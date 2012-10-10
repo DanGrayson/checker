@@ -1,0 +1,4 @@
+*.annot
+*.cmi
+*.cmo
+a.out
