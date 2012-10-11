@@ -15,7 +15,7 @@ type var =							 (* variable *)
   | Uvar of uVar
 
 type uLevel =					       (* u-level expression *)
-  | Uint of int
+  | Uint of int					       (* 0 is Prop *)
   | Uplus of uLevel * int
   | Umax of uLevel * uLevel
 
@@ -28,16 +28,26 @@ type expr =
   | Oexpr of oExpr						   (* object *)
 and tExpr =
   | Tvariable of tVar
-  | UU of uLevel						      (* U *)
-  | El of oExpr
+  | UU of uLevel						      (* U; universe as a type *)
+  | El of oExpr							      (* (Proof) *)
   | Product of oVar * tExpr * tExpr
 and oExpr =
   | Ovariable of oVar
-  | Uu of uLevel						   (* u *)
-  | Jj of uLevel * uLevel					   (* j *)
-  | Ev of oVar * oExpr * oExpr * tExpr				   (* ev *)
-  | Lambda of oVar * tExpr * oExpr				   (* lambda *)
-  | Forall of uLevel * uLevel *	oExpr * oExpr			   (* forall *)
+  | Uu of uLevel						   (* u; universe as an object *)
+  | Jj of uLevel * uLevel					   (* j; U -> U' *)
+  | Ev of oVar * oExpr * oExpr * tExpr		(* ev (evaluation; apply; App)
+						   The objects don't involve the variable.
+						   The type expression gives the target type and may involve the variable 
+						   the variable is to be replaced by the second object.
+						 *)
+  | Lambda of oVar * tExpr * oExpr				    (* lambda; 
+								       the object expression my involve the variable 
+								     *)
+  | Forall of oVar * uLevel * uLevel * oExpr * oExpr		     (* forall;
+									The first expression does not involve the variable.
+									The second expression may involve the variable.
+									The type of the result is given by the max of the two u-levels.
+								      *)
 
 (*
  Local Variables:
