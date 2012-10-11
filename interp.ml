@@ -12,8 +12,8 @@
 type var = string
 
 type sexp =
-  | Bool of bool
-  | Sym of string
+  | BooleanS of bool
+  | SymbolS of string
   | Lambda of var list * sexp
   | Var of var
   | If of sexp * sexp * sexp
@@ -26,16 +26,18 @@ type sexp =
   | Set of var * sexp
   | LetCC of var * sexp
   | Throw of sexp * sexp
+  | NilS
 
 type frametype = FCons | FSetCar | FSetCdr | FThrow
 
 type env = (var * value ref) list
 and value =
-  | Symbol of string
-  | Boolean of bool
-  | Fun of env * var list * sexp
-  | Pair of value ref * value ref
+  | SymbolV of string
+  | BooleanV of bool
+  | FunctionClosure of env * var list * sexp
+  | ConsCell of value ref * value ref
   | Cont of env * cont
+  | NilV
 and cont = frame list
 and frame =
   | IfK of sexp * sexp
@@ -47,13 +49,12 @@ and frame =
   | AppK2 of value * (value ref) list * sexp list
   | SetK of var
 
-let undef = Symbol "undefined"
-
 let rec eval e r k =
   match e with
-  | Bool b ->         throw (Boolean b) r k
-  | Sym s ->          throw (Symbol s) r k
-  | Lambda(x, e) ->   throw (Fun(r, x, e)) r k
+  | NilS ->           throw NilV r k
+  | BooleanS b ->     throw (BooleanV b) r k
+  | SymbolS s ->      throw (SymbolV s) r k
+  | Lambda(x, e) ->   throw (FunctionClosure(r, x, e)) r k
   | Var x ->          throw !(List.assoc x r) r k
   | If(e, e1, e2) ->  eval e r (IfK(e1, e2) :: k)
   | Cons(e1, e2) ->   eval e1 r (K1(FCons, e2) :: k)
@@ -67,18 +68,18 @@ let rec eval e r k =
   | Throw(e1, e2) ->  eval e1 r (K1(FThrow, e2) :: k)
 and throw v r k =
   match v, k with
-  | v, [] ->                                  v
-  | v, (K1(ftype, e) :: k) ->                 eval e r (K2(ftype, v) :: k)
-  | (Boolean b), (IfK(e1, e2) :: k) ->        eval (if b then e1 else e2) r k
-  | v, (K2(FCons, fst) :: k) ->               throw (Pair(ref fst, ref v)) r k
-  | v, (K2(FSetCar, Pair(r1, r2)) :: k) ->    (r1 := v; throw undef r k)
-  | v, (K2(FSetCdr, Pair(r1, r2)) :: k) ->    (r2 := v; throw undef r k)
-  | Cont(r, k), (K2(FThrow, v) :: _) ->       throw v r k
-  | v, (SetK(x) :: k) ->                      ((List.assoc x r) := v; throw undef r k)
-  | (Pair(fst, snd)), (CarK :: k) ->          throw !fst r k
-  | (Pair(fst, snd)), (CdrK :: k) ->          throw !snd r k
-  | Fun(r, [], e), (AppK1([]) :: k) ->        eval e r k
-  | v, (AppK1(arg :: args) :: k) ->           eval arg r (AppK2(v, [], args) :: k)
-  | v, (AppK2(f, vs, e :: es) :: k) ->        eval e r (AppK2(f, (ref v) :: vs, es) :: k)
-  | Fun(r, xs, e), (AppK2(f, vs, []) :: k) -> eval e ((List.combine xs (List.rev vs)) @ r) k
-  | _ ->                                      failwith "Helpful Error Message"
+  | v, [] ->                                              v
+  | v, (K1(ftype, e) :: k) ->                             eval e r (K2(ftype, v) :: k)
+  | (BooleanV b), (IfK(e1, e2) :: k) ->                    eval (if b then e1 else e2) r k
+  | v, (K2(FCons, fst) :: k) ->                           throw (ConsCell(ref fst, ref v)) r k
+  | v, (K2(FSetCar, ConsCell(r1, r2)) :: k) ->            (r1 := v; throw NilV r k)
+  | v, (K2(FSetCdr, ConsCell(r1, r2)) :: k) ->            (r2 := v; throw NilV r k)
+  | Cont(r, k), (K2(FThrow, v) :: _) ->                   throw v r k
+  | v, (SetK(x) :: k) ->                                  ((List.assoc x r) := v; throw NilV r k)
+  | (ConsCell(car, cdr)), (CarK :: k) ->                  throw !car r k
+  | (ConsCell(car, cdr)), (CdrK :: k) ->                  throw !cdr r k
+  | FunctionClosure(r, [], e), (AppK1([]) :: k) ->        eval e r k
+  | v, (AppK1(arg :: rest) :: k) ->                       eval arg r (AppK2(v, [], rest) :: k)
+  | v, (AppK2(f, vs, e :: es) :: k) ->                    eval e r (AppK2(f, (ref v) :: vs, es) :: k)
+  | FunctionClosure(r, xs, e), (AppK2(f, vs, []) :: k) -> eval e ((List.combine xs (List.rev vs)) @ r) k
+  | _ ->                                                  failwith "internal error"
