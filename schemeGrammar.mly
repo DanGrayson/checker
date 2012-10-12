@@ -2,8 +2,8 @@
 open Interp
 %}
 %start expr
-%type <expr> expr
-%token Tlparen Trparen Tdot 
+%type <Interp.expr> expr
+%token Tlparen Trparen Tdot Tapost COMMENT
 %token IDENTIFIER
 %%
 expr :

@@ -5,3 +5,4 @@ a.out
 schemeLex.ml
 schemeGrammar.ml
 schemeGrammar.mli
+checker
