@@ -33,7 +33,7 @@ and tExpr =
   | Product of oVar * tExpr * tExpr
 and oExpr =
   | Ovariable of oVar
-  | Uu of uLevel						   (* u; universe as an object *)
+  | Uu of uLevel						   (* u; universe as an object; converted to its type by El *)
   | Jj of uLevel * uLevel					   (* j; U -> U' *)
   | Ev of oVar * oExpr * oExpr * tExpr		(* ev (evaluation; apply; App)
 						   The objects don't involve the variable.
@@ -48,6 +48,12 @@ and oExpr =
 									The second expression may involve the variable.
 									The type of the result is given by the max of the two u-levels.
 								      *)
+
+type typingContext = (oVar * tExpr) list			      (* context; Gamma; to be thought of as a function *)
+
+let emptyContext : typingContext = []
+
+
 
 (*
  Local Variables:
