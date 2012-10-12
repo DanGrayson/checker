@@ -2,3 +2,6 @@
 *.cmi
 *.cmo
 a.out
+schemeLex.ml
+schemeGrammar.ml
+schemeGrammar.mli
