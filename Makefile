@@ -6,10 +6,12 @@
 # && rm $*.mli
 
 all : checker
-checker: interp.cmo typesystem.cmo schemeGrammar.cmo schemeLex.cmo
+	echo '( a )' | ./checker
+checker: interp.cmo typesystem.cmo schemeGrammar.cmo schemeLex.cmo main.cmo
 	ocamlc -o $@ $^
 schemeLex.ml: schemeGrammar.ml
 schemeLex.cmo: schemeGrammar.cmo
 schemeGrammar.cmo: schemeGrammar.cmi
+main.cmo: schemeLex.cmi schemeGrammar.cmi
 clean:; rm -f *.annot *.cmi *.cmo a.out *-tmp.ml schemeGrammar.mli schemeGrammar.ml schemeLex.ml
 

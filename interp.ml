@@ -56,7 +56,7 @@ let rec eval e r k =
   | BooleanS b ->     continue (BooleanV b) r k
   | SymbolS s ->      continue (SymbolV s) r k
   | Function(x, e) -> continue (FuncClosure(r, x, e)) r k
-  | Variable x ->     continue !(List.assoc x r) r k
+  | Variable x ->     continue !(try List.assoc x r with Not_found -> (Printf.printf "unset variable: %s\n" x; raise Not_found)) r k
   | If(e, e1, e2) ->  eval e r (IfCont(e1, e2) :: k)
   | Cons(e1, e2) ->   eval e1 r (ConsCont1 e2 :: k)
   | Car e ->          eval e r (CarCont :: k)
