@@ -6,9 +6,11 @@
 # && rm $*.mli
 
 all : checker
-	echo '( a )' | ./checker
+	echo '( () () (()) . () ) (123 345)' | ./checker
 checker: interp.cmo typesystem.cmo schemeGrammar.cmo schemeLex.cmo main.cmo
 	ocamlc -o $@ $^
+top: interp.cmo typesystem.cmo schemeGrammar.cmo schemeLex.cmo
+	ocaml $^
 schemeLex.ml: schemeGrammar.ml
 schemeLex.cmo: schemeGrammar.cmo
 schemeGrammar.cmo: schemeGrammar.cmi

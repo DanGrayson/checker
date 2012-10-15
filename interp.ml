@@ -10,10 +10,13 @@
 
 *)
 
+exception NotImplemented
+
 type variable = string
 
 type expr =
   | BooleanS of bool
+  | IntegerS of int
   | SymbolS of string
   | Function of variable list * expr
   | Variable of variable
@@ -34,6 +37,7 @@ and value =
   | NilV
   | SymbolV of string
   | BooleanV of bool
+  | IntegerV of int
   | ConsCell of value ref * value ref
   | FuncClosure of bindings * variable list * expr
   | ContClosure of bindings * continuations
@@ -54,6 +58,7 @@ let rec eval e r k =
   match e with
   | NilS ->           continue NilV r k
   | BooleanS b ->     continue (BooleanV b) r k
+  | IntegerS b ->     continue (IntegerV b) r k
   | SymbolS s ->      continue (SymbolV s) r k
   | Function(x, e) -> continue (FuncClosure(r, x, e)) r k
   | Variable x ->     continue !(try List.assoc x r with Not_found -> (Printf.printf "unset variable: %s\n" x; raise Not_found)) r k

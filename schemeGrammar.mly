@@ -3,14 +3,25 @@ open Interp
 %}
 %start expr
 %type <Interp.expr> expr
-%token Tlparen Trparen Tdot Tapost
+%token Tlparen Trparen Tdot Tapost Lambda
 %token <string> Identifier
+%token <int> Integer
 %%
 expr :
    | Identifier { Variable $1 }
-   | Tlparen conscell Trparen { $2 }
+   | Integer { IntegerS $1 }
+   | Tapost expr { Cons(Variable "quote",$2) }
+   | plist { $1 }
+plist :
+   | Tlparen list Trparen { $2 }
    | Tlparen Trparen { NilS }
-conscell :
-   | expr conscell { Cons($1,$2) }
+list :
+   | { NilS }
    | expr Tdot expr { Cons($1,$3) }
-   | expr { Cons($1,NilS) }
+   | expr list { Cons($1,$2) }
+pnlist :
+   | Tlparen nlist Trparen { $2 }
+   | Tlparen Trparen { NilS }
+nlist :
+   | { NilS }
+   | expr nlist { Cons($1,$2) }
