@@ -23,27 +23,33 @@ type uContext =						 (* universe context *)
     uVar list * (uLevel * uLevel) (* equation *) list
 
 type expr =
+    (* TS0 *)
   | Uexpr of uLevel
-  | Texpr of tExpr						   (* type *)
-  | Oexpr of oExpr						   (* object *)
+  | Texpr of tExpr						   (* type term *)
+  | Oexpr of oExpr						   (* object term *)
 and tExpr =
+    (* TS0 *)
   | Tvariable of tVar
   | UU of uLevel						      (* U; universe as a type *)
-  | El of oExpr							      (* (Proof) *)
-  | Product of oVar * tExpr * tExpr
+  | El of oExpr							      (* El(o) <---> [El](o)
+									 converts an object term into the corresponding type term
+								       *)
+  | Product of oVar * tExpr * tExpr					(* Product(x,T,T') <--> [Pi;x](T,T') *)
 and oExpr =
+    (* TS0 *)
   | Ovariable of oVar
   | Uu of uLevel						   (* u; universe as an object; converted to its type by El *)
   | Jj of uLevel * uLevel					   (* j; U -> U' *)
-  | Ev of oVar * oExpr * oExpr * tExpr		(* ev (evaluation; apply; App)
-						   The objects don't involve the variable.
-						   The type expression gives the target type and may involve the variable 
-						   the variable is to be replaced by the second object.
+  | Ev of oVar * oExpr * oExpr * tExpr		(* Ev(x,f,o,T) <--> [ev;x](f,o,T)
+						   Here f and o don't involve x, what's intended is the application of
+						   the function f to the argument o, and T, with the type of o replacing x,
+						   gives the type of the result.
 						 *)
-  | Lambda of oVar * tExpr * oExpr				    (* lambda; 
-								       the object expression my involve the variable 
+  | Lambda of oVar * tExpr * oExpr				    (* Lambda(x,T,o) <--> [lambda;x](T,o)
+								       the object expression may involve the variable 
 								     *)
-  | Forall of oVar * uLevel * uLevel * oExpr * oExpr		     (* forall;
+  | Forall of oVar * uLevel * uLevel * oExpr * oExpr		     (* Forall(x,M,M',o,o') <--> [forall;x]([M],[M'],o,o')
+									This is the object term corresponding to Product(x,T,T').
 									The first expression does not involve the variable.
 									The second expression may involve the variable.
 									The type of the result is given by the max of the two u-levels.
