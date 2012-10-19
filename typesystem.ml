@@ -14,7 +14,7 @@ type var =							 (* variable *)
   | Tvar of tVar
   | Uvar of uVar
 
-type uLevel =					       (* u-level expression *)
+type uLevel =					       (* u-level expression M *)
   | Uint of int					       (* 0 is Prop *)
   | Uplus of uLevel * int
   | Umax of uLevel * uLevel
@@ -24,9 +24,10 @@ type uContext =						 (* universe context *)
 
 type expr =
     (* TS0 *)
-  | Uexpr of uLevel
+  | Uexpr of uLevel					      (* Uexpr(M) <--> [M] *)
   | Texpr of tExpr						   (* type term *)
   | Oexpr of oExpr						   (* object term *)
+    (* TS1 *)
 and tExpr =
     (* TS0 *)
   | Tvariable of tVar
@@ -35,6 +36,9 @@ and tExpr =
 									 converts an object term into the corresponding type term
 								       *)
   | Product of oVar * tExpr * tExpr					(* Product(x,T,T') <--> [Pi;x](T,T') *)
+    (* TS1 *)
+  | Pt								      (* Pt <--> [Pt]
+									 the unit type *)
 and oExpr =
     (* TS0 *)
   | Ovariable of oVar
@@ -54,6 +58,7 @@ and oExpr =
 									The second expression may involve the variable.
 									The type of the result is given by the max of the two u-levels.
 								      *)
+    (* TS1 *)
 
 type typingContext = (oVar * tExpr) list			      (* context; Gamma; to be thought of as a function *)
 
