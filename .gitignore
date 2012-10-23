@@ -6,3 +6,11 @@ schemeLex.ml
 schemeGrammar.ml
 schemeGrammar.mli
 checker
+*.aux
+*.dvi
+*.log
+*.out
+*.tex-out
+*.pdf
+*.sty
+*.toc
