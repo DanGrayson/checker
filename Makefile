@@ -8,7 +8,7 @@ all : checker doc
 	echo '( () () (()) . () ) (123 345)' | ./checker
 doc: doc.pdf
 doc.pdf: typesystem.ml
-	ocamldoc -notoc -o doc.tex-out -latex $^
+	ocamldoc -charset utf8 -notoc -o doc.tex-out -latex $^
 	pdflatex doc.tex-out
 	pdflatex doc.tex-out
 checker: interp.cmo typesystem.cmo schemeGrammar.cmo schemeLex.cmo main.cmo
