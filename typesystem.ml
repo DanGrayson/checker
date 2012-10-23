@@ -5,17 +5,13 @@
 
    *)
 
-type oVar = string					(* object variable *)
-type tVar = string					(* type variable *)
-type uVar = string					(* universe variable *)
-
-type var =							 (* variable *)
-  | Ovar of oVar
-  | Tvar of tVar
-  | Uvar of uVar
+type oVar = Ovar of string					(* object variable *)
+type tVar = Tvar of string					(* type variable *)
+type uVar = Uvar of string					(* universe variable *)
 
 type uLevel =					       (* u-level expression M *)
   | Uint of int					       (* 0 is Prop *)
+  | Uvar of uVar
   | Uplus of uLevel * int
   | Umax of uLevel * uLevel
 
@@ -28,6 +24,7 @@ type expr =
   | Texpr of tExpr						   (* type term *)
   | Oexpr of oExpr						   (* object term *)
     (* TS1 *)
+    (* TS2 *)
 and tExpr =
     (* TS0 *)
   | Tvariable of tVar
@@ -35,9 +32,15 @@ and tExpr =
   | El of oExpr							      (* El(o) <---> [El](o)
 									 converts an object term into the corresponding type term
 								       *)
-  | Product of oVar * tExpr * tExpr					(* Product(x,T,T') <--> [Pi;x](T,T') *)
+  | Product of oVar * tExpr * tExpr					(* Product(x,T,T') <--> [Pi;x](T,T') 
+									   T does not contain x
+									 *)
     (* TS1 *)
-  | Pt								      (* Pt <--> [Pt]
+  | Sigma of oVar * tExpr * tExpr					(* Sigma(x,T,T') <--> [Sigma;x](T,T') 
+									   T does not contain x
+									 *)
+    (* TS2 *)
+  | PPt								      (* PPt <--> [Pt]
 									 the unit type *)
 and oExpr =
     (* TS0 *)
@@ -59,15 +62,32 @@ and oExpr =
 									The type of the result is given by the max of the two u-levels.
 								      *)
     (* TS1 *)
+  | Pair of oVar * oExpr * oExpr * tExpr			      (* Pair(x,,,) <--> [pair;x](,,)
+									 an instance of Sigma
+								       *)
+  | Pr1 of oVar * tExpr * tExpr * oExpr				      (* Pr1(x,T,T',o) <--> [pr1;x](T,T',o) *)
+  | Pr2 of oVar * tExpr * tExpr * oExpr				      (* Pr2(x,T,T',o) <--> [pr2;x](T,T',o) *)
+  | Total of oVar * uLevel * uLevel * oExpr * oExpr                   (* the object term corresponding to Sigma above *)
+    (* TS2 *)
+  | Pt								      (* Pt <--> [pt]() 
+									 the object corresponding to PPt
+								       *)
+
+  | Ptr of oVar * uLevel (*??*) * oExpr * tExpr		      	      (* Ptr(x,o,T) <--> [pt_r;x](o,T) 
+									 the eliminator for Pt
+								       *)
+
+  | Tt								      (* Tt <--> [tt]() 
+									 the unique instance of the unit type PPt
+								       *)
 
 type typingContext = (oVar * tExpr) list			      (* context; Gamma; to be thought of as a function *)
 
 let emptyContext : typingContext = []
 
-
-
 (*
  Local Variables:
-   comment-column: 70
+  compile-command: "make typesystem.cmo "
+  comment-column: 70
  End:
  *)
