@@ -107,6 +107,7 @@ and tExpr =
       (* TS6 *)
   | Id of tExpr * oExpr * oExpr
       (** Identity type; paths type. *)
+      (* TS7 *)
       
 (** [oExpr] is the type of o-expressions. *)
 and oExpr =
@@ -166,7 +167,7 @@ and oExpr =
 	(** The type of a term [Osum(T,T',s,s',o,Bd(x,S))] is [S], with [x] replaced by [o]. *)
 	(* TS4 *)
   | Oempty
-      (** [Oempty] is the object corresponding to the type [Tempty].  The type of [Oempty] is the smallest universe. *)
+      (** [Oempty] is the object corresponding to the type [Tempty].  The type of [Oempty] is the smallest universe, [Uint 0]. *)
   | Empty_r of tExpr * oExpr
 	(** The elimnination rule for the empty type.
 
@@ -187,9 +188,22 @@ and oExpr =
 	    
 	    The type of [Refl(T,o)] is [Id(T,o,o)]. *)
   | J of tExpr * oExpr * oExpr * oExpr * oExpr * tBinding2
-	(** The elimination rule for Id.  
-	    
+	(** The elimination rule for Id. 
+
 	    The type of [J(T,a,b,q,i,Tbinding2(x,e,S))] is [S\[b/x,i/e\]]. *)
+      (* TS7 *)
+   | Rr0 of uLevel * uLevel * oExpr * oExpr * oExpr
+	 (** Resizing rule.
+
+	     The type of [Rr0(M_2,M_1,s,t,e)] is [U(M_1)], resized downward from [U M_2].
+	     *)
+   | Rr1 of uLevel * oExpr * oExpr
+	 (** Resizing rule.
+
+	     The type of [Rr1(M,a,p)] is [U(Uint 0)], resized downward from [U M].
+	     *)
+
+
 type typingContext = (oVar * tExpr) list
       (** context; [Gamma]; to be thought of as a function from variables to T-expressions *)
       
