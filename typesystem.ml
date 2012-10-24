@@ -87,6 +87,9 @@ and tExpr =
 	  
 	  Voevodsky doesn't list this explicitly in the definition of TS4, but it gets used in derivation rules, so I added it.
 	  Perhaps he intended to write [El(Oempty)] for it. *)
+      (* TS5 *)
+  | IC of tExpr * oExpr * oVar * tExpr * oVar * tExpr * oVar * oExpr
+	(** Here the convention is that each variable is bound within all of the expressions to its right in the tuple. *)
       
 (** [oExpr] is the type of o-expressions. *)
 and oExpr =
@@ -151,6 +154,14 @@ and oExpr =
 	(** The elimnination rule for the empty type.
 
 	    The type of [Empty_r(T,o)] is [T].  Here the type of [o] is [Tempty], the empty type. *)
+  | Oc of tExpr * oExpr * oExpr * oExpr * oVar * tExpr * oVar * tExpr * oVar * oExpr
+	(** Here the convention is that each variable is bound within all of the expressions to its right in the tuple. 
+
+	    {b Warning:} we alter the sequence in the tuple from the one presented by Voevodsky, so we can adhere to this convention.
+	    The two oExpr's appearing in positions 3 and 4 are the ones he puts at the tail end. *)
+  | IC_r
+      (** IC_r is the elimination rule for inductive types (W-types) *)
+  | Oic
 	
 type typingContext = (oVar * tExpr) list
    (** context; [Gamma]; to be thought of as a function from variables to T-expressions *)
