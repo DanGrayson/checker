@@ -8,8 +8,9 @@ Type system TS
 
 (**
 
-This file encodes the type system TS developed in {i A universe polymorphic
-type system}, by Vladimir Voevodsky, the version dated October, 2012.
+This file encodes the type system TS developed in the paper {i A universe
+polymorphic type system}, by Vladimir Voevodsky, the version dated October,
+2012.
 
   *)
 
@@ -79,31 +80,31 @@ and tBinding2 =
 and tExpr =
   (* TS0 *)
   | Tvariable of tVar
-  | U of uLevel
-	(** [U]; a u-level expression, as a type *)
   | El of oExpr
 	(** [El]; converts an object term into the corresponding type term *)
-  | Product of tExpr * tBinding
-	(** [Product(T,Bd(x,T')) <--> \[Pi;x\](T,T')] *)
+  | ElUu of uLevel
+	(** [ElUu U]; a u-level expression, as a type *)
+  | ElForall of tExpr * tBinding
+	(** [ElForall(T,Bd(x,T')) <--> \[Pi;x\](T,T')] *)
     (* TS1 *)
-  | Sigma of tExpr * tBinding
-	(** [Sigma(T,Bd(x,T')) <--> \[Sigma;x\](T,T')] *)
+  | ElTotal of tExpr * tBinding
+	(** [ElTotal(T,Bd(x,T')) <--> \[Sigma;x\](T,T')] *)
     (* TS2 *)
-  | PPt
-      (** [Pt]; the unit type *)
+  | ElPt
+      (** Corresponds to [Pt] in the paper; the unit type *)
     (* TS3 *)
-  | Tcoprod of tExpr * tExpr
-  | Tcoprod2 of tExpr * tExpr * tBinding * tBinding * oExpr
+  | ElCoprod of tExpr * tExpr
+  | ElCoprod2 of tExpr * tExpr * tBinding * tBinding * oExpr
       (* TS4 *)
-  | Tempty
+  | ElEmpty
       (** The empty type.  
 	  
 	  Voevodsky doesn't list this explicitly in the definition of TS4, but it gets used in derivation rules, so I added it.
-	  Perhaps he intended to write [El(Oempty)] for it. *)
+	  Perhaps he intended to write [El(Empty)] for it. *)
       (* TS5 *)
-  | IC of tExpr * oExpr * ttoBinding
+  | ElIc of tExpr * oExpr * ttoBinding
       (* TS6 *)
-  | Id of tExpr * oExpr * oExpr
+  | ElPaths of tExpr * oExpr * oExpr
       (** Identity type; paths type. *)
       (* TS7 *)
       
@@ -113,9 +114,9 @@ and oExpr =
   | Ovariable of oVar
 	(** An o-variable. *)
   | Uu of uLevel
-	(** [u]; universe as an object; converted to its type [U] by [El] *)
+	(** [u]; universe as an object. *)
   | Jj of uLevel * uLevel
-	(** [j]; U -> U' *)
+	(** [j]; ElUu -> U' *)
   | Ev of oExpr * oExpr * tBinding
 	(** [Ev(f,o,Bd(x,T)) <--> \[ev;x\](f,o,T)]
 	    
@@ -127,78 +128,76 @@ and oExpr =
   | Forall of uLevel * uLevel * oExpr * oBinding
 	(** [Forall(M,M',o,Bd(x,o')) <--> \[forall;x\]([M],[M'],o,o')]
 	    
-	    [Forall] is the object term corresponding to [Product].
+	    [Forall] is the object term corresponding to [ElForall].
 	    The type of the term is given by the max of the two u-levels. *)
 	(* TS1 *)
   | Pair of oExpr * oExpr * tBinding
 	(** [Pair(a,b,Bd(x,T)) <--> \[pair;x\](a,b,T)]
 	    
-	    An instance of [Sigma]. *)
+	    An instance of [ElTotal]. *)
   | Pr1 of tExpr * tBinding * oExpr
 	(** [Pr1(T,Bd(x,T'),o) <--> \[pr1;x\](T,T',o)] *)
   | Pr2 of tExpr * tBinding * oExpr
 	(** [Pr2(T,Bd(x,T'),o) <--> \[pr2;x\](T,T',o)] *)
   | Total of uLevel * uLevel * oExpr * oBinding
-	(** [Total] is the object term corresponding to [Sigma] above *)
+	(** Corresponds to [total] or [prod] in the paper. *)
 	(* TS2 *)
   | Pt
-      (** [Pt <--> \[pt\]()]
-	  
-	  [Pt] is the object corresponding to the type [PPt]. *)
+      (** Corresponds to [\[pt\]] in the paper. *)
       
   | Pt_r of oExpr * tBinding
 	(** [Pt_r(o,Bd(x,T)) <--> \[pt_r;x\](o,T)]
 	    
-	    [Pt_r] is the eliminator for [Pt]. *)
+	    [Pt_r] is the eliminator for [ElPt]. *)
   | Tt
       (** [Tt <--> \[tt\]()]
 	  
-	  [Tt] is the unique instance of the unit type [PPt]. *)
+	  [Tt] is the unique instance of the unit type [ElPt]. *)
       (* TS3 *)
-  | Ocoprod of uLevel * uLevel * oExpr * oExpr
+  | Coprod of uLevel * uLevel * oExpr * oExpr
 	(** The type of the term is given by the [max] of the two u-levels. *)
-  | Oii1 of tExpr * tExpr * oExpr
-	(** The type of a term [Oii1(T,T',o)] is [Tcoprod(T,T')]; here [o] has type [T] *)
-  | Oii2 of tExpr * tExpr * oExpr
-	(** The type of a term [Oii2(T,T',o)] is [Tcoprod(T,T')]; here [o] has type [T'] *)
-  | Osum of tExpr * tExpr * oExpr * oExpr * oExpr * tBinding
-	(** The type of a term [Osum(T,T',s,s',o,Bd(x,S))] is [S], with [x] replaced by [o]. *)
+  | Ii1 of tExpr * tExpr * oExpr
+	(** The type of a term [Ii1(T,T',o)] is [ElCoprod(T,T')]; here [o] has type [T] *)
+  | Ii2 of tExpr * tExpr * oExpr
+	(** The type of a term [Ii2(T,T',o)] is [ElCoprod(T,T')]; here [o] has type [T'] *)
+  | Sum of tExpr * tExpr * oExpr * oExpr * oExpr * tBinding
+	(** The type of a term [Sum(T,T',s,s',o,Bd(x,S))] is [S], with [x] replaced by [o]. *)
 	(* TS4 *)
-  | Oempty
-      (** [Oempty] is the object corresponding to the type [Tempty].  The type of [Oempty] is the smallest universe, [Uint 0]. *)
+  | Empty
+      (** The type of [Empty] is the smallest universe, [Uint 0]. *)
   | Empty_r of tExpr * oExpr
 	(** The elimnination rule for the empty type.
 
-	    The type of [Empty_r(T,o)] is [T].  Here the type of [o] is [Tempty], the empty type. *)
-  | Oc of tExpr * oExpr * ttoBinding * oExpr * oExpr
-	(** Corresponds to [c]. *)
+	    The type of [Empty_r(T,o)] is [T].  Here the type of [o] is [ElEmpty], the empty type. *)
+  | Cc of tExpr * oExpr * ttoBinding * oExpr * oExpr
+	(** Corresponds to [c] in the paper. *)
   | IC_r of tExpr * oExpr * ttoBinding * oExpr * tBinding2 * oExpr
 	(** IC_r is the elimination rule for inductive types (W-types) *)
-  | Oic of uLevel * uLevel * uLevel * oExpr * oExpr * oooBinding
+  | Ic of uLevel * uLevel * uLevel * oExpr * oExpr * oooBinding
 	(** Corresponds to [ic].  Its type is the max of the three u-level expressions. *)
 	(* TS6 *)
   | Paths of uLevel * oExpr * oExpr * oExpr
-	(** The object corresponding to the identity type [Id].  
+	(** The object corresponding to the identity type [ElPaths].  
 
 	    Its type is the type corresponding to the given universe level. *)
   | Refl of tExpr * oExpr
 	(** Reflexivity, or the constant path. 
 	    
-	    The type of [Refl(T,o)] is [Id(T,o,o)]. *)
+	    The type of [Refl(T,o)] is [ElPaths(T,o,o)]. *)
   | J of tExpr * oExpr * oExpr * oExpr * oExpr * tBinding2
-	(** The elimination rule for Id. 
+	(** The elimination rule for ElPaths; Id-elim.
 
 	    The type of [J(T,a,b,q,i,Tbinding2(x,e,S))] is [S\[b/x,i/e\]]. *)
       (* TS7 *)
    | Rr0 of uLevel * uLevel * oExpr * oExpr * oExpr
 	 (** Resizing rule.
 
-	     The type of [Rr0(M_2,M_1,s,t,e)] is [U(M_1)], resized downward from [U M_2].
+	     The type of [Rr0(M_2,M_1,s,t,e)] is [ElUu(M_1)], resized downward from [ElUu M_2].
 	     *)
    | Rr1 of uLevel * oExpr * oExpr
 	 (** Resizing rule.
 
-	     The type of [Rr1(M,a,p)] is [U(Uint 0)], resized downward from [U M].
+	     The type of [Rr1(M,a,p)] is [ElUu(Uint 0)], resized downward from [ElUu M].
 	     *)
 
 
