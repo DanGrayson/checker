@@ -81,7 +81,13 @@ and tExpr =
     (* TS3 *)
   | Tcoprod of tExpr * tExpr
   | Tcoprod2 of tExpr * tExpr * otBinding * otBinding * oExpr
-
+      (* TS4 *)
+  | Tempty
+      (** The empty type.  
+	  
+	  Voevodsky doesn't list this explicitly in the definition of TS4, but it gets used in derivation rules, so I added it.
+	  Perhaps he intended to write [El(Oempty)] for it. *)
+      
 (** [oExpr] is the type of o-expressions. *)
 and oExpr =
     (* TS0 *)
@@ -93,21 +99,21 @@ and oExpr =
 	(** [j]; U -> U' *)
   | Ev of oExpr * oExpr * otBinding
 	(** [Ev(f,o,Bd(x,T)) <--> \[ev;x\](f,o,T)]
-
+	    
 	    Application of the function [f] to the argument [o].
-
+	    
 	    Here [T], with the type of [o] replacing [x], gives the type of the result. *)
   | Lambda of tExpr * ooBinding
 	(** [Lambda(T,Bd(x,o)) <--> \[lambda;x\](T,o)] *)
   | Forall of uLevel * uLevel * oExpr * ooBinding
 	(** [Forall(M,M',o,Bd(x,o')) <--> \[forall;x\]([M],[M'],o,o')]
-
+	    
 	    [Forall] is the object term corresponding to [Product].
 	    The type of the term is given by the max of the two u-levels. *)
 	(* TS1 *)
   | Pair of oExpr * oExpr * otBinding
 	(** [Pair(a,b,Bd(x,T)) <--> \[pair;x\](a,b,T)]
-									 
+	    
 	    An instance of [Sigma]. *)
   | Pr1 of tExpr * otBinding * oExpr
 	(** [Pr1(T,Bd(x,T'),o) <--> \[pr1;x\](T,T',o)] *)
@@ -118,13 +124,13 @@ and oExpr =
 	(* TS2 *)
   | Pt
       (** [Pt <--> \[pt\]()]
-
+	  
 	  [Pt] is the object corresponding to the type [PPt]. *)
-
-  | Ptr of oExpr * otBinding
-	(** [Ptr(o,Bd(x,T)) <--> \[pt_r;x\](o,T)]
-
-	    [Ptr] is the eliminator for [Pt]. *)
+      
+  | Pt_r of oExpr * otBinding
+	(** [Pt_r(o,Bd(x,T)) <--> \[pt_r;x\](o,T)]
+	    
+	    [Pt_r] is the eliminator for [Pt]. *)
   | Tt
       (** [Tt <--> \[tt\]()]
 	  
@@ -138,9 +144,16 @@ and oExpr =
 	(** The type of a term [Oii2(T,T',o)] is [Tcoprod(T,T')]; here [o] has type [T'] *)
   | Osum of tExpr * tExpr * oExpr * oExpr * oExpr * otBinding
 	(** The type of a term [Osum(T,T',s,s',o,Bd(x,S))] is [S], with [x] replaced by [o]. *)
+	(* TS4 *)
+  | Oempty
+      (** [Oempty] is the object corresponding to the type [Tempty].  The type of [Oempty] is the smallest universe. *)
+  | Empty_r of tExpr * oExpr
+	(** The elimnination rule for the empty type.
 
+	    The type of [Empty_r(T,o)] is [T].  Here the type of [o] is [Tempty], the empty type. *)
+	
 type typingContext = (oVar * tExpr) list
-	(** context; [Gamma]; to be thought of as a function from variables to T-expressions *)
+   (** context; [Gamma]; to be thought of as a function from variables to T-expressions *)
 
 let emptyContext : typingContext = []
 
