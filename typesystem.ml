@@ -1,5 +1,3 @@
-(* coding: latin-1 *)
-
 (**
 
 Type system TS
@@ -212,6 +210,7 @@ let emptyContext : typingContext = []
 (*
  For emacs:
  Local Variables:
+  coding: latin-1
   compile-command: "make typesystem.cmo doc "
   comment-column: 70
  End:
