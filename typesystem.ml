@@ -104,6 +104,9 @@ and tExpr =
 	  Perhaps he intended to write [El(Oempty)] for it. *)
       (* TS5 *)
   | IC of tExpr * oExpr * ttoBinding
+      (* TS6 *)
+  | Id of tExpr * oExpr * oExpr
+      (** Identity type; paths type. *)
       
 (** [oExpr] is the type of o-expressions. *)
 and oExpr =
@@ -174,10 +177,22 @@ and oExpr =
 	(** IC_r is the elimination rule for inductive types (W-types) *)
   | Oic of uLevel * uLevel * uLevel * oExpr * oExpr * oooBinding
 	(** Corresponds to [ic].  Its type is the max of the three u-level expressions. *)
-	
-type typingContext = (oVar * tExpr) list
-   (** context; [Gamma]; to be thought of as a function from variables to T-expressions *)
+	(* TS6 *)
+  | Paths of uLevel * oExpr * oExpr * oExpr
+	(** The object corresponding to the identity type [Id].  
 
+	    Its type is the type corresponding to the given universe level. *)
+  | Refl of tExpr * oExpr
+	(** Reflexivity, or the constant path. 
+	    
+	    The type of [Refl(T,o)] is [Id(T,o,o)]. *)
+  | J of tExpr * oExpr * oExpr * oExpr * oExpr * tBinding2
+	(** The elimination rule for Id.  
+	    
+	    The type of [J(T,a,b,q,i,Tbinding2(x,e,S))] is [S\[b/x,i/e\]]. *)
+type typingContext = (oVar * tExpr) list
+      (** context; [Gamma]; to be thought of as a function from variables to T-expressions *)
+      
 let emptyContext : typingContext = []
 
 (*
