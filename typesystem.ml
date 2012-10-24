@@ -52,15 +52,30 @@ type expr =
     (* TS1 *)
     (* TS2 *)
 
-(** [otBinding] is the type of pairs (x,T) where x is an o-variable and T is a type term.  The
+(** [tBinding] is the type of pairs (x,T) where x is an o-variable and T is a type term.  The
  variable [x] is thereby considered bound within [T]. *)
-and otBinding =
-  | OTBinding of oVar * tExpr
+and tBinding =
+  | Tbinding of oVar * tExpr
 
-(** [ooBinding] is the type of pairs (x,y) where x is an o-variable and y is an o-expression.  The
+(** [oBinding] is the type of pairs (x,y) where x is an o-variable and y is an o-expression.  The
  variable [x] is thereby considered bound within [y]. *)
+and oBinding =
+  | Obinding of oVar * oExpr
+
+and toBinding =
+  | TObinding of oVar * tExpr * oBinding
+
 and ooBinding =
-  | OOBinding of oVar * oExpr
+  | OObinding of oVar * oExpr * oBinding
+
+and ttoBinding =
+  | TTObinding of oVar * tExpr * toBinding
+
+and oooBinding =
+  | OOObinding of oVar * oExpr * ooBinding
+
+and tBinding2 =
+  | Tbinding2 of oVar * oVar * tExpr
 
 (** [tExpr] is the type of T-expressions. *)
 and tExpr =
@@ -70,17 +85,17 @@ and tExpr =
 	(** [U]; a u-level expression, as a type *)
   | El of oExpr
 	(** [El]; converts an object term into the corresponding type term *)
-  | Product of tExpr * otBinding
+  | Product of tExpr * tBinding
 	(** [Product(T,Bd(x,T')) <--> \[Pi;x\](T,T')] *)
     (* TS1 *)
-  | Sigma of tExpr * otBinding
+  | Sigma of tExpr * tBinding
 	(** [Sigma(T,Bd(x,T')) <--> \[Sigma;x\](T,T')] *)
     (* TS2 *)
   | PPt
       (** [Pt]; the unit type *)
     (* TS3 *)
   | Tcoprod of tExpr * tExpr
-  | Tcoprod2 of tExpr * tExpr * otBinding * otBinding * oExpr
+  | Tcoprod2 of tExpr * tExpr * tBinding * tBinding * oExpr
       (* TS4 *)
   | Tempty
       (** The empty type.  
@@ -88,8 +103,7 @@ and tExpr =
 	  Voevodsky doesn't list this explicitly in the definition of TS4, but it gets used in derivation rules, so I added it.
 	  Perhaps he intended to write [El(Oempty)] for it. *)
       (* TS5 *)
-  | IC of tExpr * oExpr * oVar * tExpr * oVar * tExpr * oVar * oExpr
-	(** Here the convention is that each variable is bound within all of the expressions to its right in the tuple. *)
+  | IC of tExpr * oExpr * ttoBinding
       
 (** [oExpr] is the type of o-expressions. *)
 and oExpr =
@@ -100,29 +114,29 @@ and oExpr =
 	(** [u]; universe as an object; converted to its type [U] by [El] *)
   | Jj of uLevel * uLevel
 	(** [j]; U -> U' *)
-  | Ev of oExpr * oExpr * otBinding
+  | Ev of oExpr * oExpr * tBinding
 	(** [Ev(f,o,Bd(x,T)) <--> \[ev;x\](f,o,T)]
 	    
 	    Application of the function [f] to the argument [o].
 	    
 	    Here [T], with the type of [o] replacing [x], gives the type of the result. *)
-  | Lambda of tExpr * ooBinding
+  | Lambda of tExpr * oBinding
 	(** [Lambda(T,Bd(x,o)) <--> \[lambda;x\](T,o)] *)
-  | Forall of uLevel * uLevel * oExpr * ooBinding
+  | Forall of uLevel * uLevel * oExpr * oBinding
 	(** [Forall(M,M',o,Bd(x,o')) <--> \[forall;x\]([M],[M'],o,o')]
 	    
 	    [Forall] is the object term corresponding to [Product].
 	    The type of the term is given by the max of the two u-levels. *)
 	(* TS1 *)
-  | Pair of oExpr * oExpr * otBinding
+  | Pair of oExpr * oExpr * tBinding
 	(** [Pair(a,b,Bd(x,T)) <--> \[pair;x\](a,b,T)]
 	    
 	    An instance of [Sigma]. *)
-  | Pr1 of tExpr * otBinding * oExpr
+  | Pr1 of tExpr * tBinding * oExpr
 	(** [Pr1(T,Bd(x,T'),o) <--> \[pr1;x\](T,T',o)] *)
-  | Pr2 of tExpr * otBinding * oExpr
+  | Pr2 of tExpr * tBinding * oExpr
 	(** [Pr2(T,Bd(x,T'),o) <--> \[pr2;x\](T,T',o)] *)
-  | Total of uLevel * uLevel * oExpr * ooBinding
+  | Total of uLevel * uLevel * oExpr * oBinding
 	(** [Total] is the object term corresponding to [Sigma] above *)
 	(* TS2 *)
   | Pt
@@ -130,7 +144,7 @@ and oExpr =
 	  
 	  [Pt] is the object corresponding to the type [PPt]. *)
       
-  | Pt_r of oExpr * otBinding
+  | Pt_r of oExpr * tBinding
 	(** [Pt_r(o,Bd(x,T)) <--> \[pt_r;x\](o,T)]
 	    
 	    [Pt_r] is the eliminator for [Pt]. *)
@@ -145,7 +159,7 @@ and oExpr =
 	(** The type of a term [Oii1(T,T',o)] is [Tcoprod(T,T')]; here [o] has type [T] *)
   | Oii2 of tExpr * tExpr * oExpr
 	(** The type of a term [Oii2(T,T',o)] is [Tcoprod(T,T')]; here [o] has type [T'] *)
-  | Osum of tExpr * tExpr * oExpr * oExpr * oExpr * otBinding
+  | Osum of tExpr * tExpr * oExpr * oExpr * oExpr * tBinding
 	(** The type of a term [Osum(T,T',s,s',o,Bd(x,S))] is [S], with [x] replaced by [o]. *)
 	(* TS4 *)
   | Oempty
@@ -154,14 +168,12 @@ and oExpr =
 	(** The elimnination rule for the empty type.
 
 	    The type of [Empty_r(T,o)] is [T].  Here the type of [o] is [Tempty], the empty type. *)
-  | Oc of tExpr * oExpr * oExpr * oExpr * oVar * tExpr * oVar * tExpr * oVar * oExpr
-	(** Here the convention is that each variable is bound within all of the expressions to its right in the tuple. 
-
-	    {b Warning:} we alter the sequence in the tuple from the one presented by Voevodsky, so we can adhere to this convention.
-	    The two oExpr's appearing in positions 3 and 4 are the ones he puts at the tail end. *)
-  | IC_r
-      (** IC_r is the elimination rule for inductive types (W-types) *)
-  | Oic
+  | Oc of tExpr * oExpr * ttoBinding * oExpr * oExpr
+	(** Corresponds to [c]. *)
+  | IC_r of tExpr * oExpr * ttoBinding * oExpr * tBinding2 * oExpr
+	(** IC_r is the elimination rule for inductive types (W-types) *)
+  | Oic of uLevel * uLevel * uLevel * oExpr * oExpr * oooBinding
+	(** Corresponds to [ic].  Its type is the max of the three u-level expressions. *)
 	
 type typingContext = (oVar * tExpr) list
    (** context; [Gamma]; to be thought of as a function from variables to T-expressions *)
