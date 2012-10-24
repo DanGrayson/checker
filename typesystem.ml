@@ -10,8 +10,8 @@ Type system TS
 
 (**
 
-This file encodes the type system TS developed in A universe polymorphic
-type system, by Vladimir Voevodsky, the version dated Oct 2012.
+This file encodes the type system TS developed in {i A universe polymorphic
+type system}, by Vladimir Voevodsky, the version dated October, 2012.
 
   *)
 
@@ -78,6 +78,9 @@ and tExpr =
     (* TS2 *)
   | PPt
       (** [Pt]; the unit type *)
+    (* TS3 *)
+  | Tcoprod of tExpr * tExpr
+  | Tcoprod2 of tExpr * tExpr * otBinding * otBinding * oExpr
 
 (** [oExpr] is the type of o-expressions. *)
 and oExpr =
@@ -100,8 +103,8 @@ and oExpr =
 	(** [Forall(M,M',o,Bd(x,o')) <--> \[forall;x\]([M],[M'],o,o')]
 
 	    [Forall] is the object term corresponding to [Product].
-	    The type of the result is given by the max of the two u-levels. *)
-    (* TS1 *)
+	    The type of the term is given by the max of the two u-levels. *)
+	(* TS1 *)
   | Pair of oExpr * oExpr * otBinding
 	(** [Pair(a,b,Bd(x,T)) <--> \[pair;x\](a,b,T)]
 									 
@@ -112,24 +115,32 @@ and oExpr =
 	(** [Pr2(T,Bd(x,T'),o) <--> \[pr2;x\](T,T',o)] *)
   | Total of uLevel * uLevel * oExpr * ooBinding
 	(** [Total] is the object term corresponding to [Sigma] above *)
-    (* TS2 *)
+	(* TS2 *)
   | Pt
-	(** [Pt <--> \[pt\]()]
+      (** [Pt <--> \[pt\]()]
 
-	    [Pt] is the object corresponding to the type [PPt]. *)
+	  [Pt] is the object corresponding to the type [PPt]. *)
 
-  | Ptr of uLevel * oExpr * otBinding
+  | Ptr of oExpr * otBinding
 	(** [Ptr(o,Bd(x,T)) <--> \[pt_r;x\](o,T)]
 
 	    [Ptr] is the eliminator for [Pt]. *)
-
   | Tt
-	(** [Tt <--> \[tt\]()]
-
-	    [Tt] is the unique instance of the unit type [PPt]. *)
+      (** [Tt <--> \[tt\]()]
+	  
+	  [Tt] is the unique instance of the unit type [PPt]. *)
+      (* TS3 *)
+  | Ocoprod of uLevel * uLevel * oExpr * oExpr
+	(** The type of the term is given by the [max] of the two u-levels. *)
+  | Oii1 of tExpr * tExpr * oExpr
+	(** The type of a term [Oii1(T,T',o)] is [Tcoprod(T,T')]; here [o] has type [T] *)
+  | Oii2 of tExpr * tExpr * oExpr
+	(** The type of a term [Oii2(T,T',o)] is [Tcoprod(T,T')]; here [o] has type [T'] *)
+  | Osum of tExpr * tExpr * oExpr * oExpr * oExpr * otBinding
+	(** The type of a term [Osum(T,T',s,s',o,Bd(x,S))] is [S], with [x] replaced by [o]. *)
 
 type typingContext = (oVar * tExpr) list
-	(** context; [Gamma]; to be thought of as a function *)
+	(** context; [Gamma]; to be thought of as a function from variables to T-expressions *)
 
 let emptyContext : typingContext = []
 
