@@ -23,22 +23,32 @@ type tVar = TVar of string
 (** Universe variable. *)
 type uVar = UVar of string
 
-(** A u-level expression, M, is constructed inductively as: n, v, M+n, or
-    max(M,M'), where v is a universe variable and n is a natural number. *)
+(** A u-level expression, [M], is constructed inductively as: [n], [v], [M+n], or
+    [max(M,M')], where [v] is a universe variable and [n] is a natural number.
+    The type [uLevel] implements all aspects of judging that we have a valid
+    uLevel, except for possibly constraining the list of variables used to members
+    of a given list.
+ *)
 type uLevel =
-  | Uint of int
+  | Unumeral of int
 	(** Here 0 denotes the smallest universe, 1 is its successor, and so on.
 	    The smallest universe is the one that [pt] lives in. *)
   | Uvariable of uVar
 	(** A u-level variable. *)
   | Uplus of uLevel * int
-	(** A pair (M,n), denoting M+n, the n-th successor of M.  Here n should be nonnegative *)
+	(** A pair [(M,n)], denoting [M+n], the n-th successor of [M].  Here [n] should be nonnegative *)
   | Umax of uLevel * uLevel
-	(** A pair (M,M') denoting max(M,M'). *)
+	(** A pair [(M,M')] denoting [max(M,M')]. *)
 
-(** A universe context is a list of universe variables and a list of equations between two u-level expressions. *)
-type uContext =
-    uVar list * (uLevel * uLevel) list
+(** 
+    A universe context [UC = (Fu,A)] is represented a list of universe variables [Fu] and a list of
+    equations [M_i = N_i] between two u-level expressions formed from the variables in [Fu]
+    that defines the admissible subset [A] of the functions [Fu -> nat].  It's just the subset
+    that matters.
+ *) 
+type uContext = uVar list * (uLevel * uLevel) list
+
+let emptyUContext : uContext = ([],[])
 
 type expr =
     (* TS0 *)
@@ -164,7 +174,7 @@ and oExpr =
 	(** The type of a term [Sum(T,T',s,s',o,Bd(x,S))] is [S], with [x] replaced by [o]. *)
 	(* TS4 *)
   | Empty
-      (** The type of [Empty] is the smallest universe, [Uint 0]. *)
+      (** The type of [Empty] is the smallest universe, [Unumeral 0]. *)
   | Empty_r of tExpr * oExpr
 	(** The elimnination rule for the empty type.
 
@@ -197,14 +207,34 @@ and oExpr =
    | Rr1 of uLevel * oExpr * oExpr
 	 (** Resizing rule.
 
-	     The type of [Rr1(M,a,p)] is [ElUu(Uint 0)], resized downward from [ElUu M].
+	     The type of [Rr1(M,a,p)] is [ElUu(Unumeral 0)], resized downward from [ElUu M].
 	     *)
 
-
 type typingContext = (oVar * tExpr) list
-      (** context; [Gamma]; to be thought of as a function from variables to T-expressions *)
-      
+      (** context; [Gamma]; a list of variables with T-expressions representing their declared type. *)
 let emptyContext : typingContext = []
+      
+type judgment =
+  | ContextJ of uContext * typingContext
+	(** Gamma |> *)
+  | TypeJ of uContext * typingContext * oExpr * tExpr
+	(** Gamma |- o : T *)
+  | TypeEqJ of uContext * typingContext * tExpr * tExpr
+	(* Gamma |- T = T' *)
+  | ObjEqJ of uContext * typingContext * oExpr * oExpr * tExpr
+	(* Gamma |- o = o' : T *)
+
+let emptyJudgment = ContextJ (emptyUContext, emptyContext)
+
+type inferenceRule =
+  | NoRule
+  | ARule of (judgment list -> int -> judgment)
+  | BRule of (judgment list -> oVar -> tVar -> judgment)
+
+let inferenceRules : (int * inferenceRule) list = [
+  (5, BRule (fun judgments -> fun x -> fun t -> emptyJudgment))
+]
+ 
 
 (*
  For emacs:
