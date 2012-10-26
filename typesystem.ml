@@ -109,7 +109,7 @@ and oExpr =
   | Uu of uLevel
 	(** [u]; universe as an object. *)
   | Jj of uLevel * uLevel
-	(** [j]; ElUu -> U' *)
+	(** [j]; U -> U' *)
   | Ev of oExpr * oExpr * tBinding
 	(** [Ev(f,o,Bd(x,T)) <--> \[ev;x\](f,o,T)]
 	    
@@ -209,13 +209,20 @@ type judgment =
 
 let emptyJudgment = ContextJ (emptyUContext, emptyContext)
 
-type inferenceRule =
-  | NoRule
-  | ARule of (judgment list -> int -> judgment)
-  | BRule of (judgment list -> oVar -> tVar -> judgment)
+type ruleName = Rule of int
+type ruleData =
+  | D_none
+  | D_int of int
+  | D_ot of oVar * tVar
+type ruleCitation = ruleName * ruleData
+let firstCitation = (Rule 0,D_none)
+type derivation = 
+  | Derivation of derivation list * ruleCitation * judgment
+let emptyDerivation = Derivation([],firstCitation,emptyJudgment)
+type inferenceRule = derivation list -> ruleName -> ruleData -> derivation
 
-let inferenceRules : (int * inferenceRule) list = [
-  (5, BRule (fun judgments -> fun x -> fun t -> emptyJudgment))
+let inferenceRules : (ruleName * inferenceRule) list = [
+  (Rule 5, fun derivations -> fun name -> fun data -> emptyDerivation) (*phony*)
 ]
  
 
