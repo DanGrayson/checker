@@ -61,30 +61,13 @@ type expr =
     (* TS1 *)
     (* TS2 *)
 
-(** [tBinding] is the type of pairs (x,T) where x is an o-variable and T is a type term.  The
- variable [x] is thereby considered bound within [T]. *)
-and tBinding =
-  | Tbinding of oVar * tExpr
-
-(** [oBinding] is the type of pairs (x,y) where x is an o-variable and y is an o-expression.  The
- variable [x] is thereby considered bound within [y]. *)
-and oBinding =
-  | Obinding of oVar * oExpr
-
-and toBinding =
-  | TObinding of oVar * tExpr * oBinding
-
-and ooBinding =
-  | OObinding of oVar * oExpr * oBinding
-
-and ttoBinding =
-  | TTObinding of oVar * tExpr * toBinding
-
-and oooBinding =
-  | OOObinding of oVar * oExpr * ooBinding
-
-and tBinding2 =
-  | Tbinding2 of oVar * oVar * tExpr
+and   oBinding = oVar * oExpr
+and   tBinding = oVar * tExpr
+and   tBinding2= oVar * oVar  * tExpr
+and  toBinding = oVar * tExpr * oBinding
+and  ooBinding = oVar * oExpr * oBinding
+and ttoBinding = oVar * tExpr * toBinding
+and oooBinding = oVar * oExpr * ooBinding
 
 (** [tExpr] is the type of T-expressions. *)
 and tExpr =
@@ -220,9 +203,9 @@ type judgment =
   | TypeJ of uContext * typingContext * oExpr * tExpr
 	(** Gamma |- o : T *)
   | TypeEqJ of uContext * typingContext * tExpr * tExpr
-	(* Gamma |- T = T' *)
+	(** Gamma |- T = T' *)
   | ObjEqJ of uContext * typingContext * oExpr * oExpr * tExpr
-	(* Gamma |- o = o' : T *)
+	(** Gamma |- o = o' : T *)
 
 let emptyJudgment = ContextJ (emptyUContext, emptyContext)
 
