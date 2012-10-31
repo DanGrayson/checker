@@ -115,7 +115,10 @@ and oExpr =
 	    
 	    Application of the function [f] to the argument [o].
 	    
-	    Here [T], with the type of [o] replacing [x], gives the type of the result. *)
+	    Here [T], with the type of [o] replacing [x], gives the type of the result.
+
+	    By definition, such subexpressions [T] are not essential.  Everything else is essential.
+	 *)
   | Lambda of tExpr * oBinding
 	(** [Lambda(T,Bd(x,o)) <--> \[lambda;x\](T,o)] *)
   | Forall of uLevel * uLevel * oExpr * oBinding
@@ -206,25 +209,30 @@ type judgment =
 	(** Gamma |- T = T' *)
   | ObjEqJ of uContext * typingContext * oExpr * oExpr * tExpr
 	(** Gamma |- o = o' : T *)
-
 let emptyJudgment = ContextJ (emptyUContext, emptyContext)
-
-type ruleName = Rule of int
-type ruleData =
-  | D_none
-  | D_int of int
-  | D_ot of oVar * tVar
-type ruleCitation = ruleName * ruleData
-let firstCitation = (Rule 0,D_none)
+type ruleCitation = Rule of int
 type derivation = 
   | Derivation of derivation list * ruleCitation * judgment
-let emptyDerivation = Derivation([],firstCitation,emptyJudgment)
-type inferenceRule = derivation list -> ruleName -> ruleData -> derivation
-
-let inferenceRules : (ruleName * inferenceRule) list = [
-  (Rule 5, fun derivations -> fun name -> fun data -> emptyDerivation) (*phony*)
-]
- 
+type ruleParm =
+  | RPNone
+  | RPot of oVar * tVar
+  | RPo of oVar
+exception NotImplemented
+exception InternalError
+exception VariableNotInContext
+exception NoMatchingRule
+let rec getType o = function
+    (o',t) :: _ when o = o' -> t
+  | _ :: gamma -> getType o gamma
+  | [] -> raise VariableNotInContext
+let inferenceRule : int * ruleParm * derivation list -> derivation = function
+    (1,RPNone,[]) -> Derivation([],Rule 1,emptyJudgment)
+  | (2,RPot (o,t),([Derivation(_,_,ContextJ(uc,gamma))] as derivs)) -> Derivation(derivs,Rule 2,ContextJ(uc,(o,Tvariable t) :: gamma))
+  | (3,RPo o,([Derivation(_,_,ContextJ(uc,gamma))] as derivs)) -> Derivation(derivs,Rule 3,TypeJ(uc,gamma,Ovariable o,getType o gamma))
+  | _ -> raise NoMatchingRule
+let d1 = inferenceRule(1,RPNone,[])
+let d2 = inferenceRule(2,RPot (OVar "x", TVar "X"), [d1])
+let d3 = inferenceRule(3,RPo (OVar "x"), [d2])
 
 (*
  For emacs:
