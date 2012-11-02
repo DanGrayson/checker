@@ -117,7 +117,7 @@ and oExpr =
 	    
 	    Here [T], with the type of [o] replacing [x], gives the type of the result.
 
-	    By definition, such subexpressions [T] are not essential.  Everything else is essential.
+	    By definition, such subexpressions [T] are not essential.
 	 *)
   | Lambda of tExpr * oBinding
 	(** [Lambda(T,Bd(x,o)) <--> \[lambda;x\](T,o)] *)
@@ -132,9 +132,15 @@ and oExpr =
 	    
 	    An instance of [ElTotal]. *)
   | Pr1 of tExpr * tBinding * oExpr
-	(** [Pr1(T,Bd(x,T'),o) <--> \[pr1;x\](T,T',o)] *)
+	(** [Pr1(T,Bd(x,T'),o) <--> \[pr1;x\](T,T',o)] 
+
+	    By definition, such subexpressions [T] are not essential.
+	 *)
   | Pr2 of tExpr * tBinding * oExpr
-	(** [Pr2(T,Bd(x,T'),o) <--> \[pr2;x\](T,T',o)] *)
+	(** [Pr2(T,Bd(x,T'),o) <--> \[pr2;x\](T,T',o)] 
+
+	    By definition, such subexpressions [T] are not essential.
+	 *)
   | Total of uLevel * uLevel * oExpr * oBinding
 	(** Corresponds to [total] or [prod] in the paper. *)
 	(* TS2 *)
@@ -189,11 +195,15 @@ and oExpr =
 	 (** Resizing rule.
 
 	     The type of [Rr0(M_2,M_1,s,t,e)] is [ElUu(M_1)], resized downward from [ElUu M_2].
+
+	     By definition, the subexpressions [t] and [e] are not essential.
 	     *)
    | Rr1 of uLevel * oExpr * oExpr
 	 (** Resizing rule.
 
 	     The type of [Rr1(M,a,p)] is [ElUu(Unumeral 0)], resized downward from [ElUu M].
+
+	     By definition, the subexpression [p] is not essential.
 	     *)
 
 type typingContext = (oVar * tExpr) list
