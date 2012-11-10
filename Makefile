@@ -4,10 +4,10 @@
 %.cmi: %.mli; ocamlc -g -c -annot $<
 %.ml: %.mll; ocamllex $< -o $@
 %.mli %.ml: %.mly; ocamlyacc $<
-MLFILES = typesystem main
+MLFILES = typesystem printer main
 YFILES = expressions
 LFILES = tokens
-FILES = expressions tokens main typesystem
+FILES = $(YFILES) $(LFILES) $(MLFILES)
 
 all : checker doc TAGS
 run : checker
@@ -28,4 +28,4 @@ TAGS: typesystem.ml
 clean:
 	rm -f *.annot *.cmi *.cmo a.out *-tmp.ml *.aux *.dvi *.log *.out *.pdf *.sty *.toc *.tex-out checker *.depends
 	rm -f expressions.mli expressions.ml tokens.ml TAGS
-# $(foreach x,$(MLFILES),$(eval include $x.depends))
+$(foreach x,$(MLFILES),$(eval include $x.depends))
