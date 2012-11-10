@@ -12,7 +12,7 @@ open Typesystem
 /* punctuation: */
 %token Wlparen Wrparen Wsemi Wlbracket Wrbracket Wplus Wcomma Wperiod
 /* keywords: */
-%token Wmax WEl WPi Wev Wu Wj WU Wlambda
+%token Wmax WEl WPi Wev Wu Wj WU Wlambda Wforall
 %token <string> OVar			/* starts with lower case */
 %token <string> TVar			/* starts with upper case but not with UU */
 %token <string> UVar			/* starts with UU */
@@ -35,6 +35,7 @@ oExpr :
 | Wj Wlparen uLevel Wcomma uLevel Wrparen { Jj($3,$5) }
 | Wev Wsemi oVar Wrbracket Wlparen oExpr Wcomma oExpr Wcomma tExpr Wrparen { Ev($6,$8,($3,$10)) }
 | Wlambda Wsemi oVar Wrbracket Wlparen tExpr Wcomma oExpr Wrparen { Lambda($6,($3,$8)) }
+| Wforall Wsemi oVar Wrbracket Wlparen uLevel Wcomma uLevel Wcomma oExpr Wcomma oExpr Wrparen { Forall($6,$8,$10,($3,$12)) }
 tExpr :
 | Wlparen tExpr Wrparen { $2 }
 | tVar { Tvariable $1 }

@@ -19,4 +19,5 @@ and otostring = function
   | Jj (x,y) -> "[j](" ^ (utostring x) ^ "," ^ (utostring x) ^ ")"
   | Ev (f,o,(OVar x,t)) -> "[ev;" ^ x ^ "](" ^ (otostring f) ^ "," ^ (otostring o) ^ "," ^ (ttostring t) ^ ")"
   | Lambda (t,(OVar x,o)) -> "[lambda;" ^ x ^ "](" ^ (ttostring t) ^ "," ^ (otostring o) ^ ")"
+  | Forall (u,u',o,(OVar x,o')) -> "[forall;" ^ x ^ "](" ^ (utostring u) ^ "," ^ (utostring u') ^ "," ^ (otostring o) ^ "," ^ (otostring o') ^ ")"
   | _ -> "<...>"

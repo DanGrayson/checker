@@ -23,6 +23,7 @@ rule main = parse
   | "[Pi" { WPi }
   | "[ev" { Wev }
   | "[lambda" { Wlambda }
+  | "[forall" { Wforall }
   | "max" { Wmax }
   | '('  { Wlparen }
   | ')'  { Wrparen }
