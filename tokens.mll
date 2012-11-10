@@ -16,10 +16,13 @@ let ofirst = [ 'a'-'z' ]
 let ufirst = "UU"
 let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' ]
 rule main = parse
-  | "El" { WEl }
-  | "Pi" { WPi }
-  | "UU" { WUU }
-  | "uu" { Wuu }
+  | "[El]" { WEl }
+  | "[U]" { WU }
+  | "[u]" { Wu }
+  | "[j]" { Wj }
+  | "[Pi" { WPi }
+  | "[ev" { Wev }
+  | "[lambda" { Wlambda }
   | "max" { Wmax }
   | '('  { Wlparen }
   | ')'  { Wrparen }

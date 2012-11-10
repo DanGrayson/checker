@@ -10,10 +10,13 @@ and utostring = function
 and ttostring = function
   | Tvariable TVar x -> x
   | El x -> "[El](" ^ (otostring x) ^ ")"
-  | ElUU x -> "[UU](" ^ (utostring x) ^ ")"
+  | ElUU x -> "[U](" ^ (utostring x) ^ ")"
   | ElForall (t1,(OVar x,t2)) -> "[Pi;" ^ x ^ "](" ^ (ttostring t1) ^ "," ^ (ttostring t2) ^ ")"
   | _ -> "<...>"
 and otostring = function
   | Ovariable OVar x -> x
-  | Uu x -> "[uu](" ^ (utostring x) ^ ")"
+  | Uu x -> "[u](" ^ (utostring x) ^ ")"
+  | Jj (x,y) -> "[j](" ^ (utostring x) ^ "," ^ (utostring x) ^ ")"
+  | Ev (f,o,(OVar x,t)) -> "[ev;" ^ x ^ "](" ^ (otostring f) ^ "," ^ (otostring o) ^ "," ^ (ttostring t) ^ ")"
+  | Lambda (t,(OVar x,o)) -> "[lambda;" ^ x ^ "](" ^ (ttostring t) ^ "," ^ (otostring o) ^ ")"
   | _ -> "<...>"

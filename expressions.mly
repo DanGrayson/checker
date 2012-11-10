@@ -10,9 +10,9 @@ open Typesystem
 %type <Typesystem.tVar> tVar
 %type <Typesystem.uVar> uVar
 /* punctuation: */
-%token Wlparen Wrparen Wsemi Wlbracket Wrbracket Wplus Wcomma Wperiod WPi Wuu
+%token Wlparen Wrparen Wsemi Wlbracket Wrbracket Wplus Wcomma Wperiod
 /* keywords: */
-%token Wmax WEl WUU
+%token Wmax WEl WPi Wev Wu Wj WU Wlambda
 %token <string> OVar			/* starts with lower case */
 %token <string> TVar			/* starts with upper case but not with UU */
 %token <string> UVar			/* starts with UU */
@@ -29,17 +29,20 @@ tVar : TVar { TVar $1 }
 uVar : UVar { UVar $1 }
 
 oExpr :
-| oVar { Ovariable $1 }
-| Wlbracket Wuu Wrbracket Wlparen uLevel Wrparen { Uu $5 }
 | Wlparen oExpr Wrparen { $2 }
+| oVar { Ovariable $1 }
+| Wu Wlparen uLevel Wrparen { Uu $3 }
+| Wj Wlparen uLevel Wcomma uLevel Wrparen { Jj($3,$5) }
+| Wev Wsemi oVar Wrbracket Wlparen oExpr Wcomma oExpr Wcomma tExpr Wrparen { Ev($6,$8,($3,$10)) }
+| Wlambda Wsemi oVar Wrbracket Wlparen tExpr Wcomma oExpr Wrparen { Lambda($6,($3,$8)) }
 tExpr :
-| tVar { Tvariable $1 }
-| Wlbracket WEl Wrbracket Wlparen oExpr Wrparen { El $5 }
-| Wlbracket WUU Wrbracket Wlparen uLevel Wrparen { ElUU $5 }
-| Wlbracket WPi Wsemi oVar Wrbracket Wlparen tExpr Wcomma tExpr Wrparen { ElForall($7,($4,$9)) }
 | Wlparen tExpr Wrparen { $2 }
+| tVar { Tvariable $1 }
+| WEl Wlparen oExpr Wrparen { El $3 }
+| WU Wlparen uLevel Wrparen { ElUU $3 }
+| WPi Wsemi oVar Wrbracket Wlparen tExpr Wcomma tExpr Wrparen { ElForall($6,($3,$8)) }
 uLevel :
+| Wlparen uLevel Wrparen { $2 }
 | uVar { Uvariable $1 }
 | uLevel Wplus Nat { Uplus ($1, $3) }
-| Wlparen uLevel Wrparen { $2 }
 | Wmax Wlparen uLevel Wcomma uLevel Wrparen { Umax ($3,$5)  }

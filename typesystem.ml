@@ -106,7 +106,7 @@ and oExpr =
   | Uu of uLevel
 	(** [u]; universe as an object. *)
   | Jj of uLevel * uLevel
-	(** [j]; U -> U' *)
+	(** [j](U,U') *)
   | Ev of oExpr * oExpr * tBinding
 	(** [Ev(f,o,(x,T)) <--> \[ev;x\](f,o,T)]
 	    
