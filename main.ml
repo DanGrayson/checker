@@ -7,6 +7,8 @@ let _ = (
       ()
     with 
       Tokens.Eof -> exit 0
-    | Parsing.Parse_error -> Printf.fprintf stderr "syntax error\n"; flush stderr
+    | Parsing.Parse_error -> 
+	Tokens.curry3 (Printf.fprintf stderr "%s:%d:%d: syntax error\n") (Tokens.position lexbuf);
+	flush stderr
   done
   )

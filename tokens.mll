@@ -2,8 +2,14 @@
  open Printf
  open Expressions
  exception Eof
+ let lastnewline = ref 0
+ let linenum = ref 1
+ let filename = ref "test.ts"
+ let position lexbuf = ( !filename, !linenum, Lexing.lexeme_start lexbuf - !lastnewline )
+let curry3 f (a,b,c) = f a b c
 }
-let white = [ '\n' ' ' '\t' '\r' ]
+let white = [ ' ' '\t' '\r' ]
+let newline = [ '\n' ]
 let digit = [ '0'-'9' ]
 let tfirst = [ 'A'-'Z' ]
 let ofirst = [ 'a'-'z' ]
@@ -24,5 +30,8 @@ rule main = parse
   | tfirst after* as id { TVar id }
   | ofirst after* as id { OVar id }
   | white { main lexbuf }
-  | _ as c { printf "invalid character: '%c'\n" c; main lexbuf }
+  | newline { linenum := !linenum+1 ; lastnewline := Lexing.lexeme_start lexbuf ; main lexbuf }
+  | _ as c { fprintf stderr "%s:%d:%d: invalid character: '%c'\n" "test.ts" !linenum (Lexing.lexeme_start lexbuf - !lastnewline) c; 
+	     flush stderr ;
+	     main lexbuf }
   | eof { raise Eof }
