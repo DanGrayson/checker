@@ -24,4 +24,4 @@ TAGS: typesystem.ml
 	etags.ocaml $^ >$@
 clean:
 	rm -f *.annot *.cmi *.cmo a.out *-tmp.ml *.aux *.dvi *.log *.out *.pdf *.sty *.toc *.tex-out checker
-	rm -f schemeGrammar.mli schemeGrammar.ml schemeLex.ml
+	rm -f schemeGrammar.mli schemeGrammar.ml schemeLex.ml TAGS
