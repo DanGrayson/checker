@@ -13,7 +13,7 @@ let newline = [ '\n' ]
 let digit = [ '0'-'9' ]
 let tfirst = [ 'A'-'Z' ]
 let ofirst = [ 'a'-'z' ]
-let ufirst = "UU"
+let ufirst = "uu"
 let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' ]
 rule main = parse
   | "[El]" { WEl }

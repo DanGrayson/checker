@@ -1,9 +1,11 @@
+x.
+T.
 [El](x).
-[U](UU4).
-[j](UU1, UU2).
-[El]([u](UU4)).
-[Pi;x](T1,[U](max((UU1+1+0)+4,UU2))).
+[U](uu4).
+[j](uu1, uu2).
+[El]([u](uu4)).
+[Pi;x](T1,[U](max((uu1+1+0)+4,uu2))).
 [lambda;x](T,e).
 [lambda;x]([El](r),[ev;x](f,o,T)).
-[forall;x](UU1,UU2,o,o').
+[forall;x](uu1,uu2,o,o').
 
