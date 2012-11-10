@@ -30,9 +30,6 @@ type uVar = UVar of string
     of a given list.
  *)
 type uLevel =
-  | Unumeral of int
-	(** Here 0 denotes the smallest universe, 1 is its successor, and so on.
-	    The smallest universe is the one that [pt] lives in. *)
   | Uvariable of uVar
 	(** A u-level variable. *)
   | Uplus of uLevel * int
@@ -78,10 +75,10 @@ and tExpr =
   | ElUu of uLevel
 	(** [ElUu U]; a u-level expression, as a type *)
   | ElForall of tExpr * tBinding
-	(** [ElForall(T,Bd(x,T')) <--> \[Pi;x\](T,T')] *)
+	(** [ElForall(T,(x,T')) <--> \[Pi;x\](T,T')] *)
     (* TS1 *)
   | ElTotal of tExpr * tBinding
-	(** [ElTotal(T,Bd(x,T')) <--> \[Sigma;x\](T,T')] *)
+	(** [ElTotal(T,(x,T')) <--> \[Sigma;x\](T,T')] *)
     (* TS2 *)
   | ElPt
       (** Corresponds to [Pt] in the paper; the unit type *)
@@ -111,7 +108,7 @@ and oExpr =
   | Jj of uLevel * uLevel
 	(** [j]; U -> U' *)
   | Ev of oExpr * oExpr * tBinding
-	(** [Ev(f,o,Bd(x,T)) <--> \[ev;x\](f,o,T)]
+	(** [Ev(f,o,(x,T)) <--> \[ev;x\](f,o,T)]
 	    
 	    Application of the function [f] to the argument [o].
 	    
@@ -120,24 +117,24 @@ and oExpr =
 	    By definition, such subexpressions [T] are not essential.
 	 *)
   | Lambda of tExpr * oBinding
-	(** [Lambda(T,Bd(x,o)) <--> \[lambda;x\](T,o)] *)
+	(** [Lambda(T,(x,o)) <--> \[lambda;x\](T,o)] *)
   | Forall of uLevel * uLevel * oExpr * oBinding
-	(** [Forall(M,M',o,Bd(x,o')) <--> \[forall;x\]([M],[M'],o,o')]
+	(** [Forall(M,M',o,(x,o')) <--> \[forall;x\]([M],[M'],o,o')]
 	    
 	    [Forall] is the object term corresponding to [ElForall].
 	    The type of the term is given by the max of the two u-levels. *)
 	(* TS1 *)
   | Pair of oExpr * oExpr * tBinding
-	(** [Pair(a,b,Bd(x,T)) <--> \[pair;x\](a,b,T)]
+	(** [Pair(a,b,(x,T)) <--> \[pair;x\](a,b,T)]
 	    
 	    An instance of [ElTotal]. *)
   | Pr1 of tExpr * tBinding * oExpr
-	(** [Pr1(T,Bd(x,T'),o) <--> \[pr1;x\](T,T',o)] 
+	(** [Pr1(T,(x,T'),o) <--> \[pr1;x\](T,T',o)] 
 
 	    By definition, such subexpressions [T] are not essential.
 	 *)
   | Pr2 of tExpr * tBinding * oExpr
-	(** [Pr2(T,Bd(x,T'),o) <--> \[pr2;x\](T,T',o)] 
+	(** [Pr2(T,(x,T'),o) <--> \[pr2;x\](T,T',o)] 
 
 	    By definition, such subexpressions [T] are not essential.
 	 *)
@@ -148,7 +145,7 @@ and oExpr =
       (** Corresponds to [\[pt\]] in the paper. *)
       
   | Pt_r of oExpr * tBinding
-	(** [Pt_r(o,Bd(x,T)) <--> \[pt_r;x\](o,T)]
+	(** [Pt_r(o,(x,T)) <--> \[pt_r;x\](o,T)]
 	    
 	    [Pt_r] is the eliminator for [ElPt]. *)
   | Tt
@@ -163,7 +160,7 @@ and oExpr =
   | Ii2 of tExpr * tExpr * oExpr
 	(** The type of a term [Ii2(T,T',o)] is [ElCoprod(T,T')]; here [o] has type [T'] *)
   | Sum of tExpr * tExpr * oExpr * oExpr * oExpr * tBinding
-	(** The type of a term [Sum(T,T',s,s',o,Bd(x,S))] is [S], with [x] replaced by [o]. *)
+	(** The type of a term [Sum(T,T',s,s',o,(x,S))] is [S], with [x] replaced by [o]. *)
 	(* TS4 *)
   | Empty
       (** The type of [Empty] is the smallest universe, [Unumeral 0]. *)

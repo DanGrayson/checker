@@ -2,9 +2,9 @@
 *.cmi
 *.cmo
 a.out
-schemeLex.ml
-schemeGrammar.ml
-schemeGrammar.mli
+tokens.ml
+expressions.ml
+expressions.mli
 checker
 *.aux
 *.dvi
@@ -14,3 +14,4 @@ checker
 *.pdf
 *.sty
 *.toc
+TAGS
