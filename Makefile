@@ -6,7 +6,7 @@
 
 all : checker doc TAGS
 run : checker
-	./checker
+	./checker <test.ts
 doc: doc.pdf
 doc.pdf: typesystem.ml
 	ocamldoc -charset utf8 -notoc -o doc.tex-out -latex $^
