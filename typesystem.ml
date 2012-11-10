@@ -72,8 +72,8 @@ and tExpr =
   | Tvariable of tVar
   | El of oExpr
 	(** [El]; converts an object term into the corresponding type term *)
-  | ElUu of uLevel
-	(** [ElUu U]; a u-level expression, as a type *)
+  | ElUU of uLevel
+	(** [ElUU U]; a u-level expression, as a type *)
   | ElForall of tExpr * tBinding
 	(** [ElForall(T,(x,T')) <--> \[Pi;x\](T,T')] *)
     (* TS1 *)
@@ -191,14 +191,14 @@ and oExpr =
    | Rr0 of uLevel * uLevel * oExpr * oExpr * oExpr
 	 (** Resizing rule.
 
-	     The type of [Rr0(M_2,M_1,s,t,e)] is [ElUu(M_1)], resized downward from [ElUu M_2].
+	     The type of [Rr0(M_2,M_1,s,t,e)] is [ElUU(M_1)], resized downward from [ElUU M_2].
 
 	     By definition, the subexpressions [t] and [e] are not essential.
 	     *)
    | Rr1 of uLevel * oExpr * oExpr
 	 (** Resizing rule.
 
-	     The type of [Rr1(M,a,p)] is [ElUu(Unumeral 0)], resized downward from [ElUu M].
+	     The type of [Rr1(M,a,p)] is [ElUU(Unumeral 0)], resized downward from [ElUU M].
 
 	     By definition, the subexpression [p] is not essential.
 	     *)

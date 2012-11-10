@@ -10,9 +10,9 @@ open Typesystem
 %type <Typesystem.tVar> tVar
 %type <Typesystem.uVar> uVar
 /* punctuation: */
-%token Wlparen Wrparen Wsemi Wlbracket Wrbracket Wplus Wcomma Wperiod
+%token Wlparen Wrparen Wsemi Wlbracket Wrbracket Wplus Wcomma Wperiod WPi Wuu
 /* keywords: */
-%token Wmax
+%token Wmax WEl WUU
 %token <string> OVar			/* starts with lower case */
 %token <string> TVar			/* starts with upper case but not with UU */
 %token <string> UVar			/* starts with UU */
@@ -30,9 +30,13 @@ uVar : UVar { UVar $1 }
 
 oExpr :
 | oVar { Ovariable $1 }
+| Wlbracket Wuu Wrbracket Wlparen uLevel Wrparen { Uu $5 }
 | Wlparen oExpr Wrparen { $2 }
 tExpr :
 | tVar { Tvariable $1 }
+| Wlbracket WEl Wrbracket Wlparen oExpr Wrparen { El $5 }
+| Wlbracket WUU Wrbracket Wlparen uLevel Wrparen { ElUU $5 }
+| Wlbracket WPi Wsemi oVar Wrbracket Wlparen tExpr Wcomma tExpr Wrparen { ElForall($7,($4,$9)) }
 | Wlparen tExpr Wrparen { $2 }
 uLevel :
 | uVar { Uvariable $1 }

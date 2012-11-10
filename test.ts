@@ -1,4 +1,2 @@
-UU4+123.
-xx'.
-Tasdf.
-max(UU1,UU2).
+[El]([uu](UU4)).
+[Pi;x](T1,[UU](max((UU1+1+0)+4,UU2))).
