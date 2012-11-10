@@ -9,6 +9,7 @@ let _ = (
       Tokens.Eof -> exit 0
     | Parsing.Parse_error -> 
 	Tokens.curry3 (Printf.fprintf stderr "%s:%d:%d: syntax error\n") (Tokens.position lexbuf);
-	flush stderr
+	flush stderr;
+	Lexing.flush_input lexbuf
   done
   )
