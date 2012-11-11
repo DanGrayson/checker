@@ -16,7 +16,7 @@ SRCFILES = $(YFILES:=.mly) $(LFILES:=.mll) $(MLFILES:=.ml)
 
 all : checker doc TAGS
 run : checker
-	./checker <test.ts
+	 OCAMLRUNPARAM=b ./checker <test.ts
 doc: doc.pdf
 doc.pdf: $(FILES:=.ml) $(FILES:=.cmi)
 	ocamldoc -charset utf8 -notoc -o doc.tex-out -latex $(FILES:=.ml)

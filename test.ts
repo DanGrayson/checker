@@ -11,3 +11,6 @@ Print [forall;x](uu1,uu2,o,o').
 Subst [lambda;y]([El](v),[lambda;x](T,[lambda;x](T,v)))[[forall;y](uu1,uu2,x,x')/v].
 Type [u](uu4).
 Type [j](uu,uu').
+Type [ev;x](f,o,T).
+Type [ev;x](f,o,[El](x)).
+Type [lambda;x](T,o).
