@@ -15,7 +15,15 @@ polymorphic type system}, by Vladimir Voevodsky, the version dated October,
   *)
 
 (** Object variable. *)
-type oVar = OVar of string
+type oVar = 
+    OVar of string
+  | OVarGen of int * string
+
+let genctr = ref 0
+
+let fresh x =
+  incr genctr;
+  OVarGen (!genctr, x)
 
 (** Type variable. *)
 type tVar = TVar of string

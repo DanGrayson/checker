@@ -1,10 +1,11 @@
-%: %.ml; ocamlc -g -annot $<
+OCAMLC = ocamlc -g -annot -warn-error
+%: %.ml; $(OCAMLC) $<
 %.depends: %.ml; ocamldep $< >$@
-%.cmo: %.ml; ocamlc -g -c -annot $<
-%.cmi: %.mli; ocamlc -g -c -annot $<
+%.cmo: %.ml; $(OCAMLC) -c $<
+%.cmi: %.mli; $(OCAMLC) -c $<
 %.ml: %.mll; ocamllex $< -o $@
 %.mli %.ml: %.mly; ocamlyacc $<
-MLFILES = typesystem printer main
+MLFILES = typesystem printer substitute main
 YFILES = expressions
 LFILES = tokens
 FILES = $(YFILES) $(LFILES) $(MLFILES)
@@ -13,8 +14,8 @@ all : checker doc TAGS
 run : checker
 	./checker <test.ts
 doc: doc.pdf
-doc.pdf: $(FILES:=.ml)
-	ocamldoc -charset utf8 -notoc -o doc.tex-out -latex $^
+doc.pdf: $(FILES:=.ml) $(FILES:=.cmi)
+	ocamldoc -charset utf8 -notoc -o doc.tex-out -latex $(FILES:=.ml)
 	pdflatex doc.tex-out
 	pdflatex doc.tex-out
 checker: $(FILES:=.cmo)
@@ -28,4 +29,4 @@ TAGS: typesystem.ml
 clean:
 	rm -f *.annot *.cmi *.cmo a.out *-tmp.ml *.aux *.dvi *.log *.out *.pdf *.sty *.toc *.tex-out checker *.depends
 	rm -f expressions.mli expressions.ml tokens.ml TAGS
-$(foreach x,$(MLFILES),$(eval include $x.depends))
+$(foreach x,$(MLFILES),$(eval include $x.depends)$(eval $x.depends:$x.ml))

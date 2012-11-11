@@ -38,8 +38,8 @@ rule main = parse
   | tfirst after* as id { TVar id }
   | ofirst after* as id { OVar id }
   | white { main lexbuf }
-  | newline { linenum := !linenum+1 ; lastnewline := Lexing.lexeme_start lexbuf ; main lexbuf }
-  | _ as c { fprintf stderr "%s:%d:%d: invalid character: '%c'\n" "test.ts" !linenum (Lexing.lexeme_start lexbuf - !lastnewline) c; 
+  | newline { incr linenum ; lastnewline := Lexing.lexeme_start lexbuf ; main lexbuf }
+  | _ as c { curry3 (fprintf stderr "%s:%d:%d: invalid character: '%c'\n") (position lexbuf) c; 
 	     flush stderr ;
 	     main lexbuf }
   | eof { raise Eof }
