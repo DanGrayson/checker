@@ -7,7 +7,8 @@ OCAMLC = ocamlc -c $(OCFLAGS)
 %.cmi: %.mli; $(OCAMLC) -c $<
 %.ml: %.mll; ocamllex $< -o $@
 %.mli %.ml: %.mly; ocamlyacc $<
-MLFILES = typesystem printer substitute main toplevel
+# these files go in link order, left to right
+MLFILES = typesystem printer toplevel substitute simpletyping main
 YFILES = expressions
 LFILES = tokens
 FILES = $(YFILES) $(LFILES) $(MLFILES)
@@ -25,6 +26,7 @@ checker: $(FILES:=.cmo)
 tokens.cmo: expressions.cmo
 expressions.cmo: expressions.cmi
 expressions.cmi: typesystem.cmo toplevel.cmo
+tokens.cmi: typesystem.cmo
 main.cmo: tokens.cmi expressions.cmi
 TAGS: typesystem.ml
 	etags.ocaml $^ >$@

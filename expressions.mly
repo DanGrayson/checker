@@ -21,7 +21,7 @@ open Typesystem
 command :
 | WCheck expr Wperiod { Toplevel.Check $2 }
 | WPrint expr Wperiod { Toplevel.Print $2 }
-| WType expr Wperiod { Toplevel.Type $2 }
+| WType oExpr Wperiod { Toplevel.Type $2 }
 | WSubst expr Wlbracket oExpr Wslash oVar Wrbracket Wperiod { Toplevel.Subst ($2, $4, $6) }
 
 expr : 

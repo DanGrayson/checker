@@ -20,9 +20,14 @@ type oVar =
   | OVarGen of int * string
 
 
+exception GensymCounterOverflow
+
 let fresh = 
   let genctr = ref 0 in 
-  let newgen x = (incr genctr; OVarGen (!genctr, x)) in
+  let newgen x = (
+    incr genctr; 
+    if !genctr < 0 then raise GensymCounterOverflow;
+    OVarGen (!genctr, x)) in
   function
       OVar x | OVarGen(_,x) -> newgen x
 

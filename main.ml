@@ -24,6 +24,14 @@ let _ =
 	    (Printer.ovartostring v) 
 	    (Printer.tostring (Substitute.subst [(v,w)] x));
 	  flush stdout
-      | Toplevel.Type  x -> Printf.printf "Type: %s : ...\n" (Printer.tostring x); flush stdout
+      | Toplevel.Type  x -> Printf.printf "Type: %s : %s\n" 
+	    (Printer.otostring x) 
+	    (
+	     try
+	       Printer.ttostring (Simpletyping.tau [] x)
+	     with 
+	       Simpletyping.SimpleTypingError s -> "[[ error: " ^ s ^ " ]]"
+	    );
+	  flush stdout
       | Toplevel.Check x -> Printf.printf "Check: %s : ...\n" (Printer.tostring x); flush stdout
     done
