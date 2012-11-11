@@ -8,6 +8,8 @@ let rec subst subs e = 			(* if subs = (z0,x0) :: (z1,x1) :: ..., then in e subs
 and tsubstfresh subs (v,t) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', tsubst subs' t)
 and t2substfresh subs (v,w,t) = let v' = fresh v and w' = fresh w in let subs' = (w, Ovariable w') :: (v, Ovariable v') :: subs in (v', w', tsubst subs' t)
 and osubstfresh subs (v,o) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', osubst subs' o)
+and oosubstfresh subs (v,o,k) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', osubst subs' o, osubstfresh subs' k)
+and ooosubstfresh subs (v,o,k) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', osubst subs' o, oosubstfresh subs' k)
 and ttosubstfresh subs (v,t,k) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', tsubst subs t, tosubstfresh subs' k)
 and tosubstfresh subs (v,t,k) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', tsubst subs t, osubstfresh subs' k)
 and tsubst subs t =
@@ -47,10 +49,9 @@ and osubst subs o =
   | O_c (tA,a,(x,tB,(y,tD,(z,q))),b,f) -> O_c (tsubst subs tA,osubst subs a,ttosubstfresh subs (x,tB,(y,tD,(z,q))),osubst subs b,osubst subs f)
   | IC_r (tA,a,(x,tB,(y,tD,(z,q))),i,(x',v,tS),t) 
     -> IC_r (tsubst subs tA,osubst subs a,ttosubstfresh subs(x,tB,(y,tD,(z,q))),osubst subs i,t2substfresh subs (x',v,tS),osubst subs t)
-  | O_ic _
-  | O_paths _
-  | O_refl _
-  | J _
-  | O_rr0 _
-  | O_rr1 _
-    -> raise NotImplemented
+  | O_ic (m1,m2,m3,oA,a,(x,oB,(y,oD,(z,q)))) -> O_ic (m1,m2,m3,osubst subs oA,osubst subs a,ooosubstfresh subs (x,oB,(y,oD,(z,q))))
+  | O_paths (m,t,x,y) -> O_paths (m,osubst subs t,osubst subs x,osubst subs y)
+  | O_refl (t,o) -> O_refl (tsubst subs t,osubst subs o)
+  | J (tT,a,b,q,i,(x,e,tS)) -> J (tsubst subs tT,osubst subs a,osubst subs b,osubst subs q,osubst subs i,t2substfresh subs (x,e,tS))
+  | O_rr0 (m2,m1,s,t,e) -> O_rr0 (m2,m1,osubst subs s,osubst subs t,osubst subs e)
+  | O_rr1 (m,a,p) -> O_rr1 (m,osubst subs a,osubst subs p)

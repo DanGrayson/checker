@@ -199,7 +199,9 @@ and oExpr =
 	    
 	    IC_r is the elimination rule for inductive types (generalized W-types) *)
   | O_ic of uLevel * uLevel * uLevel * oExpr * oExpr * oooBinding
-	(** Corresponds to [ic].  Its type is the max of the three u-level expressions. *)
+	(** [O_ic(M1,M2,M3,oA,a,(x,oB,(y,oD,(z,q)))) <--> \[[ic;x,y,z](M1,M2,M3,oA,a,oB,oD,q)\]]
+	    
+	    Corresponds to [ic].  Its type is the max of the three u-level expressions. *)
 	(* TS6 *)
   | O_paths of uLevel * oExpr * oExpr * oExpr
 	(** The object corresponding to the identity type [Id].  
@@ -212,7 +214,7 @@ and oExpr =
   | J of tExpr * oExpr * oExpr * oExpr * oExpr * tBinding2
 	(** The elimination rule for Id; Id-elim.
 
-	    The type of [J(T,a,b,q,i,Tbinding2(x,e,S))] is [S\[b/x,i/e\]]. *)
+	    The type of [J(T,a,b,q,i,(x,e,S))] is [S\[b/x,i/e\]]. *)
       (* TS7 *)
    | O_rr0 of uLevel * uLevel * oExpr * oExpr * oExpr
 	 (** Resizing rule.
