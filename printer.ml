@@ -23,7 +23,7 @@ and ttostring = function
 and otostring = function
   | Ovariable x -> ovartostring x
   | Uu x -> "[u](" ^ (utostring x) ^ ")"
-  | Jj (x,y) -> "[j](" ^ (utostring x) ^ "," ^ (utostring x) ^ ")"
+  | Jj (x,y) -> "[j](" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
   | Ev (f,o,(x,t)) -> "[ev;" ^ (ovartostring x) ^ "](" ^ (otostring f) ^ "," ^ (otostring o) ^ "," ^ (ttostring t) ^ ")"
   | Lambda (t,(x,o)) -> "[lambda;" ^ (ovartostring x) ^ "](" ^ (ttostring t) ^ "," ^ (otostring o) ^ ")"
   | Forall (u,u',o,(x,o')) -> "[forall;" ^ (ovartostring x) ^ "](" ^ (utostring u) ^ "," ^ (utostring u') ^ "," ^ (otostring o) ^ "," ^ (otostring o') ^ ")"
