@@ -25,6 +25,7 @@ rule command_tokens = parse
   | "Type" { WType }
   | "Subst" { WSubst }
   | white { command_tokens lexbuf }
+  | '#' [ ^ '\n' ]* { command_tokens lexbuf }
   | newline { Lexing.new_line lexbuf; command_tokens lexbuf }
   | _ as c { fprintf stderr "%s: invalid character: '%c'\n" (lexing_pos lexbuf) c; 
 	     flush stderr ;
@@ -40,16 +41,18 @@ and expr_tokens = parse
   | "[U]" { WU }
   | "[u]" { Wu }
   | "[j]" { Wj }
-  | "[Pi" { WPi }
-  | "[ev" { Wev }
-  | "[lambda" { Wlambda }
-  | "[forall" { Wforall }
+  | "[Pi;" { WPi }
+  | "[Sigma;" { WSigma }
+  | "[Coprod]" { WCoprod }
+  | "[Coprod;" { WCoprod2 }
+  | "[ev;" { Wev }
+  | "[lambda;" { Wlambda }
+  | "[forall;" { Wforall }
   | "max" { Wmax }
   | '('  { Wlparen }
   | ')'  { Wrparen }
   | '['  { Wlbracket }
   | ']'  { Wrbracket }
-  | ';'  { Wsemi }
   | '.'  { Wperiod }
   | ','  { Wcomma }
   | '/'  { Wslash }
@@ -59,10 +62,11 @@ and expr_tokens = parse
   | tfirst after* as id { TVar id }
   | ofirst after* as id { OVar id }
   | white { expr_tokens lexbuf }
+  | '#' [ ^ '\n' ]* { expr_tokens lexbuf }
   | newline { Lexing.new_line lexbuf; expr_tokens lexbuf }
   | _ as c { fprintf stderr "%s: invalid character: '%c'\n" (lexing_pos lexbuf) c; 
 	     flush stderr ;
-	     bump_error_count;
+	     bump_error_count();
 	     expr_tokens lexbuf }
   | eof { raise Eof }
 and command_flush = parse

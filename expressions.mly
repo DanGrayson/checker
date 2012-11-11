@@ -6,9 +6,9 @@ open Typesystem
 %type <Toplevel.command> command
 
 /* punctuation: */
-%token Wlparen Wrparen Wsemi Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash
+%token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash
 /* keywords: */
-%token Wmax WEl WPi Wev Wu Wj WU Wlambda Wforall
+%token Wmax WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2
 /* commands: */
 %token WCheck WType WPrint WSubst
 /* error recovery tokens */
@@ -40,15 +40,18 @@ oExpr :
 | oVar { Ovariable $1 }
 | Wu Wlparen uLevel Wrparen { Uu $3 }
 | Wj Wlparen uLevel Wcomma uLevel Wrparen { Jj($3,$5) }
-| Wev Wsemi oVar Wrbracket Wlparen oExpr Wcomma oExpr Wcomma tExpr Wrparen { Ev($6,$8,($3,$10)) }
-| Wlambda Wsemi oVar Wrbracket Wlparen tExpr Wcomma oExpr Wrparen { Lambda($6,($3,$8)) }
-| Wforall Wsemi oVar Wrbracket Wlparen uLevel Wcomma uLevel Wcomma oExpr Wcomma oExpr Wrparen { Forall($6,$8,$10,($3,$12)) }
+| Wev oVar Wrbracket Wlparen oExpr Wcomma oExpr Wcomma tExpr Wrparen { Ev($5,$7,($2,$9)) }
+| Wlambda oVar Wrbracket Wlparen tExpr Wcomma oExpr Wrparen { Lambda($5,($2,$7)) }
+| Wforall oVar Wrbracket Wlparen uLevel Wcomma uLevel Wcomma oExpr Wcomma oExpr Wrparen { Forall($5,$7,$9,($2,$11)) }
 tExpr :
 | Wlparen tExpr Wrparen { $2 }
 | tVar { Tvariable $1 }
 | WEl Wlparen oExpr Wrparen { El $3 }
 | WU Wlparen uLevel Wrparen { UU $3 }
-| WPi Wsemi oVar Wrbracket Wlparen tExpr Wcomma tExpr Wrparen { Pi($6,($3,$8)) }
+| WPi oVar Wrbracket Wlparen tExpr Wcomma tExpr Wrparen { Pi($5,($2,$7)) }
+| WSigma oVar Wrbracket Wlparen tExpr Wcomma tExpr Wrparen { Sigma($5,($2,$7)) }
+| WCoprod Wlparen tExpr Wcomma tExpr Wrparen { ElCoprod($3,$5) }
+| WCoprod2 oVar Wcomma oVar Wrbracket Wlparen tExpr Wcomma tExpr Wcomma tExpr Wcomma tExpr Wcomma oExpr Wrparen { ElCoprod2($7,$9,($2,$11),($4,$13),$15) }
 uLevel :
 | Wlparen uLevel Wrparen { $2 }
 | uVar { Uvariable $1 }
