@@ -14,40 +14,40 @@ and tsubst subs t =
   | UU _ -> t
   | Pi (t1,(v,t2)) -> Pi (tsubst subs t1, tsubstfresh subs (v,t2))
   | Sigma _
-  | ElPt
-  | ElCoprod _
-  | ElCoprod2 _
-  | ElEmpty
-  | ElIc _
-  | ElPaths _
+  | T_Pt
+  | T_Coprod _
+  | T_Coprod2 _
+  | T_Empty
+  | T_IC _
+  | Id _
     -> raise NotImplemented
 and osubst subs o =
   match o with
     Ovariable v -> (try List.assoc v subs with Not_found -> o)
-  | Uu _ -> o
-  | Jj _ -> o
-  | Ev(f,p,(v,t)) -> Ev(osubst subs f,osubst subs p,tsubstfresh subs (v,t))
-  | Lambda (t,(v,p)) -> Lambda (tsubst subs t,osubstfresh subs (v,p))
-  | Forall (m,m',o,(v,o')) -> Forall (m,m',osubst subs o,osubstfresh subs (v,o'))
-  | Pair _
-  | Pr1 _
-  | Pr2 _
-  | Total _
-  | Pt
-  | Pt_r _
-  | Tt
-  | Coprod _
-  | Ii1 _
-  | Ii2 _
+  | O_u _ -> o
+  | O_j _ -> o
+  | O_ev(f,p,(v,t)) -> O_ev(osubst subs f,osubst subs p,tsubstfresh subs (v,t))
+  | O_lambda (t,(v,p)) -> O_lambda (tsubst subs t,osubstfresh subs (v,p))
+  | O_forall (m,m',o,(v,o')) -> O_forall (m,m',osubst subs o,osubstfresh subs (v,o'))
+  | O_pair _
+  | O_pr1 _
+  | O_pr2 _
+  | O_total _
+  | O_pt
+  | O_pt_r _
+  | O_tt
+  | O_coprod _
+  | O_ii1 _
+  | O_ii2 _
   | Sum _
-  | Empty
-  | Empty_r _
-  | Cc _
+  | O_empty
+  | O_empty_r _
+  | O_c _
   | IC_r _
-  | Ic _
-  | Paths _
-  | Refl _
+  | O_ic _
+  | O_paths _
+  | O_refl _
   | J _
-  | Rr0 _
-  | Rr1 _
+  | O_rr0 _
+  | O_rr1 _
     -> raise NotImplemented

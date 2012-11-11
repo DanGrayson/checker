@@ -45,6 +45,9 @@ and expr_tokens = parse
   | "[Sigma;" { WSigma }
   | "[Coprod]" { WCoprod }
   | "[Coprod;" { WCoprod2 }
+  | "[Empty]" { WEmpty }
+  | "[IC;" { WIC }
+  | "[Id]" { WId }
   | "[ev;" { Wev }
   | "[lambda;" { Wlambda }
   | "[forall;" { Wforall }

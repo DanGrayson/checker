@@ -13,46 +13,47 @@ and ttostring = function
   | UU x -> "[U](" ^ (utostring x) ^ ")"
   | Pi (t1,(x,t2)) -> "[Pi;" ^ (ovartostring x) ^ "](" ^ (ttostring t1) ^ "," ^ (ttostring t2) ^ ")"
   | Sigma (t,(x,t')) -> "[Sigma;" ^ (ovartostring x) ^ "](" ^ (ttostring t) ^ "," ^ (ttostring t') ^ ")"
-  | ElPt -> "[Pt]()"
-  | ElCoprod (t,t') -> "[Coprod](" ^ (ttostring t) ^ "," ^ (ttostring t) ^ ")"
-  | ElCoprod2 (t,t',(x,u),(x',u'),o) 
+  | T_Pt -> "[Pt]()"
+  | T_Coprod (t,t') -> "[Coprod](" ^ (ttostring t) ^ "," ^ (ttostring t) ^ ")"
+  | T_Coprod2 (t,t',(x,u),(x',u'),o) 
     -> "[Coprod;" ^ (ovartostring x) ^ "," ^ (ovartostring x') ^ "](" 
       ^ (ttostring t) ^ "," ^ (ttostring t) ^ ","
       ^ (ttostring u) ^ "," ^ (ttostring u') ^ ","
       ^ (otostring o)
       ^ ")"
-  | ElEmpty
-  | ElIc _
-  | ElPaths _
-    -> raise NotImplemented
+  | T_Empty -> "[Empty]()"
+  | T_IC (tA,a,(x,tB,(y,tD,(z,q))))
+    -> "[IC;" ^ (ovartostring x) ^ "," ^ (ovartostring y) ^ "," ^ (ovartostring z) ^ "]("
+      ^ (ttostring tA) ^ "," ^ (otostring a) ^ "," ^ (ttostring tB) ^ "," ^ (ttostring tD) ^ "," ^ (otostring q) ^ ")"
+  | Id (t,x,y) -> "[Id](" ^ (ttostring t) ^ "," ^ (otostring x) ^ "," ^ (otostring y) ^ ")"
 and otostring = function
   | Ovariable x -> ovartostring x
-  | Uu x -> "[u](" ^ (utostring x) ^ ")"
-  | Jj (x,y) -> "[j](" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
-  | Ev (f,o,(x,t)) -> "[ev;" ^ (ovartostring x) ^ "](" ^ (otostring f) ^ "," ^ (otostring o) ^ "," ^ (ttostring t) ^ ")"
-  | Lambda (t,(x,o)) -> "[lambda;" ^ (ovartostring x) ^ "](" ^ (ttostring t) ^ "," ^ (otostring o) ^ ")"
-  | Forall (u,u',o,(x,o')) -> "[forall;" ^ (ovartostring x) ^ "](" ^ (utostring u) ^ "," ^ (utostring u') ^ "," ^ (otostring o) ^ "," ^ (otostring o') ^ ")"
-  | Pair _
-  | Pr1 _
-  | Pr2 _
-  | Total _
-  | Pt
-  | Pt_r _
-  | Tt
-  | Coprod _
-  | Ii1 _
-  | Ii2 _
+  | O_u x -> "[u](" ^ (utostring x) ^ ")"
+  | O_j (x,y) -> "[j](" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
+  | O_ev (f,o,(x,t)) -> "[ev;" ^ (ovartostring x) ^ "](" ^ (otostring f) ^ "," ^ (otostring o) ^ "," ^ (ttostring t) ^ ")"
+  | O_lambda (t,(x,o)) -> "[lambda;" ^ (ovartostring x) ^ "](" ^ (ttostring t) ^ "," ^ (otostring o) ^ ")"
+  | O_forall (u,u',o,(x,o')) -> "[forall;" ^ (ovartostring x) ^ "](" ^ (utostring u) ^ "," ^ (utostring u') ^ "," ^ (otostring o) ^ "," ^ (otostring o') ^ ")"
+  | O_pair _
+  | O_pr1 _
+  | O_pr2 _
+  | O_total _
+  | O_pt
+  | O_pt_r _
+  | O_tt
+  | O_coprod _
+  | O_ii1 _
+  | O_ii2 _
   | Sum _
-  | Empty
-  | Empty_r _
-  | Cc _
+  | O_empty
+  | O_empty_r _
+  | O_c _
   | IC_r _
-  | Ic _
-  | Paths _
-  | Refl _
+  | O_ic _
+  | O_paths _
+  | O_refl _
   | J _
-  | Rr0 _
-  | Rr1 _
+  | O_rr0 _
+  | O_rr1 _
      -> "<...>"
 and ovartostring = function
   | OVar x -> x

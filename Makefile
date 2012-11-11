@@ -24,11 +24,25 @@ doc.pdf: $(FILES:=.ml) $(FILES:=.cmi)
 	pdflatex doc.tex-out
 checker: $(FILES:=.cmo)
 	ocamlc -g -o $@ $^
-tokens.cmo: expressions.cmo basic.cmo
-expressions.cmo: expressions.cmi
+
 expressions.cmi: typesystem.cmo toplevel.cmo
-tokens.cmi: typesystem.cmo
+expressions.cmo: expressions.cmi
 main.cmo: tokens.cmi expressions.cmi
+main.cmo: toplevel.cmo substitute.cmo simpletyping.cmo printer.cmo
+main.cmo: toplevel.cmo tokens.cmo substitute.cmo simpletyping.cmo printer.cmo expressions.cmi
+main.cmx: toplevel.cmx substitute.cmx simpletyping.cmx printer.cmx
+main.cmx: toplevel.cmx tokens.cmx substitute.cmx simpletyping.cmx printer.cmx expressions.cmx
+printer.cmo: typesystem.cmo
+printer.cmx: typesystem.cmx
+simpletyping.cmo: typesystem.cmo substitute.cmo printer.cmo
+simpletyping.cmx: typesystem.cmx substitute.cmx printer.cmx
+substitute.cmo: typesystem.cmo
+substitute.cmx: typesystem.cmx
+tokens.cmi: typesystem.cmo
+tokens.cmo: expressions.cmo basic.cmo
+toplevel.cmo: typesystem.cmo
+toplevel.cmx: typesystem.cmx
+
 TAGS: $(SRCFILES)
 	etags.ocaml $^ >$@
 clean:
