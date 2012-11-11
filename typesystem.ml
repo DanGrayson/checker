@@ -156,7 +156,9 @@ and oExpr =
 	    By definition, such subexpressions [T] are not essential.
 	 *)
   | O_total of uLevel * uLevel * oExpr * oBinding
-	(** Corresponds to [total] or [prod] in the paper. *)
+	(** [O_total(m1,m2,o1,(x,o2)) <--> \[total;x\](m1,m2,o1,o2)]
+
+	    Corresponds to [total] or [prod] in the paper. *)
 	(* TS2 *)
   | O_pt
       (** Corresponds to [\[pt\]] in the paper. *)
@@ -189,9 +191,13 @@ and oExpr =
 
 	    The type of [O_empty_r(T,o)] is [T].  Here the type of [o] is [T_Empty], the empty type. *)
   | O_c of tExpr * oExpr * ttoBinding * oExpr * oExpr
-	(** Corresponds to [c] in the paper. *)
+	(** [O_c(A,a,(x,B,(y,D,(z,q))),b,f) <--> \[c;x,y,z\](A,a,B,D,q,b,f)]
+	    
+	    Corresponds to [c] in the paper. *)
   | IC_r of tExpr * oExpr * ttoBinding * oExpr * tBinding2 * oExpr
-	(** IC_r is the elimination rule for inductive types (W-types) *)
+	(** [IC_r(A,a,(x,B,(y,D,(z,q))),i,(x',v,S),t) <--> \[IC_r;x,y,z,x',v\](A,a,B,D,q,i,S,t)]
+	    
+	    IC_r is the elimination rule for inductive types (generalized W-types) *)
   | O_ic of uLevel * uLevel * uLevel * oExpr * oExpr * oooBinding
 	(** Corresponds to [ic].  Its type is the max of the three u-level expressions. *)
 	(* TS6 *)

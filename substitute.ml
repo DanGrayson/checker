@@ -6,6 +6,7 @@ let rec subst subs e = 			(* if subs = (z0,x0) :: (z1,x1) :: ..., then in e subs
   | Texpr t -> Texpr (tsubst subs t)
   | Oexpr o -> Oexpr (osubst subs o)
 and tsubstfresh subs (v,t) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', tsubst subs' t)
+and t2substfresh subs (v,w,t) = let v' = fresh v and w' = fresh w in let subs' = (w, Ovariable w') :: (v, Ovariable v') :: subs in (v', w', tsubst subs' t)
 and osubstfresh subs (v,o) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', osubst subs' o)
 and ttosubstfresh subs (v,t,k) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', tsubst subs t, tosubstfresh subs' k)
 and tosubstfresh subs (v,t,k) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', tsubst subs t, osubstfresh subs' k)
@@ -31,20 +32,21 @@ and osubst subs o =
   | O_lambda (t,(v,p)) -> O_lambda (tsubst subs t,osubstfresh subs (v,p))
   | O_forall (m,m',o,(v,o')) -> O_forall (m,m',osubst subs o,osubstfresh subs (v,o'))
   | O_pair (a,b,(x,t)) -> O_pair (osubst subs a,osubst subs b,tsubstfresh subs (x,t))
-  | O_pr1 _
-  | O_pr2 _
-  | O_total _
-  | O_pt
-  | O_pt_r _
-  | O_tt
-  | O_coprod _
-  | O_ii1 _
-  | O_ii2 _
-  | Sum _
-  | O_empty
-  | O_empty_r _
-  | O_c _
-  | IC_r _
+  | O_pr1 (t,(x,t'),o) -> O_pr1 (tsubst subs t,tsubstfresh subs (x,t'),osubst subs o)
+  | O_pr2 (t,(x,t'),o) -> O_pr2 (tsubst subs t,tsubstfresh subs (x,t'),osubst subs o)
+  | O_total (m1,m2,o1,(x,o2)) -> O_total (m1,m2,osubst subs o1,osubstfresh subs (x,o2))
+  | O_pt -> o
+  | O_pt_r (o,(x,t)) -> O_pt_r (osubst subs o, tsubstfresh subs (x,t))
+  | O_tt -> o
+  | O_coprod (m1,m2,o1,o2) -> O_coprod (m1,m2,osubst subs o1,osubst subs o2)
+  | O_ii1 (t,t',o) -> O_ii1 (tsubst subs t,tsubst subs t',osubst subs o)
+  | O_ii2 (t,t',o) -> O_ii2 (tsubst subs t,tsubst subs t',osubst subs o)
+  | Sum (tT,tT',s,s',o,(x,tS)) -> Sum (tsubst subs tT,tsubst subs tT',osubst subs s,osubst subs s',osubst subs o,tsubstfresh subs (x,tS))
+  | O_empty -> o
+  | O_empty_r (t,o) -> O_empty_r (tsubst subs t,osubst subs o)
+  | O_c (tA,a,(x,tB,(y,tD,(z,q))),b,f) -> O_c (tsubst subs tA,osubst subs a,ttosubstfresh subs (x,tB,(y,tD,(z,q))),osubst subs b,osubst subs f)
+  | IC_r (tA,a,(x,tB,(y,tD,(z,q))),i,(x',v,tS),t) 
+    -> IC_r (tsubst subs tA,osubst subs a,ttosubstfresh subs(x,tB,(y,tD,(z,q))),osubst subs i,t2substfresh subs (x',v,tS),osubst subs t)
   | O_ic _
   | O_paths _
   | O_refl _
