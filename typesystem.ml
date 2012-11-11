@@ -19,11 +19,12 @@ type oVar =
     OVar of string
   | OVarGen of int * string
 
-let genctr = ref 0
 
-let fresh x =
-  incr genctr;
-  OVarGen (!genctr, x)
+let fresh = 
+  let genctr = ref 0 in 
+  let newgen x = (incr genctr; OVarGen (!genctr, x)) in
+  function
+      OVar x | OVarGen(_,x) -> newgen x
 
 (** Type variable. *)
 type tVar = TVar of string

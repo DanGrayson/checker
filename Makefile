@@ -1,5 +1,7 @@
-OCAMLC = ocamlc -g -annot -warn-error
-%: %.ml; $(OCAMLC) $<
+OCFLAGS = -g -annot -warn-error
+OCAMLC = ocamlc -c $(OCFLAGS)
+# a strange bug in ocamlc occurs if you put -c after -warn-error
+%: %.ml; ocamlc $(OCFLAGS) $<
 %.depends: %.ml; ocamldep $< >$@
 %.cmo: %.ml; $(OCAMLC) -c $<
 %.cmi: %.mli; $(OCAMLC) -c $<
