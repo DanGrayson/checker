@@ -1,28 +1,33 @@
 %{
 open Typesystem
 %}
-%start expr
+%start expr command
 %type <Typesystem.expr> expr
-%type <Typesystem.tExpr> tExpr
-%type <Typesystem.oExpr> oExpr
-%type <Typesystem.uLevel> uLevel
-%type <Typesystem.oVar> oVar
-%type <Typesystem.tVar> tVar
-%type <Typesystem.uVar> uVar
+%type <Toplevel.command> command
+
 /* punctuation: */
-%token Wlparen Wrparen Wsemi Wlbracket Wrbracket Wplus Wcomma Wperiod
+%token Wlparen Wrparen Wsemi Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash
 /* keywords: */
 %token Wmax WEl WPi Wev Wu Wj WU Wlambda Wforall
-%token <string> OVar			/* starts with lower case */
-%token <string> TVar			/* starts with upper case but not with UU */
-%token <string> UVar			/* starts with UU */
+/* commands: */
+%token WCheck WType WPrint WSubst
+
+%token <string> UVar			/* starts with uu */
+%token <string> OVar			/* starts with lower case but not with uu */
+%token <string> TVar			/* starts with upper case */
 %token <int> Nat
 %%
 
+command :
+| WCheck expr Wperiod { Toplevel.Check $2 }
+| WPrint expr Wperiod { Toplevel.Print $2 }
+| WType expr Wperiod { Toplevel.Type $2 }
+| WSubst expr Wlbracket oExpr Wslash oVar Wrbracket Wperiod { Toplevel.Subst ($2, $4, $6) }
+
 expr : 
-| tExpr Wperiod { Texpr $1 }
-| oExpr Wperiod { Oexpr $1 }
-| uLevel Wperiod { ULevel $1 }
+| tExpr { Texpr $1 }
+| oExpr { Oexpr $1 }
+| uLevel { ULevel $1 }
 
 oVar : OVar { OVar $1 }
 tVar : TVar { TVar $1 }

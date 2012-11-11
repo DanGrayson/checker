@@ -5,8 +5,8 @@ let rec subst subs e = 			(* if subs = (z0,x0) :: (z1,x1) :: ..., then in e subs
     ULevel _ -> e
   | Texpr t -> Texpr (tsubst subs t)
   | Oexpr o -> Oexpr (osubst subs o)
-and tsubstfresh subs (v,t) = let v' = fresh v in let subs' = (v, v') :: subs in (v', tsubst subs' t)
-and osubstfresh subs (v,o) = let v' = fresh v in let subs' = (v, v') :: subs in (v', osubst subs' o)
+and tsubstfresh subs (v,t) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', tsubst subs' t)
+and osubstfresh subs (v,o) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', osubst subs' o)
 and tsubst subs t =
   match t with
     Tvariable _ -> t
@@ -23,7 +23,7 @@ and tsubst subs t =
     -> raise NotImplemented
 and osubst subs o =
   match o with
-    Ovariable v -> Ovariable (try List.assoc v subs with Not_found -> v)
+    Ovariable v -> (try List.assoc v subs with Not_found -> o)
   | Uu _ -> o
   | Jj _ -> o
   | Ev(f,p,(v,t)) -> Ev(osubst subs f,osubst subs p,tsubstfresh subs (v,t))

@@ -2,7 +2,7 @@
  open Printf
  open Expressions
  exception Eof
- let lastnewline = ref 0
+ let lastnewline = ref (-1)
  let linenum = ref 1
  let filename = ref "test.ts"
  let position lexbuf = ( !filename, !linenum, Lexing.lexeme_start lexbuf - !lastnewline )
@@ -15,7 +15,22 @@ let tfirst = [ 'A'-'Z' ]
 let ofirst = [ 'a'-'z' ]
 let ufirst = "uu"
 let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' ]
-rule main = parse
+rule command_tokens = parse
+  | "Check" { WCheck }
+  | "Print" { WPrint }
+  | "Type" { WType }
+  | "Subst" { WSubst }
+  | white { command_tokens lexbuf }
+  | newline { incr linenum ; lastnewline := Lexing.lexeme_start lexbuf ; command_tokens lexbuf }
+  | _ as c { curry3 (fprintf stderr "%s:%d:%d: invalid character: '%c'\n") (position lexbuf) c; 
+	     flush stderr ;
+	     command_tokens lexbuf }
+  | eof { raise Eof }
+and  expr_tokens = parse
+  | "Check" { WCheck }
+  | "Print" { WPrint }
+  | "Type" { WType }
+  | "Subst" { WSubst }
   | "[El]" { WEl }
   | "[U]" { WU }
   | "[u]" { Wu }
@@ -32,14 +47,15 @@ rule main = parse
   | ';'  { Wsemi }
   | '.'  { Wperiod }
   | ','  { Wcomma }
+  | '/'  { Wslash }
   | '+'  { Wplus }
   | digit* as n { Nat (int_of_string n) }
   | ufirst after* as id { UVar id }
   | tfirst after* as id { TVar id }
   | ofirst after* as id { OVar id }
-  | white { main lexbuf }
-  | newline { incr linenum ; lastnewline := Lexing.lexeme_start lexbuf ; main lexbuf }
+  | white { expr_tokens lexbuf }
+  | newline { incr linenum ; lastnewline := Lexing.lexeme_start lexbuf ; expr_tokens lexbuf }
   | _ as c { curry3 (fprintf stderr "%s:%d:%d: invalid character: '%c'\n") (position lexbuf) c; 
 	     flush stderr ;
-	     main lexbuf }
+	     expr_tokens lexbuf }
   | eof { raise Eof }
