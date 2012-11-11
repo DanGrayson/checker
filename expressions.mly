@@ -11,6 +11,8 @@ open Typesystem
 %token Wmax WEl WPi Wev Wu Wj WU Wlambda Wforall
 /* commands: */
 %token WCheck WType WPrint WSubst
+/* error recovery tokens */
+%token Wflush
 
 %token <string> UVar			/* starts with uu */
 %token <string> OVar			/* starts with lower case but not with uu */

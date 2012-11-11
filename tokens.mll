@@ -2,11 +2,15 @@
  open Printf
  open Expressions
  exception Eof
- let lastnewline = ref (-1)
- let linenum = ref 1
- let filename = ref "test.ts"
- let position lexbuf = ( !filename, !linenum, Lexing.lexeme_start lexbuf - !lastnewline )
-let curry3 f (a,b,c) = f a b c
+ let error_count = ref 0
+ let bump_error_count () =
+   incr error_count;
+   flush stderr
+ let lexing_pos lexbuf = 
+   let p = Lexing.lexeme_start_p lexbuf in
+   p.Lexing.pos_fname ^ ":" ^
+   (string_of_int p.Lexing.pos_lnum) ^ ":" ^
+   (string_of_int (p.Lexing.pos_cnum-p.Lexing.pos_bol+1))
 }
 let white = [ ' ' '\t' '\r' ]
 let newline = [ '\n' ]
@@ -21,12 +25,13 @@ rule command_tokens = parse
   | "Type" { WType }
   | "Subst" { WSubst }
   | white { command_tokens lexbuf }
-  | newline { incr linenum ; lastnewline := Lexing.lexeme_start lexbuf ; command_tokens lexbuf }
-  | _ as c { curry3 (fprintf stderr "%s:%d:%d: invalid character: '%c'\n") (position lexbuf) c; 
+  | newline { Lexing.new_line lexbuf; command_tokens lexbuf }
+  | _ as c { fprintf stderr "%s: invalid character: '%c'\n" (lexing_pos lexbuf) c; 
 	     flush stderr ;
+	     bump_error_count();
 	     command_tokens lexbuf }
   | eof { raise Eof }
-and  expr_tokens = parse
+and expr_tokens = parse
   | "Check" { WCheck }
   | "Print" { WPrint }
   | "Type" { WType }
@@ -54,8 +59,13 @@ and  expr_tokens = parse
   | tfirst after* as id { TVar id }
   | ofirst after* as id { OVar id }
   | white { expr_tokens lexbuf }
-  | newline { incr linenum ; lastnewline := Lexing.lexeme_start lexbuf ; expr_tokens lexbuf }
-  | _ as c { curry3 (fprintf stderr "%s:%d:%d: invalid character: '%c'\n") (position lexbuf) c; 
+  | newline { Lexing.new_line lexbuf; expr_tokens lexbuf }
+  | _ as c { fprintf stderr "%s: invalid character: '%c'\n" (lexing_pos lexbuf) c; 
 	     flush stderr ;
+	     bump_error_count;
 	     expr_tokens lexbuf }
   | eof { raise Eof }
+and command_flush = parse
+  | newline { Lexing.new_line lexbuf; command_flush lexbuf }
+  | '.' { Wflush }
+  | _ { command_flush lexbuf }

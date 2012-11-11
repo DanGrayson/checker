@@ -92,11 +92,11 @@ and tExpr =
   | Pi of tExpr * tBinding
 	(** [Pi(T,(x,T')) <--> \[Pi;x\](T,T')] *)
     (* TS1 *)
-  | ElTotal of tExpr * tBinding
-	(** [ElTotal(T,(x,T')) <--> \[Sigma;x\](T,T')] *)
+  | Sigma of tExpr * tBinding
+	(** [Sigma(T,(x,T')) <--> \[Sigma;x\](T,T')] *)
     (* TS2 *)
   | ElPt
-      (** Corresponds to [Pt] in the paper; the unit type *)
+      (** Corresponds to [Pt]() in the paper; the unit type *)
     (* TS3 *)
   | ElCoprod of tExpr * tExpr
   | ElCoprod2 of tExpr * tExpr * tBinding * tBinding * oExpr
@@ -142,7 +142,7 @@ and oExpr =
   | Pair of oExpr * oExpr * tBinding
 	(** [Pair(a,b,(x,T)) <--> \[pair;x\](a,b,T)]
 	    
-	    An instance of [ElTotal]. *)
+	    An instance of [Sigma]. *)
   | Pr1 of tExpr * tBinding * oExpr
 	(** [Pr1(T,(x,T'),o) <--> \[pr1;x\](T,T',o)] 
 

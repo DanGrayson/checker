@@ -13,7 +13,7 @@ and tsubst subs t =
   | El o -> El (osubst subs o)
   | UU _ -> t
   | Pi (t1,(v,t2)) -> Pi (tsubst subs t1, tsubstfresh subs (v,t2))
-  | ElTotal _
+  | Sigma _
   | ElPt
   | ElCoprod _
   | ElCoprod2 _

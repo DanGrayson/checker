@@ -8,7 +8,7 @@ OCAMLC = ocamlc -c $(OCFLAGS)
 %.ml: %.mll; ocamllex $< -o $@
 %.mli %.ml: %.mly; ocamlyacc $<
 # these files go in link order, left to right
-MLFILES = typesystem printer toplevel substitute simpletyping main
+MLFILES = basic typesystem printer toplevel substitute simpletyping main
 YFILES = expressions
 LFILES = tokens
 FILES = $(YFILES) $(LFILES) $(MLFILES)
@@ -24,7 +24,7 @@ doc.pdf: $(FILES:=.ml) $(FILES:=.cmi)
 	pdflatex doc.tex-out
 checker: $(FILES:=.cmo)
 	ocamlc -g -o $@ $^
-tokens.cmo: expressions.cmo
+tokens.cmo: expressions.cmo basic.cmo
 expressions.cmo: expressions.cmi
 expressions.cmi: typesystem.cmo toplevel.cmo
 tokens.cmi: typesystem.cmo

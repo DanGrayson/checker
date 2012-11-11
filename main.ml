@@ -1,19 +1,22 @@
 let rec protect parser lexbuf =
     try parser lexbuf
     with 
-      Tokens.Eof -> exit 0
+      Tokens.Eof -> exit (if !Tokens.error_count > 0 then 1 else 0)
     | Failure s -> 
-	Tokens.curry3 (Printf.fprintf stderr "%s:%d:%d: failure: %s\n") (Tokens.position lexbuf) s;
+	Printf.fprintf stderr "%s: failure: %s\n" (Tokens.lexing_pos lexbuf) s;
 	flush stderr;
+	Tokens.bump_error_count();
 	exit 1
     | Parsing.Parse_error -> 
-	Tokens.curry3 (Printf.fprintf stderr "%s:%d:%d: syntax error\n") (Tokens.position lexbuf);
+	Printf.fprintf stderr "%s: syntax error\n" (Tokens.lexing_pos lexbuf);
 	flush stderr;
-	Lexing.flush_input lexbuf;
+	Tokens.bump_error_count();
+	let _ = Tokens.command_flush lexbuf in
 	protect parser lexbuf
 
 let _ = 
   let lexbuf = Lexing.from_channel stdin in
+    lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = "test.ts"};
     while true do
       match protect (Expressions.command Tokens.expr_tokens) lexbuf with 
 	Toplevel.Print x -> Printf.printf "Print: %s\n" (Printer.tostring x); flush stdout
@@ -34,4 +37,5 @@ let _ =
 	    );
 	  flush stdout
       | Toplevel.Check x -> Printf.printf "Check: %s : ...\n" (Printer.tostring x); flush stdout
-    done
+    done;
+

@@ -12,10 +12,15 @@ and ttostring = function
   | El x -> "[El](" ^ (otostring x) ^ ")"
   | UU x -> "[U](" ^ (utostring x) ^ ")"
   | Pi (t1,(x,t2)) -> "[Pi;" ^ (ovartostring x) ^ "](" ^ (ttostring t1) ^ "," ^ (ttostring t2) ^ ")"
-  | ElTotal _
-  | ElPt
-  | ElCoprod _
-  | ElCoprod2 _
+  | Sigma (t,(x,t')) -> "[Sigma;" ^ (ovartostring x) ^ "](" ^ (ttostring t) ^ "," ^ (ttostring t') ^ ")"
+  | ElPt -> "[Pt]()"
+  | ElCoprod (t,t') -> "[Coprod](" ^ (ttostring t) ^ "," ^ (ttostring t) ^ ")"
+  | ElCoprod2 (t,t',(x,u),(x',u'),o) 
+    -> "[Coprod;" ^ (ovartostring x) ^ "," ^ (ovartostring x') ^ "](" 
+      ^ (ttostring t) ^ "," ^ (ttostring t) ^ ","
+      ^ (ttostring u) ^ "," ^ (ttostring u') ^ ","
+      ^ (otostring o)
+      ^ ")"
   | ElEmpty
   | ElIc _
   | ElPaths _
