@@ -10,7 +10,7 @@ and utostring = function
 and ttostring = function
   | Tvariable TVar x -> x
   | El x -> "[El](" ^ (otostring x) ^ ")"
-  | ElUU x -> "[U](" ^ (utostring x) ^ ")"
+  | UU x -> "[U](" ^ (utostring x) ^ ")"
   | ElForall (t1,(x,t2)) -> "[Pi;" ^ (ovartostring x) ^ "](" ^ (ttostring t1) ^ "," ^ (ttostring t2) ^ ")"
   | ElTotal _
   | ElPt
@@ -52,3 +52,4 @@ and otostring = function
 and ovartostring = function
   | OVar x -> x
   | OVarGen(i,x) -> x ^ "_" ^ (string_of_int i)
+  | OVarDummy -> "_"

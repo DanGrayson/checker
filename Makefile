@@ -12,6 +12,7 @@ MLFILES = typesystem printer toplevel substitute simpletyping main
 YFILES = expressions
 LFILES = tokens
 FILES = $(YFILES) $(LFILES) $(MLFILES)
+SRCFILES = $(YFILES:=.mly) $(LFILES:=.mll) $(MLFILES:=.ml)
 
 all : checker doc TAGS
 run : checker
@@ -28,7 +29,7 @@ expressions.cmo: expressions.cmi
 expressions.cmi: typesystem.cmo toplevel.cmo
 tokens.cmi: typesystem.cmo
 main.cmo: tokens.cmi expressions.cmi
-TAGS: typesystem.ml
+TAGS: $(SRCFILES)
 	etags.ocaml $^ >$@
 clean:
 	rm -f *.annot *.cmi *.cmo a.out *-tmp.ml *.aux *.dvi *.log *.out *.pdf *.sty *.toc *.tex-out checker *.depends

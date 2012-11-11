@@ -18,7 +18,7 @@ polymorphic type system}, by Vladimir Voevodsky, the version dated October,
 type oVar = 
     OVar of string
   | OVarGen of int * string
-
+  | OVarDummy
 
 exception GensymCounterOverflow
 
@@ -30,6 +30,7 @@ let fresh =
     OVarGen (!genctr, x)) in
   function
       OVar x | OVarGen(_,x) -> newgen x
+    | OVarDummy as v -> v
 
 (** Type variable. *)
 type tVar = TVar of string
@@ -86,8 +87,8 @@ and tExpr =
   | Tvariable of tVar
   | El of oExpr
 	(** [El]; converts an object term into the corresponding type term *)
-  | ElUU of uLevel
-	(** [ElUU U]; a u-level expression, as a type *)
+  | UU of uLevel
+	(** [UU U]; a u-level expression, as a type *)
   | ElForall of tExpr * tBinding
 	(** [ElForall(T,(x,T')) <--> \[Pi;x\](T,T')] *)
     (* TS1 *)
@@ -205,14 +206,14 @@ and oExpr =
    | Rr0 of uLevel * uLevel * oExpr * oExpr * oExpr
 	 (** Resizing rule.
 
-	     The type of [Rr0(M_2,M_1,s,t,e)] is [ElUU(M_1)], resized downward from [ElUU M_2].
+	     The type of [Rr0(M_2,M_1,s,t,e)] is [UU(M_1)], resized downward from [UU M_2].
 
 	     By definition, the subexpressions [t] and [e] are not essential.
 	     *)
    | Rr1 of uLevel * oExpr * oExpr
 	 (** Resizing rule.
 
-	     The type of [Rr1(M,a,p)] is [ElUU(Unumeral 0)], resized downward from [ElUU M].
+	     The type of [Rr1(M,a,p)] is [UU(Unumeral 0)], resized downward from [UU M].
 
 	     By definition, the subexpression [p] is not essential.
 	     *)
