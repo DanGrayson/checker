@@ -13,4 +13,5 @@ Type [u](uu4).
 Type [j](uu,uu').
 Type [ev;x](f,o,T).
 Type [ev;x](f,o,[El](x)).
-Type [lambda;x](T,o).
+Type [lambda;x](T,x).
+Type [forall;x](uu1,uu2,o,o').

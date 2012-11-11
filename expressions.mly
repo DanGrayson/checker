@@ -46,7 +46,7 @@ tExpr :
 | tVar { Tvariable $1 }
 | WEl Wlparen oExpr Wrparen { El $3 }
 | WU Wlparen uLevel Wrparen { UU $3 }
-| WPi Wsemi oVar Wrbracket Wlparen tExpr Wcomma tExpr Wrparen { ElForall($6,($3,$8)) }
+| WPi Wsemi oVar Wrbracket Wlparen tExpr Wcomma tExpr Wrparen { Pi($6,($3,$8)) }
 uLevel :
 | Wlparen uLevel Wrparen { $2 }
 | uVar { Uvariable $1 }

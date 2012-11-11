@@ -11,7 +11,7 @@ and ttostring = function
   | Tvariable TVar x -> x
   | El x -> "[El](" ^ (otostring x) ^ ")"
   | UU x -> "[U](" ^ (utostring x) ^ ")"
-  | ElForall (t1,(x,t2)) -> "[Pi;" ^ (ovartostring x) ^ "](" ^ (ttostring t1) ^ "," ^ (ttostring t2) ^ ")"
+  | Pi (t1,(x,t2)) -> "[Pi;" ^ (ovartostring x) ^ "](" ^ (ttostring t1) ^ "," ^ (ttostring t2) ^ ")"
   | ElTotal _
   | ElPt
   | ElCoprod _

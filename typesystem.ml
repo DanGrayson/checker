@@ -89,8 +89,8 @@ and tExpr =
 	(** [El]; converts an object term into the corresponding type term *)
   | UU of uLevel
 	(** [UU U]; a u-level expression, as a type *)
-  | ElForall of tExpr * tBinding
-	(** [ElForall(T,(x,T')) <--> \[Pi;x\](T,T')] *)
+  | Pi of tExpr * tBinding
+	(** [Pi(T,(x,T')) <--> \[Pi;x\](T,T')] *)
     (* TS1 *)
   | ElTotal of tExpr * tBinding
 	(** [ElTotal(T,(x,T')) <--> \[Sigma;x\](T,T')] *)
@@ -136,7 +136,7 @@ and oExpr =
   | Forall of uLevel * uLevel * oExpr * oBinding
 	(** [Forall(M,M',o,(x,o')) <--> \[forall;x\]([M],[M'],o,o')]
 	    
-	    [Forall] is the object term corresponding to [ElForall].
+	    [Forall] is the object term corresponding to [Pi].
 	    The type of the term is given by the max of the two u-levels. *)
 	(* TS1 *)
   | Pair of oExpr * oExpr * tBinding

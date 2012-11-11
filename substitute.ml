@@ -12,7 +12,7 @@ and tsubst subs t =
     Tvariable _ -> t
   | El o -> El (osubst subs o)
   | UU _ -> t
-  | ElForall (t1,(v,t2)) -> ElForall (tsubst subs t1, tsubstfresh subs (v,t2))
+  | Pi (t1,(v,t2)) -> Pi (tsubst subs t1, tsubstfresh subs (v,t2))
   | ElTotal _
   | ElPt
   | ElCoprod _

@@ -14,9 +14,9 @@ LFILES = tokens
 FILES = $(YFILES) $(LFILES) $(MLFILES)
 SRCFILES = $(YFILES:=.mly) $(LFILES:=.mll) $(MLFILES:=.ml)
 
-all : checker doc TAGS
 run : checker
 	 OCAMLRUNPARAM=b ./checker <test.ts
+all : checker doc TAGS
 doc: doc.pdf
 doc.pdf: $(FILES:=.ml) $(FILES:=.cmi)
 	ocamldoc -charset utf8 -notoc -o doc.tex-out -latex $(FILES:=.ml)
