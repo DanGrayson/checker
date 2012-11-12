@@ -1,0 +1,7 @@
+exception Error of string
+exception GensymCounterOverflow
+exception NotImplemented
+exception InternalError
+exception VariableNotInContext
+exception NoMatchingRule
+exception Eof
