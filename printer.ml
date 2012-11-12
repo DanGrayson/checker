@@ -62,7 +62,7 @@ and otostring = function
      -> "<...>"
 
 let jtostring = function
-  | ContextJ _ -> "context judgment"
-  | TypeJ _ -> "type judgment"
-  | TypeEqJ _ -> "type equality judgment"
-  | ObjEqJ _ -> "object equality judgment"
+  | EmptyJ _ -> "context judgement"
+  | TypeJ _ -> "type judgement"
+  | TypeEqJ _ -> "type equality judgement"
+  | ObjEqJ _ -> "object equality judgement"

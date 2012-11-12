@@ -56,16 +56,6 @@ type uLevel =
   | Umax of uLevel * uLevel
 	(** A pair [(M,M')] denoting [max(M,M')]. *)
 
-(** 
-    A universe context [UC = (Fu,A)] is represented a list of universe variables [Fu] and a list of
-    equations [M_i = N_i] between two u-level expressions formed from the variables in [Fu]
-    that defines the admissible subset [A] of the functions [Fu -> nat].  It's just the subset
-    that matters.
- *) 
-type uContext = uVar list * (uLevel * uLevel) list
-
-let emptyUContext : uContext = ([],[])
-
 type  oBinding = oVar * oExpr
 and   tBinding = oVar * tExpr
 and   tBinding2= oVar * oVar  * tExpr
@@ -226,23 +216,43 @@ and oExpr =
 	    By definition, the subexpression [p] is not essential.
 	 *)
 
-type typingContext = (oVar * tExpr) list
-      (** context; [Gamma]; a list of variables with T-expressions representing their declared type. *)
-let emptyContext : typingContext = []
+
+(** 
+    A universe context [UC = (Fu,A)] is represented a list of universe variables [Fu] and a list of
+    equations [M_i = N_i] between two u-level expressions formed from the variables in [Fu]
+    that defines the admissible subset [A] of the functions [Fu -> nat].  It's just the subset
+    that matters.
+ *) 
+type uContext = uVar list * (uLevel * uLevel) list
+let emptyUContext : uContext = ([],[])
+
+(** t-context; a list of u-variables with u-levels representing their declared universe. *)
+type tContext = (tVar * uLevel) list
+let emptyTContext : tContext = []
+
+(** o-context; a list of o-variables with T-expressions representing their declared type. *)
+type oContext = (oVar * tExpr) list
+let emptyOContext : oContext = []
+
+type context = Context of uContext * tContext * oContext			      (* [Gamma] *)
+let emptyContext : context = Context (emptyUContext,emptyTContext,emptyOContext)
       
-type judgment =
-  | ContextJ of uContext * typingContext
+type judgementBody =
+  | EmptyJ
 	(** Gamma |> *)
-  | TypeJ of uContext * typingContext * oExpr * tExpr
+  | TypeJ of oExpr * tExpr
 	(** Gamma |- o : T *)
-  | TypeEqJ of uContext * typingContext * tExpr * tExpr
+  | TypeEqJ of tExpr * tExpr
 	(** Gamma |- T = T' *)
-  | ObjEqJ of uContext * typingContext * oExpr * oExpr * tExpr
+  | ObjEqJ of oExpr * oExpr * tExpr
 	(** Gamma |- o = o' : T *)
-let emptyJudgment = ContextJ (emptyUContext, emptyContext)
+let emptyJudgementBody = EmptyJ
+type judgement = context * judgementBody
+let emptyJudgment : judgement = (emptyContext,emptyJudgementBody)
 type ruleCitation = Rule of int
 type derivation = 
-  | Derivation of derivation list * ruleCitation * judgment
+  | Derivation of derivation list * ruleCitation * judgement
+type ruleLabel = int
 type ruleParm =
   | RPNone
   | RPot of oVar * tVar
@@ -251,14 +261,18 @@ let rec getType (o:oVar) = function
     (o',t) :: _ when o = o' -> t
   | _ :: gamma -> getType o gamma
   | [] -> raise VariableNotInContext
-let inferenceRule : int * ruleParm * derivation list -> derivation = function
+let inferenceRule : ruleLabel * ruleParm * derivation list -> derivation = function
     (1,RPNone,[]) -> Derivation([],Rule 1,emptyJudgment)
-  | (2,RPot (o,t),([Derivation(_,_,ContextJ(uc,gamma))] as derivs)) -> Derivation(derivs,Rule 2,ContextJ(uc,(o,Tvariable t) :: gamma))
-  | (3,RPo o,([Derivation(_,_,ContextJ(uc,gamma))] as derivs)) -> Derivation(derivs,Rule 3,TypeJ(uc,gamma,Ovariable o,getType o gamma))
+  | (2,RPot (o,t),([Derivation(_,_,(Context (uc,tc,oc),EmptyJ))] as derivs)) -> Derivation(derivs,Rule 2,(Context (uc,tc,(o,Tvariable t) :: oc),EmptyJ))
+  | (3,RPo o,([Derivation(_,_,(Context (_,_,oc) as gamma, _))] as derivs)) -> Derivation(derivs,Rule 3,(gamma,TypeJ(Ovariable o,getType o oc)))
   | _ -> raise NoMatchingRule
 let d1 = inferenceRule(1,RPNone,[])
 let d2 = inferenceRule(2,RPot (OVar "x", TVar "X"), [d1])
 let d3 = inferenceRule(3,RPo (OVar "x"), [d2])
+
+(* Abbreviations, conventions, and definitions; from the paper *)
+
+type definition = Definition of (* name *) string * (* parameters *) context * (* body *) tExpr
 
 (*
  For emacs:

@@ -26,3 +26,5 @@ Type [ev;x](f,o,T).
 Type [ev;x](f,o,*x).
 Type [lambda;x](T,x).
 Type [forall;x](u1,u2,o,o').
+
+Definition Exmpl (u1,u2,u3 : ulevel; max(u1,u2)=max(u2,u3); u1 >= u2+1 )(X1:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := j (x1 x2) : [U](u2) .

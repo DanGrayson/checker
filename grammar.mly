@@ -7,13 +7,16 @@ open Typesystem
 %type <Typesystem.oExpr> oExpr
 %type <Typesystem.uLevel> uLevel
 %type <Toplevel.command> command
+%type <Typesystem.uVar> uVar
+%type <Typesystem.tVar> tVar
+%type <Typesystem.oVar> oVar
 
 %token <string> Var_token
 %token <int> Nat
-%token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow Wequal Wturnstile Wtriangle
-%token Kumax KPi Klambda
+%token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow Wequal Wturnstile Wtriangle Wcolonequal
+%token Kulevel Kumax KPi Klambda
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
-%token WCheck_u WCheck_t WCheck_o WType WPrint_t WPrint_o WPrint_u WSubst
+%token WType WPrint_t WPrint_o WPrint_u WDefinition
 %token Wflush
 %token Prec_application Prec_lambda
 
@@ -28,6 +31,29 @@ command:
 | WPrint_o oExpr Wperiod { Toplevel.Print_o $2 }
 | WPrint_u uLevel Wperiod { Toplevel.Print_u $2 }
 | WType oExpr Wperiod { Toplevel.Type $2 }
+| WDefinition Var_token parmList Wcolonequal tExpr { Toplevel.Definition (Definition ($2,$3,$5)) }
+parmList: uParmList tParmList oParmList { Context (($1,[]),$2,$3) }
+uParmList:
+| { [] }
+| Wlparen uParmListBody Wrparen { $2 }
+uParmListBody:
+| uParm Wcomma uParmListBody { $1 :: $3 }
+| uParm { [$1] }
+uParm: uVar Wcolon Kulevel { $1 }
+tParmList:
+| { [] }
+| Wlparen tParmListBody Wrparen { $2 }
+tParmListBody:
+| tParm Wcomma tParmListBody { $1 :: $3 }
+| tParm { [$1] }
+tParm: tVar Wcolon uLevel { ($1,$3) }
+oParmList:
+| { [] }
+| Wlparen oParmListBody Wrparen { $2 }
+oParmListBody:
+| oParm Wcomma oParmListBody { $1 :: $3 }
+| oParm { [$1] }
+oParm: oVar Wcolon tExpr { ($1,$3) }
 
 derivation_list:
 | Wlbracket derivation_list_entries Wrbracket { $2 }

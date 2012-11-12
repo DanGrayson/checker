@@ -21,6 +21,7 @@ rule expr_tokens = parse
   | "Print_t" { WPrint_t }
   | "Print_u" { WPrint_u }
   | "Type" { WType }
+  | "Definition" { WDefinition }
   | "[El]" { WEl }
   | "[U]" { WU }
   | "[u]" { Wu }
@@ -37,6 +38,7 @@ rule expr_tokens = parse
   | "[ev;" { Wev }
   | "[lambda;" { Wlambda }
   | "[forall;" { Wforall }
+  | "ulevel" { Kulevel }
   | "umax" { Kumax }
   | '('  { Wlparen }
   | ')'  { Wrparen }
@@ -50,6 +52,7 @@ rule expr_tokens = parse
   | '+'  { Wplus }
   | ':'  { Wcolon }
   | '='  { Wequal }
+  | ':' '='  { Wcolonequal }
   | '|' '-'  { Wturnstile }
   | '|' '>'  { Wtriangle }
   | digit* as n { Nat (int_of_string n) }

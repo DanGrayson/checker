@@ -37,8 +37,6 @@ let _ =
 	       Basic.Error s -> "[[ error: " ^ s ^ " ]]"
 	    );
 	  flush stdout
-      | Toplevel.Derivation Typesystem.Derivation (_,_,j) -> 
-	  Printf.printf "Derivation: %s\n" (Printer.jtostring j);
-	  flush stdout
+      | Toplevel.Definition x -> Printf.printf "Definition: %s\n" "..."; flush stdout
     done;
 
