@@ -19,21 +19,9 @@ let tfirst = [ 'A'-'Z' ]
 let ofirst = [ 'a'-'z' ]
 let ufirst = "uu"
 let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' ]
-rule command_tokens = parse
+rule expr_tokens = parse
   | "Check" { WCheck }
-  | "Print" { WPrint }
-  | "Type" { WType }
-  | "Subst" { WSubst }
-  | white { command_tokens lexbuf }
-  | '#' [ ^ '\n' ]* { command_tokens lexbuf }
-  | newline { Lexing.new_line lexbuf; command_tokens lexbuf }
-  | _ as c { fprintf stderr "%s: invalid character: '%c'\n" (lexing_pos lexbuf) c; 
-	     flush stderr ;
-	     bump_error_count();
-	     command_tokens lexbuf }
-  | eof { raise Eof }
-and expr_tokens = parse
-  | "Check" { WCheck }
+  | "Derive" { WDerive }
   | "Print" { WPrint }
   | "Type" { WType }
   | "Subst" { WSubst }

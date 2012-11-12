@@ -1,7 +1,8 @@
 %{
 open Typesystem
 %}
-%start expr command
+%start expr command derivation
+%type <Typesystem.derivation> derivation
 %type <Typesystem.expr> expr
 %type <Toplevel.command> command
 
@@ -20,7 +21,7 @@ open Typesystem
 %right WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
 
 /* commands: */
-%token WCheck WType WPrint WSubst
+%token WCheck WType WPrint WSubst WDerive
 
 /* error recovery tokens */
 %token Wflush
@@ -37,22 +38,34 @@ open Typesystem
 
 %%
 
-command :
+command:
+| WDerive derivation Wperiod { Toplevel.Derivation $2 }
 | WCheck expr Wperiod { Toplevel.Check $2 }
 | WPrint expr Wperiod { Toplevel.Print $2 }
 | WType oExpr Wperiod { Toplevel.Type $2 }
 | WSubst expr Wlbracket oExpr Wslash oVar Wrbracket Wperiod { Toplevel.Subst ($2, $4, $6) }
 
-expr : 
+derivation_list:
+| Wlbracket derivation_list_entries Wrbracket { $2 }
+| Wlbracket Wrbracket { [] }
+
+derivation_list_entries:
+| derivation { [$1] }
+| derivation Wcomma derivation_list { $1 :: $3 }
+
+derivation:
+| Wlparen Nat Wcomma Wcomma derivation_list Wrparen { inferenceRule($2,RPNone,$5) }
+
+expr: 
 | tExpr { Texpr $1 }
 | oExpr { Oexpr $1 }
 | uLevel { ULevel $1 }
 
-oVar : OVar { OVar $1 }
-tVar : TVar { TVar $1 }
-uVar : UVar { UVar $1 }
+oVar: OVar { OVar $1 }
+tVar: TVar { TVar $1 }
+uVar: UVar { UVar $1 }
 
-oExpr :
+oExpr:
 | Wlparen oExpr Wrparen { $2 }
 | oVar { Ovariable $1 }
 | Wu Wlparen uLevel Wrparen { O_u $3 }
@@ -62,7 +75,7 @@ oExpr :
 | Wlambda oVar Wrbracket Wlparen tExpr Wcomma oExpr Wrparen { O_lambda($5,($2,$7)) }
 | Klambda oVar Wcolon tExpr Wcomma oExpr { O_lambda($4,($2,$6)) }
 | Wforall oVar Wrbracket Wlparen uLevel Wcomma uLevel Wcomma oExpr Wcomma oExpr Wrparen { O_forall($5,$7,$9,($2,$11)) }
-tExpr :
+tExpr:
 | Wlparen tExpr Wrparen { $2 }
 | tVar { Tvariable $1 }
 | WEl Wlparen oExpr Wrparen { El $3 }
@@ -79,7 +92,7 @@ tExpr :
     let x = $2 and y = $4 and z = $6 and tA = $9 and a = $11 and tB = $13 and tD = $15 and q = $17 in
     T_IC(tA,a,(x,tB,(y,tD,(z,q)))) }
 | WId Wlparen tExpr Wcomma oExpr Wcomma oExpr Wrparen { Id($3,$5,$7) }
-uLevel :
+uLevel:
 | Wlparen uLevel Wrparen { $2 }
 | Nat { Unumeral $1 }
 | uVar { Uvariable $1 }

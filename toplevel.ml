@@ -4,3 +4,5 @@ type command =
   | Check of expr
   | Type of oExpr
   | Subst of expr * oExpr * oVar
+  | Derivation of derivation
+

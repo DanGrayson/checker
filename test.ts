@@ -25,3 +25,5 @@ Type [ev;x](f,o,T).
 Type [ev;x](f,o,*x).
 Type [lambda;x](T,x).
 Type [forall;x](uu1,uu2,o,o').
+
+Derive (1,,[]).

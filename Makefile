@@ -41,6 +41,8 @@ toplevel.cmo: typesystem.cmo
 toplevel.cmx: typesystem.cmx
 expressions.cmo: basic.cmo
 
+.PRECIOUS: expressions.ml tokens.ml
+
 TAGS: $(SRCFILES) always
 	etags.ocaml $(SRCFILES) >$@
 	etags test.ts -o - >>$@

@@ -42,6 +42,7 @@ let _ =
 	       Basic.Error s -> "[[ error: " ^ s ^ " ]]"
 	    );
 	  flush stdout
+      | Toplevel.Derivation d -> Printf.printf "Derivation: ...\n" ; flush stdout
       | Toplevel.Check x -> Printf.printf "Check: %s : ...\n" (Printer.tostring x); flush stdout
     done;
 
