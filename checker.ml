@@ -32,7 +32,7 @@ let _ =
 	    (Printer.otostring x) 
 	    (
 	     try
-	       Printer.ttostring (Simpletyping.tau [] x)
+	       Printer.ttostring (Tau.tau [] x)
 	     with 
 	       Basic.Error s -> "[[ error: " ^ s ^ " ]]"
 	    );
