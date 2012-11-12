@@ -41,7 +41,7 @@ rule expr_tokens = parse
   | "[ev;" { Wev }
   | "[lambda;" { Wlambda }
   | "[forall;" { Wforall }
-  | "max" { Kmax }
+  | "umax" { Kumax }
   | '('  { Wlparen }
   | ')'  { Wrparen }
   | '['  { Wlbracket }
@@ -53,6 +53,9 @@ rule expr_tokens = parse
   | '/'  { Wslash }
   | '+'  { Wplus }
   | ':'  { Wcolon }
+  | '='  { Wequal }
+  | '|' '-'  { Wturnstile }
+  | '|' '>'  { Wtriangle }
   | digit* as n { Nat (int_of_string n) }
   | ufirst after* as id { UVar id }
   | tfirst after* as id { TVar id }

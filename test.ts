@@ -4,7 +4,7 @@ Print [El](x).
 Print [U](uu4).
 Print [j](uu1, uu2).
 Print *[u](uu4).
-Print max((uu1+1+0)+4,2).
+Print umax((uu1+1+0)+4,2).
 Print [Sigma;x](T,T').
 Print [Coprod](T,T').
 Print [Coprod;x,x'](T,T',U,U',o).

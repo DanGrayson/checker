@@ -8,12 +8,17 @@ OCAMLC = ocamlc -c $(OCFLAGS)
 %.ml: %.mll; ocamllex $< -o $@
 %.mli %.ml: %.mly; ocamlyacc $<
 # these files go in link order, left to right
-SRCFILES = basic.ml typesystem.ml substitute.ml printer.ml simpletyping.ml grammar.mly tokens.mll toplevel.ml main.ml 
+SRCFILES = basic.ml typesystem.ml substitute.ml printer.ml simpletyping.ml scheme.ml grammar.mly tokens.mll toplevel.ml main.ml 
 CMOFILES = $(patsubst %.mly, %.cmo, $(patsubst %.mll, %.cmo, $(patsubst %.ml, %.cmo, $(SRCFILES))))
 
+all.byte: run.byte
 all : TAGS run
 run : checker
 	 OCAMLRUNPARAM=b ./checker <test.ts
+run.byte: checker.byte
+	 OCAMLRUNPARAM=b ./checker.byte <test.ts
+checker.byte:; ocamlbuild $@
+
 doc: doc.pdf
 doc.pdf: $(SRCFILES)
 	ocamldoc -charset utf8 -notoc -o doc.tex-out -latex $(SRCFILES)

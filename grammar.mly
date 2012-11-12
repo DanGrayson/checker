@@ -7,14 +7,15 @@ open Typesystem
 %type <Toplevel.command> command
 
 /* punctuation */
-%token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow
-%right Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow
+%token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow Wequal Wturnstile Wtriangle
+%nonassoc Wlparen Wrparen Wlbracket Wrbracket Wcomma Wperiod Wcolon Wstar Wequal Wturnstile Wtriangle
+%right Wplus Wslash Warrow
 %token Dev
 %left Dev
 
 /* keywords */
-%token Kmax KPi Klambda
-%right Kmax KPi Klambda
+%token Kumax KPi Klambda
+%right Kumax KPi Klambda
 
 /* keywords in brackets and or semicolons */
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
@@ -97,4 +98,4 @@ uLevel:
 | Nat { Unumeral $1 }
 | uVar { Uvariable $1 }
 | uLevel Wplus Nat { Uplus ($1, $3) }
-| Kmax Wlparen uLevel Wcomma uLevel Wrparen { Umax ($3,$5)  }
+| Kumax Wlparen uLevel Wcomma uLevel Wrparen { Umax ($3,$5)  }

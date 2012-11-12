@@ -16,3 +16,5 @@ checker
 *.toc
 TAGS
 *.depends
+_build
+grammar.output

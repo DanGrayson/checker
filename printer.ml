@@ -9,7 +9,7 @@ let rec utostring = function
   | Unumeral i -> string_of_int i
   | Uvariable UVar x -> x
   | Uplus (x,n) -> "(" ^ (utostring x) ^ "+" ^ (string_of_int n) ^ ")"
-  | Umax (x,y) -> "max(" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
+  | Umax (x,y) -> "umax(" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
 
 let rec ttostring = function
   | Tvariable TVar x -> x
