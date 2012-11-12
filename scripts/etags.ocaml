@@ -1,0 +1,56 @@
+#! /bin/sh
+
+etags  --output - \
+    --language=none \
+		      -r '/[^|]*\([[:upper:]][[:alnum:]'\''_]*\)[[:space:]]+of\([[:space:]]\|$\)/\1/' \
+		-r '/[^|]*|[[:space:]]*\([[:upper:]][[:alnum:]'\''_]*\)[[:space:]]*$/\1/' \
+		-r '/[^|]*|[^|]*\([[:upper:]][[:alnum:]'\''_]*\)[[:space:]]+of\([[:space:]]\|$\)/\1/' \
+	  -r '/[^|]*|[^|]*|[^|]*\([[:upper:]][[:alnum:]'\''_]*\)[[:space:]]+of\([[:space:]]\|$\)/\1/' \
+    -r '/[^|]*|[^|]*|[^|]*|[^|]*\([[:upper:]][[:alnum:]'\''_]*\)[[:space:]]+of\([[:space:]]\|$\)/\1/' \
+    -r '/\(let\([[:space:]]+rec\)?\|and\|type[[:space:]]+\((.*)\|'\''[[:alpha:]]+\)\|type\|val\|module type\|module\|exception\|external\)[[:space:]]+\([[:alnum:]'\''_]+\)/\4/' \
+    -r '/let[[:space:]]*([[:space:]]*\([[:alnum:]'\''_]+\)/\1/' \
+    -r '/let[[:space:]]*([[:space:]]*\([[:alnum:]'\''_]+\)[[:space:]]*,[[:space:]]*\([[:alnum:]'\''_]+\)/\2/' \
+    -r '/let[[:space:]]*([[:space:]]*\([[:alnum:]'\''_]+\)[[:space:]]*,[[:space:]]*\([[:alnum:]'\''_]+\)[[:space:]]*,[[:space:]]*\([[:alnum:]'\''_]+\)/\3/' \
+    -r '/[[:space:]]*\([[:alnum:]'\''_]+\)\([[:space:]]+of[[:space:]]+\)/\1/' \
+    -r '/.*Ident\.create_predef_exn[[:space:]]+"\([[:alnum:]'\''_]+\)"/\1/' \
+    -r '/.*Ident\.create[[:space:]]+"\([[:alnum:]'\''_]+\)"/\1/' \
+    -r '/.*Type_variant(\[[^;]*"\([[:alnum:]'\''_]+\).*])/\1/' \
+    -r '/.*Type_variant(\[[^;]*;[^;]*"\([[:alnum:]'\''_]+\).*])/\1/' \
+    -r '/.*Type_variant(\[[^;]*;[^;]*;[^;]*"\([[:alnum:]'\''_]+\).*])/\1/' \
+    -r '/type[[:space:]]+\([[:alnum:]'\''_]+\)[[:space:]]*=[[:space:]]*$/\1/' \
+    -r '/type[[:space:]]+[[:alnum:]'\''_]+[[:space:]]*=[[:space:]]*[[|]?[[:space:]]*\([[:upper:]][[:alnum:]'\''_]*\)[[:space:]]*|/\1/' \
+    -r '/type[[:space:]]+[[:alnum:]'\''_]+[[:space:]]*=[^|]*|?[[:space:]]*\([[:upper:]][[:alnum:]'\''_]*\)/\1/' \
+    -r '/type[[:space:]]+[[:alnum:]'\''_]+[[:space:]]*=[[:space:]]*[[|]?[[:space:]]*[[:upper:]][[:alnum:]'\''_]*[[:space:]]*|[[:space:]]*[[:upper:]][[:alnum:]'\''_]*[[:space:]]*|[[:space:]]*\([[:upper:]][[:alnum:]'\''_]*\)[[:space:]]*/\1/' \
+    -r '/type[[:space:]]+[[:alnum:]'\''_]+[[:space:]]*=[[:space:]]*[[|]?[[:space:]]*[[:upper:]][[:alnum:]'\''_]*[[:space:]]*|[[:space:]]*[[:upper:]][[:alnum:]'\''_]*[[:space:]]*|[[:space:]]*[[:upper:]][[:alnum:]'\''_]*[[:space:]]*|[[:space:]]*\([[:upper:]][[:alnum:]'\''_]*\)[[:space:]]*/\1/' \
+    -r '/type[[:space:]]+[[:alnum:]'\''_]+[[:space:]]*=[[:space:]]*[[|]?[[:space:]]*[[:upper:]][[:alnum:]'\''_]*[[:space:]]*|[[:space:]]*[[:upper:]][[:alnum:]'\''_]*[[:space:]]*|[[:space:]]*[[:upper:]][[:alnum:]'\''_]*[[:space:]]*|[[:space:]]*[[:upper:]][[:alnum:]'\''_]*[[:space:]]*|[[:space:]]*\([[:upper:]][[:alnum:]'\''_]*\)[[:space:]]*/\1/' \
+    "$@" \
+| sed \
+    -e '/^$/N' \
+    -e 's@\(.\(.*/\)*\(.\)\(.*\)\..*ml.*,[0-9][0-9]*\)@\1\
+TOUPPER(\3)\41,0@' \
+    -e 's/TOUPPER(a)/A/' \
+    -e 's/TOUPPER(b)/B/' \
+    -e 's/TOUPPER(c)/C/' \
+    -e 's/TOUPPER(d)/D/' \
+    -e 's/TOUPPER(e)/E/' \
+    -e 's/TOUPPER(f)/F/' \
+    -e 's/TOUPPER(g)/G/' \
+    -e 's/TOUPPER(h)/H/' \
+    -e 's/TOUPPER(i)/I/' \
+    -e 's/TOUPPER(j)/J/' \
+    -e 's/TOUPPER(k)/K/' \
+    -e 's/TOUPPER(l)/L/' \
+    -e 's/TOUPPER(m)/M/' \
+    -e 's/TOUPPER(n)/N/' \
+    -e 's/TOUPPER(o)/O/' \
+    -e 's/TOUPPER(p)/P/' \
+    -e 's/TOUPPER(q)/Q/' \
+    -e 's/TOUPPER(r)/R/' \
+    -e 's/TOUPPER(s)/S/' \
+    -e 's/TOUPPER(t)/T/' \
+    -e 's/TOUPPER(u)/U/' \
+    -e 's/TOUPPER(v)/V/' \
+    -e 's/TOUPPER(w)/W/' \
+    -e 's/TOUPPER(x)/X/' \
+    -e 's/TOUPPER(y)/Y/' \
+    -e 's/TOUPPER(z)/Z/'
