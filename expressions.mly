@@ -81,6 +81,7 @@ tExpr :
 | WId Wlparen tExpr Wcomma oExpr Wcomma oExpr Wrparen { Id($3,$5,$7) }
 uLevel :
 | Wlparen uLevel Wrparen { $2 }
+| Nat { Unumeral $1 }
 | uVar { Uvariable $1 }
 | uLevel Wplus Nat { Uplus ($1, $3) }
 | Kmax Wlparen uLevel Wcomma uLevel Wrparen { Umax ($3,$5)  }

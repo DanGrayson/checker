@@ -6,7 +6,7 @@ Print *x.
 Print [U](uu4).
 Print [j](uu1, uu2).
 Print *[u](uu4).
-Print Pi x : T1, [U](max((uu1+1+0)+4,uu2)).
+Print Pi x : T1, [U](max((uu1+1+0)+4,2)).
 Print [Sigma;x](T,T').
 Print [Coprod](T,T').
 Print [Coprod;x,x'](T,T',U,U',o).
@@ -15,7 +15,7 @@ Print [IC;x,y,z](A,a,B,D,q).
 Print [Id](T,x,y).
 
 Print lambda x : T, e.
-Print lambda f:T->U, lambda o:T, lambda x : [El](r), f o.
+Print lambda f:T->U, lambda o:T, lambda x : *r, f o.
 Print [forall;x](uu1,uu2,o,o').
 
 Subst lambda y: *v, lambda x:T, lambda x:T, v [[forall;y](uu1,uu2,x,x')/v].
