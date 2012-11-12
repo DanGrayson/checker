@@ -10,8 +10,6 @@
 
 *)
 
-exception NotImplemented
-
 type variable = string
 
 type expr =
