@@ -1,11 +1,7 @@
 open Typesystem
 
-let rec subst subs e = 			(* if subs = (z0,x0) :: (z1,x1) :: ..., then in e substitute z0 for x0, etc.; also written as e[z/x] *)
-  match e with 
-    ULevel _ -> e
-  | Texpr t -> Texpr (tsubst subs t)
-  | Oexpr o -> Oexpr (osubst subs o)
-and tsubstfresh subs (v,t) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', tsubst subs' t)
+let rec
+    tsubstfresh subs (v,t) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', tsubst subs' t)
 and t2substfresh subs (v,w,t) = let v' = fresh v and w' = fresh w in let subs' = (w, Ovariable w') :: (v, Ovariable v') :: subs in (v', w', tsubst subs' t)
 and osubstfresh subs (v,o) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', osubst subs' o)
 and oosubstfresh subs (v,o,k) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', osubst subs' o, osubstfresh subs' k)

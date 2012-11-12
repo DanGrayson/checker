@@ -61,11 +61,6 @@ and otostring = function
   | O_rr1 _
      -> "<...>"
 
-let tostring = function
-  | ULevel x -> "u-level: " ^ utostring x
-  | Texpr x -> "t-expr: " ^ ttostring x
-  | Oexpr x -> "o-expr: " ^ otostring x
-
 let jtostring = function
   | ContextJ _ -> "context judgment"
   | TypeJ _ -> "type judgment"

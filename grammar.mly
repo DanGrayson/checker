@@ -1,4 +1,4 @@
-%{
+%{ 
 open Typesystem
 %}
 %start tExpr oExpr uLevel command derivation
@@ -18,11 +18,8 @@ open Typesystem
 %token Prec_application Prec_lambda
 
 /* precedences, lowest first */
-%nonassoc Wlparen Wrparen Wlbracket Wrbracket Wcomma Wperiod Wcolon Wstar Wequal Wturnstile Wtriangle
-%nonassoc WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
-%right Wplus Wslash Warrow
-%right Kumax KPi Klambda
 %left Prec_application
+%nonassoc Var_token Wlparen Klambda Wev Wu Wj Wlambda Wforall
 
 %%
 
@@ -53,7 +50,7 @@ oExpr:
 | Wev oVar Wrbracket Wlparen oExpr Wcomma oExpr Wcomma tExpr Wrparen { O_ev($5,$7,($2,$9)) }
 | oExpr oExpr %prec Prec_application { O_ev($1,$2,(OVarDummy,Tvariable TVarDummy)) }
 | Wlambda oVar Wrbracket Wlparen tExpr Wcomma oExpr Wrparen { O_lambda($5,($2,$7)) }
-| Klambda oVar Wcolon tExpr Wcomma oExpr { O_lambda($4,($2,$6)) }
+| Klambda oVar Wcolon tExpr Wcomma oExpr %prec Prec_lambda { O_lambda($4,($2,$6)) }
 | Wforall oVar Wrbracket Wlparen uLevel Wcomma uLevel Wcomma oExpr Wcomma oExpr Wrparen { O_forall($5,$7,$9,($2,$11)) }
 tExpr:
 | Wlparen tExpr Wrparen { $2 }

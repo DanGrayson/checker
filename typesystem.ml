@@ -66,18 +66,7 @@ type uContext = uVar list * (uLevel * uLevel) list
 
 let emptyUContext : uContext = ([],[])
 
-type expr =
-    (* TS0 *)
-  | ULevel of uLevel
-	(** Universe term, \[M\]. *)
-  | Texpr of tExpr
-	(** Type term. *)
-  | Oexpr of oExpr
-	(** Object term. *)
-    (* TS1 *)
-    (* TS2 *)
-
-and   oBinding = oVar * oExpr
+type  oBinding = oVar * oExpr
 and   tBinding = oVar * tExpr
 and   tBinding2= oVar * oVar  * tExpr
 and  toBinding = oVar * tExpr * oBinding
