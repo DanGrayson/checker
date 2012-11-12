@@ -24,7 +24,7 @@ let _ =
   let lexbuf = Lexing.from_channel stdin in
     lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = "test.ts"};
     while true do
-      match protect (Expressions.command Tokens.expr_tokens) lexbuf with 
+      match protect (Grammar.command Tokens.expr_tokens) lexbuf with 
 	Toplevel.Print x -> Printf.printf "Print: %s\n" (Printer.tostring x); flush stdout
       | Toplevel.Subst (x,w,v) -> 
 	  Printf.printf "Subst: %s[%s/%s] = %s\n" 
