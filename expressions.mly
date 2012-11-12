@@ -5,12 +5,23 @@ open Typesystem
 %type <Typesystem.expr> expr
 %type <Toplevel.command> command
 
-/* punctuation: */
-%token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash
-/* keywords: */
-%token Wmax WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
+/* punctuation */
+%token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow
+%right Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow
+%token Dev
+%left Dev
+
+/* keywords */
+%token Kmax KPi Klambda
+%right Kmax KPi Klambda
+
+/* keywords in brackets and or semicolons */
+%token WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
+%right WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
+
 /* commands: */
 %token WCheck WType WPrint WSubst
+
 /* error recovery tokens */
 %token Wflush
 
@@ -18,6 +29,12 @@ open Typesystem
 %token <string> OVar			/* starts with lower case but not with uu */
 %token <string> TVar			/* starts with upper case */
 %token <int> Nat
+
+%nonassoc UVar
+%nonassoc OVar
+%nonassoc TVar
+%nonassoc Nat
+
 %%
 
 command :
@@ -41,14 +58,19 @@ oExpr :
 | Wu Wlparen uLevel Wrparen { O_u $3 }
 | Wj Wlparen uLevel Wcomma uLevel Wrparen { O_j($3,$5) }
 | Wev oVar Wrbracket Wlparen oExpr Wcomma oExpr Wcomma tExpr Wrparen { O_ev($5,$7,($2,$9)) }
+| oExpr oExpr %prec Dev { O_ev($1,$2,(OVarDummy,Tvariable TVarDummy)) }
 | Wlambda oVar Wrbracket Wlparen tExpr Wcomma oExpr Wrparen { O_lambda($5,($2,$7)) }
+| Klambda oVar Wcolon tExpr Wcomma oExpr { O_lambda($4,($2,$6)) }
 | Wforall oVar Wrbracket Wlparen uLevel Wcomma uLevel Wcomma oExpr Wcomma oExpr Wrparen { O_forall($5,$7,$9,($2,$11)) }
 tExpr :
 | Wlparen tExpr Wrparen { $2 }
 | tVar { Tvariable $1 }
 | WEl Wlparen oExpr Wrparen { El $3 }
+| Wstar oExpr { El $2 }
 | WU Wlparen uLevel Wrparen { T_U $3 }
 | WPi oVar Wrbracket Wlparen tExpr Wcomma tExpr Wrparen { Pi($5,($2,$7)) }
+| KPi oVar Wcolon tExpr Wcomma tExpr { Pi($4,($2,$6)) }
+| tExpr Warrow tExpr { Pi($1,(OVarDummy,$3)) }
 | WSigma oVar Wrbracket Wlparen tExpr Wcomma tExpr Wrparen { Sigma($5,($2,$7)) }
 | WCoprod Wlparen tExpr Wcomma tExpr Wrparen { T_Coprod($3,$5) }
 | WCoprod2 oVar Wcomma oVar Wrbracket Wlparen tExpr Wcomma tExpr Wcomma tExpr Wcomma tExpr Wcomma oExpr Wrparen { T_Coprod2($7,$9,($2,$11),($4,$13),$15) }
@@ -61,4 +83,4 @@ uLevel :
 | Wlparen uLevel Wrparen { $2 }
 | uVar { Uvariable $1 }
 | uLevel Wplus Nat { Uplus ($1, $3) }
-| Wmax Wlparen uLevel Wcomma uLevel Wrparen { Umax ($3,$5)  }
+| Kmax Wlparen uLevel Wcomma uLevel Wrparen { Umax ($3,$5)  }

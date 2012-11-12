@@ -8,21 +8,18 @@ OCAMLC = ocamlc -c $(OCFLAGS)
 %.ml: %.mll; ocamllex $< -o $@
 %.mli %.ml: %.mly; ocamlyacc $<
 # these files go in link order, left to right
-MLFILES = basic typesystem printer toplevel substitute simpletyping main
-YFILES = expressions
-LFILES = tokens
-FILES = $(YFILES) $(LFILES) $(MLFILES)
-SRCFILES = $(YFILES:=.mly) $(LFILES:=.mll) $(MLFILES:=.ml)
+SRCFILES = basic.ml typesystem.ml substitute.ml printer.ml simpletyping.ml expressions.mly tokens.mll toplevel.ml main.ml 
+CMOFILES = $(patsubst %.mly, %.cmo, $(patsubst %.mll, %.cmo, $(patsubst %.ml, %.cmo, $(SRCFILES))))
 
 run : checker
 	 OCAMLRUNPARAM=b ./checker <test.ts
 all : checker doc TAGS
 doc: doc.pdf
-doc.pdf: $(FILES:=.ml) $(FILES:=.cmi)
-	ocamldoc -charset utf8 -notoc -o doc.tex-out -latex $(FILES:=.ml)
+doc.pdf: $(SRCFILES)
+	ocamldoc -charset utf8 -notoc -o doc.tex-out -latex $(SRCFILES)
 	pdflatex doc.tex-out
 	pdflatex doc.tex-out
-checker: $(FILES:=.cmo)
+checker: $(CMOFILES)
 	ocamlc -g -o $@ $^
 
 expressions.cmi: typesystem.cmo toplevel.cmo
@@ -42,9 +39,12 @@ tokens.cmi: typesystem.cmo
 tokens.cmo: expressions.cmo basic.cmo
 toplevel.cmo: typesystem.cmo
 toplevel.cmx: typesystem.cmx
+expressions.cmo: basic.cmo
 
-TAGS: $(SRCFILES)
-	etags.ocaml $^ >$@
+TAGS: $(SRCFILES) always
+	etags.ocaml $(SRCFILES) >$@
+	etags test.ts -o - >>$@
+always:
 clean:
 	rm -f *.annot *.cmi *.cmo a.out *-tmp.ml *.aux *.dvi *.log *.out *.pdf *.sty *.toc *.tex-out checker *.depends
 	rm -f expressions.mli expressions.ml tokens.ml TAGS

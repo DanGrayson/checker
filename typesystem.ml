@@ -33,7 +33,9 @@ let fresh =
     | OVarDummy as v -> v
 
 (** Type variable. *)
-type tVar = TVar of string
+type tVar = 
+    TVar of string
+  | TVarDummy							      (* temporary place holder in applications [f a] *)
 
 (** Universe variable. *)
 type uVar = UVar of string
@@ -260,7 +262,7 @@ exception NotImplemented
 exception InternalError
 exception VariableNotInContext
 exception NoMatchingRule
-let rec getType o = function
+let rec getType (o:oVar) = function
     (o',t) :: _ when o = o' -> t
   | _ :: gamma -> getType o gamma
   | [] -> raise VariableNotInContext
@@ -277,7 +279,7 @@ let d3 = inferenceRule(3,RPo (OVar "x"), [d2])
  For emacs:
  Local Variables:
   coding: latin-1
-  compile-command: "make typesystem.cmo doc "
+  compile-command: "make run "
   comment-column: 70
  End:
 *)

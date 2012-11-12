@@ -10,6 +10,7 @@ and utostring = function
   | Umax (x,y) -> "max(" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
 and ttostring = function
   | Tvariable TVar x -> x
+  | Tvariable TVarDummy -> "__Unknown_type__"
   | El x -> "[El](" ^ (otostring x) ^ ")"
   | T_U x -> "[U](" ^ (utostring x) ^ ")"
   | Pi (t1,(x,t2)) -> "[Pi;" ^ (ovartostring x) ^ "](" ^ (ttostring t1) ^ "," ^ (ttostring t2) ^ ")"

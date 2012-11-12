@@ -7,6 +7,12 @@ let rec protect parser lexbuf =
 	flush stderr;
 	Tokens.bump_error_count();
 	exit 1
+    | Basic.Error s ->
+	Printf.fprintf stderr "%s: %s\n" (Tokens.lexing_pos lexbuf) s;
+	flush stderr;
+	Tokens.bump_error_count();
+	let _ = Tokens.command_flush lexbuf in
+	protect parser lexbuf
     | Parsing.Parse_error -> 
 	Printf.fprintf stderr "%s: syntax error\n" (Tokens.lexing_pos lexbuf);
 	flush stderr;
@@ -33,7 +39,7 @@ let _ =
 	     try
 	       Printer.ttostring (Simpletyping.tau [] x)
 	     with 
-	       Simpletyping.SimpleTypingError s -> "[[ error: " ^ s ^ " ]]"
+	       Basic.Error s -> "[[ error: " ^ s ^ " ]]"
 	    );
 	  flush stdout
       | Toplevel.Check x -> Printf.printf "Check: %s : ...\n" (Printer.tostring x); flush stdout

@@ -42,6 +42,8 @@ and expr_tokens = parse
   | "[u]" { Wu }
   | "[j]" { Wj }
   | "[Pi;" { WPi }
+  | "Pi" { KPi }
+  | "lambda" { Klambda }
   | "[Sigma;" { WSigma }
   | "[Coprod]" { WCoprod }
   | "[Coprod;" { WCoprod2 }
@@ -51,15 +53,18 @@ and expr_tokens = parse
   | "[ev;" { Wev }
   | "[lambda;" { Wlambda }
   | "[forall;" { Wforall }
-  | "max" { Wmax }
+  | "max" { Kmax }
   | '('  { Wlparen }
   | ')'  { Wrparen }
   | '['  { Wlbracket }
+  | '-' '>'  { Warrow }
   | ']'  { Wrbracket }
+  | '*'  { Wstar }
   | '.'  { Wperiod }
   | ','  { Wcomma }
   | '/'  { Wslash }
   | '+'  { Wplus }
+  | ':'  { Wcolon }
   | digit* as n { Nat (int_of_string n) }
   | ufirst after* as id { UVar id }
   | tfirst after* as id { TVar id }
