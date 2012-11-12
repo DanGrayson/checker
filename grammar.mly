@@ -8,30 +8,21 @@ open Typesystem
 %type <Typesystem.uLevel> uLevel
 %type <Toplevel.command> command
 
-/* punctuation */
-%token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow Wequal Wturnstile Wtriangle
-%nonassoc Wlparen Wrparen Wlbracket Wrbracket Wcomma Wperiod Wcolon Wstar Wequal Wturnstile Wtriangle
-%right Wplus Wslash Warrow
-%token Dev
-%left Dev
-
-/* keywords */
-%token Kumax KPi Klambda
-%right Kumax KPi Klambda
-
-/* keywords in brackets and or semicolons */
-%token WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
-%right WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
-
-/* commands */
-%token WCheck_u WCheck_t WCheck_o WType WPrint_t WPrint_o WPrint_u WSubst
-
-/* dummy tokens */
-%token Wflush
-
-/* tokens with content */
 %token <string> Var_token
 %token <int> Nat
+%token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow Wequal Wturnstile Wtriangle
+%token Kumax KPi Klambda
+%token WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
+%token WCheck_u WCheck_t WCheck_o WType WPrint_t WPrint_o WPrint_u WSubst
+%token Wflush
+%token Prec_application Prec_lambda
+
+/* precedences, lowest first */
+%nonassoc Wlparen Wrparen Wlbracket Wrbracket Wcomma Wperiod Wcolon Wstar Wequal Wturnstile Wtriangle
+%nonassoc WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
+%right Wplus Wslash Warrow
+%right Kumax KPi Klambda
+%left Prec_application
 
 %%
 
@@ -60,7 +51,7 @@ oExpr:
 | Wu Wlparen uLevel Wrparen { O_u $3 }
 | Wj Wlparen uLevel Wcomma uLevel Wrparen { O_j($3,$5) }
 | Wev oVar Wrbracket Wlparen oExpr Wcomma oExpr Wcomma tExpr Wrparen { O_ev($5,$7,($2,$9)) }
-| oExpr oExpr %prec Dev { O_ev($1,$2,(OVarDummy,Tvariable TVarDummy)) }
+| oExpr oExpr %prec Prec_application { O_ev($1,$2,(OVarDummy,Tvariable TVarDummy)) }
 | Wlambda oVar Wrbracket Wlparen tExpr Wcomma oExpr Wrparen { O_lambda($5,($2,$7)) }
 | Klambda oVar Wcolon tExpr Wcomma oExpr { O_lambda($4,($2,$6)) }
 | Wforall oVar Wrbracket Wlparen uLevel Wcomma uLevel Wcomma oExpr Wcomma oExpr Wrparen { O_forall($5,$7,$9,($2,$11)) }
