@@ -1,7 +1,7 @@
 let rec protect parser lexbuf =
     try parser lexbuf
     with 
-      Tokens.Eof -> exit (if !Tokens.error_count > 0 then 1 else 0)
+      Basic.Eof -> exit (if !Tokens.error_count > 0 then 1 else 0)
     | Failure s -> 
 	Printf.fprintf stderr "%s: failure: %s\n" (Tokens.lexing_pos lexbuf) s;
 	flush stderr;
@@ -42,7 +42,9 @@ let _ =
 	       Basic.Error s -> "[[ error: " ^ s ^ " ]]"
 	    );
 	  flush stdout
-      | Toplevel.Derivation d -> Printf.printf "Derivation: ...\n" ; flush stdout
+      | Toplevel.Derivation Typesystem.Derivation (_,_,j) -> 
+	  Printf.printf "Derivation: %s\n" (Printer.jtostring j);
+	  flush stdout
       | Toplevel.Check x -> Printf.printf "Check: %s : ...\n" (Printer.tostring x); flush stdout
     done;
 

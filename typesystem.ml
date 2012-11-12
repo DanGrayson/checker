@@ -14,13 +14,13 @@ polymorphic type system}, by Vladimir Voevodsky, the version dated October,
 
   *)
 
+open Basic
+
 (** Object variable. *)
 type oVar = 
     OVar of string
   | OVarGen of int * string
   | OVarDummy
-
-exception GensymCounterOverflow
 
 let fresh = 
   let genctr = ref 0 in 
@@ -258,10 +258,6 @@ type ruleParm =
   | RPNone
   | RPot of oVar * tVar
   | RPo of oVar
-exception NotImplemented
-exception InternalError
-exception VariableNotInContext
-exception NoMatchingRule
 let rec getType (o:oVar) = function
     (o',t) :: _ when o = o' -> t
   | _ :: gamma -> getType o gamma

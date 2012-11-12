@@ -1,14 +1,17 @@
 open Typesystem
-let rec tostring = function
-  | ULevel x -> utostring x
-  | Texpr x -> ttostring x
-  | Oexpr x -> otostring x
-and utostring = function
+
+let ovartostring = function
+  | OVar x -> x
+  | OVarGen(i,x) -> x ^ "_" ^ (string_of_int i)
+  | OVarDummy -> "_"
+
+let rec utostring = function
   | Unumeral i -> string_of_int i
   | Uvariable UVar x -> x
   | Uplus (x,n) -> "(" ^ (utostring x) ^ "+" ^ (string_of_int n) ^ ")"
   | Umax (x,y) -> "max(" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
-and ttostring = function
+
+let rec ttostring = function
   | Tvariable TVar x -> x
   | Tvariable TVarDummy -> "__Unknown_type__"
   | El x -> "[El](" ^ (otostring x) ^ ")"
@@ -57,7 +60,14 @@ and otostring = function
   | O_rr0 _
   | O_rr1 _
      -> "<...>"
-and ovartostring = function
-  | OVar x -> x
-  | OVarGen(i,x) -> x ^ "_" ^ (string_of_int i)
-  | OVarDummy -> "_"
+
+let tostring = function
+  | ULevel x -> "u-level: " ^ utostring x
+  | Texpr x -> "t-expr: " ^ ttostring x
+  | Oexpr x -> "o-expr: " ^ otostring x
+
+let jtostring = function
+  | ContextJ _ -> "context judgment"
+  | TypeJ _ -> "type judgment"
+  | TypeEqJ _ -> "type equality judgment"
+  | ObjEqJ _ -> "object equality judgment"

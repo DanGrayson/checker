@@ -1,7 +1,7 @@
 {
+ open Basic
  open Printf
  open Expressions
- exception Eof
  let error_count = ref 0
  let bump_error_count () =
    incr error_count;
