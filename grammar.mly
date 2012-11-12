@@ -1,9 +1,11 @@
 %{
 open Typesystem
 %}
-%start expr command derivation
+%start tExpr oExpr uLevel command derivation
 %type <Typesystem.derivation> derivation
-%type <Typesystem.expr> expr
+%type <Typesystem.tExpr> tExpr
+%type <Typesystem.oExpr> oExpr
+%type <Typesystem.uLevel> uLevel
 %type <Toplevel.command> command
 
 /* punctuation */
@@ -22,49 +24,35 @@ open Typesystem
 %right WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
 
 /* commands */
-%token WCheck WType WPrint WSubst WDerive
+%token WCheck_u WCheck_t WCheck_o WType WPrint_t WPrint_o WPrint_u WSubst
 
-/* other tokens */
-%token Wflush Weof
+/* dummy tokens */
+%token Wflush
 
-%token <string> UVar_token			/* starts with uu */
-%token <string> OVar_token			/* starts with lower case but not with uu */
-%token <string> TVar_token			/* starts with upper case */
+/* tokens with content */
+%token <string> Var_token
 %token <int> Nat
-
-%nonassoc UVar_token
-%nonassoc OVar_token
-%nonassoc TVar_token
-%nonassoc Nat
 
 %%
 
 command:
-| WDerive derivation Wperiod { Toplevel.Derivation $2 }
-| WCheck expr Wperiod { Toplevel.Check $2 }
-| WPrint expr Wperiod { Toplevel.Print $2 }
+| WPrint_t tExpr Wperiod { Toplevel.Print_t $2 }
+| WPrint_o oExpr Wperiod { Toplevel.Print_o $2 }
+| WPrint_u uLevel Wperiod { Toplevel.Print_u $2 }
 | WType oExpr Wperiod { Toplevel.Type $2 }
-| WSubst expr Wlbracket oExpr Wslash oVar Wrbracket Wperiod { Toplevel.Subst ($2, $4, $6) }
 
 derivation_list:
 | Wlbracket derivation_list_entries Wrbracket { $2 }
 | Wlbracket Wrbracket { [] }
-
 derivation_list_entries:
 | derivation { [$1] }
 | derivation Wcomma derivation_list { $1 :: $3 }
-
 derivation:
 | Wlparen Nat Wcomma Wcomma derivation_list Wrparen { inferenceRule($2,RPNone,$5) }
 
-expr: 
-| tExpr { Texpr $1 }
-| oExpr { Oexpr $1 }
-| uLevel { ULevel $1 }
-
-oVar: OVar_token { OVar $1 }
-tVar: TVar_token { TVar $1 }
-uVar: UVar_token { UVar $1 }
+oVar: Var_token { OVar $1 }
+tVar: Var_token { TVar $1 }
+uVar: Var_token { UVar $1 }
 
 oExpr:
 | Wlparen oExpr Wrparen { $2 }

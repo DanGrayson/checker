@@ -1,8 +1,8 @@
 open Typesystem
 type command = 
-    Print of expr
-  | Check of expr
+  | Print_o of oExpr
+  | Print_u of uLevel
+  | Print_t of tExpr
   | Type of oExpr
-  | Subst of expr * oExpr * oVar	(* this will become part of TS, as an abbreviation *)
   | Derivation of derivation	(* this will become part of TS, as an abbreviation *)
 

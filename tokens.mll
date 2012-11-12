@@ -14,16 +14,13 @@
 let white = [ ' ' '\t' '\r' ]
 let newline = [ '\n' ]
 let digit = [ '0'-'9' ]
-let tfirst = [ 'A'-'Z' ]
-let ofirst = [ 'a'-'z' ]
-let ufirst = "uu"
+let first = [ 'A'-'Z' 'a'-'z' ]
 let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' ]
 rule expr_tokens = parse
-  | "Check" { WCheck }
-  | "Derive" { WDerive }
-  | "Print" { WPrint }
+  | "Print_o" { WPrint_o }
+  | "Print_t" { WPrint_t }
+  | "Print_u" { WPrint_u }
   | "Type" { WType }
-  | "Subst" { WSubst }
   | "[El]" { WEl }
   | "[U]" { WU }
   | "[u]" { Wu }
@@ -56,9 +53,7 @@ rule expr_tokens = parse
   | '|' '-'  { Wturnstile }
   | '|' '>'  { Wtriangle }
   | digit* as n { Nat (int_of_string n) }
-  | ufirst after* as id { UVar_token id }
-  | tfirst after* as id { TVar_token id }
-  | ofirst after* as id { OVar_token id }
+  | first after* as id { Var_token id }
   | white { expr_tokens lexbuf }
   | '#' [ ^ '\n' ]* { expr_tokens lexbuf }
   | newline { Lexing.new_line lexbuf; expr_tokens lexbuf }

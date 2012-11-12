@@ -25,14 +25,9 @@ let _ =
     lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = "test.ts"};
     while true do
       match protect (Grammar.command Tokens.expr_tokens) lexbuf with 
-	Toplevel.Print x -> Printf.printf "Print: %s\n" (Printer.tostring x); flush stdout
-      | Toplevel.Subst (x,w,v) -> 
-	  Printf.printf "Subst: %s[%s/%s] = %s\n" 
-	    (Printer.tostring x) 
-	    (Printer.otostring w) 
-	    (Printer.ovartostring v) 
-	    (Printer.tostring (Substitute.subst [(v,w)] x));
-	  flush stdout
+      | Toplevel.Print_t x -> Printf.printf "Print_t: %s\n" (Printer.ttostring x); flush stdout
+      | Toplevel.Print_o x -> Printf.printf "Print_o: %s\n" (Printer.otostring x); flush stdout
+      | Toplevel.Print_u x -> Printf.printf "Print_u: %s\n" (Printer.utostring x); flush stdout
       | Toplevel.Type  x -> Printf.printf "Type: %s : %s\n" 
 	    (Printer.otostring x) 
 	    (
@@ -45,6 +40,5 @@ let _ =
       | Toplevel.Derivation Typesystem.Derivation (_,_,j) -> 
 	  Printf.printf "Derivation: %s\n" (Printer.jtostring j);
 	  flush stdout
-      | Toplevel.Check x -> Printf.printf "Check: %s : ...\n" (Printer.tostring x); flush stdout
     done;
 
