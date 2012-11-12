@@ -16,7 +16,7 @@ and tsubst subs t =
   match t with
     Tvariable _ -> t
   | El o -> El (osubst subs o)
-  | UU _ -> t
+  | T_U _ -> t
   | Pi (t1,(v,t2)) -> Pi (tsubst subs t1, tsubstfresh subs (v,t2))
   | Sigma (t1,(v,t2)) -> Sigma (tsubst subs t1, tsubstfresh subs (v,t2))
   | T_Pt -> t
@@ -47,11 +47,11 @@ and osubst subs o =
   | O_empty -> o
   | O_empty_r (t,o) -> O_empty_r (tsubst subs t,osubst subs o)
   | O_c (tA,a,(x,tB,(y,tD,(z,q))),b,f) -> O_c (tsubst subs tA,osubst subs a,ttosubstfresh subs (x,tB,(y,tD,(z,q))),osubst subs b,osubst subs f)
-  | IC_r (tA,a,(x,tB,(y,tD,(z,q))),i,(x',v,tS),t) 
-    -> IC_r (tsubst subs tA,osubst subs a,ttosubstfresh subs(x,tB,(y,tD,(z,q))),osubst subs i,t2substfresh subs (x',v,tS),osubst subs t)
+  | O_ic_r (tA,a,(x,tB,(y,tD,(z,q))),i,(x',v,tS),t) 
+    -> O_ic_r (tsubst subs tA,osubst subs a,ttosubstfresh subs(x,tB,(y,tD,(z,q))),osubst subs i,t2substfresh subs (x',v,tS),osubst subs t)
   | O_ic (m1,m2,m3,oA,a,(x,oB,(y,oD,(z,q)))) -> O_ic (m1,m2,m3,osubst subs oA,osubst subs a,ooosubstfresh subs (x,oB,(y,oD,(z,q))))
   | O_paths (m,t,x,y) -> O_paths (m,osubst subs t,osubst subs x,osubst subs y)
   | O_refl (t,o) -> O_refl (tsubst subs t,osubst subs o)
-  | J (tT,a,b,q,i,(x,e,tS)) -> J (tsubst subs tT,osubst subs a,osubst subs b,osubst subs q,osubst subs i,t2substfresh subs (x,e,tS))
+  | O_J (tT,a,b,q,i,(x,e,tS)) -> O_J (tsubst subs tT,osubst subs a,osubst subs b,osubst subs q,osubst subs i,t2substfresh subs (x,e,tS))
   | O_rr0 (m2,m1,s,t,e) -> O_rr0 (m2,m1,osubst subs s,osubst subs t,osubst subs e)
   | O_rr1 (m,a,p) -> O_rr1 (m,osubst subs a,osubst subs p)

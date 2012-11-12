@@ -47,7 +47,7 @@ tExpr :
 | Wlparen tExpr Wrparen { $2 }
 | tVar { Tvariable $1 }
 | WEl Wlparen oExpr Wrparen { El $3 }
-| WU Wlparen uLevel Wrparen { UU $3 }
+| WU Wlparen uLevel Wrparen { T_U $3 }
 | WPi oVar Wrbracket Wlparen tExpr Wcomma tExpr Wrparen { Pi($5,($2,$7)) }
 | WSigma oVar Wrbracket Wlparen tExpr Wcomma tExpr Wrparen { Sigma($5,($2,$7)) }
 | WCoprod Wlparen tExpr Wcomma tExpr Wrparen { T_Coprod($3,$5) }

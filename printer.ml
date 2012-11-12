@@ -4,13 +4,14 @@ let rec tostring = function
   | Texpr x -> ttostring x
   | Oexpr x -> otostring x
 and utostring = function
+  | Unumeral i -> string_of_int i
   | Uvariable UVar x -> x
   | Uplus (x,n) -> "(" ^ (utostring x) ^ "+" ^ (string_of_int n) ^ ")"
   | Umax (x,y) -> "max(" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
 and ttostring = function
   | Tvariable TVar x -> x
   | El x -> "[El](" ^ (otostring x) ^ ")"
-  | UU x -> "[U](" ^ (utostring x) ^ ")"
+  | T_U x -> "[U](" ^ (utostring x) ^ ")"
   | Pi (t1,(x,t2)) -> "[Pi;" ^ (ovartostring x) ^ "](" ^ (ttostring t1) ^ "," ^ (ttostring t2) ^ ")"
   | Sigma (t,(x,t')) -> "[Sigma;" ^ (ovartostring x) ^ "](" ^ (ttostring t) ^ "," ^ (ttostring t') ^ ")"
   | T_Pt -> "[Pt]()"
@@ -47,11 +48,11 @@ and otostring = function
   | O_empty
   | O_empty_r _
   | O_c _
-  | IC_r _
+  | O_ic_r _
   | O_ic _
   | O_paths _
   | O_refl _
-  | J _
+  | O_J _
   | O_rr0 _
   | O_rr1 _
      -> "<...>"

@@ -45,6 +45,8 @@ type uVar = UVar of string
     of a given list.
  *)
 type uLevel =
+  | Unumeral of int
+	(** A u-level [n] stages above the bottom-most universe. *)
   | Uvariable of uVar
 	(** A u-level variable. *)
   | Uplus of uLevel * int
@@ -87,8 +89,8 @@ and tExpr =
   | Tvariable of tVar
   | El of oExpr
 	(** [El]; converts an object term into the corresponding type term *)
-  | UU of uLevel
-	(** [UU U]; a u-level expression, as a type *)
+  | T_U of uLevel
+	(** [T_U m]; a u-level expression, as a type *)
   | Pi of tExpr * tBinding
 	(** [Pi(T,(x,T')) <--> \[Pi;x\](T,T')] *)
     (* TS1 *)
@@ -185,6 +187,8 @@ and oExpr =
       (** [ O_empty <--> \[empty\]() ]
 				    
 	  The type of [\[empty\]] is the smallest universe, [Unumeral 0]. 
+
+	  Remember to make [El]([empty]()) reduce to [Empty]().
        *)
   | O_empty_r of tExpr * oExpr
 	(** The elimnination rule for the empty type.
@@ -194,10 +198,10 @@ and oExpr =
 	(** [O_c(A,a,(x,B,(y,D,(z,q))),b,f) <--> \[c;x,y,z\](A,a,B,D,q,b,f)]
 	    
 	    Corresponds to [c] in the paper. *)
-  | IC_r of tExpr * oExpr * ttoBinding * oExpr * tBinding2 * oExpr
-	(** [IC_r(A,a,(x,B,(y,D,(z,q))),i,(x',v,S),t) <--> \[IC_r;x,y,z,x',v\](A,a,B,D,q,i,S,t)]
+  | O_ic_r of tExpr * oExpr * ttoBinding * oExpr * tBinding2 * oExpr
+	(** [O_ic_r(A,a,(x,B,(y,D,(z,q))),i,(x',v,S),t) <--> \[ic_r;x,y,z,x',v\](A,a,B,D,q,i,S,t)]
 	    
-	    IC_r is the elimination rule for inductive types (generalized W-types) *)
+	    ic_r is the elimination rule for inductive types (generalized W-types) *)
   | O_ic of uLevel * uLevel * uLevel * oExpr * oExpr * oooBinding
 	(** [O_ic(M1,M2,M3,oA,a,(x,oB,(y,oD,(z,q)))) <--> \[[ic;x,y,z](M1,M2,M3,oA,a,oB,oD,q)\]]
 	    
@@ -211,25 +215,25 @@ and oExpr =
 	(** Reflexivity, or the constant path. 
 	    
 	    The type of [O_refl(T,o)] is [Id(T,o,o)]. *)
-  | J of tExpr * oExpr * oExpr * oExpr * oExpr * tBinding2
+  | O_J of tExpr * oExpr * oExpr * oExpr * oExpr * tBinding2
 	(** The elimination rule for Id; Id-elim.
 
-	    The type of [J(T,a,b,q,i,(x,e,S))] is [S\[b/x,i/e\]]. *)
+	    The type of [O_J(T,a,b,q,i,(x,e,S))] is [S\[b/x,i/e\]]. *)
       (* TS7 *)
-   | O_rr0 of uLevel * uLevel * oExpr * oExpr * oExpr
-	 (** Resizing rule.
+  | O_rr0 of uLevel * uLevel * oExpr * oExpr * oExpr
+	(** Resizing rule.
 
-	     The type of [O_rr0(M_2,M_1,s,t,e)] is [UU(M_1)], resized downward from [UU M_2].
+	    The type of [O_rr0(M_2,M_1,s,t,e)] is [T_U(M_1)], resized downward from [T_U M_2].
 
-	     By definition, the subexpressions [t] and [e] are not essential.
-	     *)
-   | O_rr1 of uLevel * oExpr * oExpr
-	 (** Resizing rule.
+	    By definition, the subexpressions [t] and [e] are not essential.
+	 *)
+  | O_rr1 of uLevel * oExpr * oExpr
+	(** Resizing rule.
 
-	     The type of [O_rr1(M,a,p)] is [UU(Unumeral 0)], resized downward from [UU M].
+	    The type of [O_rr1(M,a,p)] is [T_U(Unumeral 0)], resized downward from [T_U M].
 
-	     By definition, the subexpression [p] is not essential.
-	     *)
+	    By definition, the subexpression [p] is not essential.
+	 *)
 
 type typingContext = (oVar * tExpr) list
       (** context; [Gamma]; a list of variables with T-expressions representing their declared type. *)
