@@ -1,5 +1,9 @@
 %{ 
 open Typesystem
+let rec mergeOParmList = function 
+    [] -> []
+  | (v :: vr, t) :: pr -> (v,t) :: mergeOParmList ((vr,t) :: pr)
+  | ([], t) :: pr -> mergeOParmList pr
 %}
 %start tExpr oExpr uLevel command derivation
 %type <Typesystem.derivation> derivation
@@ -14,15 +18,19 @@ open Typesystem
 %token <string> Var_token
 %token <int> Nat
 %token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow Wequal Wturnstile Wtriangle Wcolonequal
-%token Kulevel Kumax KPi Klambda
+%token Kulevel Kumax KType KPi Klambda Kj
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
-%token WType WPrint_t WPrint_o WPrint_u WDefinition
+%token WTau WPrint_t WPrint_o WPrint_u WDefinition
 %token Wflush
-%token Prec_application Prec_lambda
+%token Prec_application
 
 /* precedences, lowest first */
+%right KPi
+%right Warrow
 %left Prec_application
-%nonassoc Var_token Wlparen Klambda Wev Wu Wj Wlambda Wforall
+%right Klambda
+%nonassoc Kj
+%nonassoc Var_token Wlparen Wev Wu Wj Wlambda Wforall
 
 %%
 
@@ -30,30 +38,26 @@ command:
 | WPrint_t tExpr Wperiod { Toplevel.Print_t $2 }
 | WPrint_o oExpr Wperiod { Toplevel.Print_o $2 }
 | WPrint_u uLevel Wperiod { Toplevel.Print_u $2 }
-| WType oExpr Wperiod { Toplevel.Type $2 }
-| WDefinition Var_token parmList Wcolonequal tExpr { Toplevel.Definition (Definition ($2,$3,$5)) }
-parmList: uParmList tParmList oParmList { Context (($1,[]),$2,$3) }
-uParmList:
-| { [] }
-| Wlparen uParmListBody Wrparen { $2 }
-uParmListBody:
-| uParm Wcomma uParmListBody { $1 :: $3 }
-| uParm { [$1] }
-uParm: uVar Wcolon Kulevel { $1 }
-tParmList:
-| { [] }
-| Wlparen tParmListBody Wrparen { $2 }
-tParmListBody:
-| tParm Wcomma tParmListBody { $1 :: $3 }
-| tParm { [$1] }
-tParm: tVar Wcolon uLevel { ($1,$3) }
+| WTau oExpr Wperiod { Toplevel.Type $2 }
+| WDefinition Var_token parmList Wcolonequal tExpr Wperiod { Toplevel.Definition (Definition ($2,$3,None,$5)) }
+| WDefinition Var_token parmList Wcolonequal oExpr Wcolon tExpr Wperiod { Toplevel.Definition (Definition ($2,$3,Some $5,$7)) }
+parmList: uParm tParm oParmList { Context (($1,[]),$2,mergeOParmList $3) }
+uParm: Wlparen uVarList Wcolon Kulevel Wrparen { $2 }
+uVarList:
+| uVar { [$1] }
+| uVar Wcomma uVarList { $1 :: $3 }
+tParm: Wlparen tVarList Wcolon KType Wrparen { $2 }
+tVarList:
+| tVar { [$1] }
+| tVar Wcomma tVarList { $1 :: $3 }
+
 oParmList:
 | { [] }
-| Wlparen oParmListBody Wrparen { $2 }
-oParmListBody:
-| oParm Wcomma oParmListBody { $1 :: $3 }
-| oParm { [$1] }
-oParm: oVar Wcolon tExpr { ($1,$3) }
+| oParm oParmList { $1 :: $2 }
+oParm: Wlparen oVarList Wcolon tExpr Wrparen { ($2,$4) }
+oVarList:
+| oVar { [$1] }
+| oVar Wcomma oVarList { $1 :: $3 }
 
 derivation_list:
 | Wlbracket derivation_list_entries Wrbracket { $2 }
@@ -73,10 +77,11 @@ oExpr:
 | oVar { Ovariable $1 }
 | Wu Wlparen uLevel Wrparen { O_u $3 }
 | Wj Wlparen uLevel Wcomma uLevel Wrparen { O_j($3,$5) }
+| Kj Wlparen uLevel Wcomma uLevel Wrparen { O_j($3,$5) }
 | Wev oVar Wrbracket Wlparen oExpr Wcomma oExpr Wcomma tExpr Wrparen { O_ev($5,$7,($2,$9)) }
 | oExpr oExpr %prec Prec_application { O_ev($1,$2,(OVarDummy,Tvariable TVarDummy)) }
 | Wlambda oVar Wrbracket Wlparen tExpr Wcomma oExpr Wrparen { O_lambda($5,($2,$7)) }
-| Klambda oVar Wcolon tExpr Wcomma oExpr %prec Prec_lambda { O_lambda($4,($2,$6)) }
+| Klambda oVar Wcolon tExpr Wcomma oExpr %prec Klambda { O_lambda($4,($2,$6)) }
 | Wforall oVar Wrbracket Wlparen uLevel Wcomma uLevel Wcomma oExpr Wcomma oExpr Wrparen { O_forall($5,$7,$9,($2,$11)) }
 tExpr:
 | Wlparen tExpr Wrparen { $2 }
@@ -85,7 +90,7 @@ tExpr:
 | Wstar oExpr { El $2 }
 | WU Wlparen uLevel Wrparen { T_U $3 }
 | WPi oVar Wrbracket Wlparen tExpr Wcomma tExpr Wrparen { Pi($5,($2,$7)) }
-| KPi oVar Wcolon tExpr Wcomma tExpr { Pi($4,($2,$6)) }
+| KPi oVar Wcolon tExpr Wcomma tExpr %prec KPi { Pi($4,($2,$6)) }
 | tExpr Warrow tExpr { Pi($1,(OVarDummy,$3)) }
 | WSigma oVar Wrbracket Wlparen tExpr Wcomma tExpr Wrparen { Sigma($5,($2,$7)) }
 | WCoprod Wlparen tExpr Wcomma tExpr Wrparen { T_Coprod($3,$5) }

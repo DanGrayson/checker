@@ -20,12 +20,13 @@ rule expr_tokens = parse
   | "Print_o" { WPrint_o }
   | "Print_t" { WPrint_t }
   | "Print_u" { WPrint_u }
-  | "Type" { WType }
+  | "Tau" { WTau }
   | "Definition" { WDefinition }
   | "[El]" { WEl }
   | "[U]" { WU }
   | "[u]" { Wu }
   | "[j]" { Wj }
+  | "j" { Kj }
   | "[Pi;" { WPi }
   | "Pi" { KPi }
   | "lambda" { Klambda }
@@ -39,6 +40,7 @@ rule expr_tokens = parse
   | "[lambda;" { Wlambda }
   | "[forall;" { Wforall }
   | "ulevel" { Kulevel }
+  | "Type" { KType }
   | "umax" { Kumax }
   | '('  { Wlparen }
   | ')'  { Wrparen }

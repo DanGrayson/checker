@@ -7,5 +7,7 @@ checker.byte checker.native: $(SRCFILES); ocamlbuild $(BFLAGS) $@
 clean::; ocamlbuild -clean
 TAGS: $(SRCFILES); ( scripts/etags.ocaml $(SRCFILES) && etags test.ts -o - ) >$@
 clean::; rm -f TAGS
+wc:; wc -l $(SRCFILES) Makefile test.ts
+# add ,p to OCAMLRUNPARAM to get the parser to display a trace
 run: checker.byte; OCAMLRUNPARAM=b ./$< <test.ts
 run.native: checker.native; OCAMLRUNPARAM=b ./$< <test.ts

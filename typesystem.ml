@@ -226,8 +226,8 @@ and oExpr =
 type uContext = uVar list * (uLevel * uLevel) list
 let emptyUContext : uContext = ([],[])
 
-(** t-context; a list of u-variables with u-levels representing their declared universe. *)
-type tContext = (tVar * uLevel) list
+(** t-context; a list of t-variables declared as "Type". *)
+type tContext = tVar list
 let emptyTContext : tContext = []
 
 (** o-context; a list of o-variables with T-expressions representing their declared type. *)
@@ -272,7 +272,7 @@ let d3 = inferenceRule(3,RPo (OVar "x"), [d2])
 
 (* Abbreviations, conventions, and definitions; from the paper *)
 
-type definition = Definition of (* name *) string * (* parameters *) context * (* body *) tExpr
+type definition = Definition of (* name *) string * (* parameters *) context * (* body *) oExpr option * tExpr (* declared type *)
 
 (*
  For emacs:
