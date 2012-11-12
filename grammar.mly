@@ -21,20 +21,20 @@ open Typesystem
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
 %right WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
 
-/* commands: */
+/* commands */
 %token WCheck WType WPrint WSubst WDerive
 
-/* error recovery tokens */
-%token Wflush
+/* other tokens */
+%token Wflush Weof
 
-%token <string> UVar			/* starts with uu */
-%token <string> OVar			/* starts with lower case but not with uu */
-%token <string> TVar			/* starts with upper case */
+%token <string> UVar_token			/* starts with uu */
+%token <string> OVar_token			/* starts with lower case but not with uu */
+%token <string> TVar_token			/* starts with upper case */
 %token <int> Nat
 
-%nonassoc UVar
-%nonassoc OVar
-%nonassoc TVar
+%nonassoc UVar_token
+%nonassoc OVar_token
+%nonassoc TVar_token
 %nonassoc Nat
 
 %%
@@ -62,9 +62,9 @@ expr:
 | oExpr { Oexpr $1 }
 | uLevel { ULevel $1 }
 
-oVar: OVar { OVar $1 }
-tVar: TVar { TVar $1 }
-uVar: UVar { UVar $1 }
+oVar: OVar_token { OVar $1 }
+tVar: TVar_token { TVar $1 }
+uVar: UVar_token { UVar $1 }
 
 oExpr:
 | Wlparen oExpr Wrparen { $2 }

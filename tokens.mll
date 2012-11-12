@@ -1,6 +1,5 @@
 {
  open Basic
- open Printf
  open Grammar
  let error_count = ref 0
  let bump_error_count () =
@@ -57,13 +56,13 @@ rule expr_tokens = parse
   | '|' '-'  { Wturnstile }
   | '|' '>'  { Wtriangle }
   | digit* as n { Nat (int_of_string n) }
-  | ufirst after* as id { UVar id }
-  | tfirst after* as id { TVar id }
-  | ofirst after* as id { OVar id }
+  | ufirst after* as id { UVar_token id }
+  | tfirst after* as id { TVar_token id }
+  | ofirst after* as id { OVar_token id }
   | white { expr_tokens lexbuf }
   | '#' [ ^ '\n' ]* { expr_tokens lexbuf }
   | newline { Lexing.new_line lexbuf; expr_tokens lexbuf }
-  | _ as c { fprintf stderr "%s: invalid character: '%c'\n" (lexing_pos lexbuf) c; 
+  | _ as c { Printf.fprintf stderr "%s: invalid character: '%c'\n" (lexing_pos lexbuf) c; 
 	     flush stderr ;
 	     bump_error_count();
 	     expr_tokens lexbuf }
