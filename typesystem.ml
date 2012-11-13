@@ -223,8 +223,8 @@ and oExpr =
     that defines the admissible subset [A] of the functions [Fu -> nat].  It's just the subset
     that matters.
  *) 
-type uContext = uVar list * (uLevel * uLevel) list
-let emptyUContext : uContext = ([],[])
+type uContext = UContext of uVar list * (uLevel * uLevel) list
+let emptyUContext = UContext ([],[])
 
 (** t-context; a list of t-variables declared as "Type". *)
 type tContext = tVar list
@@ -272,7 +272,10 @@ let d3 = inferenceRule(3,RPo (OVar "x"), [d2])
 
 (* Abbreviations, conventions, and definitions; from the paper *)
 
-type definition = Definition of (* name *) string * (* parameters *) context * (* body *) oExpr option * tExpr (* declared type *)
+type identifier = Ident of string
+type definition = 
+  | TDefinition of identifier * context         * tExpr
+  | ODefinition of identifier * context * oExpr * tExpr
 
 (*
  For emacs:

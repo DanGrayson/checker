@@ -28,7 +28,7 @@ let _ =
       | Toplevel.Print_t x -> Printf.printf "Print_t: %s\n" (Printer.ttostring x); flush stdout
       | Toplevel.Print_o x -> Printf.printf "Print_o: %s\n" (Printer.otostring x); flush stdout
       | Toplevel.Print_u x -> Printf.printf "Print_u: %s\n" (Printer.utostring x); flush stdout
-      | Toplevel.Type  x -> Printf.printf "Type: %s : %s\n" 
+      | Toplevel.Type  x -> Printf.printf "Tau: %s : %s\n" 
 	    (Printer.otostring x) 
 	    (
 	     try
@@ -37,6 +37,6 @@ let _ =
 	       Basic.Error s -> "[[ error: " ^ s ^ " ]]"
 	    );
 	  flush stdout
-      | Toplevel.Definition x -> Printf.printf "Definition: %s\n" "..."; flush stdout
+      | Toplevel.Definition x -> Printf.printf "Definition: %s\n" (Printer.deftostring x); flush stdout
     done;
 

@@ -41,19 +41,24 @@ rule expr_tokens = parse
   | "[forall;" { Wforall }
   | "ulevel" { Kulevel }
   | "Type" { KType }
-  | "umax" { Kumax }
+  | "max" { Kumax }
   | '('  { Wlparen }
   | ')'  { Wrparen }
   | '['  { Wlbracket }
   | '-' '>'  { Warrow }
   | ']'  { Wrbracket }
   | '*'  { Wstar }
+  | ';'  { Wsemi }
   | '.'  { Wperiod }
   | ','  { Wcomma }
   | '/'  { Wslash }
   | '+'  { Wplus }
   | ':'  { Wcolon }
   | '='  { Wequal }
+  | '>' '='  { Wgreaterequal }
+  | '>' { Wgreater }
+  | '<' '='  { Wlessequal }
+  | '<' { Wless }
   | ':' '='  { Wcolonequal }
   | '|' '-'  { Wturnstile }
   | '|' '>'  { Wtriangle }

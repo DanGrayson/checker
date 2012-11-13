@@ -5,15 +5,21 @@ let ovartostring = function
   | OVarGen(i,x) -> x ^ "_" ^ (string_of_int i)
   | OVarDummy -> "_"
 
+let uvartostring = function
+  | UVar x -> x
 let rec utostring = function
   | Unumeral i -> string_of_int i
-  | Uvariable UVar x -> x
+  | Uvariable x -> uvartostring x
   | Uplus (x,n) -> "(" ^ (utostring x) ^ "+" ^ (string_of_int n) ^ ")"
-  | Umax (x,y) -> "umax(" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
+  | Umax (x,y) -> "max(" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
+let ueqntostring (u,v) = ";" ^ (utostring u) ^ "=" ^ (utostring v)
+
+let tvartostring = function
+  | TVar x -> x
+  | TVarDummy -> "__Unknown_type__"
 
 let rec ttostring = function
-  | Tvariable TVar x -> x
-  | Tvariable TVarDummy -> "__Unknown_type__"
+  | Tvariable x -> tvartostring x
   | El x -> "[El](" ^ (otostring x) ^ ")"
   | T_U x -> "[U](" ^ (utostring x) ^ ")"
   | Pi (t1,(x,t2)) -> "[Pi;" ^ (ovartostring x) ^ "](" ^ (ttostring t1) ^ "," ^ (ttostring t2) ^ ")"
@@ -66,3 +72,15 @@ let jtostring = function
   | TypeJ _ -> "type judgement"
   | TypeEqJ _ -> "type equality judgement"
   | ObjEqJ _ -> "object equality judgement"
+
+let parmstostring = function
+  | Context(UContext(uvars,ueqns),tc,oc) 
+    ->
+      "(" ^ (String.concat "," (List.map uvartostring uvars)) ^ ":ulevel"^
+      (String.concat "" (List.map ueqntostring ueqns)) ^
+      ")"^
+      "(" ^ (String.concat "," (List.map tvartostring tc)) ^ ":Type)"
+
+let deftostring = function
+  | TDefinition (Ident name,c,t) -> "Definition "^name^(parmstostring c)^" := "^(ttostring t)^"."
+  | ODefinition (Ident name,c,o,t) -> "Definition "^name^(parmstostring c)^" := "^(otostring o)^" : "^(ttostring t)^"."

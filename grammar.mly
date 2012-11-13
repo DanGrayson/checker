@@ -18,6 +18,7 @@ let rec mergeOParmList = function
 %token <string> Var_token
 %token <int> Nat
 %token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow Wequal Wturnstile Wtriangle Wcolonequal
+%token Wgreaterequal Wgreater Wlessequal Wless Wsemi
 %token Kulevel Kumax KType KPi Klambda Kj
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
 %token WTau WPrint_t WPrint_o WPrint_u WDefinition
@@ -39,13 +40,23 @@ command:
 | WPrint_o oExpr Wperiod { Toplevel.Print_o $2 }
 | WPrint_u uLevel Wperiod { Toplevel.Print_u $2 }
 | WTau oExpr Wperiod { Toplevel.Type $2 }
-| WDefinition Var_token parmList Wcolonequal tExpr Wperiod { Toplevel.Definition (Definition ($2,$3,None,$5)) }
-| WDefinition Var_token parmList Wcolonequal oExpr Wcolon tExpr Wperiod { Toplevel.Definition (Definition ($2,$3,Some $5,$7)) }
-parmList: uParm tParm oParmList { Context (($1,[]),$2,mergeOParmList $3) }
-uParm: Wlparen uVarList Wcolon Kulevel Wrparen { $2 }
+| WDefinition Var_token parmList Wcolonequal tExpr Wperiod { Toplevel.Definition (TDefinition (Ident $2,$3,$5)) }
+| WDefinition Var_token parmList Wcolonequal oExpr Wcolon tExpr Wperiod { Toplevel.Definition (ODefinition (Ident $2,$3,$5,$7)) }
+parmList: uParm tParm oParmList { Context ($1,$2,mergeOParmList $3) }
+uParm: Wlparen uVarList Wcolon Kulevel uEquationList Wrparen { UContext ($2,$5) }
 uVarList:
 | uVar { [$1] }
 | uVar Wcomma uVarList { $1 :: $3 }
+uEquationList:
+| { [] }
+| Wsemi uEquation uEquationList { $2 :: $3 }
+uEquation:
+| uLevel Wequal uLevel { ($1,$3) }
+| uLevel Wgreaterequal uLevel { (Umax($1,$3),$1) }
+| uLevel Wlessequal uLevel { (Umax($1,$3),$3) }
+| uLevel Wgreater uLevel { (Umax($1,Uplus($3,1)),$1) }
+| uLevel Wless uLevel { (Umax(Uplus($1,1),$3),$3) }
+
 tParm: Wlparen tVarList Wcolon KType Wrparen { $2 }
 tVarList:
 | tVar { [$1] }
@@ -106,3 +117,4 @@ uLevel:
 | uVar { Uvariable $1 }
 | uLevel Wplus Nat { Uplus ($1, $3) }
 | Kumax Wlparen uLevel Wcomma uLevel Wrparen { Umax ($3,$5)  }
+

@@ -4,7 +4,7 @@ Print_t [El](x).
 Print_t [U](u4).
 Print_o [j](u1, u2).
 Print_t *[u](u4).
-Print_u umax((u1+1+0)+4,2).
+Print_u max((u1+1+0)+4,2).
 Print_t [Sigma;x](T,T').
 Print_t [Coprod](T,T').
 Print_t [Coprod;x,x'](T,T',U,U',o).
@@ -27,6 +27,7 @@ Tau [ev;x](f,o,*x).
 Tau [lambda;x](T,x).
 Tau [forall;x](u1,u2,o,o').
 
+Definition Exmpl (u1,u2,u3 : ulevel)(X:Type) := X->X .
 Definition Exmpl (u1,u2,u3 : ulevel)(X1:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := [U](u2) .
-Definition Exmpl (u1,u2,u3 : ulevel)(X1:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := j (x1, x2) : [U](u2) .
+Definition Exmpl (u1,u2,u3 : ulevel)(X1, X2:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := j (x1, x2) : [U](u2) .
 Definition Exmpl (u1,u2,u3 : ulevel; max(u1,u2)=max(u2,u3); u1 >= u2+1 )(X1:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := j (x1, x2) : [U](u2) .
