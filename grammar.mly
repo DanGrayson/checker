@@ -27,7 +27,7 @@ let fixParmList (p:parm list) : context =
   in fix [] [] [] p
 
 %}
-%start tExpr oExpr uLevel command derivation
+%start command derivation
 %type <Typesystem.derivation> derivation
 %type <Typesystem.tExpr> tExpr
 %type <Typesystem.oExpr> oExpr
@@ -46,6 +46,7 @@ let fixParmList (p:parm list) : context =
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
 %token WTau WPrint_t WPrint_o WPrint_u WDefine WDeclare WShow WExit
 %token Wflush
+%token UnusedToken
 %token Prec_application
 
 /* precedences, lowest first */
@@ -68,6 +69,7 @@ command:
 | WDefine Var_token parmList Wcolonequal oExpr Wcolon tExpr Wperiod { Toplevel.Notation (Definition (Ident $2,fixParmList $3,$5,$7)) }
 | WShow Wperiod { Toplevel.Show }
 | WExit Wperiod { Toplevel.Exit }
+| UnusedToken Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile Wempty Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile { Toplevel.Exit }
 
 varList:
 | Var_token { [$1] }

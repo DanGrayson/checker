@@ -54,7 +54,7 @@ let _ =
     | Toplevel.Show -> 
 	Printf.printf "Show:\n";
 	let p = List.rev_append notations [] in
-	List.map (fun x -> Printf.printf "   "; printnotation (snd x)) p;
+	List.iter (fun x -> Printf.printf "   "; printnotation (snd x)) p;
 	continue notations
   in
   process [];

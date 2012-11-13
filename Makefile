@@ -1,5 +1,5 @@
 BFLAGS = -cflags -g,-annot -lflags -g -yaccflag -v
-# BFLAGS += -use-menhir
+BFLAGS += -use-menhir
 # BFLAGS += -verbose 0
 SRCFILES = basic.ml typesystem.ml substitute.ml printer.ml tau.ml scheme.ml grammar.mly tokens.mll toplevel.ml checker.ml 
 all: TAGS run
