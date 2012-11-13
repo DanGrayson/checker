@@ -27,9 +27,10 @@ Tau [ev;x](f,o,*x).
 Tau [lambda;x](T,x).
 Tau [forall;x](u1,u2,o,o').
 
-Definition Exmpl (u:ulevel)(X:Type)(x:X) := X.
-Definition Exmpl (u:ulevel)(X:Type)(x:X) := x.
-Definition Exmpl (u1,u2,u3 : ulevel)(X:Type) := X->X .
-Definition Exmpl (u1,u2,u3 : ulevel)(X1:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := [U](u2) .
-Definition Exmpl (u1,u2,u3 : ulevel)(X1, X2:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := j (x1, x2) : [U](u2) .
-Definition Exmpl (u1,u2,u3 : ulevel; max(u1,u2)=max(u2,u3); u1 >= u2+1 )(X1:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := j (x1, x2) : [U](u2) .
+tDefinition Exmpl (u:ulevel)(X:Type)(x:X) := X.
+oDefinition Exmpl (u:ulevel)(X:Type)(x:X) := x : X.
+tDefinition Exmpl (u1,u2,u3 : ulevel)(X:Type) := X->X .
+tDefinition Exmpl (u1,u2,u3 : ulevel)(X1:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := [U](u2) .
+oDefinition Exmpl (u1,u2,u3 : ulevel)(X1, X2:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := j (x1, x2) .
+oDefinition Exmpl (u1,u2,u3 : ulevel)(X1, X2:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := j (x1, x2) : [U](u2) .
+oDefinition Exmpl (u1,u2,u3 : ulevel; max(u1,u2)=max(u2,u3); u1 >= u2+1 )(X1:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := j (x1, x2) : [U](u2) .

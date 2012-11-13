@@ -1,4 +1,4 @@
-%{ 
+%{
 open Typesystem
 let rec mergeOParmList = function 
     [] -> []
@@ -21,7 +21,7 @@ let rec mergeOParmList = function
 %token Wgreaterequal Wgreater Wlessequal Wless Wsemi
 %token Kulevel Kumax KType KPi Klambda Kj
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
-%token WTau WPrint_t WPrint_o WPrint_u WDefinition
+%token WTau WPrint_t WPrint_o WPrint_u WoDefinition WtDefinition
 %token Wflush
 %token Prec_application
 
@@ -40,8 +40,9 @@ command:
 | WPrint_o oExpr Wperiod { Toplevel.Print_o $2 }
 | WPrint_u uLevel Wperiod { Toplevel.Print_u $2 }
 | WTau oExpr Wperiod { Toplevel.Type $2 }
-| WDefinition Var_token parmList Wcolonequal tExpr Wperiod { Toplevel.Definition (TDefinition (Ident $2,$3,$5)) }
-| WDefinition Var_token parmList Wcolonequal oExpr Wcolon tExpr Wperiod { Toplevel.Definition (ODefinition (Ident $2,$3,$5,$7)) }
+| WtDefinition Var_token parmList Wcolonequal tExpr Wperiod { Toplevel.Definition (TDefinition (Ident $2,$3,$5)) }
+| WoDefinition Var_token parmList Wcolonequal oExpr Wperiod { Toplevel.Definition (ODefinition (Ident $2,$3,$5,Tvariable TVarDummy)) }
+| WoDefinition Var_token parmList Wcolonequal oExpr Wcolon tExpr Wperiod { Toplevel.Definition (ODefinition (Ident $2,$3,$5,$7)) }
 parmList: uParm tParm oParmList { Context ($1,$2,mergeOParmList $3) }
 uParm: Wlparen uVarList Wcolon Kulevel uEquationList Wrparen { UContext ($2,$5) }
 uVarList:
