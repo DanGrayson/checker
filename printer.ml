@@ -82,7 +82,7 @@ let parmstostring = function
       (String.concat "" (List.map ueqntostring ueqns)) ^
       ")"^
       "(" ^ (String.concat "," (List.map tvartostring tc)) ^ ":Type)"^
-      "(" ^ (String.concat "," (List.map octostring oc)) ^ ")"
+      "(" ^ (String.concat ")(" (List.map octostring oc)) ^ ")"
 
 let deftostring = function
   | Definition (Ident name,c,o,t) -> "Define "^name^(parmstostring c)^" := "^(otostring o)^" : "^(ttostring t)^"."

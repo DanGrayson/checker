@@ -46,8 +46,10 @@ rule expr_tokens = parse
   | '('  { Wlparen }
   | ')'  { Wrparen }
   | '['  { Wlbracket }
-  | '-' '>'  { Warrow }
   | ']'  { Wrbracket }
+  | '{'  { Wlbrace }
+  | '}'  { Wrbrace }
+  | '-' '>'  { Warrow }
   | '*'  { Wstar }
   | ';'  { Wsemi }
   | '.'  { Wperiod }

@@ -30,6 +30,6 @@ Tau [forall;x](u1,u2,o,o').
 Define Exmpl (u:ulevel)(X:Type)(x:X) := x : X.
 Declare Exmpl (u1,u2,u3 : ulevel)(X:Type) := X->X .
 Declare Exmpl (u1,u2,u3 : ulevel)(X1:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := [U](u2) .
-Define Exmpl (u1,u2,u3 : ulevel)(X1, X2:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := j (x1, x2) .
 Define Exmpl (u1,u2,u3 : ulevel)(X1, X2:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := j (x1, x2) : [U](u2) .
 Define Exmpl (u1,u2,u3 : ulevel; max(u1,u2)=max(u2,u3); u1 >= u2+1 )(X1:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := j (x1, x2) : [U](u2) .
+Define Exmpl (u1,u2,u3 : ulevel)(X1, X2:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := j (x1, x2) .

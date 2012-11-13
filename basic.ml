@@ -1,6 +1,7 @@
 exception Error of string
 exception GensymCounterOverflow
 exception NotImplemented
+exception Unimplemented of string
 exception InternalError
 exception VariableNotInContext
 exception NoMatchingRule

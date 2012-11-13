@@ -13,6 +13,12 @@ let rec protect parser lexbuf =
 	Tokens.bump_error_count();
 	let _ = Tokens.command_flush lexbuf in
 	protect parser lexbuf
+    | Basic.Unimplemented s ->
+	Printf.fprintf stderr "%s: feature not implemented yet: %s\n" (Tokens.lexing_pos lexbuf) s;
+	flush stderr;
+	Tokens.bump_error_count();
+	let _ = Tokens.command_flush lexbuf in
+	protect parser lexbuf
     | Parsing.Parse_error -> 
 	Printf.fprintf stderr "%s: syntax error\n" (Tokens.lexing_pos lexbuf);
 	flush stderr;

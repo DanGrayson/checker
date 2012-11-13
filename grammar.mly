@@ -1,9 +1,31 @@
 %{
 open Typesystem
-let rec mergeOParmList = function 
-    [] -> []
-  | (v :: vr, t) :: pr -> (v,t) :: mergeOParmList ((vr,t) :: pr)
-  | ([], t) :: pr -> mergeOParmList pr
+
+type parm =
+  | UParm of uContext
+  | TParm of tContext
+  | OParm of oContext
+
+let fixParmList (p:parm list) : context =
+  let rec fix us ts os p =
+    match p with 
+    | UParm u :: p -> 
+	if List.length ts > 0 or List.length os > 0 then raise (Basic.Error "expected ulevel variables first");
+	fix (u::us) ts os p
+    | TParm t :: p -> 
+	if List.length os > 0 then raise (Basic.Error "expected type variables before object variables");
+	fix us (t::ts) os p
+    | OParm o :: p -> fix us ts (o::os) p
+    | [] -> ( 
+	let tc = List.flatten (List.rev_append ts [])
+	and oc = List.flatten (List.rev_append os [])
+	and uc = match (List.rev_append us []) with
+	| [] -> emptyUContext
+	| (uc :: []) -> uc
+	| _ -> raise (Basic.Unimplemented "merging of ulevel variable lists")
+	in Context(uc,tc,oc))
+  in fix [] [] [] p
+
 %}
 %start tExpr oExpr uLevel command derivation
 %type <Typesystem.derivation> derivation
@@ -18,6 +40,7 @@ let rec mergeOParmList = function
 %token <string> Var_token
 %token <int> Nat
 %token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow Wequal Wturnstile Wtriangle Wcolonequal
+%token Wlbrace Wrbrace
 %token Wgreaterequal Wgreater Wlessequal Wless Wsemi
 %token Kulevel Kumax KType KPi Klambda Kj
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
@@ -40,15 +63,17 @@ command:
 | WPrint_o oExpr Wperiod { Toplevel.Print_o $2 }
 | WPrint_u uLevel Wperiod { Toplevel.Print_u $2 }
 | WTau oExpr Wperiod { Toplevel.Type $2 }
-| WDeclare Var_token parmList Wcolonequal tExpr Wperiod { Toplevel.Declaration (Declaration (Ident $2,$3,$5)) }
-| WDefine Var_token parmList Wcolonequal oExpr Wperiod { Toplevel.Definition (Definition (Ident $2,$3,$5,Tvariable TVarDummy)) }
-| WDefine Var_token parmList Wcolonequal oExpr Wcolon tExpr Wperiod { Toplevel.Definition (Definition (Ident $2,$3,$5,$7)) }
-parmList: uParm tParm oParmList { Context ($1,$2,mergeOParmList $3) }
-uParm: 
-| Wlparen uVarList Wcolon Kulevel uEquationList Wrparen { UContext ($2,$5) }
-uVarList:
-| uVar { [$1] }
-| uVar Wcomma uVarList { $1 :: $3 }
+| WDeclare Var_token parmList Wcolonequal tExpr Wperiod { Toplevel.Declaration (Declaration (Ident $2,fixParmList $3,$5)) }
+| WDefine Var_token parmList Wcolonequal oExpr Wperiod { Toplevel.Definition (Definition (Ident $2,fixParmList $3,$5,Tvariable TVarDummy)) }
+| WDefine Var_token parmList Wcolonequal oExpr Wcolon tExpr Wperiod { Toplevel.Definition (Definition (Ident $2,fixParmList $3,$5,$7)) }
+
+varList:
+| Var_token { [$1] }
+| Var_token Wcomma varList { $1 :: $3 }
+uParm: varList Wcolon Kulevel uEquationList { UParm (UContext ((List.map (fun s -> UVar s) $1),$4)) }
+tParm: varList Wcolon KType { TParm (List.map (fun s -> TVar s) $1) }
+oParm: varList Wcolon tExpr { OParm (List.map (fun s -> (OVar s,$3)) $1) }
+
 uEquationList:
 | { [] }
 | Wsemi uEquation uEquationList { $2 :: $3 }
@@ -59,18 +84,13 @@ uEquation:
 | uLevel Wgreater uLevel { (Umax($1,Uplus($3,1)),$1) }
 | uLevel Wless uLevel { (Umax(Uplus($1,1),$3),$3) }
 
-tParm: Wlparen tVarList Wcolon KType Wrparen { $2 }
-tVarList:
-| tVar { [$1] }
-| tVar Wcomma tVarList { $1 :: $3 }
-
-oParmList:
+parmList:
 | { [] }
-| oParm oParmList { $1 :: $2 }
-oParm: Wlparen oVarList Wcolon tExpr Wrparen { ($2,$4) }
-oVarList:
-| oVar { [$1] }
-| oVar Wcomma oVarList { $1 :: $3 }
+| Wlparen parm Wrparen parmList { $2 :: $4 }
+parm:
+| uParm { $1 } 
+| tParm { $1 }
+| oParm { $1 } 
 
 derivation_list:
 | Wlbracket derivation_list_entries Wrbracket { $2 }
