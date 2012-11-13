@@ -27,16 +27,10 @@ let fixParmList (p:parm list) : context =
   in fix [] [] [] p
 
 %}
-%start command derivation
+%start command derivation unusedtokens
 %type <Typesystem.derivation> derivation
-%type <Typesystem.tExpr> tExpr
-%type <Typesystem.oExpr> oExpr
-%type <Typesystem.uLevel> uLevel
 %type <Toplevel.command> command
-%type <Typesystem.uVar> uVar
-%type <Typesystem.tVar> tVar
-%type <Typesystem.oVar> oVar
-
+%type <unit> unusedtokens
 %token <string> Var_token
 %token <int> Nat
 %token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow Wequal Wturnstile Wtriangle Wcolonequal
@@ -46,7 +40,6 @@ let fixParmList (p:parm list) : context =
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
 %token WTau WPrint_t WPrint_o WPrint_u WDefine WDeclare WShow WExit
 %token Wflush
-%token UnusedToken
 %token Prec_application
 
 /* precedences, lowest first */
@@ -60,16 +53,17 @@ let fixParmList (p:parm list) : context =
 %%
 
 command:
-| WPrint_t tExpr Wperiod { Toplevel.Print_t $2 }
-| WPrint_o oExpr Wperiod { Toplevel.Print_o $2 }
-| WPrint_u uLevel Wperiod { Toplevel.Print_u $2 }
+| WPrint_t t=tExpr Wperiod { Toplevel.Print_t t }
+| WPrint_o o=oExpr Wperiod { Toplevel.Print_o o }
+| WPrint_u u=uLevel Wperiod { Toplevel.Print_u u }
 | WTau oExpr Wperiod { Toplevel.Type $2 }
 | WDeclare Var_token parmList Wcolonequal tExpr Wperiod { Toplevel.Notation (Declaration (Ident $2,fixParmList $3,$5)) }
 | WDefine Var_token parmList Wcolonequal oExpr Wperiod { Toplevel.Notation (Definition (Ident $2,fixParmList $3,$5,Tvariable TVarDummy)) }
 | WDefine Var_token parmList Wcolonequal oExpr Wcolon tExpr Wperiod { Toplevel.Notation (Definition (Ident $2,fixParmList $3,$5,$7)) }
 | WShow Wperiod { Toplevel.Show }
 | WExit Wperiod { Toplevel.Exit }
-| UnusedToken Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile Wempty Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile { Toplevel.Exit }
+
+unusedtokens: Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile Wempty Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile { () }
 
 varList:
 | Var_token { [$1] }
