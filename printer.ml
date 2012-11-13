@@ -73,14 +73,17 @@ let jtostring = function
   | TypeEqJ _ -> "type equality judgement"
   | ObjEqJ _ -> "object equality judgement"
 
+let octostring (v,t) = (ovartostring v) ^ ":" ^ (ttostring t)
+
 let parmstostring = function
   | Context(UContext(uvars,ueqns),tc,oc) 
     ->
       "(" ^ (String.concat "," (List.map uvartostring uvars)) ^ ":ulevel"^
       (String.concat "" (List.map ueqntostring ueqns)) ^
       ")"^
-      "(" ^ (String.concat "," (List.map tvartostring tc)) ^ ":Type)"
+      "(" ^ (String.concat "," (List.map tvartostring tc)) ^ ":Type)"^
+      "(" ^ (String.concat "," (List.map octostring oc)) ^ ")"
 
 let deftostring = function
-  | TDefinition (Ident name,c,t) -> "Definition "^name^(parmstostring c)^" := "^(ttostring t)^"."
-  | ODefinition (Ident name,c,o,t) -> "Definition "^name^(parmstostring c)^" := "^(otostring o)^" : "^(ttostring t)^"."
+  | TDefinition (Ident name,c,t) -> "t-Definition "^name^(parmstostring c)^" := "^(ttostring t)^"."
+  | ODefinition (Ident name,c,o,t) -> "o-Definition "^name^(parmstostring c)^" := "^(otostring o)^" : "^(ttostring t)^"."
