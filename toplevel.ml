@@ -5,3 +5,4 @@ type command =
   | Print_t of tExpr
   | Type of oExpr
   | Definition of definition
+  | Declaration of declaration

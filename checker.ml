@@ -38,5 +38,6 @@ let _ =
 	    );
 	  flush stdout
       | Toplevel.Definition x -> Printf.printf "Definition: %s\n" (Printer.deftostring x); flush stdout
+      | Toplevel.Declaration x -> Printf.printf "Declaration: %s\n" (Printer.dectostring x); flush stdout
     done;
 

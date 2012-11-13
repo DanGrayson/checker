@@ -273,9 +273,10 @@ let d3 = inferenceRule(3,RPo (OVar "x"), [d2])
 (* Abbreviations, conventions, and definitions; from the paper *)
 
 type identifier = Ident of string
+type declaration = 
+  | Declaration of identifier * context         * tExpr
 type definition = 
-  | TDefinition of identifier * context         * tExpr
-  | ODefinition of identifier * context * oExpr * tExpr
+  | Definition  of identifier * context * oExpr * tExpr
 
 (*
  For emacs:

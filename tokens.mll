@@ -21,8 +21,8 @@ rule expr_tokens = parse
   | "Print_t" { WPrint_t }
   | "Print_u" { WPrint_u }
   | "Tau" { WTau }
-  | "tDefinition" { WtDefinition }
-  | "oDefinition" { WoDefinition }
+  | "Declare" { WDeclare }
+  | "Define" { WDefine }
   | "[El]" { WEl }
   | "[U]" { WU }
   | "[u]" { Wu }
