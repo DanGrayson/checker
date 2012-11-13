@@ -30,8 +30,8 @@ let notation_name = function
   | Typesystem.Declaration(name,_,_) -> name
   | Typesystem.Definition(name,_,_,_) -> name
 let printnotation = function
-  | Typesystem.Declaration(name,_,_) as x -> Printf.printf "Declaration: %s\n" (Printer.notationtostring x)
-  | Typesystem.Definition(name,_,_,_) as x -> Printf.printf "Definition: %s\n" (Printer.notationtostring x)
+  | Typesystem.Declaration(name,_,_) as x -> Printf.printf "%s\n" (Printer.notationtostring x)
+  | Typesystem.Definition(name,_,_,_) as x -> Printf.printf "%s\n" (Printer.notationtostring x)
 
 let _ = 
   let lexbuf = Lexing.from_channel stdin in
@@ -48,7 +48,7 @@ let _ =
 	  (try Printer.ttostring (Tau.tau [] x) with Basic.Error s -> "[[ error: " ^ s ^ " ]]");
 	continue notations
     | Toplevel.Notation x ->
- 	Printf.printf "Declaration: %s\n" (Printer.notationtostring x);
+ 	Printf.printf "Notation: %s\n" (Printer.notationtostring x);
 	continue ((notation_name x,x) :: notations)
     | Toplevel.Exit -> ()
     | Toplevel.Show -> 
