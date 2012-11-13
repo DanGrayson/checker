@@ -23,6 +23,8 @@ rule expr_tokens = parse
   | "Tau" { WTau }
   | "Declare" { WDeclare }
   | "Define" { WDefine }
+  | "Exit" { WExit }
+  | "Show" { WShow }
   | "[El]" { WEl }
   | "[U]" { WU }
   | "[u]" { Wu }

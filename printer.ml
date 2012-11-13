@@ -84,7 +84,6 @@ let parmstostring = function
       "(" ^ (String.concat "," (List.map tvartostring tc)) ^ ":Type)"^
       "(" ^ (String.concat ")(" (List.map octostring oc)) ^ ")"
 
-let deftostring = function
+let notationtostring = function
   | Definition (Ident name,c,o,t) -> "Define "^name^(parmstostring c)^" := "^(otostring o)^" : "^(ttostring t)^"."
-let dectostring = function
   | Declaration (Ident name,c,t) -> "Declare "^name^(parmstostring c)^" := "^(ttostring t)^"."

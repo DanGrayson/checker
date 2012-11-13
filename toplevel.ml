@@ -4,5 +4,6 @@ type command =
   | Print_u of uLevel
   | Print_t of tExpr
   | Type of oExpr
-  | Definition of definition
-  | Declaration of declaration
+  | Notation of notation
+  | Show
+  | Exit

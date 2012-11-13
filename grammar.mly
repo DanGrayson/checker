@@ -44,7 +44,7 @@ let fixParmList (p:parm list) : context =
 %token Wgreaterequal Wgreater Wlessequal Wless Wsemi
 %token Kulevel Kumax KType KPi Klambda Kj
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
-%token WTau WPrint_t WPrint_o WPrint_u WDefine WDeclare
+%token WTau WPrint_t WPrint_o WPrint_u WDefine WDeclare WShow WExit
 %token Wflush
 %token Prec_application
 
@@ -63,9 +63,11 @@ command:
 | WPrint_o oExpr Wperiod { Toplevel.Print_o $2 }
 | WPrint_u uLevel Wperiod { Toplevel.Print_u $2 }
 | WTau oExpr Wperiod { Toplevel.Type $2 }
-| WDeclare Var_token parmList Wcolonequal tExpr Wperiod { Toplevel.Declaration (Declaration (Ident $2,fixParmList $3,$5)) }
-| WDefine Var_token parmList Wcolonequal oExpr Wperiod { Toplevel.Definition (Definition (Ident $2,fixParmList $3,$5,Tvariable TVarDummy)) }
-| WDefine Var_token parmList Wcolonequal oExpr Wcolon tExpr Wperiod { Toplevel.Definition (Definition (Ident $2,fixParmList $3,$5,$7)) }
+| WDeclare Var_token parmList Wcolonequal tExpr Wperiod { Toplevel.Notation (Declaration (Ident $2,fixParmList $3,$5)) }
+| WDefine Var_token parmList Wcolonequal oExpr Wperiod { Toplevel.Notation (Definition (Ident $2,fixParmList $3,$5,Tvariable TVarDummy)) }
+| WDefine Var_token parmList Wcolonequal oExpr Wcolon tExpr Wperiod { Toplevel.Notation (Definition (Ident $2,fixParmList $3,$5,$7)) }
+| WShow Wperiod { Toplevel.Show }
+| WExit Wperiod { Toplevel.Exit }
 
 varList:
 | Var_token { [$1] }

@@ -26,24 +26,36 @@ let rec protect parser lexbuf =
 	let _ = Tokens.command_flush lexbuf in
 	protect parser lexbuf
 
+let notation_name = function
+  | Typesystem.Declaration(name,_,_) -> name
+  | Typesystem.Definition(name,_,_,_) -> name
+let printnotation = function
+  | Typesystem.Declaration(name,_,_) as x -> Printf.printf "Declaration: %s\n" (Printer.notationtostring x)
+  | Typesystem.Definition(name,_,_,_) as x -> Printf.printf "Definition: %s\n" (Printer.notationtostring x)
+
 let _ = 
   let lexbuf = Lexing.from_channel stdin in
-    lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = "test.ts"};
-    while true do
-      match protect (Grammar.command Tokens.expr_tokens) lexbuf with 
-      | Toplevel.Print_t x -> Printf.printf "Print_t: %s\n" (Printer.ttostring x); flush stdout
-      | Toplevel.Print_o x -> Printf.printf "Print_o: %s\n" (Printer.otostring x); flush stdout
-      | Toplevel.Print_u x -> Printf.printf "Print_u: %s\n" (Printer.utostring x); flush stdout
-      | Toplevel.Type  x -> Printf.printf "Tau: %s : %s\n" 
-	    (Printer.otostring x) 
-	    (
-	     try
-	       Printer.ttostring (Tau.tau [] x)
-	     with 
-	       Basic.Error s -> "[[ error: " ^ s ^ " ]]"
-	    );
-	  flush stdout
-      | Toplevel.Definition x -> Printf.printf "Definition: %s\n" (Printer.deftostring x); flush stdout
-      | Toplevel.Declaration x -> Printf.printf "Declaration: %s\n" (Printer.dectostring x); flush stdout
-    done;
-
+  lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = "test.ts"};
+  let parser = Grammar.command Tokens.expr_tokens in
+  let rec process = function notations ->
+    let continue notations = flush stdout; process notations in
+    match protect parser lexbuf with 
+    | Toplevel.Print_t x -> Printf.printf "Print_t: %s\n" (Printer.ttostring x); continue notations
+    | Toplevel.Print_o x -> Printf.printf "Print_o: %s\n" (Printer.otostring x); continue notations
+    | Toplevel.Print_u x -> Printf.printf "Print_u: %s\n" (Printer.utostring x); continue notations
+    | Toplevel.Type  x -> Printf.printf "Tau: %s : %s\n" 
+	  (Printer.otostring x) 
+	  (try Printer.ttostring (Tau.tau [] x) with Basic.Error s -> "[[ error: " ^ s ^ " ]]");
+	continue notations
+    | Toplevel.Notation x ->
+ 	Printf.printf "Declaration: %s\n" (Printer.notationtostring x);
+	continue ((notation_name x,x) :: notations)
+    | Toplevel.Exit -> ()
+    | Toplevel.Show -> 
+	Printf.printf "Show:\n";
+	let p = List.rev_append notations [] in
+	List.map (fun x -> Printf.printf "   "; printnotation (snd x)) p;
+	continue notations
+  in
+  process [];
+  Printf.printf "Exit."
