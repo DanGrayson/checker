@@ -13,7 +13,7 @@ let fixParmList (p:parm list) : context =
 	if List.length ts > 0 or List.length os > 0 then raise (Basic.Error "expected ulevel variables first");
 	fix (u::us) ts os p
     | TParm t :: p -> 
-	if List.length os > 0 then raise (Basic.Error "expected type variables before object variables");
+	if List.length os > 0 then raise (Basic.Unimplemented "a type parameter after an object parameter");
 	fix us (t::ts) os p
     | OParm o :: p -> fix us ts (o::os) p
     | [] -> ( 
@@ -58,7 +58,7 @@ command:
 | WPrint_u u=uLevel Wperiod { Toplevel.Print_u u }
 | WTau oExpr Wperiod { Toplevel.Type $2 }
 | WDeclare Var_token parmList Wcolonequal tExpr Wperiod { Toplevel.Notation (Declaration (Ident $2,fixParmList $3,$5)) }
-| WDefine Var_token parmList Wcolonequal oExpr Wperiod { Toplevel.Notation (Definition (Ident $2,fixParmList $3,$5,Tvariable TVarDummy)) }
+| WDefine Var_token parmList Wcolonequal oExpr Wperiod { Toplevel.Notation (Definition (Ident $2,fixParmList $3,$5,(Tvariable TVarDummy, Position($startpos, $endpos)))) }
 | WDefine Var_token parmList Wcolonequal oExpr Wcolon tExpr Wperiod { Toplevel.Notation (Definition (Ident $2,fixParmList $3,$5,$7)) }
 | WShow Wperiod { Toplevel.Show }
 | WExit Wperiod { Toplevel.Exit }
@@ -72,9 +72,8 @@ uParm: varList Wcolon Kulevel uEquationList { UParm (UContext ((List.map (fun s 
 tParm: varList Wcolon KType { TParm (List.map (fun s -> TVar s) $1) }
 oParm: varList Wcolon tExpr { OParm (List.map (fun s -> (OVar s,$3)) $1) }
 
-uEquationList:
-| { [] }
-| Wsemi uEquation uEquationList { $2 :: $3 }
+uEquationList: l=semi_and_uEquation* {l}
+semi_and_uEquation: Wsemi; e=uEquation; {e}
 uEquation:
 | uLevel Wequal uLevel { ($1,$3) }
 | uLevel Wgreaterequal uLevel { (Umax($1,$3),$1) }
@@ -110,12 +109,13 @@ oExpr:
 | Wj Wlparen uLevel Wcomma uLevel Wrparen { O_j($3,$5) }
 | Kj Wlparen uLevel Wcomma uLevel Wrparen { O_j($3,$5) }
 | Wev oVar Wrbracket Wlparen oExpr Wcomma oExpr Wcomma tExpr Wrparen { O_ev($5,$7,($2,$9)) }
-| oExpr oExpr %prec Prec_application { O_ev($1,$2,(OVarDummy,Tvariable TVarDummy)) }
+| oExpr oExpr %prec Prec_application { O_ev($1,$2,(OVarDummy,(Tvariable TVarDummy, Position($startpos, $endpos)))) }
 | Wlambda oVar Wrbracket Wlparen tExpr Wcomma oExpr Wrparen { O_lambda($5,($2,$7)) }
 | Klambda oVar Wcolon tExpr Wcomma oExpr %prec Klambda { O_lambda($4,($2,$6)) }
 | Wforall oVar Wrbracket Wlparen uLevel Wcomma uLevel Wcomma oExpr Wcomma oExpr Wrparen { O_forall($5,$7,$9,($2,$11)) }
-tExpr:
-| Wlparen tExpr Wrparen { $2 }
+tExpr: mark_position(tExpr0) {$1}
+tExpr0:
+| Wlparen tExpr0 Wrparen { $2 }
 | tVar { Tvariable $1 }
 | WEl Wlparen oExpr Wrparen { El $3 }
 | Wstar oExpr { El $2 }
@@ -137,3 +137,4 @@ uLevel:
 | uVar { Uvariable $1 }
 | uLevel Wplus Nat { Uplus ($1, $3) }
 | Kumax Wlparen uLevel Wcomma uLevel Wrparen { Umax ($3,$5)  }
+mark_position(a): x=a { x, Position($startpos, $endpos) }

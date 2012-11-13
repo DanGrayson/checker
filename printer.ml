@@ -19,6 +19,8 @@ let tvartostring = function
   | TVarDummy -> "__Unknown_type__"
 
 let rec ttostring = function
+  | (t,_) -> ttostring' t
+and ttostring' = function
   | Tvariable x -> tvartostring x
   | El x -> "[El](" ^ (otostring x) ^ ")"
   | T_U x -> "[U](" ^ (utostring x) ^ ")"

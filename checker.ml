@@ -14,11 +14,12 @@ let rec protect parser lexbuf =
 	let _ = Tokens.command_flush lexbuf in
 	protect parser lexbuf
     | Basic.Unimplemented s ->
-	Printf.fprintf stderr "%s: feature not implemented yet: %s\n" (Tokens.lexing_pos lexbuf) s;
+	Printf.fprintf stderr "%s: feature not yet implemented: %s\n" (Tokens.lexing_pos lexbuf) s;
 	flush stderr;
 	Tokens.bump_error_count();
 	let _ = Tokens.command_flush lexbuf in
 	protect parser lexbuf
+    | Grammar.Error
     | Parsing.Parse_error -> 
 	Printf.fprintf stderr "%s: syntax error\n" (Tokens.lexing_pos lexbuf);
 	flush stderr;
@@ -37,7 +38,7 @@ let _ =
   let lexbuf = Lexing.from_channel stdin in
   lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = "test.ts"};
   let parser = Grammar.command Tokens.expr_tokens in
-  let rec process = function notations ->
+  let rec process notations =
     let continue notations = flush stdout; process notations in
     match protect parser lexbuf with 
     | Toplevel.Print_t x -> Printf.printf "Print_t: %s\n" (Printer.ttostring x); continue notations
@@ -58,4 +59,6 @@ let _ =
 	continue notations
   in
   process [];
-  Printf.printf "Exit."
+  exit 0
+
+

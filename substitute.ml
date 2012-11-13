@@ -8,7 +8,7 @@ and oosubstfresh subs (v,o,k) = let v' = fresh v in let subs' = (v, Ovariable v'
 and ooosubstfresh subs (v,o,k) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', osubst subs' o, oosubstfresh subs' k)
 and ttosubstfresh subs (v,t,k) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', tsubst subs t, tosubstfresh subs' k)
 and tosubstfresh subs (v,t,k) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', tsubst subs t, osubstfresh subs' k)
-and tsubst subs t =
+and tsubst subs (t,oldpos) = nowhere(
   match t with
     Tvariable _ -> t
   | El o -> El (osubst subs o)
@@ -20,7 +20,7 @@ and tsubst subs t =
   | T_Coprod2 (t,t',(x,u),(x',u'),o) -> T_Coprod2 (tsubst subs t,tsubst subs t',tsubstfresh subs (x,u),tsubstfresh subs (x',u'),osubst subs o)
   | T_Empty -> t
   | T_IC (tA,a,(x,tB,(y,tD,(z,q)))) -> T_IC (tsubst subs tA,osubst subs a,ttosubstfresh subs (x,tB,(y,tD,(z,q))))
-  | Id (t,x,y) -> Id (tsubst subs t,osubst subs x,osubst subs y)
+  | Id (t,x,y) -> Id (tsubst subs t,osubst subs x,osubst subs y))
 and osubst subs o =
   match o with
     Ovariable v -> (try List.assoc v subs with Not_found -> o)

@@ -16,6 +16,12 @@ polymorphic type system}, by Vladimir Voevodsky, the version dated October,
 
 open Basic
 
+type position =
+  | Position of Lexing.position * Lexing.position (** start, end *)
+  | Nowhere
+let nowhere x = (x,Nowhere)
+let strip_pos = fst
+
 (** Object variable. *)
 type oVar = 
     OVar of string
@@ -65,7 +71,8 @@ and ttoBinding = oVar * tExpr * toBinding
 and oooBinding = oVar * oExpr * ooBinding
 
 (** [tExpr] is the type of T-expressions. *)
-and tExpr =
+and tExpr = tExpr' * position
+and tExpr' =
   (* TS0 *)
   | Tvariable of tVar
   | El of oExpr
@@ -263,7 +270,7 @@ let rec getType (o:oVar) = function
   | [] -> raise VariableNotInContext
 let inferenceRule : ruleLabel * ruleParm * derivation list -> derivation = function
     (1,RPNone,[]) -> Derivation([],Rule 1,emptyJudgment)
-  | (2,RPot (o,t),([Derivation(_,_,(Context (uc,tc,oc),EmptyJ))] as derivs)) -> Derivation(derivs,Rule 2,(Context (uc,tc,(o,Tvariable t) :: oc),EmptyJ))
+  | (2,RPot (o,t),([Derivation(_,_,(Context (uc,tc,oc),EmptyJ))] as derivs)) -> Derivation(derivs,Rule 2,(Context (uc,tc,(o,nowhere (Tvariable t)) :: oc),EmptyJ))
   | (3,RPo o,([Derivation(_,_,(Context (_,_,oc) as gamma, _))] as derivs)) -> Derivation(derivs,Rule 3,(gamma,TypeJ(Ovariable o,getType o oc)))
   | _ -> raise NoMatchingRule
 let d1 = inferenceRule(1,RPNone,[])
