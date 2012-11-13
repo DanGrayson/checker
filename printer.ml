@@ -85,6 +85,6 @@ let parmstostring = function
       "(" ^ (String.concat "," (List.map octostring oc)) ^ ")"
 
 let deftostring = function
-  | Definition (Ident name,c,o,t) -> "Definition "^name^(parmstostring c)^" := "^(otostring o)^" : "^(ttostring t)^"."
+  | Definition (Ident name,c,o,t) -> "Define "^name^(parmstostring c)^" := "^(otostring o)^" : "^(ttostring t)^"."
 let dectostring = function
-  | Declaration (Ident name,c,t) -> "Declaration "^name^(parmstostring c)^" := "^(ttostring t)^"."
+  | Declaration (Ident name,c,t) -> "Declare "^name^(parmstostring c)^" := "^(ttostring t)^"."
