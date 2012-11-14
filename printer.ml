@@ -11,7 +11,7 @@ let rec utostring = function
   | Unumeral i -> string_of_int i
   | Uvariable x -> uvartostring x
   | Uplus (x,n) -> "(" ^ (utostring x) ^ "+" ^ (string_of_int n) ^ ")"
-  | Umax (x,y) -> "max(" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
+  | Umax (x,y) -> "(" ^ (utostring x) ^ "|" ^ (utostring y) ^ ")"
 let ueqntostring (u,v) = ";" ^ (utostring u) ^ "=" ^ (utostring v)
 
 let tvartostring = function
@@ -74,13 +74,13 @@ and otostring' = function
 let jtostring = function
   | EmptyJ _ -> "context judgement"
   | TypeJ _ -> "type judgement"
-  | TypeEqJ _ -> "type equality judgement"
-  | ObjEqJ _ -> "object equality judgement"
+  | TEqualityJ _ -> "type equality judgement"
+  | OEqualityJ _ -> "object equality judgement"
 
 let octostring (v,t) = (ovartostring v) ^ ":" ^ (ttostring t)
 
 let parmstostring = function
-  | Context(UContext(uvars,ueqns),tc,oc) 
+  | (UContext(uvars,ueqns),tc,oc) 
     -> (
       if List.length uvars > 0 
       then "(" ^ (String.concat " " (List.map uvartostring uvars)) ^ ":Univ" ^ (String.concat "" (List.map ueqntostring ueqns)) ^ ")"
@@ -94,5 +94,5 @@ let parmstostring = function
       (String.concat "" (List.map (fun x -> "(" ^ (octostring x) ^ ")") oc))
 	
 let notationtostring = function
-  | ODefinition (Ident name,c,o,t) -> "oDefinition "^name^(parmstostring c)^" := "^(otostring o)^" : "^(ttostring t)^"."
-  | TDefinition (Ident name,c,t) -> "tDefinition "^name^(parmstostring c)^" := "^(ttostring t)^"."
+  | TDefinition (Ident name,(c,  t)) -> "tDefinition "^name^(parmstostring c)^" :=                     "^(ttostring t)^"."
+  | ODefinition (Ident name,(c,o,t)) -> "oDefinition "^name^(parmstostring c)^" := "^(otostring o)^" : "^(ttostring t)^"."

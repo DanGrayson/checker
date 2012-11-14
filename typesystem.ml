@@ -50,6 +50,7 @@ type oVar =
     OVar of string
   | OVarGen of int * string
   | OVarDummy
+let make_oVar c = OVar c
 
 let fresh = 
   let genctr = ref 0 in 
@@ -65,9 +66,11 @@ let fresh =
 type tVar = 
     TVar of string
   | TVarDummy							      (* temporary place holder in applications [f a] *)
+let make_tVar c = TVar c
 
 (** Universe variable. *)
 type uVar = UVar of string
+let make_uVar c = UVar c
 
 (** A u-level expression, [M], is constructed inductively as: [n], [v], [M+n], or
     [max(M,M')], where [v] is a universe variable and [n] is a natural number.
@@ -255,31 +258,33 @@ and oExpr' =
     that matters.
  *) 
 type uContext = UContext of uVar list * (uLevel * uLevel) list
+let mergeUContext : uContext -> uContext -> uContext =
+    function UContext(uvars,eqns) -> function UContext(uvars',eqns') -> UContext(uvars@uvars',eqns@eqns')
 let emptyUContext = UContext ([],[])
 
 (** t-context; a list of t-variables declared as "Type". *)
 type tContext = tVar list
 let emptyTContext : tContext = []
 
-(** o-context; a list of o-variables with T-expressions representing their declared type. *)
-type oContext = (oVar * tExpr) list
-let emptyOContext : oContext = []
+type utContext = uContext * tContext
+let emptyUTContext = emptyUContext, emptyTContext
 
-type context = Context of uContext * tContext * oContext			      (* [Gamma] *)
-let emptyContext : context = Context (emptyUContext,emptyTContext,emptyOContext)
+(** o-context; a list of o-variables with T-expressions representing their declared type. *)
+type oContext = (oVar * tExpr) list				  (* [Gamma] *)
+let emptyOContext : oContext = []
       
 type judgementBody =
   | EmptyJ
 	(** Gamma |> *)
   | TypeJ of oExpr * tExpr
 	(** Gamma |- o : T *)
-  | TypeEqJ of tExpr * tExpr
+  | TEqualityJ of tExpr * tExpr
 	(** Gamma |- T = T' *)
-  | ObjEqJ of oExpr * oExpr * tExpr
+  | OEqualityJ of oExpr * oExpr * tExpr
 	(** Gamma |- o = o' : T *)
 let emptyJudgementBody = EmptyJ
-type judgement = context * judgementBody
-let emptyJudgment : judgement = (emptyContext,emptyJudgementBody)
+type judgement = utContext * oContext * judgementBody
+let emptyJudgment : judgement = emptyUTContext,emptyOContext,emptyJudgementBody
 type ruleCitation = Rule of int
 type derivation = 
   | Derivation of derivation list * ruleCitation * judgement
@@ -293,9 +298,16 @@ let rec getType (o:oVar) = function
   | _ :: gamma -> getType o gamma
   | [] -> raise VariableNotInContext
 let inferenceRule : ruleLabel * ruleParm * derivation list -> derivation = function
-    (1,RPNone,[]) -> Derivation([],Rule 1,emptyJudgment)
-  | (2,RPot (o,t),([Derivation(_,_,(Context (uc,tc,oc),EmptyJ))] as derivs)) -> Derivation(derivs,Rule 2,(Context (uc,tc,(o,nowhere (Tvariable t)) :: oc),EmptyJ))
-  | (3,RPo o,([Derivation(_,_,(Context (_,_,oc) as gamma, _))] as derivs)) -> Derivation(derivs,Rule 3,(gamma,TypeJ(nowhere(Ovariable o),getType o oc)))
+
+    (1,RPNone,[])
+    -> Derivation([],Rule 1,emptyJudgment)
+
+  | (2,RPot (o,t),([Derivation(_,_,((uc,tc),oc,EmptyJ))] as derivs))
+    -> Derivation(derivs,Rule 2,((uc,tc),(o,nowhere (Tvariable t)) :: oc,EmptyJ))
+
+  | (3,RPo o,([Derivation(_,_,(utc,gamma,_))] as derivs))
+    -> Derivation(derivs,Rule 3,(utc,gamma,TypeJ(nowhere(Ovariable o),getType o gamma)))
+
   | _ -> raise NoMatchingRule
 let d1 = inferenceRule(1,RPNone,[])
 let d2 = inferenceRule(2,RPot (OVar "x", TVar "X"), [d1])
@@ -305,8 +317,8 @@ let d3 = inferenceRule(3,RPo (OVar "x"), [d2])
 
 type identifier = Ident of string
 type notation = 
-  | TDefinition of identifier * context         * tExpr
-  | ODefinition  of identifier * context * oExpr * tExpr
+  | TDefinition of identifier * ((uContext * tContext * oContext)         * tExpr)
+  | ODefinition of identifier * ((uContext * tContext * oContext) * oExpr * tExpr)
 
 (*
  For emacs:

@@ -1,5 +1,6 @@
 {
  open Grammar
+ open Typesystem
  let error_count = ref 0
  let bump_error_count () =
    incr error_count;
@@ -15,11 +16,14 @@ let newline = [ '\n' ]
 let digit = [ '0'-'9' ]
 let first = [ 'A'-'Z' 'a'-'z' ]
 let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' ]
-rule expr_tokens = parse
+rule expr_tokens notations uc tc = 
+parse
   | "oPrint" { WPrint_o }
   | "tPrint" { WPrint_t }
   | "uPrint" { WPrint_u }
   | "Tau" { WTau }
+  | "tVariable" { WtVariable }
+  | "uVariable" { WuVariable }
   | "tDefinition" { WDeclare }
   | "oDefinition" { WDefine }
   | "Exit" { WExit }
@@ -44,7 +48,7 @@ rule expr_tokens = parse
   | "[forall;" { Wforall }
   | "Univ" { Kulevel }
   | "Type" { KType }
-  | "max" { Kumax }
+  | "|" { Wbar }
   | '('  { Wlparen }
   | ')'  { Wrparen }
   | '['  { Wlbracket }
@@ -63,21 +67,25 @@ rule expr_tokens = parse
   | '>' '='  { Wgreaterequal }
   | '>' { Wgreater }
   | '<' '='  { Wlessequal }
+  | '_' { Wunderscore }
   | '<' { Wless }
   | ':' '='  { Wcolonequal }
   | '|' '-'  { Wturnstile }
   | '|' '>'  { Wtriangle }
   | digit* as n { Nat (int_of_string n) }
-  | first after* as id { Var_token id }
-  | white { expr_tokens lexbuf }
-  | '#' [ ^ '\n' ]* { expr_tokens lexbuf }
-  | newline { Lexing.new_line lexbuf; expr_tokens lexbuf }
+  | first after* as id {
+       (* an experiment: *)
+       (* if List.mem (TVar id) tc then TVar_token (TVar id) else *)
+       Var_token id }
+  | white { expr_tokens notations uc tc lexbuf }
+  | '#' [ ^ '\n' ]* { expr_tokens notations uc tc lexbuf }
+  | newline { Lexing.new_line lexbuf; expr_tokens notations uc tc lexbuf }
   | _ as c { Printf.fprintf stderr "%s: invalid character: '%c'\n" (lexing_pos lexbuf) c; 
 	     flush stderr ;
 	     bump_error_count();
-	     expr_tokens lexbuf }
-  | eof { raise Typesystem.Eof }
+	     expr_tokens notations uc tc lexbuf }
+  | eof { raise Eof }
 and command_flush = parse
-  | newline { Lexing.new_line lexbuf; command_flush lexbuf }
+  | newline { command_flush lexbuf }
   | '.' { Wflush }
   | _ { command_flush lexbuf }

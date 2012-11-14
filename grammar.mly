@@ -6,7 +6,7 @@ type parm =
   | TParm of tContext
   | OParm of oContext
 
-let fixParmList (p:parm list) : context =
+let fixParmList (p:parm list) : uContext * tContext * oContext =
   let rec fix us ts os p =
     match p with 
     | UParm u :: p -> 
@@ -23,7 +23,7 @@ let fixParmList (p:parm list) : context =
 	| [] -> emptyUContext
 	| (uc :: []) -> uc
 	| _ -> raise (Typesystem.Unimplemented "merging of universe level variable lists")
-	in Context(uc,tc,oc))
+	in (uc,tc,oc))
   in fix [] [] [] p
 
 %}
@@ -31,20 +31,24 @@ let fixParmList (p:parm list) : context =
 %type <Typesystem.derivation> derivation
 %type <Toplevel.command> command
 %type <unit> unusedtokens
-%token <string> Var_token
+%token <string> Var_token 
+%token <Typesystem.tVar> TVar_token
+%token <Typesystem.uVar> UVar_token 
 %token <int> Nat
 %token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow Wequal Wturnstile Wtriangle Wcolonequal
-%token Wlbrace Wrbrace
+%token Wlbrace Wrbrace Wbar Wunderscore
 %token Wgreaterequal Wgreater Wlessequal Wless Wsemi
-%token Kulevel Kumax KType KPi Klambda Kj KSigma
+%token Kulevel KType KPi Klambda Kj KSigma
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
-%token WTau WPrint_t WPrint_o WPrint_u WDefine WDeclare WShow WExit
+%token WTau WPrint_t WPrint_o WPrint_u WDefine WDeclare WShow WExit WtVariable WuVariable
 %token Wflush
 %token Prec_application
 
 /* precedences, lowest first */
 %right KPi KSigma
 %right Warrow
+%left Wbar
+%left Wplus
 %left Prec_application
 %right Klambda
 %nonassoc Kj
@@ -53,6 +57,10 @@ let fixParmList (p:parm list) : context =
 %%
 
 command:
+| WtVariable vars=nonempty_list(Var_token) Wperiod
+    { Toplevel.TVariable vars }
+| WuVariable vars=nonempty_list(Var_token) eqns=preceded(Wsemi,uEquation)* Wperiod
+    { Toplevel.UVariable (vars,eqns) }
 | WPrint_t t = topTExpr Wperiod
     { Toplevel.Print_t t }
 | WPrint_o o = topOExpr Wperiod
@@ -62,19 +70,19 @@ command:
 | WTau o=topOExpr Wperiod
     { Toplevel.Type o }
 | WDeclare name=Var_token parms=parmList Wcolonequal t=topTExpr Wperiod 
-    { Toplevel.Notation (TDefinition (Ident name,fixParmList parms,t)) }
+    { Toplevel.Notation (TDefinition (Ident name,(fixParmList parms,t))) }
 | WDefine v=Var_token p=parmList Wcolonequal o=oExpr Wperiod 
     {
-     let Context(uc,tc,oc) = fixParmList p in
-     let o = List.fold_right (function (x,t) -> function o -> nowhere( O_lambda (t, (x,o)))) oc o in
+     let (uc,tc,oc) = fixParmList p in
+     let o = List.fold_right (fun (x,t) o -> nowhere( O_lambda (t, (x,o)))) oc o in
      let o = Fillin.ofillin [] o in
      let t = Tau.tau [] o in
      Toplevel.Notation (
-     ODefinition (Ident v,Context(uc,tc,emptyOContext),o,t)
+     ODefinition (Ident v,((uc,tc,emptyOContext),o,t))
     ) 
    }
 | WDefine name=Var_token parms=parmList Wcolonequal o=topOExpr Wcolon t=tExpr Wperiod 
-    { Toplevel.Notation (ODefinition (Ident name,fixParmList parms,o,t)) }
+    { Toplevel.Notation (ODefinition (Ident name,(fixParmList parms,o,t))) }
 | WShow Wperiod 
     { Toplevel.Show }
 | WExit Wperiod
@@ -85,12 +93,12 @@ topTExpr : tExpr
 topOExpr : oExpr
     { Fillin.ofillin [] $1 }
 
-unusedtokens: Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile Wempty Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile { () }
+unusedtokens: Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile Wempty Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile TVar_token UVar_token { () }
 
 uParm: vars=nonempty_list(Var_token) Wcolon Kulevel eqns=preceded(Wsemi,uEquation)*
-    { UParm (UContext ((List.map (fun s -> UVar s) vars),eqns)) }
+    { UParm (UContext ((List.map make_uVar vars),eqns)) }
 tParm: vars=nonempty_list(Var_token) Wcolon KType 
-    { TParm (List.map (fun s -> TVar s) vars) }
+    { TParm (List.map make_tVar vars) }
 oParm: vars=nonempty_list(Var_token) Wcolon t=tExpr 
     { OParm (List.map (fun s -> (OVar s,t)) vars) }
 
@@ -127,7 +135,11 @@ derivation:
     { inferenceRule(n,RPNone,derivs) }
 
 oVar: Var_token { OVar $1 }
-tVar: Var_token { TVar $1 }
+
+tVar: 					(* we have to choose one approach or the other: *)
+| Var_token { TVar $1 }
+| TVar_token { $1 }
+
 uVar: Var_token { UVar $1 }
 
 oExpr: o=oExpr0
@@ -141,7 +153,7 @@ oExpr0:
     { O_u u }
 | Wj Wlparen u=uLevel Wcomma v=uLevel Wrparen
     { O_j(u,v) }
-| Kj Wlparen u=uLevel Wcomma v=uLevel Wrparen
+| Kj Wunderscore Wlparen u=uLevel Wcomma v=uLevel Wrparen
     { O_j(u,v) }
 | Wev x=oVar Wrbracket Wlparen f=oExpr Wcomma o=oExpr Wcomma t=tExpr Wrparen
     { O_ev(f,o,(x,t)) }
@@ -201,5 +213,5 @@ uLevel:
     { Uvariable u }
 | u=uLevel Wplus n=Nat
     { Uplus (u,n) }
-| Kumax Wlparen u=uLevel Wcomma v=uLevel Wrparen
+| u=uLevel Wbar v=uLevel
     { Umax (u,v)  }
