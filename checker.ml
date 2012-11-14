@@ -42,35 +42,43 @@ let printnotation = function
   | Typesystem.TDefinition(name,_,_) as x -> Printf.printf "%s\n" (Printer.notationtostring x)
   | Typesystem.ODefinition(name,_,_,_) as x -> Printf.printf "%s\n" (Printer.notationtostring x)
 
+let parse_file filename = 
+    let lexbuf = Lexing.from_channel (open_in filename) in
+    lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = filename};
+    let parser = Grammar.command Tokens.expr_tokens in
+    let rec process notations =
+      let continue notations = flush stdout; process notations in
+      match protect parser lexbuf with 
+      | Toplevel.Print_t x -> Printf.printf "tPrint: %s\n" (Printer.ttostring x); continue notations
+      | Toplevel.Print_o x -> Printf.printf "oPrint: %s\n" (Printer.otostring x); continue notations
+      | Toplevel.Print_u x -> Printf.printf "uPrint: %s\n" (Printer.utostring x); continue notations
+      | Toplevel.Type x ->
+	  (
+	   try 
+	     let tx = Tau.tau [] x in
+	     Printf.printf "Tau: %s : %s\n" (Printer.otostring x) (Printer.ttostring tx);
+	   with 
+	   | Typesystem.GeneralError s -> raise Typesystem.NotImplemented
+	   | Typesystem.TypingError (p,s) 
+	     -> Printf.fprintf stderr "%s: %s\n" (Typesystem.error_format_pos p) s; flush stderr; Tokens.bump_error_count());
+	  continue notations
+      | Toplevel.Notation x ->
+	  Printf.printf "Notation: %s\n" (Printer.notationtostring x);
+	  continue ((notation_name x,x) :: notations)
+      | Toplevel.Exit -> ()
+      | Toplevel.Show -> 
+	  Printf.printf "Show:\n";
+	  let p = List.rev_append notations [] in
+	  List.iter (fun x -> Printf.printf "   "; printnotation (snd x)) p;
+	  continue notations
+    in
+    process []
+
 let _ = 
-  let lexbuf = Lexing.from_channel stdin in
-  lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = "test.ts"};
-  let parser = Grammar.command Tokens.expr_tokens in
-  let rec process notations =
-    let continue notations = flush stdout; process notations in
-    match protect parser lexbuf with 
-    | Toplevel.Print_t x -> Printf.printf "tPrint: %s\n" (Printer.ttostring x); continue notations
-    | Toplevel.Print_o x -> Printf.printf "oPrint: %s\n" (Printer.otostring x); continue notations
-    | Toplevel.Print_u x -> Printf.printf "uPrint: %s\n" (Printer.utostring x); continue notations
-    | Toplevel.Type x ->
-	(
-	 try 
-	   let tx = Tau.tau [] x in
-	   Printf.printf "Tau: %s : %s\n" (Printer.otostring x) (Printer.ttostring tx);
-	 with 
-	 | Typesystem.GeneralError s -> raise Typesystem.NotImplemented
-	 | Typesystem.TypingError (p,s) 
-	   -> Printf.fprintf stderr "%s: %s\n" (Typesystem.error_format_pos p) s; flush stderr; Tokens.bump_error_count());
-	continue notations
-    | Toplevel.Notation x ->
- 	Printf.printf "Notation: %s\n" (Printer.notationtostring x);
-	continue ((notation_name x,x) :: notations)
-    | Toplevel.Exit -> ()
-    | Toplevel.Show -> 
-	Printf.printf "Show:\n";
-	let p = List.rev_append notations [] in
-	List.iter (fun x -> Printf.printf "   "; printnotation (snd x)) p;
-	continue notations
-  in
-  process [];
+  Arg.parse 
+    [
+     ("--debug" , Arg.Set Typesystem.debug_mode, "turn on debug mode")
+    ]
+    parse_file
+    "usage: [options] filename ...";
   leave()

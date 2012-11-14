@@ -14,14 +14,21 @@ polymorphic type system}, by Vladimir Voevodsky, the version dated October,
 
   *)
 
+let debug_mode = ref false
+
 type position =
   | Position of Lexing.position * Lexing.position (** start, end *)
   | Nowhere
 let error_format_pos = function
   | Position(p,q) 
-    -> p.Lexing.pos_fname ^ ":" ^
-      (string_of_int p.Lexing.pos_lnum) ^ ":" ^
-      (string_of_int (p.Lexing.pos_cnum-p.Lexing.pos_bol+1))
+    -> "File \"" ^ p.Lexing.pos_fname ^ "\", " 
+      ^ (
+	if p.Lexing.pos_lnum = q.Lexing.pos_lnum
+	then "line " ^ (string_of_int p.Lexing.pos_lnum) 
+	else "lines " ^ (string_of_int p.Lexing.pos_lnum) ^ "-" ^ (string_of_int q.Lexing.pos_lnum)
+       )
+      ^ ", " ^ 
+      "characters " ^ (string_of_int (p.Lexing.pos_cnum-p.Lexing.pos_bol+1)) ^ "-" ^ (string_of_int (q.Lexing.pos_cnum-q.Lexing.pos_bol+1))
   | Nowhere -> "unknown position"
 
 let nowhere x = (x,Nowhere)
