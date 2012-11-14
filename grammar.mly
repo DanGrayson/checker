@@ -10,7 +10,7 @@ let fixParmList (p:parm list) : context =
   let rec fix us ts os p =
     match p with 
     | UParm u :: p -> 
-	if List.length ts > 0 or List.length os > 0 then raise (GeneralError "expected ulevel variables first");
+	if List.length ts > 0 or List.length os > 0 then raise (GeneralError "expected universe-level variables first");
 	fix (u::us) ts os p
     | TParm t :: p -> 
 	if List.length os > 0 then raise (Typesystem.Unimplemented "a type parameter after an object parameter");
@@ -22,7 +22,7 @@ let fixParmList (p:parm list) : context =
 	and uc = match (List.rev_append us []) with
 	| [] -> emptyUContext
 	| (uc :: []) -> uc
-	| _ -> raise (Typesystem.Unimplemented "merging of ulevel variable lists")
+	| _ -> raise (Typesystem.Unimplemented "merging of universe level variable lists")
 	in Context(uc,tc,oc))
   in fix [] [] [] p
 

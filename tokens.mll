@@ -41,7 +41,7 @@ rule expr_tokens = parse
   | "[ev;" { Wev }
   | "[lambda;" { Wlambda }
   | "[forall;" { Wforall }
-  | "ulevel" { Kulevel }
+  | "Univ" { Kulevel }
   | "Type" { KType }
   | "max" { Kumax }
   | '('  { Wlparen }

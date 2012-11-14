@@ -34,11 +34,11 @@ Tau [ev;x](f,o,*x).
 Tau [lambda;x](T,x).
 Tau [forall;x](u1,u2,o,o').
 
-oDefinition E1 (u:ulevel)(X:Type)(x:X) := x : X.
-tDefinition E2 (u1,u2,u3 : ulevel)(X:Type) := X->X .
-tDefinition E3 (u1,u2,u3 : ulevel)(X1:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := [U](u2) .
-oDefinition E5 (u1,u2,u3 : ulevel; max(u1,u2)=max(u2,u3); u1 >= u2+1 )(X1:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := j (x1, x2) : [U](u2) .
+oDefinition E1 (u:Univ)(X:Type)(x:X) := x : X.
+tDefinition E2 (u1,u2,u3 : Univ)(X:Type) := X->X .
+tDefinition E3 (u1,u2,u3 : Univ)(X1:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := [U](u2) .
+oDefinition E5 (u1,u2,u3 : Univ; max(u1,u2)=max(u2,u3); u1 >= u2+1 )(X1:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := j (x1, x2) : [U](u2) .
 oDefinition E7 (T,U:Type)(t:T)(u:U)(f:T->U) := f t.
 oDefinition E7 (T,U:Type)(t:T)(g:T -> [U](0))(u:U)(f:Pi x:T,*g x) := f t.
-oDefinition E6 (u1,u2,u3 : ulevel)(X1, X2:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := j (x1, x2) .
+oDefinition E6 (u1,u2,u3 : Univ)(X1, X2:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := j (x1, x2) .
 Exit.
