@@ -87,15 +87,13 @@ topOExpr : oExpr
 
 unusedtokens: Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile Wempty Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile { () }
 
-uParm: vars=nonempty_list(Var_token) Wcolon Kulevel eqns=uEquationList 
+uParm: vars=nonempty_list(Var_token) Wcolon Kulevel eqns=preceded(Wsemi,uEquation)*
     { UParm (UContext ((List.map (fun s -> UVar s) vars),eqns)) }
 tParm: vars=nonempty_list(Var_token) Wcolon KType 
     { TParm (List.map (fun s -> TVar s) vars) }
 oParm: vars=nonempty_list(Var_token) Wcolon t=tExpr 
     { OParm (List.map (fun s -> (OVar s,t)) vars) }
 
-uEquationList: l=semi_and_uEquation* {l}
-semi_and_uEquation: Wsemi; e=uEquation; {e}
 uEquation:
 | u=uLevel Wequal v=uLevel 
     { (u,v) }
@@ -108,9 +106,9 @@ uEquation:
 | u=uLevel Wless v=uLevel 
     { (Umax(Uplus(u,1),v),v) }
 
-parenthesized(X): Wlparen x=X Wrparen {x}
-parenthesized_list(X): list(parenthesized(X)) {$1}
-parmList: parenthesized_list(parm) {$1}
+parenthesized(X): x=delimited(Wlparen,X,Wrparen) {x}
+list_of_parenthesized(X): list(parenthesized(X)) {$1}
+parmList: list_of_parenthesized(parm) {$1}
 parm:
 | uParm { $1 } 
 | tParm { $1 }
