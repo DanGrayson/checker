@@ -53,15 +53,18 @@ let fixParmList (p:parm list) : context =
 %%
 
 command:
-| WPrint_t t=tExpr Wperiod { Toplevel.Print_t t }
-| WPrint_o o=oExpr Wperiod { Toplevel.Print_o o }
-| WPrint_u u=uLevel Wperiod { Toplevel.Print_u u }
-| WTau oExpr Wperiod { Toplevel.Type $2 }
-| WDeclare Var_token parmList Wcolonequal tExpr Wperiod { Toplevel.Notation (Declaration (Ident $2,fixParmList $3,$5)) }
-| WDefine Var_token parmList Wcolonequal oExpr Wperiod { Toplevel.Notation (Definition (Ident $2,fixParmList $3,$5,(Tvariable TVarDummy, Position($startpos, $endpos)))) }
-| WDefine Var_token parmList Wcolonequal oExpr Wcolon tExpr Wperiod { Toplevel.Notation (Definition (Ident $2,fixParmList $3,$5,$7)) }
+| WPrint_t t = topTExpr Wperiod { Toplevel.Print_t t }
+| WPrint_o o = topOExpr Wperiod { Toplevel.Print_o o }
+| WPrint_u u = uLevel Wperiod { Toplevel.Print_u u }
+| WTau topOExpr Wperiod { Toplevel.Type $2 }
+| WDeclare Var_token parmList Wcolonequal topTExpr Wperiod { Toplevel.Notation (Declaration (Ident $2,fixParmList $3,$5)) }
+| WDefine Var_token parmList Wcolonequal topOExpr Wperiod { Toplevel.Notation (Definition (Ident $2,fixParmList $3,$5,(Tvariable TVarDummy, Position($startpos, $endpos)))) }
+| WDefine Var_token parmList Wcolonequal topOExpr Wcolon tExpr Wperiod { Toplevel.Notation (Definition (Ident $2,fixParmList $3,$5,$7)) }
 | WShow Wperiod { Toplevel.Show }
 | WExit Wperiod { Toplevel.Exit }
+
+topTExpr : tExpr { Fillin.tfillin [] $1 }
+topOExpr : oExpr { Fillin.ofillin [] $1 }
 
 unusedtokens: Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile Wempty Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile { () }
 

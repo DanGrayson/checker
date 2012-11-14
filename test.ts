@@ -18,7 +18,10 @@ Print_t Pi x : T1, [U](14).
 Print_t *x.
 Print_o lambda x : T, e.
 Print_o lambda f:T->U, lambda o:T, lambda x : *r, f o.
+Print_o lambda f:U, lambda o:T, lambda x : *r, f o.
 Print_t A->B->C.
+
+Print_o lambda g:T -> [U](0), lambda f:(Pi t:T, *g t), lambda o:T, f o.
 
 Tau [u](u4).
 Tau [j](u,u').
@@ -26,12 +29,10 @@ Tau [ev;x](f,o,T).
 Tau [ev;x](f,o,*x).
 Tau [lambda;x](T,x).
 Tau [forall;x](u1,u2,o,o').
-Tau x.
 
 oDefinition E1 (u:ulevel)(X:Type)(x:X) := x : X.
 tDefinition E2 (u1,u2,u3 : ulevel)(X:Type) := X->X .
 tDefinition E3 (u1,u2,u3 : ulevel)(X1:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := [U](u2) .
 oDefinition E5 (u1,u2,u3 : ulevel; max(u1,u2)=max(u2,u3); u1 >= u2+1 )(X1:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := j (x1, x2) : [U](u2) .
 oDefinition E6 (u1,u2,u3 : ulevel)(X1, X2:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := j (x1, x2) .
-Show.
 Exit.
