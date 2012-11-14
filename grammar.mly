@@ -36,14 +36,14 @@ let fixParmList (p:parm list) : context =
 %token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow Wequal Wturnstile Wtriangle Wcolonequal
 %token Wlbrace Wrbrace
 %token Wgreaterequal Wgreater Wlessequal Wless Wsemi
-%token Kulevel Kumax KType KPi Klambda Kj
+%token Kulevel Kumax KType KPi Klambda Kj KSigma
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
 %token WTau WPrint_t WPrint_o WPrint_u WDefine WDeclare WShow WExit
 %token Wflush
 %token Prec_application
 
 /* precedences, lowest first */
-%right KPi
+%right KPi KSigma
 %right Warrow
 %left Prec_application
 %right Klambda
@@ -130,11 +130,11 @@ oVar: Var_token { OVar $1 }
 tVar: Var_token { TVar $1 }
 uVar: Var_token { UVar $1 }
 
-oExpr: oExpr0
-    {$1, Position($startpos, $endpos)}
+oExpr: o=oExpr0
+    {o, Position($startpos, $endpos)}
+| o=parenthesized(oExpr) 
+    {o}
 oExpr0:
-| parenthesized(oExpr0) 
-    { $1 }
 | x=oVar
     { Ovariable x }
 | Wu Wlparen u=uLevel Wrparen
@@ -145,20 +145,22 @@ oExpr0:
     { O_j(u,v) }
 | Wev x=oVar Wrbracket Wlparen f=oExpr Wcomma o=oExpr Wcomma t=tExpr Wrparen
     { O_ev(f,o,(x,t)) }
-| f=oExpr o=oExpr %prec Prec_application
+| f=oExpr o=oExpr
+    %prec Prec_application
     { O_ev(f,o,(OVarDummy,(Tvariable TVarDummy, Nowhere))) }
 | Wlambda x=oVar Wrbracket Wlparen t=tExpr Wcomma o=oExpr Wrparen
     { O_lambda(t,(x,o)) }
-| Klambda x=oVar Wcolon t=tExpr Wcomma o=oExpr %prec Klambda
+| Klambda x=oVar Wcolon t=tExpr Wcomma o=oExpr
+    %prec Klambda
     { O_lambda(t,(x,o)) }
 | Wforall x=oVar Wrbracket Wlparen u1=uLevel Wcomma u2=uLevel Wcomma o1=oExpr Wcomma o2=oExpr Wrparen
     { O_forall(u1,u2,o1,(x,o2)) }
 
 tExpr: t=tExpr0 
     {t, Position($startpos, $endpos)}
+| t=parenthesized(tExpr)
+    {t}
 tExpr0:
-| Wlparen t=tExpr0 Wrparen
-    { t }
 | t=tVar
     { Tvariable t }
 | WEl Wlparen o=oExpr Wrparen
@@ -169,11 +171,15 @@ tExpr0:
     { T_U u }
 | WPi x=oVar Wrbracket Wlparen t1=tExpr Wcomma t2=tExpr Wrparen 
     { Pi(t1,(x,t2)) }
-| KPi x=oVar Wcolon t1=tExpr Wcomma t2=tExpr %prec KPi
+| KPi x=oVar Wcolon t1=tExpr Wcomma t2=tExpr
+    %prec KPi
     { Pi(t1,(x,t2)) }
 | t=tExpr Warrow u=tExpr
     { Pi(t,(OVarDummy,u)) }
 | WSigma x=oVar Wrbracket Wlparen t1=tExpr Wcomma t2=tExpr Wrparen
+    { Sigma(t1,(x,t2)) }
+| KSigma x=oVar Wcolon t1=tExpr Wcomma t2=tExpr
+    %prec KSigma
     { Sigma(t1,(x,t2)) }
 | WCoprod Wlparen t1=tExpr Wcomma t2=tExpr Wrparen
     { T_Coprod(t1,t2) }

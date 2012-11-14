@@ -28,7 +28,7 @@ let error_format_pos = function
 	else "lines " ^ (string_of_int p.Lexing.pos_lnum) ^ "-" ^ (string_of_int q.Lexing.pos_lnum)
        )
       ^ ", " ^ 
-      "characters " ^ (string_of_int (p.Lexing.pos_cnum-p.Lexing.pos_bol+1)) ^ "-" ^ (string_of_int (q.Lexing.pos_cnum-q.Lexing.pos_bol+1))
+      "characters " ^ (string_of_int (p.Lexing.pos_cnum-p.Lexing.pos_bol+1)) ^ "-" ^ (string_of_int (q.Lexing.pos_cnum-q.Lexing.pos_bol))
   | Nowhere -> "unknown position"
 
 let nowhere x = (x,Nowhere)

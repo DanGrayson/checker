@@ -47,7 +47,7 @@ and ofillin ctxt (o,pos) = nowhere(
   | O_ev(f,p,(OVarDummy,(Tvariable TVarDummy,loc))) -> (
     match strip_pos(Tau.tau ctxt f) with
       | Pi(t1,(x,t2)) -> O_ev(ofillin ctxt f,ofillin ctxt p,tfillin_binder ((x,t1)::ctxt) (x,t2))
-      | _ -> raise (TypingError(pos,"expected a product type"))
+      | _ -> raise (TypingError(get_pos f,"expected a product type"))
     )
   | O_ev(f,p,(v,t)) -> O_ev(ofillin ctxt f,ofillin ctxt p,tfillin_binder ctxt (v,t))
   | O_lambda (t,(v,p)) -> O_lambda (tfillin ctxt t,ofillin_binder ((v,t)::ctxt) (v,p))

@@ -33,6 +33,7 @@ rule expr_tokens = parse
   | "Pi" { KPi }
   | "lambda" { Klambda }
   | "[Sigma;" { WSigma }
+  | "Sigma" { KSigma }
   | "[Coprod]" { WCoprod }
   | "[Coprod;" { WCoprod2 }
   | "[Empty]" { WEmpty }
