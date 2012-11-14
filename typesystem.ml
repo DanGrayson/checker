@@ -14,13 +14,29 @@ polymorphic type system}, by Vladimir Voevodsky, the version dated October,
 
   *)
 
-open Basic
-
 type position =
   | Position of Lexing.position * Lexing.position (** start, end *)
   | Nowhere
+let error_format_pos = function
+  | Position(p,q) 
+    -> p.Lexing.pos_fname ^ ":" ^
+      (string_of_int p.Lexing.pos_lnum) ^ ":" ^
+      (string_of_int (p.Lexing.pos_cnum-p.Lexing.pos_bol+1))
+  | Nowhere -> "unknown position"
+
 let nowhere x = (x,Nowhere)
 let strip_pos = fst
+let get_pos = snd
+
+exception TypingError of position * string
+exception GeneralError of string
+exception GensymCounterOverflow
+exception NotImplemented
+exception Unimplemented of string
+exception InternalError
+exception VariableNotInContext
+exception NoMatchingRule
+exception Eof
 
 (** Object variable. *)
 type oVar = 
@@ -106,7 +122,8 @@ and tExpr' =
       (* TS7 *)
       
 (** [oExpr] is the type of o-expressions. *)
-and oExpr =
+and oExpr = oExpr' * position
+and oExpr' =
     (* TS0 *)
   | Ovariable of oVar
 	(** An o-variable. *)
@@ -271,7 +288,7 @@ let rec getType (o:oVar) = function
 let inferenceRule : ruleLabel * ruleParm * derivation list -> derivation = function
     (1,RPNone,[]) -> Derivation([],Rule 1,emptyJudgment)
   | (2,RPot (o,t),([Derivation(_,_,(Context (uc,tc,oc),EmptyJ))] as derivs)) -> Derivation(derivs,Rule 2,(Context (uc,tc,(o,nowhere (Tvariable t)) :: oc),EmptyJ))
-  | (3,RPo o,([Derivation(_,_,(Context (_,_,oc) as gamma, _))] as derivs)) -> Derivation(derivs,Rule 3,(gamma,TypeJ(Ovariable o,getType o oc)))
+  | (3,RPo o,([Derivation(_,_,(Context (_,_,oc) as gamma, _))] as derivs)) -> Derivation(derivs,Rule 3,(gamma,TypeJ(nowhere(Ovariable o),getType o oc)))
   | _ -> raise NoMatchingRule
 let d1 = inferenceRule(1,RPNone,[])
 let d2 = inferenceRule(2,RPot (OVar "x", TVar "X"), [d1])

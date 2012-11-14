@@ -40,6 +40,8 @@ and ttostring' = function
       ^ (ttostring tA) ^ "," ^ (otostring a) ^ "," ^ (ttostring tB) ^ "," ^ (ttostring tD) ^ "," ^ (otostring q) ^ ")"
   | Id (t,x,y) -> "[Id](" ^ (ttostring t) ^ "," ^ (otostring x) ^ "," ^ (otostring y) ^ ")"
 and otostring = function
+  | (o,_) -> otostring' o
+and otostring' = function
   | Ovariable x -> ovartostring x
   | O_u x -> "[u](" ^ (utostring x) ^ ")"
   | O_j (x,y) -> "[j](" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
@@ -87,5 +89,5 @@ let parmstostring = function
       "(" ^ (String.concat ")(" (List.map octostring oc)) ^ ")"
 
 let notationtostring = function
-  | Definition (Ident name,c,o,t) -> "Define "^name^(parmstostring c)^" := "^(otostring o)^" : "^(ttostring t)^"."
-  | Declaration (Ident name,c,t) -> "Declare "^name^(parmstostring c)^" := "^(ttostring t)^"."
+  | Definition (Ident name,c,o,t) -> "oDefinition "^name^(parmstostring c)^" := "^(otostring o)^" : "^(ttostring t)^"."
+  | Declaration (Ident name,c,t) -> "tDefinition "^name^(parmstostring c)^" := "^(ttostring t)^"."

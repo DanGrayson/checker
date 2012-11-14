@@ -10,10 +10,10 @@ let fixParmList (p:parm list) : context =
   let rec fix us ts os p =
     match p with 
     | UParm u :: p -> 
-	if List.length ts > 0 or List.length os > 0 then raise (Basic.Error "expected ulevel variables first");
+	if List.length ts > 0 or List.length os > 0 then raise (GeneralError "expected ulevel variables first");
 	fix (u::us) ts os p
     | TParm t :: p -> 
-	if List.length os > 0 then raise (Basic.Unimplemented "a type parameter after an object parameter");
+	if List.length os > 0 then raise (Typesystem.Unimplemented "a type parameter after an object parameter");
 	fix us (t::ts) os p
     | OParm o :: p -> fix us ts (o::os) p
     | [] -> ( 
@@ -22,7 +22,7 @@ let fixParmList (p:parm list) : context =
 	and uc = match (List.rev_append us []) with
 	| [] -> emptyUContext
 	| (uc :: []) -> uc
-	| _ -> raise (Basic.Unimplemented "merging of ulevel variable lists")
+	| _ -> raise (Typesystem.Unimplemented "merging of ulevel variable lists")
 	in Context(uc,tc,oc))
   in fix [] [] [] p
 
@@ -102,8 +102,9 @@ oVar: Var_token { OVar $1 }
 tVar: Var_token { TVar $1 }
 uVar: Var_token { UVar $1 }
 
-oExpr:
-| Wlparen oExpr Wrparen { $2 }
+oExpr: mark_position(oExpr0) {$1}
+oExpr0:
+| Wlparen oExpr0 Wrparen { $2 }
 | oVar { Ovariable $1 }
 | Wu Wlparen uLevel Wrparen { O_u $3 }
 | Wj Wlparen uLevel Wcomma uLevel Wrparen { O_j($3,$5) }

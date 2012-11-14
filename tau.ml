@@ -3,12 +3,16 @@
      even if the expression is not yet known to be well-formed.
    *)
 
-open Basic
 open Typesystem
 
-let rec tau (g:(oVar*tExpr) list) o = nowhere (tau0 g o)
-and tau0 g = function
-  | Ovariable v -> (try strip_pos(List.assoc v g) with Not_found -> raise (Basic.Error ("unbound variable, not in context: " ^ (Printer.ovartostring v))))
+let rec tau (g:(oVar*tExpr) list) ((o,pos):oExpr) = nowhere (
+  match o with
+  | Ovariable v -> (
+      try strip_pos(List.assoc v g) 
+      with
+	Not_found -> 
+	  raise (TypingError(pos, "unbound variable, not in context: " ^ (Printer.ovartostring v)))
+     )
   | O_u x -> T_U (Uplus(x,1))
   | O_j (m1,m2) -> Pi(nowhere(T_U m1),(OVarDummy,nowhere(T_U m2)))
   | O_ev (o1,o2,(x,t)) -> strip_pos(Substitute.tsubst [(x,o2)] t)
@@ -35,4 +39,4 @@ and tau0 g = function
   | O_J _
   | O_rr0 _
   | O_rr1 _
-      -> raise NotImplemented
+      -> raise NotImplemented )

@@ -1,5 +1,4 @@
 {
- open Basic
  open Grammar
  let error_count = ref 0
  let bump_error_count () =
@@ -21,8 +20,8 @@ rule expr_tokens = parse
   | "Print_t" { WPrint_t }
   | "Print_u" { WPrint_u }
   | "Tau" { WTau }
-  | "Declare" { WDeclare }
-  | "Define" { WDefine }
+  | "tDefinition" { WDeclare }
+  | "oDefinition" { WDefine }
   | "Exit" { WExit }
   | "Show" { WShow }
   | "[El]" { WEl }
@@ -76,7 +75,7 @@ rule expr_tokens = parse
 	     flush stderr ;
 	     bump_error_count();
 	     expr_tokens lexbuf }
-  | eof { raise Eof }
+  | eof { raise Typesystem.Eof }
 and command_flush = parse
   | newline { Lexing.new_line lexbuf; command_flush lexbuf }
   | '.' { Wflush }

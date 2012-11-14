@@ -1,14 +1,33 @@
 open Typesystem
 
-let rec
-    tsubstfresh subs (v,t) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', tsubst subs' t)
-and t2substfresh subs (v,w,t) = let v' = fresh v and w' = fresh w in let subs' = (w, Ovariable w') :: (v, Ovariable v') :: subs in (v', w', tsubst subs' t)
-and osubstfresh subs (v,o) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', osubst subs' o)
-and oosubstfresh subs (v,o,k) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', osubst subs' o, osubstfresh subs' k)
-and ooosubstfresh subs (v,o,k) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', osubst subs' o, oosubstfresh subs' k)
-and ttosubstfresh subs (v,t,k) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', tsubst subs t, tosubstfresh subs' k)
-and tosubstfresh subs (v,t,k) = let v' = fresh v in let subs' = (v, Ovariable v') :: subs in (v', tsubst subs t, osubstfresh subs' k)
-and tsubst subs (t,oldpos) = nowhere(
+let rec tsubstfresh subs (v,t) = 
+  let v' = fresh v 
+  in let subs' = (v, nowhere(Ovariable v')) :: subs
+  in (v', tsubst subs' t)
+and t2substfresh subs (v,w,t) = 
+  let v' = fresh v and w' = fresh w 
+  in let subs' = (w, nowhere(Ovariable w')) :: (v, nowhere(Ovariable v')) :: subs 
+  in (v', w', tsubst subs' t)
+and osubstfresh subs (v,o) = 
+  let v' = fresh v 
+  in let subs' = (v, nowhere(Ovariable v')) :: subs in (v', osubst subs' o)
+and oosubstfresh subs (v,o,k) =
+  let v' = fresh v 
+  in let subs' = (v, nowhere(Ovariable v')) :: subs 
+  in (v', osubst subs' o, osubstfresh subs' k)
+and ooosubstfresh subs (v,o,k) = 
+  let v' = fresh v 
+  in let subs' = (v, nowhere(Ovariable v')) :: subs 
+  in (v', osubst subs' o, oosubstfresh subs' k)
+and ttosubstfresh subs (v,t,k) = 
+  let v' = fresh v 
+  in let subs' = (v, nowhere(Ovariable v')) :: subs 
+  in (v', tsubst subs t, tosubstfresh subs' k)
+and tosubstfresh subs (v,t,k) = 
+  let v' = fresh v 
+  in let subs' = (v, nowhere(Ovariable v')) :: subs 
+  in (v', tsubst subs t, osubstfresh subs' k)
+and tsubst subs (t,pos) = nowhere(
   match t with
     Tvariable _ -> t
   | El o -> El (osubst subs o)
@@ -21,9 +40,9 @@ and tsubst subs (t,oldpos) = nowhere(
   | T_Empty -> t
   | T_IC (tA,a,(x,tB,(y,tD,(z,q)))) -> T_IC (tsubst subs tA,osubst subs a,ttosubstfresh subs (x,tB,(y,tD,(z,q))))
   | Id (t,x,y) -> Id (tsubst subs t,osubst subs x,osubst subs y))
-and osubst subs o =
+and osubst subs (o,pos) = nowhere(
   match o with
-    Ovariable v -> (try List.assoc v subs with Not_found -> o)
+    Ovariable v -> (try strip_pos(List.assoc v subs) with Not_found -> o)
   | O_u _ -> o
   | O_j _ -> o
   | O_ev(f,p,(v,t)) -> O_ev(osubst subs f,osubst subs p,tsubstfresh subs (v,t))
@@ -50,4 +69,4 @@ and osubst subs o =
   | O_refl (t,o) -> O_refl (tsubst subs t,osubst subs o)
   | O_J (tT,a,b,q,i,(x,e,tS)) -> O_J (tsubst subs tT,osubst subs a,osubst subs b,osubst subs q,osubst subs i,t2substfresh subs (x,e,tS))
   | O_rr0 (m2,m1,s,t,e) -> O_rr0 (m2,m1,osubst subs s,osubst subs t,osubst subs e)
-  | O_rr1 (m,a,p) -> O_rr1 (m,osubst subs a,osubst subs p)
+  | O_rr1 (m,a,p) -> O_rr1 (m,osubst subs a,osubst subs p))

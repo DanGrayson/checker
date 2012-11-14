@@ -1,19 +1,25 @@
 let rec protect parser lexbuf =
     try parser lexbuf
     with 
-      Basic.Eof -> exit (if !Tokens.error_count > 0 then 1 else 0)
+      Typesystem.Eof -> exit (if !Tokens.error_count > 0 then 1 else 0)
     | Failure s -> 
 	Printf.fprintf stderr "%s: failure: %s\n" (Tokens.lexing_pos lexbuf) s;
 	flush stderr;
 	Tokens.bump_error_count();
 	exit 1
-    | Basic.Error s ->
+    | Typesystem.TypingError (Typesystem.Position(p,q),s) ->
+	Printf.fprintf stderr "%s: %s\n" p.Lexing.pos_fname s; (* improve this *)
+	flush stderr;
+	Tokens.bump_error_count();
+	let _ = Tokens.command_flush lexbuf in
+	protect parser lexbuf
+    | Typesystem.GeneralError s ->
 	Printf.fprintf stderr "%s: %s\n" (Tokens.lexing_pos lexbuf) s;
 	flush stderr;
 	Tokens.bump_error_count();
 	let _ = Tokens.command_flush lexbuf in
 	protect parser lexbuf
-    | Basic.Unimplemented s ->
+    | Typesystem.Unimplemented s ->
 	Printf.fprintf stderr "%s: feature not yet implemented: %s\n" (Tokens.lexing_pos lexbuf) s;
 	flush stderr;
 	Tokens.bump_error_count();
@@ -44,9 +50,15 @@ let _ =
     | Toplevel.Print_t x -> Printf.printf "Print_t: %s\n" (Printer.ttostring x); continue notations
     | Toplevel.Print_o x -> Printf.printf "Print_o: %s\n" (Printer.otostring x); continue notations
     | Toplevel.Print_u x -> Printf.printf "Print_u: %s\n" (Printer.utostring x); continue notations
-    | Toplevel.Type  x -> Printf.printf "Tau: %s : %s\n" 
-	  (Printer.otostring x) 
-	  (try Printer.ttostring (Tau.tau [] x) with Basic.Error s -> "[[ error: " ^ s ^ " ]]");
+    | Toplevel.Type x ->
+	(
+	 try 
+	   let tx = Tau.tau [] x in
+	   Printf.printf "Tau: %s : %s\n" (Printer.otostring x) (Printer.ttostring tx);
+	 with 
+	 | Typesystem.GeneralError s -> raise Typesystem.NotImplemented
+	 | Typesystem.TypingError (p,s) 
+	   -> Printf.fprintf stderr "%s: %s\n" (Typesystem.error_format_pos p) s; flush stderr);
 	continue notations
     | Toplevel.Notation x ->
  	Printf.printf "Notation: %s\n" (Printer.notationtostring x);
