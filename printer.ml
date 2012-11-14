@@ -83,12 +83,12 @@ let parmstostring = function
   | Context(UContext(uvars,ueqns),tc,oc) 
     -> (
       if List.length uvars > 0 
-      then "(" ^ (String.concat "," (List.map uvartostring uvars)) ^ ":Univ" ^ (String.concat "" (List.map ueqntostring ueqns)) ^ ")"
+      then "(" ^ (String.concat " " (List.map uvartostring uvars)) ^ ":Univ" ^ (String.concat "" (List.map ueqntostring ueqns)) ^ ")"
       else "" )
       ^ 
 	(
 	 if List.length tc > 0
-	 then "(" ^ (String.concat "," (List.map tvartostring tc)) ^ ":Type)"
+	 then "(" ^ (String.concat " " (List.map tvartostring tc)) ^ ":Type)"
 	 else ""
 	) ^
       (String.concat "" (List.map (fun x -> "(" ^ (octostring x) ^ ")") oc))
