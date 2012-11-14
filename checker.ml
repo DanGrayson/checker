@@ -49,9 +49,9 @@ let _ =
   let rec process notations =
     let continue notations = flush stdout; process notations in
     match protect parser lexbuf with 
-    | Toplevel.Print_t x -> Printf.printf "Print_t: %s\n" (Printer.ttostring x); continue notations
-    | Toplevel.Print_o x -> Printf.printf "Print_o: %s\n" (Printer.otostring x); continue notations
-    | Toplevel.Print_u x -> Printf.printf "Print_u: %s\n" (Printer.utostring x); continue notations
+    | Toplevel.Print_t x -> Printf.printf "tPrint: %s\n" (Printer.ttostring x); continue notations
+    | Toplevel.Print_o x -> Printf.printf "oPrint: %s\n" (Printer.otostring x); continue notations
+    | Toplevel.Print_u x -> Printf.printf "uPrint: %s\n" (Printer.utostring x); continue notations
     | Toplevel.Type x ->
 	(
 	 try 

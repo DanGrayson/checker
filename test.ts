@@ -1,27 +1,31 @@
-Print_o x.
-Print_t T.
-Print_t [El](x).
-Print_t [U](u4).
-Print_o [j](u1, u2).
-Print_t *[u](u4).
-Print_u max((u1+1+0)+4,2).
-Print_t [Sigma;x](T,T').
-Print_t [Coprod](T,T').
-Print_t [Coprod;x,x'](T,T',U,U',o).
-Print_t [Empty]().
-Print_t [IC;x,y,z](A,a,B,D,q).
-Print_t [Id](T,x,y).
+oPrint x.
+tPrint T.
+tPrint [El](x).
+tPrint [U](u4).
+oPrint [j](u1, u2).
+tPrint *[u](u4).
+uPrint max((u1+1+0)+4,2).
+tPrint [Sigma;x](T,T').
+tPrint [Coprod](T,T').
+tPrint [Coprod;x,x'](T,T',U,U',o).
+tPrint [Empty]().
+tPrint [IC;x,y,z](A,a,B,D,q).
+tPrint [Id](T,x,y).
 
-Print_o [forall;x](u1,u2,o,o').
+oPrint [forall;x](u1,u2,o,o').
 
-Print_t Pi x : T1, [U](14).
-Print_t *x.
-Print_o lambda x : T, e.
-Print_o lambda f:T->U, lambda o:T, lambda x : *r, f o.
-Print_o lambda f:U, lambda o:T, lambda x : *r, f o.
-Print_t A->B->C.
+tPrint Pi x : T1, [U](14).
+tPrint *x.
+oPrint lambda x : T, e.
 
-Print_o lambda g:T -> [U](0), lambda f:(Pi t:T, *g t), lambda o:T, f o.
+oPrint lambda f:T->U, lambda o:T, f o.
+oPrint lambda g:T -> *k, lambda f:(Pi t:T, *g t), lambda o:T, f o.
+
+
+oPrint lambda f:T->U, lambda o:T, lambda x : *r, f o.
+oPrint lambda f:U, lambda o:T, lambda x : *r, f o.
+tPrint A->B->C.
+
 
 Tau [u](u4).
 Tau [j](u,u').

@@ -16,9 +16,9 @@ let digit = [ '0'-'9' ]
 let first = [ 'A'-'Z' 'a'-'z' ]
 let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' ]
 rule expr_tokens = parse
-  | "Print_o" { WPrint_o }
-  | "Print_t" { WPrint_t }
-  | "Print_u" { WPrint_u }
+  | "oPrint" { WPrint_o }
+  | "tPrint" { WPrint_t }
+  | "uPrint" { WPrint_u }
   | "Tau" { WTau }
   | "tDefinition" { WDeclare }
   | "oDefinition" { WDefine }
