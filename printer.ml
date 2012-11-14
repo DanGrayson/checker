@@ -81,13 +81,18 @@ let octostring (v,t) = (ovartostring v) ^ ":" ^ (ttostring t)
 
 let parmstostring = function
   | Context(UContext(uvars,ueqns),tc,oc) 
-    ->
-      "(" ^ (String.concat "," (List.map uvartostring uvars)) ^ ":ulevel"^
-      (String.concat "" (List.map ueqntostring ueqns)) ^
-      ")"^
-      "(" ^ (String.concat "," (List.map tvartostring tc)) ^ ":Type)"^
-      "(" ^ (String.concat ")(" (List.map octostring oc)) ^ ")"
-
+    -> (
+      if List.length uvars > 0 
+      then "(" ^ (String.concat "," (List.map uvartostring uvars)) ^ ":ulevel" ^ (String.concat "" (List.map ueqntostring ueqns)) ^ ")"
+      else "" )
+      ^ 
+	(
+	 if List.length tc > 0
+	 then "(" ^ (String.concat "," (List.map tvartostring tc)) ^ ":Type)"
+	 else ""
+	) ^
+      (String.concat "" (List.map (fun x -> "(" ^ (octostring x) ^ ")") oc))
+	
 let notationtostring = function
   | ODefinition (Ident name,c,o,t) -> "oDefinition "^name^(parmstostring c)^" := "^(otostring o)^" : "^(ttostring t)^"."
   | TDefinition (Ident name,c,t) -> "tDefinition "^name^(parmstostring c)^" := "^(ttostring t)^"."
