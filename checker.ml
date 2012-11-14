@@ -1,14 +1,16 @@
+let leave () = exit (if !Tokens.error_count > 0 then 1 else 0)
+
 let rec protect parser lexbuf =
     try parser lexbuf
     with 
-      Typesystem.Eof -> exit (if !Tokens.error_count > 0 then 1 else 0)
+      Typesystem.Eof -> leave()
     | Failure s -> 
 	Printf.fprintf stderr "%s: failure: %s\n" (Tokens.lexing_pos lexbuf) s;
 	flush stderr;
 	Tokens.bump_error_count();
 	exit 1
-    | Typesystem.TypingError (Typesystem.Position(p,q),s) ->
-	Printf.fprintf stderr "%s: %s\n" p.Lexing.pos_fname s; (* improve this *)
+    | Typesystem.TypingError (p,s) ->
+	Printf.fprintf stderr "%s: %s\n" (Typesystem.error_format_pos p) s;
 	flush stderr;
 	Tokens.bump_error_count();
 	let _ = Tokens.command_flush lexbuf in
@@ -58,7 +60,7 @@ let _ =
 	 with 
 	 | Typesystem.GeneralError s -> raise Typesystem.NotImplemented
 	 | Typesystem.TypingError (p,s) 
-	   -> Printf.fprintf stderr "%s: %s\n" (Typesystem.error_format_pos p) s; flush stderr);
+	   -> Printf.fprintf stderr "%s: %s\n" (Typesystem.error_format_pos p) s; flush stderr; Tokens.bump_error_count());
 	continue notations
     | Toplevel.Notation x ->
  	Printf.printf "Notation: %s\n" (Printer.notationtostring x);
@@ -71,6 +73,6 @@ let _ =
 	continue notations
   in
   process [];
-  exit 0
+  leave()
 
 
