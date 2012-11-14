@@ -89,5 +89,5 @@ let parmstostring = function
       "(" ^ (String.concat ")(" (List.map octostring oc)) ^ ")"
 
 let notationtostring = function
-  | Definition (Ident name,c,o,t) -> "oDefinition "^name^(parmstostring c)^" := "^(otostring o)^" : "^(ttostring t)^"."
-  | Declaration (Ident name,c,t) -> "tDefinition "^name^(parmstostring c)^" := "^(ttostring t)^"."
+  | ODefinition (Ident name,c,o,t) -> "oDefinition "^name^(parmstostring c)^" := "^(otostring o)^" : "^(ttostring t)^"."
+  | TDefinition (Ident name,c,t) -> "tDefinition "^name^(parmstostring c)^" := "^(ttostring t)^"."

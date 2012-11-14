@@ -1,7 +1,7 @@
 BFLAGS = -cflags -g,-annot -lflags -g -yaccflag -v
 BFLAGS += -use-menhir
 # BFLAGS += -verbose 0
-SRCFILES = basic.ml typesystem.ml substitute.ml fillin.ml printer.ml tau.ml scheme.ml grammar.mly tokens.mll toplevel.ml checker.ml 
+SRCFILES = typesystem.ml substitute.ml fillin.ml printer.ml tau.ml scheme.ml grammar.mly tokens.mll toplevel.ml checker.ml 
 all: TAGS run
 checker.byte checker.native: $(SRCFILES); ocamlbuild $(BFLAGS) $@
 clean::; ocamlbuild -clean

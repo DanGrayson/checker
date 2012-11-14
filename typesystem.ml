@@ -298,8 +298,8 @@ let d3 = inferenceRule(3,RPo (OVar "x"), [d2])
 
 type identifier = Ident of string
 type notation = 
-  | Declaration of identifier * context         * tExpr
-  | Definition  of identifier * context * oExpr * tExpr
+  | TDefinition of identifier * context         * tExpr
+  | ODefinition  of identifier * context * oExpr * tExpr
 
 (*
  For emacs:

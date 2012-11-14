@@ -57,9 +57,17 @@ command:
 | WPrint_o o = topOExpr Wperiod { Toplevel.Print_o o }
 | WPrint_u u = uLevel Wperiod { Toplevel.Print_u u }
 | WTau topOExpr Wperiod { Toplevel.Type $2 }
-| WDeclare Var_token parmList Wcolonequal topTExpr Wperiod { Toplevel.Notation (Declaration (Ident $2,fixParmList $3,$5)) }
-| WDefine Var_token parmList Wcolonequal topOExpr Wperiod { Toplevel.Notation (Definition (Ident $2,fixParmList $3,$5,(Tvariable TVarDummy, Position($startpos, $endpos)))) }
-| WDefine Var_token parmList Wcolonequal topOExpr Wcolon tExpr Wperiod { Toplevel.Notation (Definition (Ident $2,fixParmList $3,$5,$7)) }
+| WDeclare Var_token parmList Wcolonequal topTExpr Wperiod { Toplevel.Notation (TDefinition (Ident $2,fixParmList $3,$5)) }
+| WDefine v=Var_token p=parmList Wcolonequal o=oExpr Wperiod {
+   let Context(uc,tc,oc) = fixParmList p in
+   let o = List.fold_right (function (x,t) -> function o -> nowhere( O_lambda (t, (x,o)))) oc o in
+   let o = Fillin.ofillin [] o in
+   let t = Tau.tau [] o in
+   Toplevel.Notation (
+    ODefinition (Ident v,Context(uc,tc,emptyOContext),o,t)
+   ) 
+  }
+| WDefine Var_token parmList Wcolonequal topOExpr Wcolon tExpr Wperiod { Toplevel.Notation (ODefinition (Ident $2,fixParmList $3,$5,$7)) }
 | WShow Wperiod { Toplevel.Show }
 | WExit Wperiod { Toplevel.Exit }
 
