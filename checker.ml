@@ -70,18 +70,37 @@ let process_command lexbuf = (
       environment := { !environment with uc = mergeUContext (!environment).uc (UContext(vars,eqns)) }
   | Toplevel.TVariable tvars -> 
       environment := { !environment with tc = List.rev_append (List.map make_tVar tvars) (!environment).tc }
-  | Toplevel.Print_t x ->
+  | Toplevel.TPrint x ->
       Printf.printf "tPrint: %s\n" (Printer.ttostring x);
       flush stdout;
       let x' = protect tfix x nopos in
       if not (Alpha.tequal x' x) then Printf.printf "      : %s\n" (Printer.ttostring x');
-  | Toplevel.Print_o x ->
+  | Toplevel.OPrint x ->
       Printf.printf "oPrint: %s\n" (Printer.otostring x); 
       flush stdout;
       let x' = protect ofix x nopos in
       if not (Alpha.oequal x' x) then Printf.printf "      : %s\n" (Printer.otostring x')
-  | Toplevel.Print_u x -> 
+  | Toplevel.UPrint x -> 
       Printf.printf "uPrint: %s\n" (Printer.utostring x); 
+  | Toplevel.TAlpha (x,y) ->
+      let x = protect tfix x nopos in
+      let y = protect tfix y nopos in
+      Printf.printf "tAlpha: %s\n" (if (Alpha.tequal x y) then "true" else "false");
+      Printf.printf "      : %s\n" (Printer.ttostring x);
+      Printf.printf "      : %s\n" (Printer.ttostring y);
+      flush stdout;
+  | Toplevel.OAlpha (x,y) ->
+      let x = protect ofix x nopos in
+      let y = protect ofix y nopos in
+      Printf.printf "oAlpha: %s\n" (if (Alpha.oequal x y) then "true" else "false");
+      Printf.printf "      : %s\n" (Printer.otostring x);
+      Printf.printf "      : %s\n" (Printer.otostring y);
+      flush stdout;
+  | Toplevel.UAlpha (x,y) -> 
+      Printf.printf "uAlpha: %s\n" (if (Alpha.uequal x y) then "true" else "false");
+      Printf.printf "      : %s\n" (Printer.utostring x);
+      Printf.printf "      : %s\n" (Printer.utostring y);
+      flush stdout;
   | Toplevel.Type x ->
       (
        try 

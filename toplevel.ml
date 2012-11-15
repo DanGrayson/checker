@@ -1,10 +1,13 @@
 open Typesystem
 type command = 
-  | Print_o of oExpr
-  | Print_u of uExpr
-  | Print_t of tExpr
+  | OPrint of oExpr
+  | UPrint of uExpr
+  | TPrint of tExpr
   | TVariable of string list
   | UVariable of string list * (uExpr * uExpr) list
+  | UAlpha of uExpr * uExpr
+  | TAlpha of tExpr * tExpr
+  | OAlpha of oExpr * oExpr
   | Type of oExpr
   | Notation of notation
   | Show

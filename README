@@ -1,1 +1,21 @@
 an attempt at making a toy proof checker for experimental purposes
+
+
+    BTW already the eta for Empty which has the form:
+
+    a. (Gamma |- a:Empty , Gamma |- T : Type, Gamma |- T' : Type) => (Gamma |- T=T')
+
+    b. (Gamma |- a:Empty , Gamma |- o : T , Gamma |- o' : T) => (Gamma |- o = o' : T)
+
+    implies that definitional equality is undecidable. So we can add this to TS0 and start figuring out how to work with def. equality in this case. 
+
+    We have also have in this system the following:
+
+    1. The list of universe variables automatically contains uuu0 which is automatically <= to all other universe variables.
+
+    2. (Gamma ok)=>(Gamma |- empty : [U](uuu0))
+
+    3. (Gamma ok)=>(Gamma |- Empty : Type)
+
+    4. (Gamma ok)=>(Gamma |- * empty = Empty) 
+

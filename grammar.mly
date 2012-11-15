@@ -35,12 +35,12 @@ let fixParmList (p:parm list) : uContext * tContext * oContext =
 %token <string> Var_token
 %token <Typesystem.tVar> TVar_token
 %token <Typesystem.uVar> UVar_token 
-%token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow Wequal Wturnstile Wtriangle Wcolonequal
+%token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow Wequalequal Wequal Wturnstile Wtriangle Wcolonequal
 %token Wlbrace Wrbrace Wbar Wunderscore
 %token Wgreaterequal Wgreater Wlessequal Wless Wsemi
 %token KUniv Kumax KType KPi Klambda KSigma
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
-%token WTau WPrint_t WPrint_o WPrint_u WoDefinition WtDefinition WShow WExit WtVariable WuVariable
+%token WTau WtPrint WoPrint WuPrint WoDefinition WtDefinition WShow WExit WtVariable WuVariable WoAlpha WtAlpha WuAlpha
 %token Wflush
 %token Prec_application
 
@@ -58,12 +58,18 @@ command:
     { Toplevel.TVariable vars }
 | WuVariable vars=nonempty_list(Var_token) eqns=preceded(Wsemi,uEquation)* Wperiod
     { Toplevel.UVariable (vars,eqns) }
-| WPrint_t t = tExpr Wperiod
-    { Toplevel.Print_t t }
-| WPrint_o o = oExpr Wperiod
-    { Toplevel.Print_o o }
-| WPrint_u u = uExpr Wperiod
-    { Toplevel.Print_u u }
+| WtPrint t=tExpr Wperiod
+    { Toplevel.TPrint t }
+| WoPrint o=oExpr Wperiod
+    { Toplevel.OPrint o }
+| WuPrint u=uExpr Wperiod
+    { Toplevel.UPrint u }
+| WtAlpha t1=tExpr Wequalequal t2=tExpr Wperiod
+    { Toplevel.TAlpha (t1, t2) }
+| WoAlpha o1=oExpr Wequalequal o2=oExpr Wperiod
+    { Toplevel.OAlpha (o1, o2) }
+| WuAlpha u1=uExpr Wequalequal u2=uExpr Wperiod
+    { Toplevel.UAlpha (u1, u2) }
 | WTau o=oExpr Wperiod
     { Toplevel.Type o }
 | WtDefinition name=Var_token parms=parmList Wcolonequal t=tExpr Wperiod 

@@ -19,9 +19,12 @@ let first = [ 'A'-'Z' 'a'-'z' ]
 let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' ]
 rule expr_tokens = 
 parse
-  | "oPrint" { WPrint_o }
-  | "tPrint" { WPrint_t }
-  | "uPrint" { WPrint_u }
+  | "oPrint" { WoPrint }
+  | "tPrint" { WtPrint }
+  | "uPrint" { WuPrint }
+  | "oAlpha" { WoAlpha }
+  | "tAlpha" { WtAlpha }
+  | "uAlpha" { WuAlpha }
   | "Tau" { WTau }
   | "tVariable" { WtVariable }
   | "uVariable" { WuVariable }
@@ -65,6 +68,7 @@ parse
   | '+'  { Wplus }
   | ':'  { Wcolon }
   | '='  { Wequal }
+  | '=' '=' { Wequalequal }
   | '>' '='  { Wgreaterequal }
   | '>' { Wgreater }
   | '<' '='  { Wlessequal }

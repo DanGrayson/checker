@@ -23,6 +23,20 @@ tPrint [Id](T,x,y).
 
 oPrint [forall;x](u1,u2,o,o').
 
+tAlpha Pi x:T, U  ==  Pi y:T, U .
+oAlpha lambda g:T->U, lambda x:T, g x
+   ==  lambda h:T->U, lambda y:T, h y  .
+oAlpha lambda g:Pi a:T, U, lambda x:T, g x
+   ==  lambda h:Pi b:T, U, lambda y:T, h y  .
+oAlpha lambda g:T->U, lambda x:T, g a
+   ==  lambda h:T->U, lambda y:T, h y  .
+oAlpha lambda g:T->U, lambda x:T, g x
+   ==  lambda h:T->U, lambda y:T, h b  .
+oAlpha lambda g:T->U, lambda x:T, g h
+   ==  lambda h:T->U, lambda y:T, h y  .
+oAlpha lambda g:T->U, lambda x:T, g x
+   ==  lambda h:T->U, lambda y:T, h h  .
+
 tPrint Pi x : T1, [U](uuu0+14).
 tPrint *x.
 oPrint lambda x : T, e.
