@@ -1,9 +1,9 @@
+Exit.
+
 # this is a comment
 
-oPrint lambda f:T->U, lambda o:T, [ev;_](f,o,U).
-oPrint lambda f:T->U, lambda o:T, f o.
-uVariable u0 u1 u2 ; u0 <= u1; u0 <= u2.
-tVariable T T1 T2 U T' V W U' A B C D X X1.
+Variable u0 u1 u2 : Univ ; u0 <= u1; u0 <= u2 .
+Variable T T1 T2 U T' V W U' A B C D X X1 : Type.
 Show.
 
 oPrint x.
@@ -41,7 +41,7 @@ tPrint Pi x : T1, [U](uuu0+14).
 tPrint *x.
 oPrint lambda x : T, e.
 
-oPrint lambda g:T -> *k, lambda f:(Pi t:T, *g t), lambda o:T, f o.
+oPrint lambda g:T -> *k, lambda f:Pi t:T, *g t, lambda o:T, f o.
 
 oPrint lambda f:T->U, lambda o:T, lambda x : *r, f o.
 tPrint A->B->C.
@@ -67,7 +67,8 @@ oDefinition E7 (T U:Type)(t:T)(u:U)(f:T->U) := f t.
 # this one gives an error message with an unknown position
 # oDefinition E7 := ft.
 
-oDefinition E7 (K L:Kype)(t:K)(g:K -> [U](uuu0))(u:L)(f:Pi x:K,*g x) := f t.
+oDefinition E7 (K L:Type)(t:K)(g:K -> [U](uuu0))(u:L)(f:Pi x:K,*g x) := f t.
 oDefinition E6 (u1 u2 u3 : Univ)(X1 X2:Type)(x1: X1 -> [U](u1))(x2: [U](uuu0+1)) := [j](x1, x2) .
 
-Exit.
+oPrint lambda f:T->U, lambda o:T, [ev;_](f,o,U).
+oPrint lambda f:T->U, lambda o:T, f o.

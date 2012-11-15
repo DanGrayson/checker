@@ -1,4 +1,4 @@
-%{
+%{ 
 open Typesystem
 
 type parm =
@@ -27,9 +27,12 @@ let fixParmList (p:parm list) : uContext * tContext * oContext =
   in fix [] [] [] p
 
 %}
-%start command derivation unusedtokens
+%start command derivation unusedtokens uExprEof tExprEof oExprEof
 %type <Typesystem.derivation> derivation
 %type <Toplevel.command> command
+%type <Typesystem.uExpr> uExprEof
+%type <Typesystem.tExpr> tExprEof
+%type <Typesystem.oExpr> oExprEof
 %token <int> Nat Wunderscore_numeral
 %type <unit> unusedtokens
 %token <string> Var_token
@@ -40,7 +43,7 @@ let fixParmList (p:parm list) : uContext * tContext * oContext =
 %token Wgreaterequal Wgreater Wlessequal Wless Wsemi
 %token KUniv Kumax KType KPi Klambda KSigma
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
-%token WTau WtPrint WoPrint WuPrint WoDefinition WtDefinition WShow WExit WtVariable WuVariable WoAlpha WtAlpha WuAlpha
+%token WTau WtPrint WoPrint WuPrint WoDefinition WtDefinition WShow WExit WVariable WoAlpha WtAlpha WuAlpha Weof
 %token Wflush
 %token Prec_application
 
@@ -53,10 +56,16 @@ let fixParmList (p:parm list) : uContext * tContext * oContext =
 
 %%
 
+uExprEof: a=uExpr Weof {a}
+tExprEof: a=tExpr Weof {a}
+oExprEof: a=oExpr Weof {a}
+
 command:
-| WtVariable vars=nonempty_list(Var_token) Wperiod
+| Weof
+    { raise Eof }
+| WVariable vars=nonempty_list(Var_token) Wcolon KType Wperiod
     { Toplevel.TVariable vars }
-| WuVariable vars=nonempty_list(Var_token) eqns=preceded(Wsemi,uEquation)* Wperiod
+| WVariable vars=nonempty_list(Var_token) Wcolon KUniv eqns=preceded(Wsemi,uEquation)* Wperiod
     { Toplevel.UVariable (vars,eqns) }
 | WtPrint t=tExpr Wperiod
     { Toplevel.TPrint t }

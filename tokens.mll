@@ -26,8 +26,7 @@ parse
   | "tAlpha" { WtAlpha }
   | "uAlpha" { WuAlpha }
   | "Tau" { WTau }
-  | "tVariable" { WtVariable }
-  | "uVariable" { WuVariable }
+  | "Variable" { WVariable }
   | "tDefinition" { WtDefinition }
   | "oDefinition" { WoDefinition }
   | "Exit" { WExit }
@@ -90,8 +89,9 @@ parse
 	     flush stderr ;
 	     bump_error_count();
 	     expr_tokens lexbuf }
-  | eof { raise Eof }
+  | eof { Weof }
 and command_flush = parse
+  | eof { Weof }
   | newline { command_flush lexbuf }
   | '.' { Wflush }
   | _ { command_flush lexbuf }

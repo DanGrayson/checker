@@ -136,6 +136,33 @@ let parse_file filename =
       Printf.printf "\n";
       flush stdout;
     done
+  
+let strname =
+  let n = ref 0 in
+  fun () ->
+    let p = "string_" ^ (string_of_int !n) in
+    incr n;
+    p
+
+let oExpr_from_string s = 
+    let lexbuf = Lexing.from_string s in
+    lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = strname()};
+    (
+     try
+       Some (protect (Grammar.oExprEof (Tokens.expr_tokens)) lexbuf lexpos)
+     with Error_Handled 
+       -> None
+    )
+
+let tExpr_from_string s = 
+    let lexbuf = Lexing.from_string s in
+    lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = strname()};
+    (
+     try
+       Some (protect (Grammar.tExprEof (Tokens.expr_tokens)) lexbuf lexpos)
+     with Error_Handled 
+       -> None
+    )
 
 let _ = 
   Arg.parse [
@@ -143,4 +170,6 @@ let _ =
       ]
     parse_file
     "usage: [options] filename ...";
+  let _ = tExpr_from_string "Pi f:T->[U](uuu0), Pi o:T, *f o" in
+  let _ = oExpr_from_string "lambda f:T->U, lambda o:T, f o" in
   leave()
