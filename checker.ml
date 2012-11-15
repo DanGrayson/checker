@@ -63,6 +63,45 @@ let environment = ref {
 let tfix t = Fillin.tfillin [] t
 let ofix o = Fillin.ofillin [] o
 
+let tPrintCommand x =
+  Printf.printf "tPrint: %s\n" (Printer.ttostring x);
+  flush stdout;
+  let x' = protect tfix x nopos in
+  if not (Alpha.tequal x' x) then Printf.printf "      : %s\n" (Printer.ttostring x');
+  flush stdout
+  
+let oPrintCommand x =
+  Printf.printf "oPrint: %s\n" (Printer.otostring x); 
+  flush stdout;
+  let x' = protect ofix x nopos in
+  if not (Alpha.oequal x' x) then Printf.printf "      : %s\n" (Printer.otostring x');
+  flush stdout
+
+let uPrintCommand x =
+  Printf.printf "uPrint: %s\n" (Printer.utostring x)
+
+let tAlphaCommand (x,y) =
+  let x = protect tfix x nopos in
+  let y = protect tfix y nopos in
+  Printf.printf "tAlpha: %s\n" (if (Alpha.tequal x y) then "true" else "false");
+  Printf.printf "      : %s\n" (Printer.ttostring x);
+  Printf.printf "      : %s\n" (Printer.ttostring y);
+  flush stdout
+
+let oAlphaCommand = fun (x,y) ->
+      let x = protect ofix x nopos in
+      let y = protect ofix y nopos in
+      Printf.printf "oAlpha: %s\n" (if (Alpha.oequal x y) then "true" else "false");
+      Printf.printf "      : %s\n" (Printer.otostring x);
+      Printf.printf "      : %s\n" (Printer.otostring y);
+      flush stdout
+
+let uAlphaCommand = fun (x,y) -> 
+      Printf.printf "uAlpha: %s\n" (if (Alpha.uequal x y) then "true" else "false");
+      Printf.printf "      : %s\n" (Printer.utostring x);
+      Printf.printf "      : %s\n" (Printer.utostring y);
+      flush stdout
+
 let process_command lexbuf = (
   match protect (Grammar.command (Tokens.expr_tokens)) lexbuf lexpos with 
   | Toplevel.UVariable (vars,eqns) -> 
@@ -70,37 +109,12 @@ let process_command lexbuf = (
       environment := { !environment with uc = mergeUContext (!environment).uc (UContext(vars,eqns)) }
   | Toplevel.TVariable tvars -> 
       environment := { !environment with tc = List.rev_append (List.map make_tVar tvars) (!environment).tc }
-  | Toplevel.TPrint x ->
-      Printf.printf "tPrint: %s\n" (Printer.ttostring x);
-      flush stdout;
-      let x' = protect tfix x nopos in
-      if not (Alpha.tequal x' x) then Printf.printf "      : %s\n" (Printer.ttostring x');
-  | Toplevel.OPrint x ->
-      Printf.printf "oPrint: %s\n" (Printer.otostring x); 
-      flush stdout;
-      let x' = protect ofix x nopos in
-      if not (Alpha.oequal x' x) then Printf.printf "      : %s\n" (Printer.otostring x')
-  | Toplevel.UPrint x -> 
-      Printf.printf "uPrint: %s\n" (Printer.utostring x); 
-  | Toplevel.TAlpha (x,y) ->
-      let x = protect tfix x nopos in
-      let y = protect tfix y nopos in
-      Printf.printf "tAlpha: %s\n" (if (Alpha.tequal x y) then "true" else "false");
-      Printf.printf "      : %s\n" (Printer.ttostring x);
-      Printf.printf "      : %s\n" (Printer.ttostring y);
-      flush stdout;
-  | Toplevel.OAlpha (x,y) ->
-      let x = protect ofix x nopos in
-      let y = protect ofix y nopos in
-      Printf.printf "oAlpha: %s\n" (if (Alpha.oequal x y) then "true" else "false");
-      Printf.printf "      : %s\n" (Printer.otostring x);
-      Printf.printf "      : %s\n" (Printer.otostring y);
-      flush stdout;
-  | Toplevel.UAlpha (x,y) -> 
-      Printf.printf "uAlpha: %s\n" (if (Alpha.uequal x y) then "true" else "false");
-      Printf.printf "      : %s\n" (Printer.utostring x);
-      Printf.printf "      : %s\n" (Printer.utostring y);
-      flush stdout;
+  | Toplevel.TPrint x -> tPrintCommand x
+  | Toplevel.OPrint x -> oPrintCommand x
+  | Toplevel.UPrint x -> uPrintCommand x
+  | Toplevel.TAlpha (x,y) -> tAlphaCommand (x,y)
+  | Toplevel.OAlpha (x,y) -> oAlphaCommand (x,y)
+  | Toplevel.UAlpha (x,y) -> uAlphaCommand (x,y)
   | Toplevel.Type x ->
       (
        try 
@@ -147,22 +161,12 @@ let strname =
 let oExpr_from_string s = 
     let lexbuf = Lexing.from_string s in
     lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = strname()};
-    (
-     try
-       Some (protect (Grammar.oExprEof (Tokens.expr_tokens)) lexbuf lexpos)
-     with Error_Handled 
-       -> None
-    )
+    protect (Grammar.oExprEof (Tokens.expr_tokens)) lexbuf lexpos
 
 let tExpr_from_string s = 
     let lexbuf = Lexing.from_string s in
     lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = strname()};
-    (
-     try
-       Some (protect (Grammar.tExprEof (Tokens.expr_tokens)) lexbuf lexpos)
-     with Error_Handled 
-       -> None
-    )
+    protect (Grammar.tExprEof (Tokens.expr_tokens)) lexbuf lexpos
 
 let _ = 
   Arg.parse [
@@ -170,6 +174,6 @@ let _ =
       ]
     parse_file
     "usage: [options] filename ...";
-  let _ = tExpr_from_string "Pi f:T->[U](uuu0), Pi o:T, *f o" in
-  let _ = oExpr_from_string "lambda f:T->U, lambda o:T, f o" in
+  (try tPrintCommand (tExpr_from_string "Pi f:T->[U](uuu0), Pi o:T, *f o") with Error_Handled -> ());
+  (try oPrintCommand (oExpr_from_string "lambda f:T->U, lambda o:T, f o") with Error_Handled -> ());
   leave()
