@@ -29,6 +29,7 @@ and tofillin_binder ctxt (v,t,k) =
 and tfillin ctxt (t,pos) = nowhere(
   match t with
     Tvariable _ -> t
+  | TEmptyHole -> raise (TypingError(pos,"empty t-expression hole, no method for filling"))
   | El o -> El (ofillin ctxt o)
   | T_U _ -> t
   | Pi (t1,(v,t2)) -> Pi (tfillin ctxt t1, tfillin_binder ((v,t1) :: ctxt) (v,t2))
@@ -38,13 +39,16 @@ and tfillin ctxt (t,pos) = nowhere(
   | T_Coprod2 (t,t',(x,u),(x',u'),o) -> T_Coprod2 (tfillin ctxt t,tfillin ctxt t',tfillin_binder ctxt (x,u),tfillin_binder ctxt (x',u'),ofillin ctxt o)
   | T_Empty -> t
   | T_IC (tA,a,(x,tB,(y,tD,(z,q)))) -> T_IC (tfillin ctxt tA,ofillin ctxt a,ttofillin_binder ctxt (x,tB,(y,tD,(z,q))))
-  | Id (t,x,y) -> Id (tfillin ctxt t,ofillin ctxt x,ofillin ctxt y))
+  | Id (t,x,y) -> Id (tfillin ctxt t,ofillin ctxt x,ofillin ctxt y)
+  | T_nat -> t)
 and ofillin ctxt (o,pos) = nowhere(
   match o with
     Ovariable v -> o
+  | Onumeral _ -> o
+  | OEmptyHole -> raise (TypingError(pos,"empty o-expression hole, no method for filling"))
   | O_u _ -> o
   | O_j _ -> o
-  | O_ev(f,p,(OVarDummy,(Tvariable TVarDummy,loc))) -> (
+  | O_ev(f,p,(OVarUnused,(TEmptyHole,loc))) -> (
     match strip_pos(Tau.tau ctxt f) with
       | Pi(t1,(x,t2)) -> O_ev(ofillin ctxt f,ofillin ctxt p,tfillin_binder ((x,t1)::ctxt) (x,t2))
       | _ -> raise (TypingError(get_pos f,"expected a product type"))

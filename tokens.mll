@@ -16,7 +16,7 @@ let newline = [ '\n' ]
 let digit = [ '0'-'9' ]
 let first = [ 'A'-'Z' 'a'-'z' ]
 let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' ]
-rule expr_tokens notations uc tc = 
+rule expr_tokens = 
 parse
   | "oPrint" { WPrint_o }
   | "tPrint" { WPrint_t }
@@ -24,15 +24,14 @@ parse
   | "Tau" { WTau }
   | "tVariable" { WtVariable }
   | "uVariable" { WuVariable }
-  | "tDefinition" { WDeclare }
-  | "oDefinition" { WDefine }
+  | "tDefinition" { WtDefinition }
+  | "oDefinition" { WoDefinition }
   | "Exit" { WExit }
   | "Show" { WShow }
   | "[El]" { WEl }
   | "[U]" { WU }
   | "[u]" { Wu }
   | "[j]" { Wj }
-  | "j" { Kj }
   | "[Pi;" { WPi }
   | "Pi" { KPi }
   | "lambda" { Klambda }
@@ -48,6 +47,7 @@ parse
   | "[forall;" { Wforall }
   | "Univ" { Kulevel }
   | "Type" { KType }
+  | "max" { Kumax }
   | "|" { Wbar }
   | '('  { Wlparen }
   | ')'  { Wrparen }
@@ -77,13 +77,13 @@ parse
        (* an experiment: *)
        (* if List.mem (TVar id) tc then TVar_token (TVar id) else *)
        Var_token id }
-  | white { expr_tokens notations uc tc lexbuf }
-  | '#' [ ^ '\n' ]* { expr_tokens notations uc tc lexbuf }
-  | newline { Lexing.new_line lexbuf; expr_tokens notations uc tc lexbuf }
+  | white { expr_tokens lexbuf }
+  | '#' [ ^ '\n' ]* { expr_tokens lexbuf }
+  | newline { Lexing.new_line lexbuf; expr_tokens lexbuf }
   | _ as c { Printf.fprintf stderr "%s: invalid character: '%c'\n" (lexing_pos lexbuf) c; 
 	     flush stderr ;
 	     bump_error_count();
-	     expr_tokens notations uc tc lexbuf }
+	     expr_tokens lexbuf }
   | eof { raise Eof }
 and command_flush = parse
   | newline { command_flush lexbuf }

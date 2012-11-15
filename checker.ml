@@ -49,11 +49,11 @@ let parse_file filename =
     lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = filename};
     let rec process notations (uc:uContext) (tc:tContext) =
       let continue notations uc tc = flush stdout; flush stderr; process notations uc tc in
-      match protect (Grammar.command (Tokens.expr_tokens notations uc tc)) lexbuf with 
+      match protect (Grammar.command (Tokens.expr_tokens)) lexbuf with 
       | Toplevel.UVariable (vars,eqns) -> 
 	  let vars = List.map make_uVar vars in
 	  continue notations (mergeUContext uc (UContext(vars,eqns))) tc
-      | Toplevel.TVariable tvars -> continue notations uc (tc@(List.map make_tVar tvars))
+      | Toplevel.TVariable tvars -> continue notations uc (List.rev_append (List.map make_tVar tvars) tc)
       | Toplevel.Print_t x -> Printf.printf "tPrint: %s\n" (Printer.ttostring x); continue notations uc tc
       | Toplevel.Print_o x -> Printf.printf "oPrint: %s\n" (Printer.otostring x); continue notations uc tc
       | Toplevel.Print_u x -> Printf.printf "uPrint: %s\n" (Printer.utostring x); continue notations uc tc
@@ -75,8 +75,9 @@ let parse_file filename =
 	  Printf.printf "Show:\n";
 	  Printf.printf "   uVariable ";
 	  let UContext(uvars,ueqns) = uc in 
-	  Printf.printf "%s.\n" ((String.concat " " (List.map Printer.uvartostring uvars)) ^ ":Univ" ^ (String.concat "" (List.map Printer.ueqntostring ueqns)));
-	  Printf.printf "   tVariable"; List.iter (fun x -> Printf.printf " %s" (Printer.tvartostring x)) tc; Printf.printf ".\n";
+	  Printf.printf "%s.\n" 
+	    ((String.concat " " (List.map Printer.uvartostring uvars)) ^ ":Univ" ^ (String.concat "" (List.map Printer.ueqntostring ueqns)));
+	  Printf.printf "   tVariable"; List.iter (fun x -> Printf.printf " %s" (Printer.tvartostring x)) (List.rev tc); Printf.printf ".\n";
 	  let p = List.rev_append notations [] in List.iter (fun x -> Printf.printf "   "; printnotation (snd x)) p;
 	  continue notations uc tc
     in

@@ -30,6 +30,7 @@ and tosubstfresh subs (v,t,k) =
 and tsubst subs (t,pos) = nowhere(
   match t with
     Tvariable _ -> t
+  | TEmptyHole -> t
   | El o -> El (osubst subs o)
   | T_U _ -> t
   | Pi (t1,(v,t2)) -> Pi (tsubst subs t1, tsubstfresh subs (v,t2))
@@ -39,10 +40,13 @@ and tsubst subs (t,pos) = nowhere(
   | T_Coprod2 (t,t',(x,u),(x',u'),o) -> T_Coprod2 (tsubst subs t,tsubst subs t',tsubstfresh subs (x,u),tsubstfresh subs (x',u'),osubst subs o)
   | T_Empty -> t
   | T_IC (tA,a,(x,tB,(y,tD,(z,q)))) -> T_IC (tsubst subs tA,osubst subs a,ttosubstfresh subs (x,tB,(y,tD,(z,q))))
-  | Id (t,x,y) -> Id (tsubst subs t,osubst subs x,osubst subs y))
+  | Id (t,x,y) -> Id (tsubst subs t,osubst subs x,osubst subs y)
+  | T_nat -> t)
 and osubst subs (o,pos) = nowhere(
   match o with
     Ovariable v -> (try strip_pos(List.assoc v subs) with Not_found -> o)
+  | OEmptyHole -> o
+  | Onumeral _ -> o 
   | O_u _ -> o
   | O_j _ -> o
   | O_ev(f,p,(v,t)) -> O_ev(osubst subs f,osubst subs p,tsubstfresh subs (v,t))

@@ -22,13 +22,15 @@ type position =
 let error_format_pos = function
   | Position(p,q) 
     -> "File \"" ^ p.Lexing.pos_fname ^ "\", " 
-      ^ (
-	if p.Lexing.pos_lnum = q.Lexing.pos_lnum
-	then "line " ^ (string_of_int p.Lexing.pos_lnum) 
-	else "lines " ^ (string_of_int p.Lexing.pos_lnum) ^ "-" ^ (string_of_int q.Lexing.pos_lnum)
-       )
-      ^ ", " ^ 
-      "characters " ^ (string_of_int (p.Lexing.pos_cnum-p.Lexing.pos_bol+1)) ^ "-" ^ (string_of_int (q.Lexing.pos_cnum-q.Lexing.pos_bol))
+      ^ (if p.Lexing.pos_lnum = q.Lexing.pos_lnum
+	 then "line " ^ (string_of_int p.Lexing.pos_lnum) 
+	 else "lines " ^ (string_of_int p.Lexing.pos_lnum) ^ "-" ^ (string_of_int q.Lexing.pos_lnum))
+      ^ ", " 
+      ^ (let i = p.Lexing.pos_cnum-p.Lexing.pos_bol+1
+         and j = q.Lexing.pos_cnum-q.Lexing.pos_bol in
+         if i = j
+	 then "character " ^ (string_of_int i)
+         else "characters " ^ (string_of_int i) ^ "-" ^ (string_of_int j))
   | Nowhere -> "unknown position"
 
 let nowhere x = (x,Nowhere)
@@ -49,7 +51,7 @@ exception Eof
 type oVar = 
     OVar of string
   | OVarGen of int * string
-  | OVarDummy
+  | OVarUnused
 let make_oVar c = OVar c
 
 let fresh = 
@@ -60,12 +62,11 @@ let fresh =
     OVarGen (!genctr, x)) in
   function
       OVar x | OVarGen(_,x) -> newgen x
-    | OVarDummy as v -> v
+    | OVarUnused as v -> v
 
 (** Type variable. *)
 type tVar = 
     TVar of string
-  | TVarDummy							      (* temporary place holder in applications [f a] *)
 let make_tVar c = TVar c
 
 (** Universe variable. *)
@@ -87,6 +88,8 @@ type uLevel =
 	(** A pair [(M,n)], denoting [M+n], the n-th successor of [M].  Here [n] should be nonnegative *)
   | Umax of uLevel * uLevel
 	(** A pair [(M,M')] denoting [max(M,M')]. *)
+  | UEmptyHole
+        (** A u-level, to be filled in later, by type checking. *)
 
 type  oBinding = oVar * oExpr
 and   tBinding = oVar * tExpr
@@ -100,6 +103,8 @@ and oooBinding = oVar * oExpr * ooBinding
 and tExpr = tExpr' * position
 and tExpr' =
   (* TS0 *)
+  | TEmptyHole
+        (** a hole to be filled in later  *)
   | Tvariable of tVar
   | El of oExpr
 	(** [El]; converts an object term into the corresponding type term *)
@@ -130,11 +135,17 @@ and tExpr' =
   | Id of tExpr * oExpr * oExpr
       (** Identity type; paths type. *)
       (* TS7 *)
+  | T_nat
+      (** nat 
+
+	  The type of natural numbers. *)
       
 (** [oExpr] is the type of o-expressions. *)
 and oExpr = oExpr' * position
 and oExpr' =
     (* TS0 *)
+  | OEmptyHole
+        (** a hole to be filled in later *)
   | Ovariable of oVar
 	(** An o-variable. *)
   | O_u of uLevel
@@ -249,7 +260,12 @@ and oExpr' =
 
 	    By definition, the subexpression [p] is not essential.
 	 *)
-
+  | Onumeral of int 
+         (** A numeral.
+	     
+	     We add this variant temporarily to experiment with parsing
+	     conflicts, when numerals such as 4, can be considered either as
+	     o-expressions (S(S(S(S O)))) or as universe levels.  *)
 
 (** 
     A universe context [UC = (Fu,A)] is represented a list of universe variables [Fu] and a list of
@@ -259,7 +275,7 @@ and oExpr' =
  *) 
 type uContext = UContext of uVar list * (uLevel * uLevel) list
 let mergeUContext : uContext -> uContext -> uContext =
-    function UContext(uvars,eqns) -> function UContext(uvars',eqns') -> UContext(uvars@uvars',eqns@eqns')
+  function UContext(uvars,eqns) -> function UContext(uvars',eqns') -> UContext(List.rev_append uvars' uvars,List.rev_append eqns' eqns)
 let emptyUContext = UContext ([],[])
 
 (** t-context; a list of t-variables declared as "Type". *)

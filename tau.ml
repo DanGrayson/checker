@@ -7,6 +7,8 @@ open Typesystem
 
 let rec tau (g:(oVar*tExpr) list) ((o,pos):oExpr) = nowhere (
   match o with
+  | OEmptyHole -> raise (TypingError(pos, "empty hole, type undetermined, internal error"))
+  | Onumeral _ -> T_nat
   | Ovariable v -> (
       try strip_pos(List.assoc v g) 
       with
@@ -14,7 +16,7 @@ let rec tau (g:(oVar*tExpr) list) ((o,pos):oExpr) = nowhere (
 	  raise (TypingError(pos, "unbound variable, not in context: " ^ (Printer.ovartostring v)))
      )
   | O_u x -> T_U (Uplus(x,1))
-  | O_j (m1,m2) -> Pi(nowhere(T_U m1),(OVarDummy,nowhere(T_U m2)))
+  | O_j (m1,m2) -> Pi(nowhere(T_U m1),(OVarUnused,nowhere(T_U m2)))
   | O_ev (o1,o2,(x,t)) -> strip_pos(Substitute.tsubst [(x,o2)] t)
   | O_lambda (t,(x,o)) -> Pi(t, (x, tau ((x,t) :: g) o))
   | O_forall (m1,m2,_,(_,_)) -> T_U (Umax( m1, m2))

@@ -38,21 +38,18 @@ let fixParmList (p:parm list) : uContext * tContext * oContext =
 %token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow Wequal Wturnstile Wtriangle Wcolonequal
 %token Wlbrace Wrbrace Wbar Wunderscore
 %token Wgreaterequal Wgreater Wlessequal Wless Wsemi
-%token Kulevel KType KPi Klambda Kj KSigma
+%token Kulevel Kumax KType KPi Klambda KSigma
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
-%token WTau WPrint_t WPrint_o WPrint_u WDefine WDeclare WShow WExit WtVariable WuVariable
+%token WTau WPrint_t WPrint_o WPrint_u WoDefinition WtDefinition WShow WExit WtVariable WuVariable
 %token Wflush
 %token Prec_application
 
 /* precedences, lowest first */
 %right KPi KSigma
 %right Warrow
-%left Wbar
-%left Wplus
 %left Prec_application
 %right Klambda
-%nonassoc Kj
-%nonassoc Var_token Wlparen Wev Wu Wj Wlambda Wforall
+%nonassoc Wforall Wunderscore Nat
 
 %%
 
@@ -69,9 +66,9 @@ command:
     { Toplevel.Print_u u }
 | WTau o=topOExpr Wperiod
     { Toplevel.Type o }
-| WDeclare name=Var_token parms=parmList Wcolonequal t=topTExpr Wperiod 
+| WtDefinition name=Var_token parms=parmList Wcolonequal t=topTExpr Wperiod 
     { Toplevel.Notation (TDefinition (Ident name,(fixParmList parms,t))) }
-| WDefine v=Var_token p=parmList Wcolonequal o=oExpr Wperiod 
+| WoDefinition v=Var_token p=parmList Wcolonequal o=oExpr Wperiod 
     {
      let (uc,tc,oc) = fixParmList p in
      let o = List.fold_right (fun (x,t) o -> nowhere( O_lambda (t, (x,o)))) oc o in
@@ -81,7 +78,7 @@ command:
      ODefinition (Ident v,((uc,tc,emptyOContext),o,t))
     ) 
    }
-| WDefine name=Var_token parms=parmList Wcolonequal o=topOExpr Wcolon t=tExpr Wperiod 
+| WoDefinition name=Var_token parms=parmList Wcolonequal o=topOExpr Wcolon t=tExpr Wperiod 
     { Toplevel.Notation (ODefinition (Ident name,(fixParmList parms,o,t))) }
 | WShow Wperiod 
     { Toplevel.Show }
@@ -93,7 +90,7 @@ topTExpr : tExpr
 topOExpr : oExpr
     { Fillin.ofillin [] $1 }
 
-unusedtokens: Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile Wempty Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile TVar_token UVar_token { () }
+unusedtokens: Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile Wempty Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile Wbar TVar_token UVar_token { () }
 
 uParm: vars=nonempty_list(Var_token) Wcolon Kulevel eqns=preceded(Wsemi,uEquation)*
     { UParm (UContext ((List.map make_uVar vars),eqns)) }
@@ -140,26 +137,27 @@ tVar: 					(* we have to choose one approach or the other: *)
 | Var_token { TVar $1 }
 | TVar_token { $1 }
 
-uVar: Var_token { UVar $1 }
+uVar:
+| Var_token { UVar $1 }
 
 oExpr: o=oExpr0
     {o, Position($startpos, $endpos)}
 | o=parenthesized(oExpr) 
     {o}
 oExpr0:
+| Wunderscore
+    { OEmptyHole }
 | x=oVar
     { Ovariable x }
 | Wu Wlparen u=uLevel Wrparen
     { O_u u }
 | Wj Wlparen u=uLevel Wcomma v=uLevel Wrparen
     { O_j(u,v) }
-| Kj Wunderscore Wlparen u=uLevel Wcomma v=uLevel Wrparen
-    { O_j(u,v) }
 | Wev x=oVar Wrbracket Wlparen f=oExpr Wcomma o=oExpr Wcomma t=tExpr Wrparen
     { O_ev(f,o,(x,t)) }
 | f=oExpr o=oExpr
     %prec Prec_application
-    { O_ev(f,o,(OVarDummy,(Tvariable TVarDummy, Nowhere))) }
+    { O_ev(f,o,(OVarUnused,(TEmptyHole, Nowhere))) }
 | Wlambda x=oVar Wrbracket Wlparen t=tExpr Wcomma o=oExpr Wrparen
     { O_lambda(t,(x,o)) }
 | Klambda x=oVar Wcolon t=tExpr Wcomma o=oExpr
@@ -167,12 +165,16 @@ oExpr0:
     { O_lambda(t,(x,o)) }
 | Wforall x=oVar Wrbracket Wlparen u1=uLevel Wcomma u2=uLevel Wcomma o1=oExpr Wcomma o2=oExpr Wrparen
     { O_forall(u1,u2,o1,(x,o2)) }
+| n=Nat
+    { Onumeral n }
 
 tExpr: t=tExpr0 
     {t, Position($startpos, $endpos)}
 | t=parenthesized(tExpr)
     {t}
 tExpr0:
+| Wunderscore
+    { TEmptyHole }
 | t=tVar
     { Tvariable t }
 | WEl Wlparen o=oExpr Wrparen
@@ -187,7 +189,7 @@ tExpr0:
     %prec KPi
     { Pi(t1,(x,t2)) }
 | t=tExpr Warrow u=tExpr
-    { Pi(t,(OVarDummy,u)) }
+    { Pi(t,(OVarUnused,u)) }
 | WSigma x=oVar Wrbracket Wlparen t1=tExpr Wcomma t2=tExpr Wrparen
     { Sigma(t1,(x,t2)) }
 | KSigma x=oVar Wcolon t1=tExpr Wcomma t2=tExpr
@@ -205,6 +207,7 @@ tExpr0:
 | WId Wlparen t=tExpr Wcomma a=oExpr Wcomma b=oExpr Wrparen 
     { Id(t,a,b) }
 uLevel:
+| Wunderscore { UEmptyHole }
 | Wlparen u=uLevel Wrparen 
     { u }
 | n=Nat
@@ -213,5 +216,5 @@ uLevel:
     { Uvariable u }
 | u=uLevel Wplus n=Nat
     { Uplus (u,n) }
-| u=uLevel Wbar v=uLevel
+| Kumax Wlparen u=uLevel Wcomma v=uLevel Wrparen
     { Umax (u,v)  }

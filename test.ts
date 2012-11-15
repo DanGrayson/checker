@@ -10,7 +10,7 @@ tPrint [El](x).
 tPrint [U](u4).
 oPrint [j](u1, u2).
 tPrint *[u](u4).
-uPrint u1+1+0+4|2.
+uPrint max(u1+1+0+4,2).
 tPrint [Sigma;x](T,T').
 tPrint Sigma x:T, Sigma y:U, V -> W .
 tPrint [Coprod](T,T').
@@ -31,8 +31,13 @@ oPrint lambda g:T -> *k, lambda f:(Pi t:T, *g t), lambda o:T, f o.
 oPrint lambda f:T->U, lambda o:T, lambda x : *r, f o.
 tPrint A->B->C.
 
+oPrint lambda f:(X->X)->U, f lambda x:X, x.
+
+Tau 14.
 Tau [u](u4).
 Tau [j](u,u').
+Tau [j](_,u').
+Tau [j](u,_).
 Tau [ev;x](f,o,T).
 Tau [ev;x](f,o,*x).
 Tau [lambda;x](T,x).
@@ -41,13 +46,13 @@ Tau [forall;x](u1,u2,o,o').
 oDefinition E1 (u:Univ)(K:Type)(x:K) := x : K.
 tDefinition E2 (u1 u2 u3:Univ)(K:Type) := K->K .
 tDefinition E3 (u1 u2 u3 : Univ)(K:Type)(x1: K -> [U](u1))(x2: [U](1)) := [U](u2) .
-oDefinition E5 (u1 u2 u3 : Univ; u1|u2=u2|u3; u1 >= u2+1 )(K:Type)(x1: K -> [U](u1))(x2: [U](1)) := j_(x1, x2) : [U](u2) .
+oDefinition E5 (u1 u2 u3 : Univ; max(u1,u2)=max(u2,u3); u1 >= u2+1 )(K:Type)(x1: K -> [U](u1))(x2: [U](1)) := [j](x1, x2) : [U](u2) .
 oDefinition E7 (T U:Type)(t:T)(u:U)(f:T->U) := f t.
 
 # this one gives an error message with an unknown position
 # oDefinition E7 := ft.
 
 oDefinition E7 (K L:Kype)(t:K)(g:K -> [U](0))(u:L)(f:Pi x:K,*g x) := f t.
-oDefinition E6 (u1 u2 u3 : Univ)(X1 X2:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := j_(x1, x2) .
+oDefinition E6 (u1 u2 u3 : Univ)(X1 X2:Type)(x1: X1 -> [U](u1))(x2: [U](1)) := [j](x1, x2) .
 
 Exit.

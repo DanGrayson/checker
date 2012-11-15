@@ -3,11 +3,12 @@ open Typesystem
 let ovartostring = function
   | OVar x -> x
   | OVarGen(i,x) -> x ^ "_" ^ (string_of_int i)
-  | OVarDummy -> "_"
+  | OVarUnused -> "_"
 
 let uvartostring = function
   | UVar x -> x
 let rec utostring = function
+  | UEmptyHole -> "_"
   | Unumeral i -> string_of_int i
   | Uvariable x -> uvartostring x
   | Uplus (x,n) -> "(" ^ (utostring x) ^ "+" ^ (string_of_int n) ^ ")"
@@ -16,11 +17,11 @@ let ueqntostring (u,v) = ";" ^ (utostring u) ^ "=" ^ (utostring v)
 
 let tvartostring = function
   | TVar x -> x
-  | TVarDummy -> "__Unknown_type__"
 
 let rec ttostring = function
   | (t,_) -> ttostring' t
 and ttostring' = function
+  | TEmptyHole -> "_"
   | Tvariable x -> tvartostring x
   | El x -> "[El](" ^ (otostring x) ^ ")"
   | T_U x -> "[U](" ^ (utostring x) ^ ")"
@@ -39,15 +40,18 @@ and ttostring' = function
     -> "[IC;" ^ (ovartostring x) ^ "," ^ (ovartostring y) ^ "," ^ (ovartostring z) ^ "]("
       ^ (ttostring tA) ^ "," ^ (otostring a) ^ "," ^ (ttostring tB) ^ "," ^ (ttostring tD) ^ "," ^ (otostring q) ^ ")"
   | Id (t,x,y) -> "[Id](" ^ (ttostring t) ^ "," ^ (otostring x) ^ "," ^ (otostring y) ^ ")"
+  | T_nat -> "nat"
 and otostring = function
   | (o,_) -> otostring' o
 and otostring' = function
+  | OEmptyHole -> "_"
   | Ovariable x -> ovartostring x
   | O_u x -> "[u](" ^ (utostring x) ^ ")"
   | O_j (x,y) -> "[j](" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
   | O_ev (f,o,(x,t)) -> "[ev;" ^ (ovartostring x) ^ "](" ^ (otostring f) ^ "," ^ (otostring o) ^ "," ^ (ttostring t) ^ ")"
   | O_lambda (t,(x,o)) -> "[lambda;" ^ (ovartostring x) ^ "](" ^ (ttostring t) ^ "," ^ (otostring o) ^ ")"
   | O_forall (u,u',o,(x,o')) -> "[forall;" ^ (ovartostring x) ^ "](" ^ (utostring u) ^ "," ^ (utostring u') ^ "," ^ (otostring o) ^ "," ^ (otostring o') ^ ")"
+  | Onumeral i -> string_of_int i
   | O_pair _
   | O_pr1 _
   | O_pr2 _
@@ -94,5 +98,5 @@ let parmstostring = function
       (String.concat "" (List.map (fun x -> "(" ^ (octostring x) ^ ")") oc))
 	
 let notationtostring = function
-  | TDefinition (Ident name,(c,  t)) -> "tDefinition "^name^(parmstostring c)^" :=                     "^(ttostring t)^"."
+  | TDefinition (Ident name,(c,  t)) -> "tDefinition "^name^(parmstostring c)^" := "                    ^(ttostring t)^"."
   | ODefinition (Ident name,(c,o,t)) -> "oDefinition "^name^(parmstostring c)^" := "^(otostring o)^" : "^(ttostring t)^"."
