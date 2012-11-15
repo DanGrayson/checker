@@ -6,7 +6,7 @@ type parm =
   | TParm of tContext
   | OParm of oContext
 
-let fixParmList (p:parm list) : uContext * tContext * oContext =
+let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code has to be moved somewhere to use the context *)
   let rec fix us ts os p =
     match p with 
     | UParm u :: p -> 
@@ -20,7 +20,7 @@ let fixParmList (p:parm list) : uContext * tContext * oContext =
 	let tc = List.flatten (List.rev_append ts [])
 	and oc = List.flatten (List.rev_append os [])
 	and uc = match (List.rev_append us []) with
-	| [] -> initialUContext
+	| [] -> emptyUContext
 	| (uc :: []) -> uc
 	| _ -> raise (Typesystem.Unimplemented "merging of universe level variable lists")
 	in (uc,tc,oc))

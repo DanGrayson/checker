@@ -1,5 +1,3 @@
-Exit.
-
 # this is a comment
 
 Variable u0 u1 u2 : Univ ; u0 <= u1; u0 <= u2 .

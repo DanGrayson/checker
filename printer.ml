@@ -13,7 +13,7 @@ let rec utostring = function
   | Uvariable x -> uvartostring x
   | Uplus (x,n) -> "(" ^ (utostring x) ^ "+" ^ (string_of_int n) ^ ")"
   | Umax (x,y) -> "max(" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
-let ueqntostring (u,v) = ";" ^ (utostring u) ^ "=" ^ (utostring v)
+let ueqntostring (u,v) = "; " ^ (utostring u) ^ "=" ^ (utostring v)
 
 let tvartostring = function
   | TVar x -> x

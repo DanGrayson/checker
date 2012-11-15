@@ -48,17 +48,26 @@ let lexpos lexbuf =
   let _ = Tokens.command_flush lexbuf in
   p
 
+type var = U of uVar | T of tVar | O of oVar
+
 type environment_type = {
-  uc : uContext;
-  tc : tContext;
-  notations : (Typesystem.identifier * Typesystem.notation) list;
-}
+    uc : uContext;
+    tc : tContext;
+    definitions : (Typesystem.identifier * Typesystem.notation) list;
+    lookup_order : (string * var) list	(* put definitions in here later *)
+  }
 
 let environment = ref {
-  uc = initialUContext;
+  uc = emptyUContext;
   tc = emptyTContext;
-  notations = [];
+  definitions = [];
+  lookup_order = [];
 }
+
+let add_tVars tvars = environment := { !environment with tc = List.rev_append (List.map make_tVar tvars) (!environment).tc }
+let add_uVars uvars eqns =
+  let uvars = List.map make_uVar uvars in
+  environment := { !environment with uc = mergeUContext (!environment).uc (UContext(uvars,eqns)) }
 
 let tfix t = Fillin.tfillin [] t
 let ofix o = Fillin.ofillin [] o
@@ -78,7 +87,8 @@ let oPrintCommand x =
   flush stdout
 
 let uPrintCommand x =
-  Printf.printf "uPrint: %s\n" (Printer.utostring x)
+  Printf.printf "uPrint: %s\n" (Printer.utostring x);
+  flush stdout
 
 let tAlphaCommand (x,y) =
   let x = protect tfix x nopos in
@@ -89,67 +99,73 @@ let tAlphaCommand (x,y) =
   flush stdout
 
 let oAlphaCommand = fun (x,y) ->
-      let x = protect ofix x nopos in
-      let y = protect ofix y nopos in
-      Printf.printf "oAlpha: %s\n" (if (Alpha.oequal x y) then "true" else "false");
-      Printf.printf "      : %s\n" (Printer.otostring x);
-      Printf.printf "      : %s\n" (Printer.otostring y);
-      flush stdout
+  let x = protect ofix x nopos in
+  let y = protect ofix y nopos in
+  Printf.printf "oAlpha: %s\n" (if (Alpha.oequal x y) then "true" else "false");
+  Printf.printf "      : %s\n" (Printer.otostring x);
+  Printf.printf "      : %s\n" (Printer.otostring y);
+  flush stdout
 
 let uAlphaCommand = fun (x,y) -> 
-      Printf.printf "uAlpha: %s\n" (if (Alpha.uequal x y) then "true" else "false");
-      Printf.printf "      : %s\n" (Printer.utostring x);
-      Printf.printf "      : %s\n" (Printer.utostring y);
-      flush stdout
+  Printf.printf "uAlpha: %s\n" (if (Alpha.uequal x y) then "true" else "false");
+  Printf.printf "      : %s\n" (Printer.utostring x);
+  Printf.printf "      : %s\n" (Printer.utostring y);
+  flush stdout
+
+let typeCommand x = (
+  try 
+    let tx = Tau.tau [] x in
+    Printf.printf "Tau: %s : %s\n" (Printer.otostring x) (Printer.ttostring tx);
+    flush stdout;
+  with 
+  | GeneralError s -> raise NotImplemented
+  | TypingError (p,s) 
+    -> Printf.fprintf stderr "%s: %s\n" (error_format_pos p) s; 
+      flush stderr;
+      Tokens.bump_error_count())
+    
+let show_command () = 
+  Printf.printf "Show:\n";
+  Printf.printf "   Variable ";
+  let UContext(uvars,ueqns) = (!environment).uc in 
+  Printf.printf "%s.\n" 
+    ((String.concat " " (List.map Printer.uvartostring uvars)) ^ " : Univ" ^ (String.concat "" (List.map Printer.ueqntostring ueqns)));
+  Printf.printf "   Variable"; List.iter (fun x -> Printf.printf " %s" (Printer.tvartostring x)) (List.rev (!environment).tc); Printf.printf " : Type.\n";
+  let p = List.rev_append (!environment).definitions [] in List.iter (fun x -> Printf.printf "   "; printnotation (snd x)) p;
+  flush stdout
+
+let addDefinition x =
+  Printf.printf "Notation: %s\n" (Printer.notationtostring x);
+  flush stdout;
+  environment := { !environment with definitions = (notation_name x,x) :: (!environment).definitions }
+
+exception StopParsingFile
 
 let process_command lexbuf = (
   match protect (Grammar.command (Tokens.expr_tokens)) lexbuf lexpos with 
-  | Toplevel.UVariable (vars,eqns) -> 
-      let vars = List.map make_uVar vars in
-      environment := { !environment with uc = mergeUContext (!environment).uc (UContext(vars,eqns)) }
-  | Toplevel.TVariable tvars -> 
-      environment := { !environment with tc = List.rev_append (List.map make_tVar tvars) (!environment).tc }
+  | Toplevel.UVariable (uvars,eqns) -> add_uVars uvars eqns
+  | Toplevel.TVariable tvars -> add_tVars tvars
   | Toplevel.TPrint x -> tPrintCommand x
   | Toplevel.OPrint x -> oPrintCommand x
   | Toplevel.UPrint x -> uPrintCommand x
   | Toplevel.TAlpha (x,y) -> tAlphaCommand (x,y)
   | Toplevel.OAlpha (x,y) -> oAlphaCommand (x,y)
   | Toplevel.UAlpha (x,y) -> uAlphaCommand (x,y)
-  | Toplevel.Type x ->
-      (
-       try 
-	 let tx = Tau.tau [] x in
-	 Printf.printf "Tau: %s : %s\n" (Printer.otostring x) (Printer.ttostring tx);
-	 flush stdout;
-       with 
-       | GeneralError s -> raise NotImplemented
-       | TypingError (p,s) 
-	 -> Printf.fprintf stderr "%s: %s\n" (error_format_pos p) s; 
-	   flush stderr;
-	   Tokens.bump_error_count());
-  | Toplevel.Notation x ->
-      Printf.printf "Notation: %s\n" (Printer.notationtostring x);
-      environment := { !environment with notations = (notation_name x,x) :: (!environment).notations }
-  | Toplevel.Exit -> ()
-  | Toplevel.Show -> 
-      Printf.printf "Show:\n";
-      Printf.printf "   uVariable ";
-      let UContext(uvars,ueqns) = (!environment).uc in 
-      Printf.printf "%s.\n" 
-	((String.concat " " (List.map Printer.uvartostring uvars)) ^ ":Univ" ^ (String.concat "" (List.map Printer.ueqntostring ueqns)));
-      Printf.printf "   tVariable"; List.iter (fun x -> Printf.printf " %s" (Printer.tvartostring x)) (List.rev (!environment).tc); Printf.printf ".\n";
-      let p = List.rev_append (!environment).notations [] in List.iter (fun x -> Printf.printf "   "; printnotation (snd x)) p;
+  | Toplevel.Type x -> typeCommand x
+  | Toplevel.Notation x -> addDefinition x
+  | Toplevel.Exit -> raise StopParsingFile
+  | Toplevel.Show -> show_command()
  )
 
 let parse_file filename =
     let lexbuf = Lexing.from_channel (open_in filename) in
     lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = filename};
-    while true do
-      ( try process_command lexbuf with Error_Handled -> ());
-      flush stderr;
-      Printf.printf "\n";
-      flush stdout;
-    done
+    (
+     try
+       while true do (try process_command lexbuf with Error_Handled -> ());
+       done
+     with StopParsingFile -> ()
+    )
   
 let strname =
   let n = ref 0 in
@@ -158,15 +174,12 @@ let strname =
     incr n;
     p
 
-let oExpr_from_string s = 
+let parse_string grammar s = 
     let lexbuf = Lexing.from_string s in
     lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = strname()};
-    protect (Grammar.oExprEof (Tokens.expr_tokens)) lexbuf lexpos
-
-let tExpr_from_string s = 
-    let lexbuf = Lexing.from_string s in
-    lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = strname()};
-    protect (Grammar.tExprEof (Tokens.expr_tokens)) lexbuf lexpos
+    protect (grammar (Tokens.expr_tokens)) lexbuf lexpos
+let oExpr_from_string = parse_string Grammar.oExprEof
+let tExpr_from_string = parse_string Grammar.tExprEof
 
 let _ = 
   Arg.parse [

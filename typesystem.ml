@@ -285,16 +285,16 @@ and oExpr' =
     that matters.
  *) 
 type uContext = UContext of uVar list * (uExpr * uExpr) list
+let emptyUContext = UContext ([],[])
 let mergeUContext : uContext -> uContext -> uContext =
   function UContext(uvars,eqns) -> function UContext(uvars',eqns') -> UContext(List.rev_append uvars' uvars,List.rev_append eqns' eqns)
-let initialUContext = UContext ([UVar "uuu0"],[])
 
 (** t-context; a list of t-variables declared as "Type". *)
 type tContext = tVar list
 let emptyTContext : tContext = []
 
 type utContext = uContext * tContext
-let emptyUTContext = initialUContext, emptyTContext
+let emptyUTContext = emptyUContext, emptyTContext
 
 (** o-context; a list of o-variables with T-expressions representing their declared type. *)
 type oContext = (oVar * tExpr) list				  (* [Gamma] *)
