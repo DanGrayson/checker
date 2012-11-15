@@ -75,21 +75,23 @@ let make_uVar c = UVar c
 
 (** A u-level expression, [M], is constructed inductively as: [n], [v], [M+n], or
     [max(M,M')], where [v] is a universe variable and [n] is a natural number.
-    The type [uLevel] implements all aspects of judging that we have a valid
-    uLevel, except for possibly constraining the list of variables used to members
+    The type [uExpr] implements all aspects of judging that we have a valid
+    uExpr, except for possibly constraining the list of variables used to members
     of a given list.
  *)
-type uLevel =
-  | Unumeral of int
-	(** A u-level [n] stages above the bottom-most universe. *)
+type uExpr =
   | Uvariable of uVar
 	(** A u-level variable. *)
-  | Uplus of uLevel * int
+  | Uplus of uExpr * int
 	(** A pair [(M,n)], denoting [M+n], the n-th successor of [M].  Here [n] should be nonnegative *)
-  | Umax of uLevel * uLevel
+  | Umax of uExpr * uExpr
 	(** A pair [(M,M')] denoting [max(M,M')]. *)
   | UEmptyHole
         (** A u-level, to be filled in later, by type checking. *)
+  | UNumberedEmptyHole of int
+        (** A u-level, to be filled in later, by type checking. *)
+
+let uuu0 = Uvariable (UVar "uuu0")
 
 type  oBinding = oVar * oExpr
 and   tBinding = oVar * tExpr
@@ -105,10 +107,12 @@ and tExpr' =
   (* TS0 *)
   | TEmptyHole
         (** a hole to be filled in later  *)
+  | TNumberedEmptyHole of int
+        (** A hole to be filled in later, by type checking. *)
   | Tvariable of tVar
   | El of oExpr
 	(** [El]; converts an object term into the corresponding type term *)
-  | T_U of uLevel
+  | T_U of uExpr
 	(** [T_U m]; a u-level expression, as a type *)
   | Pi of tExpr * tBinding
 	(** [Pi(T,(x,T')) <--> \[Pi;x\](T,T')] *)
@@ -146,11 +150,13 @@ and oExpr' =
     (* TS0 *)
   | OEmptyHole
         (** a hole to be filled in later *)
+  | ONumberedEmptyHole of int
+        (** A hole to be filled in later, by type checking. *)
   | Ovariable of oVar
 	(** An o-variable. *)
-  | O_u of uLevel
+  | O_u of uExpr
 	(** [u]; universe as an object. *)
-  | O_j of uLevel * uLevel
+  | O_j of uExpr * uExpr
 	(** [j](U,U') *)
   | O_ev of oExpr * oExpr * tBinding
 	(** [O_ev(f,o,(x,T)) <--> \[ev;x\](f,o,T)]
@@ -163,7 +169,7 @@ and oExpr' =
 	 *)
   | O_lambda of tExpr * oBinding
 	(** [O_lambda(T,(x,o)) <--> \[lambda;x\](T,o)] *)
-  | O_forall of uLevel * uLevel * oExpr * oBinding
+  | O_forall of uExpr * uExpr * oExpr * oBinding
 	(** [O_forall(M,M',o,(x,o')) <--> \[forall;x\]([M],[M'],o,o')]
 	    
 	    [O_forall] is the object term corresponding to [Pi].
@@ -183,7 +189,7 @@ and oExpr' =
 
 	    By definition, such subexpressions [T] are not essential.
 	 *)
-  | O_total of uLevel * uLevel * oExpr * oBinding
+  | O_total of uExpr * uExpr * oExpr * oBinding
 	(** [O_total(m1,m2,o1,(x,o2)) <--> \[total;x\](m1,m2,o1,o2)]
 
 	    Corresponds to [total] or [prod] in the paper. *)
@@ -200,7 +206,7 @@ and oExpr' =
 	  
 	  [O_tt] is the unique instance of the unit type [T_Pt]. *)
       (* TS3 *)
-  | O_coprod of uLevel * uLevel * oExpr * oExpr
+  | O_coprod of uExpr * uExpr * oExpr * oExpr
 	(** The type of the term is given by the [max] of the two u-levels. *)
   | O_ii1 of tExpr * tExpr * oExpr
 	(** The type of a term [O_ii1(T,T',o)] is [T_Coprod(T,T')]; here [o] has type [T] *)
@@ -212,7 +218,7 @@ and oExpr' =
   | O_empty
       (** [ O_empty <--> \[empty\]() ]
 				    
-	  The type of [\[empty\]] is the smallest universe, [Unumeral 0]. 
+	  The type of [\[empty\]] is the smallest universe, [uuu0]. 
 
 	  Remember to make [El]([empty]()) reduce to [Empty]().
        *)
@@ -228,12 +234,12 @@ and oExpr' =
 	(** [O_ic_r(A,a,(x,B,(y,D,(z,q))),i,(x',v,S),t) <--> \[ic_r;x,y,z,x',v\](A,a,B,D,q,i,S,t)]
 	    
 	    ic_r is the elimination rule for inductive types (generalized W-types) *)
-  | O_ic of uLevel * uLevel * uLevel * oExpr * oExpr * oooBinding
+  | O_ic of uExpr * uExpr * uExpr * oExpr * oExpr * oooBinding
 	(** [O_ic(M1,M2,M3,oA,a,(x,oB,(y,oD,(z,q)))) <--> \[[ic;x,y,z](M1,M2,M3,oA,a,oB,oD,q)\]]
 	    
 	    Corresponds to [ic].  Its type is the max of the three u-level expressions. *)
 	(* TS6 *)
-  | O_paths of uLevel * oExpr * oExpr * oExpr
+  | O_paths of uExpr * oExpr * oExpr * oExpr
 	(** The object corresponding to the identity type [Id].  
 
 	    Its type is the type corresponding to the given universe level. *)
@@ -246,17 +252,17 @@ and oExpr' =
 
 	    The type of [O_J(T,a,b,q,i,(x,e,S))] is [S\[b/x,i/e\]]. *)
       (* TS7 *)
-  | O_rr0 of uLevel * uLevel * oExpr * oExpr * oExpr
+  | O_rr0 of uExpr * uExpr * oExpr * oExpr * oExpr
 	(** Resizing rule.
 
 	    The type of [O_rr0(M_2,M_1,s,t,e)] is [T_U(M_1)], resized downward from [T_U M_2].
 
 	    By definition, the subexpressions [t] and [e] are not essential.
 	 *)
-  | O_rr1 of uLevel * oExpr * oExpr
+  | O_rr1 of uExpr * oExpr * oExpr
 	(** Resizing rule.
 
-	    The type of [O_rr1(M,a,p)] is [T_U(Unumeral 0)], resized downward from [T_U M].
+	    The type of [O_rr1(M,a,p)] is [T_U uuu0], resized downward from [T_U M].
 
 	    By definition, the subexpression [p] is not essential.
 	 *)
@@ -273,17 +279,17 @@ and oExpr' =
     that defines the admissible subset [A] of the functions [Fu -> nat].  It's just the subset
     that matters.
  *) 
-type uContext = UContext of uVar list * (uLevel * uLevel) list
+type uContext = UContext of uVar list * (uExpr * uExpr) list
 let mergeUContext : uContext -> uContext -> uContext =
   function UContext(uvars,eqns) -> function UContext(uvars',eqns') -> UContext(List.rev_append uvars' uvars,List.rev_append eqns' eqns)
-let emptyUContext = UContext ([],[])
+let initialUContext = UContext ([UVar "uuu0"],[])
 
 (** t-context; a list of t-variables declared as "Type". *)
 type tContext = tVar list
 let emptyTContext : tContext = []
 
 type utContext = uContext * tContext
-let emptyUTContext = emptyUContext, emptyTContext
+let emptyUTContext = initialUContext, emptyTContext
 
 (** o-context; a list of o-variables with T-expressions representing their declared type. *)
 type oContext = (oVar * tExpr) list				  (* [Gamma] *)

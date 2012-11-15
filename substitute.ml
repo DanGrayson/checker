@@ -31,6 +31,7 @@ and tsubst subs (t,pos) = nowhere(
   match t with
     Tvariable _ -> t
   | TEmptyHole -> t
+  | TNumberedEmptyHole _ -> t
   | El o -> El (osubst subs o)
   | T_U _ -> t
   | Pi (t1,(v,t2)) -> Pi (tsubst subs t1, tsubstfresh subs (v,t2))
@@ -46,6 +47,7 @@ and osubst subs (o,pos) = nowhere(
   match o with
     Ovariable v -> (try strip_pos(List.assoc v subs) with Not_found -> o)
   | OEmptyHole -> o
+  | ONumberedEmptyHole _ -> o
   | Onumeral _ -> o 
   | O_u _ -> o
   | O_j _ -> o

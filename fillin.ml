@@ -29,7 +29,7 @@ and tofillin_binder ctxt (v,t,k) =
 and tfillin ctxt (t,pos) = nowhere(
   match t with
     Tvariable _ -> t
-  | TEmptyHole -> raise (TypingError(pos,"empty t-expression hole, no method for filling"))
+  | TEmptyHole | TNumberedEmptyHole _ -> raise (TypingError(pos,"empty t-expression hole, no method for filling"))
   | El o -> El (ofillin ctxt o)
   | T_U _ -> t
   | Pi (t1,(v,t2)) -> Pi (tfillin ctxt t1, tfillin_binder ((v,t1) :: ctxt) (v,t2))
@@ -45,7 +45,7 @@ and ofillin ctxt (o,pos) = nowhere(
   match o with
     Ovariable v -> o
   | Onumeral _ -> o
-  | OEmptyHole -> raise (TypingError(pos,"empty o-expression hole, no method for filling"))
+  | OEmptyHole | ONumberedEmptyHole _ -> raise (TypingError(pos,"empty o-expression hole, no method for filling"))
   | O_u _ -> o
   | O_j _ -> o
   | O_ev(f,p,(OVarUnused,(TEmptyHole,loc))) -> (

@@ -9,10 +9,10 @@ let uvartostring = function
   | UVar x -> x
 let rec utostring = function
   | UEmptyHole -> "_"
-  | Unumeral i -> string_of_int i
+  | UNumberedEmptyHole n -> "_" ^ (string_of_int n)
   | Uvariable x -> uvartostring x
   | Uplus (x,n) -> "(" ^ (utostring x) ^ "+" ^ (string_of_int n) ^ ")"
-  | Umax (x,y) -> "(" ^ (utostring x) ^ "|" ^ (utostring y) ^ ")"
+  | Umax (x,y) -> "max(" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
 let ueqntostring (u,v) = ";" ^ (utostring u) ^ "=" ^ (utostring v)
 
 let tvartostring = function
@@ -22,6 +22,7 @@ let rec ttostring = function
   | (t,_) -> ttostring' t
 and ttostring' = function
   | TEmptyHole -> "_"
+  | TNumberedEmptyHole n -> "_" ^ (string_of_int  n)
   | Tvariable x -> tvartostring x
   | El x -> "[El](" ^ (otostring x) ^ ")"
   | T_U x -> "[U](" ^ (utostring x) ^ ")"
@@ -45,6 +46,7 @@ and otostring = function
   | (o,_) -> otostring' o
 and otostring' = function
   | OEmptyHole -> "_"
+  | ONumberedEmptyHole n -> "_" ^ (string_of_int  n)
   | Ovariable x -> ovartostring x
   | O_u x -> "[u](" ^ (utostring x) ^ ")"
   | O_j (x,y) -> "[j](" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"

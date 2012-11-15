@@ -8,6 +8,7 @@ open Typesystem
 let rec tau (g:(oVar*tExpr) list) ((o,pos):oExpr) = nowhere (
   match o with
   | OEmptyHole -> raise (TypingError(pos, "empty hole, type undetermined, internal error"))
+  | ONumberedEmptyHole _ -> raise (TypingError(pos, "empty hole, type undetermined, internal error"))
   | Onumeral _ -> T_nat
   | Ovariable v -> (
       try strip_pos(List.assoc v g) 
@@ -24,7 +25,7 @@ let rec tau (g:(oVar*tExpr) list) ((o,pos):oExpr) = nowhere (
   | O_pr1 _
   | O_pr2 _
   | O_total _
-  | O_pt -> T_U (Unumeral 0)
+  | O_pt -> T_U uuu0
   | O_pt_r _ -> raise NotImplemented
   | O_tt
   | O_coprod _

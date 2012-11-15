@@ -13,6 +13,7 @@
 }
 let white = [ ' ' '\t' '\r' ]
 let newline = [ '\n' ]
+let nzdigit = [ '1'-'9' ]
 let digit = [ '0'-'9' ]
 let first = [ 'A'-'Z' 'a'-'z' ]
 let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' ]
@@ -45,7 +46,7 @@ parse
   | "[ev;" { Wev }
   | "[lambda;" { Wlambda }
   | "[forall;" { Wforall }
-  | "Univ" { Kulevel }
+  | "Univ" { KUniv }
   | "Type" { KType }
   | "max" { Kumax }
   | "|" { Wbar }
@@ -68,11 +69,12 @@ parse
   | '>' { Wgreater }
   | '<' '='  { Wlessequal }
   | '_' { Wunderscore }
+  | '_' (digit | nzdigit digit as n) { Wunderscore_numeral (int_of_string n) }
   | '<' { Wless }
   | ':' '='  { Wcolonequal }
   | '|' '-'  { Wturnstile }
   | '|' '>'  { Wtriangle }
-  | digit* as n { Nat (int_of_string n) }
+  | digit+ as n { Nat (int_of_string n) }
   | first after* as id {
        (* an experiment: *)
        (* if List.mem (TVar id) tc then TVar_token (TVar id) else *)
