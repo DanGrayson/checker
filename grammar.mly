@@ -152,6 +152,8 @@ oExpr0:
     { O_j(u,v) }
 | Wev x=oVar Wrbracket Wlparen f=oExpr Wcomma o=oExpr Wcomma t=tExpr Wrparen
     { O_ev(f,o,(x,t)) }
+| Wev Wunderscore Wrbracket Wlparen f=oExpr Wcomma o=oExpr Wcomma t=tExpr Wrparen
+    { O_ev(f,o,(OVarUnused,t)) }
 | f=oExpr o=oExpr
     %prec Prec_application
     { O_ev(f,o,(OVarUnused,(TEmptyHole, Nowhere))) }

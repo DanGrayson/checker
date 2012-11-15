@@ -1,5 +1,6 @@
 # this is a comment
 
+oPrint lambda f:T->U, lambda o:T, [ev;_](f,o,U).
 oPrint lambda f:T->U, lambda o:T, f o.
 uVariable u0 u1 u2 ; u0 <= u1; u0 <= u2.
 tVariable T T1 T2 U T' V W U' A B C D X X1.
