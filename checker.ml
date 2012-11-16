@@ -5,7 +5,7 @@ let nopos x = error_format_pos Nowhere
 
 exception Error_Handled
 
-let protect1 f = (
+let protect1 f =
   try f () with
     TypingUnimplemented (p,s) -> 
       Printf.fprintf stderr "%s: type checking unimplemented: %s\n" (error_format_pos p) s;
@@ -14,7 +14,13 @@ let protect1 f = (
   | Check.TypeCheckingFailure (p,s) -> 
       Printf.fprintf stderr "%s: type checking failure: %s\n" (error_format_pos p) s;
       flush stderr;
-      Tokens.bump_error_count())
+      Tokens.bump_error_count()
+  | Check.TypeCheckingFailure3 (p1,s1,p2,s2,p3,s3) -> 
+      Printf.fprintf stderr "%s: type checking failure: %s\n" (error_format_pos p1) s1;
+      Printf.fprintf stderr "%s:      %s\n" (error_format_pos p2) s2;
+      Printf.fprintf stderr "%s:      %s\n" (error_format_pos p3) s3;
+      flush stderr;
+      Tokens.bump_error_count()
 
 let protect parser lexbuf posfun =
     try parser lexbuf

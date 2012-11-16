@@ -16,9 +16,9 @@ uCheck max(u1+1+0+4,u0).
 tCheck [Sigma;x](T,T').
 tCheck Sigma x:T, Sigma y:U, V -> W .
 tCheck [Coprod](T,T').
-tCheck [Coprod;x,x'](T,T',U,U',[u](u0)).
+# tCheck [Coprod;x,x'](T,T',U,U',[u](u0)).
 tCheck [Empty]().
-oCheck lambda a:A, lambda q:B, lambda t:[IC;x,y,z](A,a,B,D,q), t.
+# oCheck lambda a:A, lambda q:B, lambda t:[IC;x,y,z](A,a,B,D,q), t.
 oCheck lambda x:T, lambda y:T, lambda t:[Id](T,x,y), t.
 
 oCheck lambda o:T, lambda o':T, [forall;x](u1,u2,o,o').
@@ -72,13 +72,13 @@ oDefinition E7 (K L:Type)(t:K)(g:K -> [U](u0))(u:L)(f:Pi x:K,*g x) := f t.
 oDefinition E6 (u1 u2 u3 : Univ)(X1 X2:Type)(x1: X1 -> [U](u1))(x2: [U](u0+1)) := [j](x1, x2) .
 
 oCheck lambda f:T->U, lambda o:T, [ev;_](f,o,U).
+oCheck lambda f:T->U, lambda o:U, f o.
 oCheck lambda f:T->U, lambda o:T, f o.
-uCheck [udef;foo](u0+1,u1).
-oCheck lambda x:T, lambda y:U, lambda t:[tdef;foo](u0,u0;T,U;x,y), t.
 oDefinition E7 := ft.
 oCheck lambda k:U, lambda g:T -> *k, lambda f:Pi t:T, *g t, lambda o:T, f o.
 oCheck lambda r:U, lambda f:T->U, lambda o:T, lambda x : *r, f o.
-oCheck lambda f:X->T, lambda y:X, f y.
 oCheck lambda f:X->T, lambda y:X, [ev;_](f,y,U).
-oCheck lambda f:X->T, lambda y:T, [ev;_](f,y,T).
-oCheck lambda f:X->T, lambda y:T, f y.
+oCheck lambda f:X->T, lambda y:X, [ev;_](f,y,T).
+oCheck lambda f:X->T, lambda y:X, f y.
+uCheck [udef;foo](u0+1,u1).
+oCheck lambda x:T, lambda y:U, lambda t:[tdef;foo](u0,u0;T,U;x,y), t.

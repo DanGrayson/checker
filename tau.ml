@@ -17,10 +17,10 @@ let rec tau (env:environment_type) o = with_pos_of o (
 	  raise (TypingError(get_pos o, "unbound variable, not in context: " ^ (Printer.ovartostring' v)))
      )
   | O_u x -> T_U (nowhere(Uplus(x,1)))
-  | O_j (m1,m2) -> Pi(nowhere(T_U m1),(nowhere OVarUnused,nowhere(T_U m2)))
+  | O_j (m1,m2) -> Pi(with_pos_of m1 (T_U m1),(with_pos_of m2 OVarUnused,with_pos_of m2 (T_U m2)))
   | O_ev (o1,o2,(x,t)) -> strip_pos(Substitute.tsubst [(strip_pos x,o2)] t)
   | O_lambda (t,(x,o)) -> Pi(t, (x, tau (obind (strip_pos x,t) env) o))
-  | O_forall (m1,m2,_,(_,_)) -> T_U (nowhere(Umax(m1, m2)))
+  | O_forall (m1,m2,_,(_,_)) -> T_U (with_pos_of o (Umax(m1, m2)))
   | O_pair _
   | O_pr1 _
   | O_pr2 _
