@@ -100,6 +100,7 @@ let tCheckCommand x =
   protect1 (fun () -> Check.tcheck !environment x)
 
 let oCheckCommand x =
+  let x = Fillin.ofillin !environment x in
   Printf.printf "oCheck: %s\n" (Printer.otostring x);
   flush stdout;
   protect1 (fun () -> Check.ocheck !environment x)

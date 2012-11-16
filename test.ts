@@ -73,8 +73,10 @@ oDefinition E6 (u1 u2 u3 : Univ)(X1 X2:Type)(x1: X1 -> [U](u1))(x2: [U](u0+1)) :
 
 oCheck lambda f:T->U, lambda o:T, [ev;_](f,o,U).
 oCheck lambda f:T->U, lambda o:T, f o.
-uCheck [udef;foo](u+1,v).
+uCheck [udef;foo](u0+1,u1).
 oCheck lambda x:T, lambda y:U, lambda t:[tdef;foo](u0,u0;T,U;x,y), t.
 oDefinition E7 := ft.
 oCheck lambda k:U, lambda g:T -> *k, lambda f:Pi t:T, *g t, lambda o:T, f o.
 oCheck lambda r:U, lambda f:T->U, lambda o:T, lambda x : *r, f o.
+oCheck lambda f:X->T, lambda y:X, f y.
+oCheck lambda f:X->T, lambda y:T, f y.

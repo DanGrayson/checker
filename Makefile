@@ -21,7 +21,7 @@ SRCFILES = 					\
 
 # add ,p to get the ocamlyacc parser to display a trace
 RUN = -b
-RUN = -b,p
+# RUN = -b,p
 
 all: TAGS run
 checker.byte checker.native: $(SRCFILES); ocamlbuild $(BFLAGS) $@
