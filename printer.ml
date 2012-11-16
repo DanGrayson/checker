@@ -3,6 +3,7 @@ open Typesystem
 let ovartostring = function
   | OVar x -> x
   | OVarGen(i,x) -> x ^ "_" ^ (string_of_int i)
+  | OVarEmptyHole -> "_"
   | OVarUnused -> "_"
 
 let uvartostring = function
@@ -22,7 +23,7 @@ let tvartostring = function
   | TVar x -> x
 
 let rec ttostring = function
-  | (t,_) -> ttostring' t
+  | (_,t) -> ttostring' t
 and ttostring' = function
   | TEmptyHole -> "_"
   | TNumberedEmptyHole n -> "_" ^ (string_of_int  n)
@@ -47,7 +48,7 @@ and ttostring' = function
   | T_def (d,u,t,o) -> "[tdef;" ^ d ^ "](" ^ (ulisttostring u) ^ ";" ^ (tlisttostring t) ^ ";" ^ (olisttostring o) ^ ")"
   | T_nat -> "nat"
 and otostring = function
-  | (o,_) -> otostring' o
+  | (_,o) -> otostring' o
 and otostring' = function
   | OEmptyHole -> "_"
   | ONumberedEmptyHole n -> "_" ^ (string_of_int  n)

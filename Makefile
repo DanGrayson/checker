@@ -13,7 +13,6 @@ SRCFILES = 					\
 	check.ml				\
 	tau.ml					\
 	printer.ml				\
-	scheme.ml				\
 	grammar.mly				\
 	tokens.mll				\
 	toplevel.ml				\

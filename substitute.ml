@@ -2,32 +2,32 @@ open Typesystem
 
 let rec tsubstfresh subs (v,t) = 
   let v' = fresh v 
-  in let subs' = (v, nowhere(Ovariable v')) :: subs
+  in let subs' = (v, with_pos_of v (Ovariable v')) :: subs
   in (v', tsubst subs' t)
 and t2substfresh subs (v,w,t) = 
   let v' = fresh v and w' = fresh w 
-  in let subs' = (w, nowhere(Ovariable w')) :: (v, nowhere(Ovariable v')) :: subs 
+  in let subs' = (w, with_pos_of w (Ovariable w')) :: (v, with_pos_of v (Ovariable v')) :: subs 
   in (v', w', tsubst subs' t)
 and osubstfresh subs (v,o) = 
   let v' = fresh v 
-  in let subs' = (v, nowhere(Ovariable v')) :: subs in (v', osubst subs' o)
+  in let subs' = (v, with_pos_of v (Ovariable v')) :: subs in (v', osubst subs' o)
 and oosubstfresh subs (v,o,k) =
   let v' = fresh v 
-  in let subs' = (v, nowhere(Ovariable v')) :: subs 
+  in let subs' = (v, with_pos_of v (Ovariable v')) :: subs 
   in (v', osubst subs' o, osubstfresh subs' k)
 and ooosubstfresh subs (v,o,k) = 
   let v' = fresh v 
-  in let subs' = (v, nowhere(Ovariable v')) :: subs 
+  in let subs' = (v, with_pos_of v (Ovariable v')) :: subs 
   in (v', osubst subs' o, oosubstfresh subs' k)
 and ttosubstfresh subs (v,t,k) = 
   let v' = fresh v 
-  in let subs' = (v, nowhere(Ovariable v')) :: subs 
+  in let subs' = (v, with_pos_of v (Ovariable v')) :: subs 
   in (v', tsubst subs t, tosubstfresh subs' k)
 and tosubstfresh subs (v,t,k) = 
   let v' = fresh v 
-  in let subs' = (v, nowhere(Ovariable v')) :: subs 
+  in let subs' = (v, with_pos_of v (Ovariable v')) :: subs 
   in (v', tsubst subs t, osubstfresh subs' k)
-and tsubst subs (t,pos) = nowhere(
+and tsubst subs (pos,t) = pos,(
   match t with
     Tvariable _ -> t
   | TEmptyHole -> t
@@ -44,7 +44,7 @@ and tsubst subs (t,pos) = nowhere(
   | Id (t,x,y) -> Id (tsubst subs t,osubst subs x,osubst subs y)
   | T_def (d,u,t,c) -> raise NotImplemented
   | T_nat -> t)
-and osubst subs (o,pos) = nowhere(
+and osubst subs (pos,o) = pos,(
   match o with
     Ovariable v -> (try strip_pos(List.assoc v subs) with Not_found -> o)
   | OEmptyHole -> o

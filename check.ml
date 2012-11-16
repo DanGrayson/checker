@@ -102,6 +102,7 @@ and ocheck (env:environment_type) (o,pos) = match o with
     | O _ -> ())
   | Ovariable OVarGen (i,s) -> ()
   | Ovariable OVarUnused -> raise InternalError
+  | Ovariable OVarEmptyHole -> raise InternalError
   | Onumeral _ -> ()
   | OEmptyHole | ONumberedEmptyHole _ -> raise (TypeCheckingFailure(pos,"empty o-expression hole, no method for filling"))
   | O_u u -> ucheck env u

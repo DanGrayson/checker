@@ -26,14 +26,14 @@ and ttofillin_binder env (v,t,k) =
 and tofillin_binder env (v,t,k) = 
   let env' = env 
   in (v, tfillin env t, ofillin_binder env' k)
-and tfillin env (t,pos) = nowhere(
+and tfillin env (pos,t) = pos,(
   match t with
     Tvariable _ -> t
   | TEmptyHole | TNumberedEmptyHole _ -> raise (TypingError(pos,"empty t-expression hole, no method for filling"))
   | El o -> El (ofillin env o)
   | T_U _ -> t
-  | Pi (t1,(v,t2)) -> Pi (tfillin env t1, tfillin_binder (obind (v,t1) env) (v,t2))
-  | Sigma (t1,(v,t2)) -> Sigma (tfillin env t1, tfillin_binder (obind (v,t1) env) (v,t2))
+  | Pi (t1,(v,t2)) -> Pi (tfillin env t1, tfillin_binder (obind (strip_pos v,t1) env) (v,t2))
+  | Sigma (t1,(v,t2)) -> Sigma (tfillin env t1, tfillin_binder (obind (strip_pos v,t1) env) (v,t2))
   | T_Pt -> t
   | T_Coprod (t,t') -> T_Coprod (tfillin env t,tfillin env t')
   | T_Coprod2 (t,t',(x,u),(x',u'),o) -> T_Coprod2 (tfillin env t,tfillin env t',tfillin_binder env (x,u),tfillin_binder env (x',u'),ofillin env o)
@@ -42,14 +42,14 @@ and tfillin env (t,pos) = nowhere(
   | Id (t,x,y) -> Id (tfillin env t,ofillin env x,ofillin env y)
   | T_def (d,u,t,o) -> T_def (d,u,List.map (tfillin env) t,List.map (ofillin env) o)
   | T_nat -> t)
-and ofillin env (o,pos) = nowhere(
+and ofillin env (pos,o) = pos,(
   match o with
     Ovariable v -> o
   | Onumeral _ -> o
   | OEmptyHole | ONumberedEmptyHole _ -> raise (TypingError(pos,"empty o-expression hole, no method for filling"))
   | O_u _ -> o
   | O_j _ -> o
-  | O_ev(f,p,(OVarUnused,(TEmptyHole,loc))) -> (
+  | O_ev(f,p,(OVarUnused, (loc, TEmptyHole))) -> (
     match strip_pos(Tau.tau env f) with
       | Pi(t1,(x,t2)) -> O_ev(ofillin env f,ofillin env p,tfillin_binder (obind (x,t1) env) (x,t2))
       | _ -> raise (TypingError(get_pos f,"expected a product type"))

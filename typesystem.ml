@@ -33,9 +33,11 @@ let error_format_pos = function
          else "characters " ^ (string_of_int i) ^ "-" ^ (string_of_int j))
   | Nowhere -> "nowhere:0:0"
 
-let nowhere x = (x,Nowhere)
-let strip_pos = fst
-let get_pos = snd
+let nowhere x = (Nowhere,x)
+let strip_pos : position * 'a -> 'a = snd
+let get_pos : position * 'a -> position = fst
+let with_pos (p:position) b = (p, b)
+let with_pos_of a b = (get_pos a, b)
 
 exception TypingError of position * string
 exception TypingUnimplemented of position * string
@@ -49,10 +51,12 @@ exception NoMatchingRule
 exception Eof
 
 (** Object variable. *)
-type oVar = 
+type oVar = position * oVar'
+and oVar' =
     OVar of string
   | OVarGen of int * string
-  | OVarUnused							      (*this kind doesn't ever become an o-expr, re-do *)
+  | OVarUnused
+  | OVarEmptyHole
 let make_oVar c = OVar c
 
 let fresh = 
@@ -64,14 +68,16 @@ let fresh =
   function
       OVar x | OVarGen(_,x) -> newgen x
     | OVarUnused as v -> v
+    | OVarEmptyHole as v -> v
 
 (** Type variable. *)
-type tVar = 
-    TVar of string
+type tVar = position * tVar'
+and tVar' = TVar of string
 let make_tVar c = TVar c
 
 (** Universe variable. *)
-type uVar = UVar of string
+type uVar = position * uVar'
+and uVar' = UVar of string
 let make_uVar c = UVar c
 
 (*
@@ -85,9 +91,9 @@ let make_uVar c = UVar c
     uExpr, except for possibly constraining the list of variables used to members
     of a given list.
  *)
-type uExpr = uExpr' * position
+type uExpr = position * uExpr'
 and uExpr' =
-  | Uvariable of uVar
+  | Uvariable of uVar'
 	(** A u-level variable. *)
   | Uplus of uExpr * int
 	(** A pair [(M,n)], denoting [M+n], the n-th successor of [M].  Here [n] should be nonnegative *)
@@ -110,14 +116,14 @@ and ttoBinding = oVar * tExpr * toBinding
 and oooBinding = oVar * oExpr * ooBinding
 
 (** [tExpr] is the type of T-expressions. *)
-and tExpr = tExpr' * position
+and tExpr = position * tExpr'
 and tExpr' =
   (* TS0 *)
   | TEmptyHole
         (** a hole to be filled in later  *)
   | TNumberedEmptyHole of int
         (** A hole to be filled in later, by type checking. *)
-  | Tvariable of tVar
+  | Tvariable of tVar'
   | El of oExpr
 	(** [El]; converts an object term into the corresponding type term *)
   | T_U of uExpr
@@ -154,14 +160,14 @@ and tExpr' =
 	  The type of natural numbers. *)
       
 (** [oExpr] is the type of o-expressions. *)
-and oExpr = oExpr' * position
+and oExpr = position * oExpr'
 and oExpr' =
     (* TS0 *)
   | OEmptyHole
         (** a hole to be filled in later *)
   | ONumberedEmptyHole of int
         (** A hole to be filled in later, by type checking. *)
-  | Ovariable of oVar
+  | Ovariable of oVar'
 	(** An o-variable. *)
   | O_u of uExpr
 	(** [u]; universe as an object. *)
@@ -289,20 +295,20 @@ and oExpr' =
     that defines the admissible subset [A] of the functions [Fu -> nat].  It's just the subset
     that matters.
  *) 
-type uContext = UContext of uVar list * (uExpr * uExpr) list
+type uContext = UContext of uVar' list * (uExpr * uExpr) list
 let emptyUContext = UContext ([],[])
 let mergeUContext : uContext -> uContext -> uContext =
   function UContext(uvars,eqns) -> function UContext(uvars',eqns') -> UContext(List.rev_append uvars' uvars,List.rev_append eqns' eqns)
 
 (** t-context; a list of t-variables declared as "Type". *)
-type tContext = tVar list
+type tContext = tVar' list
 let emptyTContext : tContext = []
 
 type utContext = uContext * tContext
 let emptyUTContext = emptyUContext, emptyTContext
 
 (** o-context; a list of o-variables with T-expressions representing their declared type. *)
-type oContext = (oVar * tExpr) list				  (* [Gamma] *)
+type oContext = (oVar' * tExpr) list				  (* [Gamma] *)
 let emptyOContext : oContext = []
       
 type judgementBody =
@@ -323,9 +329,9 @@ type derivation =
 type ruleLabel = int
 type ruleParm =
   | RPNone
-  | RPot of oVar * tVar
-  | RPo of oVar
-let rec getType (o:oVar) = function
+  | RPot of oVar' * tVar'
+  | RPo of oVar'
+let rec getType (o:oVar') = function
     (o',t) :: _ when o = o' -> t
   | _ :: gamma -> getType o gamma
   | [] -> raise VariableNotInContext
@@ -335,7 +341,7 @@ let inferenceRule : ruleLabel * ruleParm * derivation list -> derivation = funct
     -> Derivation([],Rule 1,emptyJudgment)
 
   | (2,RPot (o,t),([Derivation(_,_,((uc,tc),oc,EmptyJ))] as derivs))
-    -> Derivation(derivs,Rule 2,((uc,tc),(o,nowhere (Tvariable t)) :: oc,EmptyJ))
+    -> Derivation(derivs,Rule 2,((uc,tc),(o,nowhere(Tvariable t)) :: oc,EmptyJ))
 
   | (3,RPo o,([Derivation(_,_,(utc,gamma,_))] as derivs))
     -> Derivation(derivs,Rule 3,(utc,gamma,TypeJ(nowhere(Ovariable o),getType o gamma)))
@@ -352,7 +358,7 @@ type definition =
   | TDefinition of identifier * ((uContext * tContext * oContext)         * tExpr)
   | ODefinition of identifier * ((uContext * tContext * oContext) * oExpr * tExpr)
 
-type var = U of uVar | T of tVar | O of oVar
+type var = U of uVar' | T of tVar' | O of oVar'
 
 type environment_type = {
     uc : uContext;
@@ -366,6 +372,7 @@ let obind (v,t) env = match v with
     OVar name -> { env with oc = (v,t) :: env.oc; lookup_order = (name, O v) :: env.lookup_order }
   | OVarGen (_,_) -> { env with oc = (v,t) :: env.oc }
   | OVarUnused -> env
+  | OVarEmptyHole -> env
 
 (*
  For emacs:
