@@ -38,7 +38,13 @@ oAlpha lambda g:T->U, lambda x:T, g x
 tPrint Pi x : T1, [U](uuu0+14).
 tCheck Pi x : T1, [U](uuu0+14).
 
-uCheck T.
+uPrint [udef;foo](u+1,v).
+tPrint [tdef;foo](u,v;t,u;x,y).
+oPrint [odef;foo](u,v;t,u;x,y).
+
+uCheck u1.
+tCheck TTT.
+oCheck xxx.
 Show.
 
 tPrint *x.

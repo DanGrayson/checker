@@ -54,7 +54,7 @@ let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code ha
 %right Warrow
 %left Prec_application
 %right Klambda
-%nonassoc Wforall Wunderscore Wunderscore_numeral Nat Wu Wlparen Wlambda Wj Wev IDENTIFIER
+%nonassoc Wforall Wunderscore Wunderscore_numeral Nat Wu Wlparen Wlambda Wj Wev IDENTIFIER Wodef
 
 %%
 
@@ -95,11 +95,7 @@ command:
     {
      let (uc,tc,oc) = fixParmList p in
      let o = List.fold_right (fun (x,t) o -> nowhere( O_lambda (t, (x,o)))) oc o in
-     let o = Fillin.ofillin [] o in
-     let t = Tau.tau [] o in
-     Toplevel.Definition (
-     ODefinition (Ident v,((uc,tc,emptyOContext),o,t))
-    ) 
+     Toplevel.Definition ( ODefinition (Ident v,((uc,tc,emptyOContext),o,nowhere TEmptyHole)) ) 
    }
 | WoDefinition name=IDENTIFIER parms=parmList Wcolonequal o=oExpr Wcolon t=tExpr Wperiod 
     { Toplevel.Definition (ODefinition (Ident name,(fixParmList parms,o,t))) }
@@ -242,6 +238,18 @@ tExpr0:
     { T_IC(tA,a,(x,tB,(y,tD,(z,q)))) }
 | WId Wlparen t=tExpr Wcomma a=oExpr Wcomma b=oExpr Wrparen 
     { Id(t,a,b) }
+| Wtdef name=IDENTIFIER Wrbracket Wlparen 
+    u=separated_list(Wcomma,uExpr) 
+    Wrparen { T_def(name,u,[],[]) }
+| Wtdef name=IDENTIFIER Wrbracket Wlparen 
+    u=separated_list(Wcomma,uExpr) Wsemi
+    t=separated_list(Wcomma,tExpr) 
+    Wrparen { T_def(name,u,t,[]) }
+| Wtdef name=IDENTIFIER Wrbracket Wlparen 
+    u=separated_list(Wcomma,uExpr) Wsemi
+    t=separated_list(Wcomma,tExpr) Wsemi
+    o=separated_list(Wcomma,oExpr) 
+    Wrparen { T_def(name,u,t,o) }
 uExpr: u=uExpr0 
     {u, Position($startpos, $endpos)}
 | u=parenthesized(uExpr)
@@ -257,3 +265,6 @@ uExpr0:
     { Uplus (u,n) }
 | Kumax Wlparen u=uExpr Wcomma v=uExpr Wrparen
     { Umax (u,v)  }
+| Wudef name=IDENTIFIER Wrbracket Wlparen 
+    u=separated_list(Wcomma,uExpr) 
+    Wrparen { U_def(name,u) }

@@ -13,7 +13,9 @@ let rec utostring u = match strip_pos u with
   | Uvariable x -> uvartostring x
   | Uplus (x,n) -> "(" ^ (utostring x) ^ "+" ^ (string_of_int n) ^ ")"
   | Umax (x,y) -> "max(" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
-  | U_def(d,u) -> raise NotImplemented
+  | U_def (d,u) -> "[udef;" ^ d ^ "](" ^ (ulisttostring u) ^ ")"
+and ulisttostring s = String.concat "," (List.map utostring s)
+
 let ueqntostring (u,v) = "; " ^ (utostring u) ^ "=" ^ (utostring v)
 
 let tvartostring = function
@@ -42,7 +44,7 @@ and ttostring' = function
     -> "[IC;" ^ (ovartostring x) ^ "," ^ (ovartostring y) ^ "," ^ (ovartostring z) ^ "]("
       ^ (ttostring tA) ^ "," ^ (otostring a) ^ "," ^ (ttostring tB) ^ "," ^ (ttostring tD) ^ "," ^ (otostring q) ^ ")"
   | Id (t,x,y) -> "[Id](" ^ (ttostring t) ^ "," ^ (otostring x) ^ "," ^ (otostring y) ^ ")"
-  | T_def (d,u,t,o) -> raise NotImplemented
+  | T_def (d,u,t,o) -> "[tdef;" ^ d ^ "](" ^ (ulisttostring u) ^ ";" ^ (tlisttostring t) ^ ";" ^ (olisttostring o) ^ ")"
   | T_nat -> "nat"
 and otostring = function
   | (o,_) -> otostring' o
@@ -55,7 +57,7 @@ and otostring' = function
   | O_ev (f,o,(x,t)) -> "[ev;" ^ (ovartostring x) ^ "](" ^ (otostring f) ^ "," ^ (otostring o) ^ "," ^ (ttostring t) ^ ")"
   | O_lambda (t,(x,o)) -> "[lambda;" ^ (ovartostring x) ^ "](" ^ (ttostring t) ^ "," ^ (otostring o) ^ ")"
   | O_forall (u,u',o,(x,o')) -> "[forall;" ^ (ovartostring x) ^ "](" ^ (utostring u) ^ "," ^ (utostring u') ^ "," ^ (otostring o) ^ "," ^ (otostring o') ^ ")"
-  | O_def (d,u,t,o) -> raise NotImplemented
+  | O_def (d,u,t,o) -> "[odef;" ^ d ^ "](" ^ (ulisttostring u) ^ ";" ^ (tlisttostring t) ^ ";" ^ (olisttostring o) ^ ")"
   | Onumeral i -> string_of_int i
   | O_pair _
   | O_pr1 _
@@ -79,6 +81,8 @@ and otostring' = function
   | O_rr0 _
   | O_rr1 _
      -> "<...>"
+and tlisttostring s = String.concat "," (List.map ttostring s)
+and olisttostring s = String.concat "," (List.map otostring s)
 
 let jtostring = function
   | EmptyJ _ -> "context judgement"

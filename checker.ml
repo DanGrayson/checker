@@ -58,17 +58,25 @@ let lexpos lexbuf =
 let environment = ref {
   uc = emptyUContext;
   tc = emptyTContext;
+  oc = emptyOContext;
   definitions = [];
   lookup_order = [];
 }
 
-let add_tVars tvars = environment := { !environment with tc = List.rev_append (List.map make_tVar tvars) (!environment).tc }
+let add_tVars tvars = environment := 
+  { !environment with 
+    tc = List.rev_append (List.map make_tVar tvars) (!environment).tc ;
+    lookup_order = List.rev_append (List.map (fun t -> (t,T (make_tVar t))) tvars) (!environment).lookup_order ;
+  }
 let add_uVars uvars eqns =
-  let uvars = List.map make_uVar uvars in
-  environment := { !environment with uc = mergeUContext (!environment).uc (UContext(uvars,eqns)) }
+  environment := {
+    !environment with
+		  uc = mergeUContext (!environment).uc (UContext(List.map make_uVar uvars,eqns));
+		  lookup_order = List.rev_append (List.map (fun u -> (u,U (make_uVar u))) uvars) (!environment).lookup_order;
+		}
 
-let tfix t = Fillin.tfillin [] t
-let ofix o = Fillin.ofillin [] o
+let tfix t = Fillin.tfillin !environment t
+let ofix o = Fillin.ofillin !environment o
 
 let tPrintCommand x =
   Printf.printf "tPrint: %s\n" (Printer.ttostring x);
@@ -127,7 +135,7 @@ let uAlphaCommand = fun (x,y) ->
 
 let typeCommand x = (
   try 
-    let tx = Tau.tau [] x in
+    let tx = Tau.tau !environment x in
     Printf.printf "Tau: %s : %s\n" (Printer.otostring x) (Printer.ttostring tx);
     flush stdout;
   with 

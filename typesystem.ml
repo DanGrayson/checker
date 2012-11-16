@@ -51,7 +51,7 @@ exception Eof
 type oVar = 
     OVar of string
   | OVarGen of int * string
-  | OVarUnused
+  | OVarUnused							      (*this kind doesn't ever become an o-expr, re-do *)
 let make_oVar c = OVar c
 
 let fresh = 
@@ -356,9 +356,15 @@ type var = U of uVar | T of tVar | O of oVar
 type environment_type = {
     uc : uContext;
     tc : tContext;
+    oc : oContext;
     definitions : (identifier * definition) list;
     lookup_order : (string * var) list	(* put definitions in here later *)
   }
+
+let obind (v,t) env = match v with
+    OVar name -> { env with oc = (v,t) :: env.oc; lookup_order = (name, O v) :: env.lookup_order }
+  | OVarGen (_,_) -> { env with oc = (v,t) :: env.oc }
+  | OVarUnused -> env
 
 (*
  For emacs:
