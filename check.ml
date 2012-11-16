@@ -86,7 +86,10 @@ and overify env o t =			(* verify that o has type t *)
 				   "\n   to have type "^(Printer.ttostring t)))
 and tverify env t1 t2 =			(* verify that t1 = t2 *)
   if not (tequal t1 t2)
-  then raise (TypeCheckingFailure (get_pos t1, "expected t-expression to equal: "^(Printer.ttostring t2)))
+  then raise (TypeCheckingFailure (get_pos t2, "expected equal types:\n"^
+				   "     : "^(Printer.ttostring t1) ^ "\n" ^
+				   "     : "^(Printer.ttostring t2)
+				  ))
   else ()      
 and ocheck (env:environment_type) (o,pos) = match o with
   Ovariable OVar s -> (
@@ -107,16 +110,15 @@ and ocheck (env:environment_type) (o,pos) = match o with
       ocheck env f; 
       ocheck env x; 
       match strip_pos(tau env f) with
-	| Pi(t1,(w,t2)) -> 
+	| Pi(s,(w,t')) -> 
 	    if not ( w = v ) 
 	    then raise (
 	      TypeCheckingFailure(pos,"expected identical variables: " ^
 				  (Printer.ovartostring w) ^ ", " ^
 				  (Printer.ovartostring v) ^ ")"));
-	    overify env x t1;
-	    let env = obind (v,t1) env in 
-	    tcheck env t2;
-	    tverify env t2 t
+	    overify env x s;
+	    let env = obind (v,s) env in 
+	    tverify env t t'
 	| _ -> raise (TypeCheckingFailure(get_pos f,"expected a product type")))
   | O_lambda (t,(v,p)) -> tcheck env t; ocheck_binder (obind (v,t) env) (v,p)
   | O_forall (m,m',o,(v,o')) -> ucheck env m; ucheck env m'; ocheck env o; ocheck_binder (obind (v,nowhere(El o)) env) (v,o')

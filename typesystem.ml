@@ -31,7 +31,7 @@ let error_format_pos = function
          if i = j
 	 then "character " ^ (string_of_int i)
          else "characters " ^ (string_of_int i) ^ "-" ^ (string_of_int j))
-  | Nowhere -> "unknown position"
+  | Nowhere -> "nowhere:0:0"
 
 let nowhere x = (x,Nowhere)
 let strip_pos = fst

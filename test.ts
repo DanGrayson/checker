@@ -79,4 +79,6 @@ oDefinition E7 := ft.
 oCheck lambda k:U, lambda g:T -> *k, lambda f:Pi t:T, *g t, lambda o:T, f o.
 oCheck lambda r:U, lambda f:T->U, lambda o:T, lambda x : *r, f o.
 oCheck lambda f:X->T, lambda y:X, f y.
+oCheck lambda f:X->T, lambda y:X, [ev;_](f,y,U).
+oCheck lambda f:X->T, lambda y:T, [ev;_](f,y,T).
 oCheck lambda f:X->T, lambda y:T, f y.

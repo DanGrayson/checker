@@ -1,7 +1,7 @@
 open Typesystem
 
 let leave () = exit (if !Tokens.error_count > 0 then 1 else 0)
-let nopos x = "unknown position"
+let nopos x = error_format_pos Nowhere
 
 exception Error_Handled
 
