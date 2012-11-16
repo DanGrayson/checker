@@ -5,7 +5,14 @@ let nopos x = "unknown position"
 
 exception Error_Handled
 
-let rec protect parser lexbuf posfun =
+let protect1 f = (
+  try f () with
+    Check.TypeCheckingFailure (p,s) -> 
+      Printf.fprintf stderr "%s: type checking failure: %s\n" (error_format_pos p) s;
+      flush stderr;
+      Tokens.bump_error_count())
+
+let protect parser lexbuf posfun =
     try parser lexbuf
     with 
       Eof -> leave()
@@ -36,26 +43,17 @@ let rec protect parser lexbuf posfun =
 	Tokens.bump_error_count();
 	raise Error_Handled
 
-let notation_name = function
+let definition_name = function
   | TDefinition(name,_) -> name
   | ODefinition(name,_) -> name
-let printnotation = function
-  | TDefinition(name,_) as x -> Printf.printf "%s\n" (Printer.notationtostring x)
-  | ODefinition(name,_) as x -> Printf.printf "%s\n" (Printer.notationtostring x)
+let printdefinition = function
+  | TDefinition(name,_) as x -> Printf.printf "%s\n" (Printer.definitiontostring x)
+  | ODefinition(name,_) as x -> Printf.printf "%s\n" (Printer.definitiontostring x)
 
 let lexpos lexbuf = 
   let p = Tokens.lexing_pos lexbuf in
   let _ = Tokens.command_flush lexbuf in
   p
-
-type var = U of uVar | T of tVar | O of oVar
-
-type environment_type = {
-    uc : uContext;
-    tc : tContext;
-    definitions : (Typesystem.identifier * Typesystem.notation) list;
-    lookup_order : (string * var) list	(* put definitions in here later *)
-  }
 
 let environment = ref {
   uc = emptyUContext;
@@ -78,6 +76,21 @@ let tPrintCommand x =
   let x' = protect tfix x nopos in
   if not (Alpha.tequal x' x) then Printf.printf "      : %s\n" (Printer.ttostring x');
   flush stdout
+
+let uCheckCommand x =
+  Printf.printf "uCheck: %s\n" (Printer.utostring x);
+  flush stdout;
+  protect1 (fun () -> Check.ucheck !environment x)
+
+let tCheckCommand x =
+  Printf.printf "tCheck: %s\n" (Printer.ttostring x);
+  flush stdout;
+  protect1 (fun () -> Check.tcheck !environment x)
+
+let oCheckCommand x =
+  Printf.printf "oCheck: %s\n" (Printer.otostring x);
+  flush stdout;
+  protect1 (fun () -> Check.ocheck !environment x)
   
 let oPrintCommand x =
   Printf.printf "oPrint: %s\n" (Printer.otostring x); 
@@ -126,18 +139,29 @@ let typeCommand x = (
     
 let show_command () = 
   Printf.printf "Show:\n";
-  Printf.printf "   Variable ";
-  let UContext(uvars,ueqns) = (!environment).uc in 
-  Printf.printf "%s.\n" 
-    ((String.concat " " (List.map Printer.uvartostring uvars)) ^ " : Univ" ^ (String.concat "" (List.map Printer.ueqntostring ueqns)));
-  Printf.printf "   Variable"; List.iter (fun x -> Printf.printf " %s" (Printer.tvartostring x)) (List.rev (!environment).tc); Printf.printf " : Type.\n";
-  let p = List.rev_append (!environment).definitions [] in List.iter (fun x -> Printf.printf "   "; printnotation (snd x)) p;
+  (
+   Printf.printf "   Variable ";
+   let UContext(uvars,ueqns) = (!environment).uc in 
+   Printf.printf "%s.\n"
+     ((String.concat " " (List.map Printer.uvartostring uvars)) ^ " : Univ" ^ (String.concat "" (List.map Printer.ueqntostring ueqns)));
+  );
+  (
+   Printf.printf "   Variable"; List.iter (fun x -> Printf.printf " %s" (Printer.tvartostring x)) (List.rev (!environment).tc); Printf.printf " : Type.\n";
+  );
+  (
+   let p = List.rev_append (!environment).definitions [] in List.iter (fun x -> Printf.printf "   "; printdefinition (snd x)) p;
+  );
+  (
+   Printf.printf "   Lookup order:";
+   List.iter (fun (s,_) -> Printf.printf " %s" s) (!environment).lookup_order;
+   Printf.printf "\n";
+  );
   flush stdout
 
 let addDefinition x =
-  Printf.printf "Notation: %s\n" (Printer.notationtostring x);
+  Printf.printf "Definition: %s\n" (Printer.definitiontostring x);
   flush stdout;
-  environment := { !environment with definitions = (notation_name x,x) :: (!environment).definitions }
+  environment := { !environment with definitions = (definition_name x,x) :: (!environment).definitions }
 
 exception StopParsingFile
 
@@ -145,14 +169,17 @@ let process_command lexbuf = (
   match protect (Grammar.command (Tokens.expr_tokens)) lexbuf lexpos with 
   | Toplevel.UVariable (uvars,eqns) -> add_uVars uvars eqns
   | Toplevel.TVariable tvars -> add_tVars tvars
+  | Toplevel.UPrint x -> uPrintCommand x
   | Toplevel.TPrint x -> tPrintCommand x
   | Toplevel.OPrint x -> oPrintCommand x
-  | Toplevel.UPrint x -> uPrintCommand x
+  | Toplevel.UCheck x -> uCheckCommand x
+  | Toplevel.TCheck x -> tCheckCommand x
+  | Toplevel.OCheck x -> oCheckCommand x
   | Toplevel.TAlpha (x,y) -> tAlphaCommand (x,y)
   | Toplevel.OAlpha (x,y) -> oAlphaCommand (x,y)
   | Toplevel.UAlpha (x,y) -> uAlphaCommand (x,y)
   | Toplevel.Type x -> typeCommand x
-  | Toplevel.Notation x -> addDefinition x
+  | Toplevel.Definition x -> addDefinition x
   | Toplevel.Exit -> raise StopParsingFile
   | Toplevel.Show -> show_command()
  )

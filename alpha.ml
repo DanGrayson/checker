@@ -10,7 +10,7 @@ let testalpha x x' =
       | (y,y') :: alpha -> if x=y then x'=y' else if x'=y' then false else test alpha)
   in test
 
-let ueq a b = a = b
+let ueq (a:uExpr) b = a = b
 
 let rec teq alpha a b = a == b || match (a,b) with ((a,_),(b,_)) -> (a == b || teq' alpha (a,b))
 
@@ -46,6 +46,6 @@ and oeq' alpha = function
   | (a,a')
     -> a = a'
 
-let uequal a b = ueq a b
+let uequal = ueq
 let tequal a b = teq [] a b
 let oequal a b = oeq [] a b

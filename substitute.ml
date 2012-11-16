@@ -42,6 +42,7 @@ and tsubst subs (t,pos) = nowhere(
   | T_Empty -> t
   | T_IC (tA,a,(x,tB,(y,tD,(z,q)))) -> T_IC (tsubst subs tA,osubst subs a,ttosubstfresh subs (x,tB,(y,tD,(z,q))))
   | Id (t,x,y) -> Id (tsubst subs t,osubst subs x,osubst subs y)
+  | T_def (d,u,t,c) -> raise NotImplemented
   | T_nat -> t)
 and osubst subs (o,pos) = nowhere(
   match o with
@@ -75,4 +76,6 @@ and osubst subs (o,pos) = nowhere(
   | O_refl (t,o) -> O_refl (tsubst subs t,osubst subs o)
   | O_J (tT,a,b,q,i,(x,e,tS)) -> O_J (tsubst subs tT,osubst subs a,osubst subs b,osubst subs q,osubst subs i,t2substfresh subs (x,e,tS))
   | O_rr0 (m2,m1,s,t,e) -> O_rr0 (m2,m1,osubst subs s,osubst subs t,osubst subs e)
-  | O_rr1 (m,a,p) -> O_rr1 (m,osubst subs a,osubst subs p))
+  | O_rr1 (m,a,p) -> O_rr1 (m,osubst subs a,osubst subs p)
+  | O_def (d,u,t,c) -> raise NotImplemented
+ )

@@ -84,7 +84,8 @@ let make_uVar c = UVar c
     uExpr, except for possibly constraining the list of variables used to members
     of a given list.
  *)
-type uExpr =
+type uExpr = uExpr' * position
+and uExpr' =
   | Uvariable of uVar
 	(** A u-level variable. *)
   | Uplus of uExpr * int
@@ -95,8 +96,9 @@ type uExpr =
         (** A u-level, to be filled in later, by type checking. *)
   | UNumberedEmptyHole of int
         (** A u-level, to be filled in later, by type checking. *)
+  | U_def of string * uExpr list
 
-let uuu0 = Uvariable (UVar "uuu0")
+let uuu0 = nowhere(Uvariable (UVar "uuu0"))
 
 type  oBinding = oVar * oExpr
 and   tBinding = oVar * tExpr
@@ -144,6 +146,7 @@ and tExpr' =
   | Id of tExpr * oExpr * oExpr
       (** Identity type; paths type. *)
       (* TS7 *)
+  | T_def of string * uExpr list * tExpr list * oExpr list
   | T_nat
       (** nat 
 
@@ -271,6 +274,7 @@ and oExpr' =
 
 	    By definition, the subexpression [p] is not essential.
 	 *)
+  | O_def of string * uExpr list * tExpr list * oExpr list
   | Onumeral of int 
          (** A numeral.
 	     
@@ -343,9 +347,18 @@ let d3 = inferenceRule(3,RPo (OVar "x"), [d2])
 (* Abbreviations, conventions, and definitions; from the paper *)
 
 type identifier = Ident of string
-type notation = 
+type definition = 
   | TDefinition of identifier * ((uContext * tContext * oContext)         * tExpr)
   | ODefinition of identifier * ((uContext * tContext * oContext) * oExpr * tExpr)
+
+type var = U of uVar | T of tVar | O of oVar
+
+type environment_type = {
+    uc : uContext;
+    tc : tContext;
+    definitions : (identifier * definition) list;
+    lookup_order : (string * var) list	(* put definitions in here later *)
+  }
 
 (*
  For emacs:

@@ -16,11 +16,11 @@ let rec tau (g:(oVar*tExpr) list) ((o,pos):oExpr) = nowhere (
 	Not_found -> 
 	  raise (TypingError(pos, "unbound variable, not in context: " ^ (Printer.ovartostring v)))
      )
-  | O_u x -> T_U (Uplus(x,1))
+  | O_u x -> T_U (nowhere(Uplus(x,1)))
   | O_j (m1,m2) -> Pi(nowhere(T_U m1),(OVarUnused,nowhere(T_U m2)))
   | O_ev (o1,o2,(x,t)) -> strip_pos(Substitute.tsubst [(x,o2)] t)
   | O_lambda (t,(x,o)) -> Pi(t, (x, tau ((x,t) :: g) o))
-  | O_forall (m1,m2,_,(_,_)) -> T_U (Umax( m1, m2))
+  | O_forall (m1,m2,_,(_,_)) -> T_U (nowhere(Umax(m1, m2)))
   | O_pair _
   | O_pr1 _
   | O_pr2 _
@@ -41,5 +41,6 @@ let rec tau (g:(oVar*tExpr) list) ((o,pos):oExpr) = nowhere (
   | O_refl _
   | O_J _
   | O_rr0 _
-  | O_rr1 _
-      -> raise NotImplemented )
+  | O_rr1 _ -> raise NotImplemented
+  | O_def (d,u,t,c) -> raise NotImplemented
+ )

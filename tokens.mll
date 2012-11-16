@@ -19,12 +19,15 @@ let first = [ 'A'-'Z' 'a'-'z' ]
 let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' ]
 rule expr_tokens = 
 parse
-  | "oPrint" { WoPrint }
-  | "tPrint" { WtPrint }
   | "uPrint" { WuPrint }
-  | "oAlpha" { WoAlpha }
-  | "tAlpha" { WtAlpha }
+  | "tPrint" { WtPrint }
+  | "oPrint" { WoPrint }
   | "uAlpha" { WuAlpha }
+  | "tAlpha" { WtAlpha }
+  | "oAlpha" { WoAlpha }
+  | "uCheck" { WuCheck }
+  | "tCheck" { WtCheck }
+  | "oCheck" { WoCheck }
   | "Tau" { WTau }
   | "Variable" { WVariable }
   | "tDefinition" { WtDefinition }
@@ -35,6 +38,9 @@ parse
   | "[U]" { WU }
   | "[u]" { Wu }
   | "[j]" { Wj }
+  | "[udef;" { Wudef }
+  | "[tdef;" { Wtdef }
+  | "[odef;" { Wodef }
   | "[Pi;" { WPi }
   | "Pi" { KPi }
   | "lambda" { Klambda }
@@ -78,10 +84,7 @@ parse
   | '|' '-'  { Wturnstile }
   | '|' '>'  { Wtriangle }
   | digit+ as n { Nat (int_of_string n) }
-  | first after* as id {
-       (* an experiment: *)
-       (* if List.mem (TVar id) tc then TVar_token (TVar id) else *)
-       Var_token id }
+  | first after* as id { IDENTIFIER id }
   | white { expr_tokens lexbuf }
   | '#' [ ^ '\n' ]* { expr_tokens lexbuf }
   | newline { Lexing.new_line lexbuf; expr_tokens lexbuf }

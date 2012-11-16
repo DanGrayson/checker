@@ -40,6 +40,7 @@ and tfillin ctxt (t,pos) = nowhere(
   | T_Empty -> t
   | T_IC (tA,a,(x,tB,(y,tD,(z,q)))) -> T_IC (tfillin ctxt tA,ofillin ctxt a,ttofillin_binder ctxt (x,tB,(y,tD,(z,q))))
   | Id (t,x,y) -> Id (tfillin ctxt t,ofillin ctxt x,ofillin ctxt y)
+  | T_def (d,u,t,c) -> raise NotImplemented
   | T_nat -> t)
 and ofillin ctxt (o,pos) = nowhere(
   match o with
@@ -77,4 +78,6 @@ and ofillin ctxt (o,pos) = nowhere(
   | O_refl (t,o) -> O_refl (tfillin ctxt t,ofillin ctxt o)
   | O_J (tT,a,b,q,i,(x,e,tS)) -> O_J (tfillin ctxt tT,ofillin ctxt a,ofillin ctxt b,ofillin ctxt q,ofillin ctxt i,t2fillin_binder ctxt (x,e,tS))
   | O_rr0 (m2,m1,s,t,e) -> O_rr0 (m2,m1,ofillin ctxt s,ofillin ctxt t,ofillin ctxt e)
-  | O_rr1 (m,a,p) -> O_rr1 (m,ofillin ctxt a,ofillin ctxt p))
+  | O_rr1 (m,a,p) -> O_rr1 (m,ofillin ctxt a,ofillin ctxt p)
+  | O_def (d,u,t,c) -> raise NotImplemented
+ )

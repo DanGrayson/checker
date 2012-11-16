@@ -1,6 +1,6 @@
 # this is a comment
 
-Variable u0 u1 u2 : Univ ; u0 <= u1; u0 <= u2 .
+Variable uuu0 u1 u2 : Univ ; uuu0 <= u1; uuu0 <= u2 .
 Variable T T1 T2 U T' V W U' A B C D X X1 : Type.
 Show.
 
@@ -36,10 +36,16 @@ oAlpha lambda g:T->U, lambda x:T, g x
    ==  lambda h:T->U, lambda y:T, h h  .
 
 tPrint Pi x : T1, [U](uuu0+14).
+tCheck Pi x : T1, [U](uuu0+14).
+
+uCheck T.
+Show.
+
 tPrint *x.
 oPrint lambda x : T, e.
 
 oPrint lambda g:T -> *k, lambda f:Pi t:T, *g t, lambda o:T, f o.
+oCheck lambda g:T -> *k, lambda f:Pi t:T, *g t, lambda o:T, f o.
 
 oPrint lambda f:T->U, lambda o:T, lambda x : *r, f o.
 tPrint A->B->C.

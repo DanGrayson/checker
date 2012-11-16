@@ -5,7 +5,19 @@ BFLAGS += -use-menhir
 # BFLAGS += -yaccflag --trace
 
 # BFLAGS += -verbose 0
-SRCFILES = typesystem.ml alpha.ml substitute.ml fillin.ml printer.ml tau.ml scheme.ml grammar.mly tokens.mll toplevel.ml checker.ml 
+SRCFILES = 					\
+	typesystem.ml				\
+	alpha.ml				\
+	substitute.ml				\
+	fillin.ml				\
+	check.ml				\
+	tau.ml					\
+	printer.ml				\
+	scheme.ml				\
+	grammar.mly				\
+	tokens.mll				\
+	toplevel.ml				\
+	checker.ml
 
 # add ,p to get the ocamlyacc parser to display a trace
 RUN = -b
