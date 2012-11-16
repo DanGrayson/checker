@@ -41,13 +41,13 @@ let rec ucheck (env:environment_type) (u,pos) = match u with
   | Umax (u,v) -> ucheck env u; ucheck env v
   | UEmptyHole
   | UNumberedEmptyHole _ -> raise (TypeCheckingFailure(pos, "empty hole for u-expression found"))
-  | U_def (d,u) -> raise NotImplemented
+  | U_def (d,u) -> raise (TypingUnimplemented (pos, "u-definition"))
 
 let rec tcheck (env:environment_type) (t,pos) = match t with
     Tvariable TVar s -> (
       match (
 	try List.assoc s env.lookup_order
-	with Not_found -> raise (TypeCheckingFailure (pos, "encountered unbound u-variable: "^s)))
+	with Not_found -> raise (TypeCheckingFailure (pos, "encountered unbound t-variable: "^s)))
       with 
 	U _ -> raise (TypeCheckingFailure (pos, "expected a t-variable but found a u-variable: "^s))
       | T _ -> ()
@@ -63,13 +63,14 @@ let rec tcheck (env:environment_type) (t,pos) = match t with
   | T_Empty -> ()
   | T_IC (tA,a,(x,tB,(y,tD,(z,q)))) -> tcheck env tA; ocheck env a; ttocheck_binder env (x,tB,(y,tD,(z,q)))
   | Id (t,x,y) -> tcheck env t; ocheck env x; ocheck env y
-  | T_def (d,u,t,o) -> List.iter (ucheck env) u; List.iter (tcheck env) t; List.iter (ocheck env) o; raise NotImplemented (*check d, too*)
+  | T_def (d,u,t,o) -> List.iter (ucheck env) u; List.iter (tcheck env) t; List.iter (ocheck env) o; 
+      raise (TypingUnimplemented (pos, "t-definition")) (*check d, too*)
   | T_nat -> ()
 and ocheck (env:environment_type) (o,pos) = match o with
   Ovariable OVar s -> (
     match
       try List.assoc s env.lookup_order
-      with Not_found -> raise (TypeCheckingFailure (pos, "encountered unbound u-variable: "^s))
+      with Not_found -> raise (TypeCheckingFailure (pos, "encountered unbound o-variable: "^s))
     with 
       U _ -> raise (TypeCheckingFailure (pos, "expected an o-variable but found a u-variable: "^s))
     | T _ -> raise (TypeCheckingFailure (pos, "expected an o-variable but found a t-variable: "^s))
@@ -111,11 +112,27 @@ and ocheck (env:environment_type) (o,pos) = match o with
   | O_rr0 (m2,m1,s,t,e) -> ucheck env m2; ucheck env m1; ocheck env s; ocheck env t; ocheck env e
   | O_rr1 (m,a,p) -> ucheck env m; ocheck env a; ocheck env p
   | O_def (d,u,t,o) -> List.iter (ucheck env) u; List.iter (tcheck env) t; List.iter (ocheck env) o
-and tcheck_binder _ = raise NotImplemented
-and ocheck_binder _ = raise NotImplemented
-and ttocheck_binder _ = raise NotImplemented
-and t2check_binder _ = raise NotImplemented
-and ooocheck_binder _ = raise NotImplemented
+and tcheck_binder env (v,t) = 
+  let env' = env
+  in tcheck env' t
+and t2check_binder env (v,w,t) = 
+  let env' = env			(*?*) 
+  in tcheck env' t
+and ocheck_binder env (v,o) = 
+  let env' = env			(*?*)
+  in ocheck env' o
+and oocheck_binder env (v,o,k) =
+  let env' = env			(*?*) 
+  in ocheck env' o; ocheck_binder env' k
+and ooocheck_binder env (v,o,k) = 
+  let env' = env			(*?*) 
+  in ocheck env' o; oocheck_binder env' k
+and ttocheck_binder env (v,t,k) = 
+  let env' = env			(*?*) 
+  in tcheck env t; tocheck_binder env' k
+and tocheck_binder env (v,t,k) = 
+  let env' = env			(*?*) 
+  in tcheck env t; ocheck_binder env' k
 
 let ucheck_okay env x = try ucheck env x; true with TypeCheckingFailure _ -> false
 let tcheck_okay env x = try tcheck env x; true with TypeCheckingFailure _ -> false

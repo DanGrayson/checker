@@ -7,7 +7,7 @@
 open Typesystem
 
 let rec tfillin_binder env (v,t) = 
-  let env' = env
+  let env' = env			(* ? *)
   in (v, tfillin env' t)
 and t2fillin_binder env (v,w,t) = 
   let env' = env 

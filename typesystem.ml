@@ -38,6 +38,7 @@ let strip_pos = fst
 let get_pos = snd
 
 exception TypingError of position * string
+exception TypingUnimplemented of position * string
 exception GeneralError of string
 exception GensymCounterOverflow
 exception NotImplemented

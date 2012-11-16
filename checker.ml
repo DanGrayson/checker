@@ -7,7 +7,11 @@ exception Error_Handled
 
 let protect1 f = (
   try f () with
-    Check.TypeCheckingFailure (p,s) -> 
+    TypingUnimplemented (p,s) -> 
+      Printf.fprintf stderr "%s: type checking unimplemented: %s\n" (error_format_pos p) s;
+      flush stderr;
+      Tokens.bump_error_count()
+  | Check.TypeCheckingFailure (p,s) -> 
       Printf.fprintf stderr "%s: type checking failure: %s\n" (error_format_pos p) s;
       flush stderr;
       Tokens.bump_error_count())
