@@ -1,17 +1,19 @@
 open Typesystem
 
-let ovartostring = function
+let ovartostring' = function
   | OVar x -> x
   | OVarGen(i,x) -> x ^ "_" ^ (string_of_int i)
   | OVarEmptyHole -> "_"
   | OVarUnused -> "_"
+let ovartostring v = ovartostring' (strip_pos v)
 
-let uvartostring = function
-  | UVar x -> x
+let uvartostring' (UVar x) = x
+let uvartostring v = uvartostring' (strip_pos v)
+
 let rec utostring u = match strip_pos u with
   | UEmptyHole -> "_"
   | UNumberedEmptyHole n -> "_" ^ (string_of_int n)
-  | Uvariable x -> uvartostring x
+  | Uvariable x -> uvartostring' x
   | Uplus (x,n) -> "(" ^ (utostring x) ^ "+" ^ (string_of_int n) ^ ")"
   | Umax (x,y) -> "max(" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
   | U_def (d,u) -> "[udef;" ^ d ^ "](" ^ (ulisttostring u) ^ ")"
@@ -19,15 +21,15 @@ and ulisttostring s = String.concat "," (List.map utostring s)
 
 let ueqntostring (u,v) = "; " ^ (utostring u) ^ "=" ^ (utostring v)
 
-let tvartostring = function
-  | TVar x -> x
+let tvartostring' (TVar x) = x
+let tvartostring v = tvartostring' (strip_pos v)
 
 let rec ttostring = function
   | (_,t) -> ttostring' t
 and ttostring' = function
   | TEmptyHole -> "_"
   | TNumberedEmptyHole n -> "_" ^ (string_of_int  n)
-  | Tvariable x -> tvartostring x
+  | Tvariable x -> tvartostring' x
   | El x -> "[El](" ^ (otostring x) ^ ")"
   | T_U x -> "[U](" ^ (utostring x) ^ ")"
   | Pi (t1,(x,t2)) -> "[Pi;" ^ (ovartostring x) ^ "](" ^ (ttostring t1) ^ "," ^ (ttostring t2) ^ ")"
@@ -52,7 +54,7 @@ and otostring = function
 and otostring' = function
   | OEmptyHole -> "_"
   | ONumberedEmptyHole n -> "_" ^ (string_of_int  n)
-  | Ovariable x -> ovartostring x
+  | Ovariable x -> ovartostring' x
   | O_u x -> "[u](" ^ (utostring x) ^ ")"
   | O_j (x,y) -> "[j](" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
   | O_ev (f,o,(x,t)) -> "[ev;" ^ (ovartostring x) ^ "](" ^ (otostring f) ^ "," ^ (otostring o) ^ "," ^ (ttostring t) ^ ")"
@@ -91,18 +93,18 @@ let jtostring = function
   | TEqualityJ _ -> "type equality judgement"
   | OEqualityJ _ -> "object equality judgement"
 
-let octostring (v,t) = (ovartostring v) ^ ":" ^ (ttostring t)
+let octostring (v,t) = (ovartostring' v) ^ ":" ^ (ttostring t)
 
 let parmstostring = function
-  | (UContext(uvars,ueqns),tc,oc) 
+  | ((UContext(uvars,ueqns):uContext),(tc:tContext),(oc:oContext)) 
     -> (
       if List.length uvars > 0 
-      then "(" ^ (String.concat " " (List.map uvartostring uvars)) ^ ":Univ" ^ (String.concat "" (List.map ueqntostring ueqns)) ^ ")"
+      then "(" ^ (String.concat " " (List.map uvartostring' uvars)) ^ ":Univ" ^ (String.concat "" (List.map ueqntostring ueqns)) ^ ")"
       else "" )
       ^ 
 	(
 	 if List.length tc > 0
-	 then "(" ^ (String.concat " " (List.map tvartostring tc)) ^ ":Type)"
+	 then "(" ^ (String.concat " " (List.map tvartostring' tc)) ^ ":Type)"
 	 else ""
 	) ^
       (String.concat "" (List.map (fun x -> "(" ^ (octostring x) ^ ")") oc))

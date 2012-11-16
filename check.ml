@@ -33,48 +33,48 @@ open Tau
 open Equality
 exception TypeCheckingFailure of position * string
 
-let rec ucheck (env:environment_type) (u,pos) = match u with
+let rec ucheck (env:environment_type) u = match strip_pos u with
   | Uvariable UVar s -> (
       match (
 	try List.assoc s env.lookup_order
-	with Not_found -> raise (TypeCheckingFailure (pos, "encountered unbound u-variable: "^s)))
+	with Not_found -> raise (TypeCheckingFailure (get_pos u, "encountered unbound u-variable: "^s)))
       with 
 	U _ -> ()
-      | T _ -> raise (TypeCheckingFailure (pos, "expected a u-variable but found a t-variable: "^s))
-      | O _ -> raise (TypeCheckingFailure (pos, "expected a u-variable but found an o-variable: "^s)))
+      | T _ -> raise (TypeCheckingFailure (get_pos u, "expected a u-variable but found a t-variable: "^s))
+      | O _ -> raise (TypeCheckingFailure (get_pos u, "expected a u-variable but found an o-variable: "^s)))
   | Uplus (u,n) -> ucheck env u
   | Umax (u,v) -> ucheck env u; ucheck env v
   | UEmptyHole
-  | UNumberedEmptyHole _ -> raise (TypeCheckingFailure(pos, "empty hole for u-expression found"))
-  | U_def (d,u) -> raise (TypingUnimplemented (pos, "u-definition"))
+  | UNumberedEmptyHole _ -> raise (TypeCheckingFailure(get_pos u, "empty hole for u-expression found"))
+  | U_def _ -> raise (TypingUnimplemented (get_pos u, "u-definition"))
 
-let rec tcheck (env:environment_type) (t,pos) = match t with
+let rec tcheck (env:environment_type) t = match strip_pos t with
     Tvariable TVar s -> (
       match (
 	try List.assoc s env.lookup_order
-	with Not_found -> raise (TypeCheckingFailure (pos, "encountered unbound t-variable: "^s)))
+	with Not_found -> raise (TypeCheckingFailure (get_pos t, "encountered unbound t-variable: "^s)))
       with 
-	U _ -> raise (TypeCheckingFailure (pos, "expected a t-variable but found a u-variable: "^s))
+	U _ -> raise (TypeCheckingFailure (get_pos t, "expected a t-variable but found a u-variable: "^s))
       | T _ -> ()
-      | O _ -> raise (TypeCheckingFailure (pos, "expected a t-variable but found an o-variable: "^s)))
-  | TEmptyHole | TNumberedEmptyHole _ -> raise (TypeCheckingFailure(pos,"empty hole for t-expression found"))
+      | O _ -> raise (TypeCheckingFailure (get_pos t, "expected a t-variable but found an o-variable: "^s)))
+  | TEmptyHole | TNumberedEmptyHole _ -> raise (TypeCheckingFailure(get_pos t,"empty hole for t-expression found"))
   | El o -> ocheck env o
   | T_U _ -> ()
-  | Pi (t1,(v,t2)) -> tcheck env t1; tcheck_binder (obind (v,t1) env) (v,t2)
-  | Sigma (t1,(v,t2)) -> tcheck env t1; tcheck_binder (obind (v,t1) env) (v,t2)
+  | Pi (t1,(v,t2)) -> tcheck env t1; tcheck_binder (obind (strip_pos v,t1) env) (v,t2)
+  | Sigma (t1,(v,t2)) -> tcheck env t1; tcheck_binder (obind (strip_pos v,t1) env) (v,t2)
   | T_Pt -> ()
-  | T_Coprod (t,t') -> tcheck env t; tcheck env t'
-  | T_Coprod2 (t,t',(x,u),(x',u'),o) -> 
-      tcheck env t; tcheck env t'; tcheck_binder env (x,u); tcheck_binder env (x',u'); ocheck env o;
-      raise (TypingUnimplemented (pos, "coprod"))
+  | T_Coprod (t1,t2) -> tcheck env t1; tcheck env t2
+  | T_Coprod2 (t1,t2,(x,u),(x',u'),o) -> 
+      tcheck env t1; tcheck env t2; tcheck_binder env (x,u); tcheck_binder env (x',u'); ocheck env o;
+      raise (TypingUnimplemented (get_pos t, "coprod"))
   | T_Empty -> ()
   | T_IC (tA,a,(x,tB,(y,tD,(z,q)))) -> 
       tcheck env tA; ocheck env a; ttocheck_binder env (x,tB,(y,tD,(z,q)));
-      raise (TypingUnimplemented (pos, "IC"))
+      raise (TypingUnimplemented (get_pos t, "IC"))
   | Id (t,x,y) -> tcheck env t; ocheck env x; ocheck env y; overify env x t; overify env y t
-  | T_def (d,u,t,o) -> 
-      List.iter (ucheck env) u; List.iter (tcheck env) t; List.iter (ocheck env) o; 
-      raise (TypingUnimplemented (pos, "t-definition"))
+  | T_def (d,u,t',o) -> 
+      List.iter (ucheck env) u; List.iter (tcheck env) t'; List.iter (ocheck env) o; 
+      raise (TypingUnimplemented (get_pos t, "t-definition"))
   | T_nat -> ()
 and overify env o t =			(* verify that o has type t *)
   let t' = (tau env o) in
@@ -91,20 +91,20 @@ and tverify env t1 t2 =			(* verify that t1 = t2 *)
 				   "     : "^(Printer.ttostring t2)
 				  ))
   else ()      
-and ocheck (env:environment_type) (o,pos) = match o with
+and ocheck (env:environment_type) o = match strip_pos o with
   Ovariable OVar s -> (
     match
       try List.assoc s env.lookup_order
-      with Not_found -> raise (TypeCheckingFailure (pos, "encountered unbound o-variable: "^s))
+      with Not_found -> raise (TypeCheckingFailure (get_pos o, "encountered unbound o-variable: "^s))
     with 
-      U _ -> raise (TypeCheckingFailure (pos, "expected an o-variable but found a u-variable: "^s))
-    | T _ -> raise (TypeCheckingFailure (pos, "expected an o-variable but found a t-variable: "^s))
+      U _ -> raise (TypeCheckingFailure (get_pos o, "expected an o-variable but found a u-variable: "^s))
+    | T _ -> raise (TypeCheckingFailure (get_pos o, "expected an o-variable but found a t-variable: "^s))
     | O _ -> ())
   | Ovariable OVarGen (i,s) -> ()
   | Ovariable OVarUnused -> raise InternalError
   | Ovariable OVarEmptyHole -> raise InternalError
   | Onumeral _ -> ()
-  | OEmptyHole | ONumberedEmptyHole _ -> raise (TypeCheckingFailure(pos,"empty o-expression hole, no method for filling"))
+  | OEmptyHole | ONumberedEmptyHole _ -> raise (TypeCheckingFailure(get_pos o,"empty o-expression hole, no method for filling"))
   | O_u u -> ucheck env u
   | O_j (u,v) -> ucheck env u; ucheck env v
   | O_ev(f,x,(v,t)) -> (
@@ -114,21 +114,21 @@ and ocheck (env:environment_type) (o,pos) = match o with
 	| Pi(s,(w,t')) -> 
 	    if not ( w = v ) 
 	    then raise (
-	      TypeCheckingFailure(pos,"expected identical variables: " ^
+	      TypeCheckingFailure(get_pos o,"expected identical variables: " ^
 				  (Printer.ovartostring w) ^ ", " ^
 				  (Printer.ovartostring v) ^ ")"));
 	    overify env x s;
-	    let env = obind (v,s) env in 
+	    let env = obind (strip_pos v,s) env in 
 	    tverify env t t'
 	| _ -> raise (TypeCheckingFailure(get_pos f,"expected a product type")))
-  | O_lambda (t,(v,p)) -> tcheck env t; ocheck_binder (obind (v,t) env) (v,p)
-  | O_forall (m,m',o,(v,o')) -> ucheck env m; ucheck env m'; ocheck env o; ocheck_binder (obind (v,nowhere(El o)) env) (v,o')
+  | O_lambda (t,(v,p)) -> tcheck env t; ocheck_binder (obind (strip_pos v,t) env) (v,p)
+  | O_forall (m,m',o,(v,o')) -> ucheck env m; ucheck env m'; ocheck env o; ocheck_binder (obind (strip_pos v,nowhere(El o)) env) (v,o')
   | O_pair (a,b,(x,t)) -> ocheck env a; ocheck env b; tcheck_binder env (x,t)
   | O_pr1 (t,(x,t'),o) -> tcheck env t; tcheck_binder env (x,t'); ocheck env o
   | O_pr2 (t,(x,t'),o) -> tcheck env t; tcheck_binder env (x,t'); ocheck env o
   | O_total (m1,m2,o1,(x,o2)) -> ucheck env m1; ucheck env m2; ocheck env o1; ocheck_binder env (x,o2)
   | O_pt -> ()
-  | O_pt_r (o,(x,t)) -> ocheck env o; tcheck_binder (obind (x,nowhere T_Pt) env) (x,t)
+  | O_pt_r (o,(x,t)) -> ocheck env o; tcheck_binder (obind (strip_pos x,nowhere T_Pt) env) (x,t)
   | O_tt -> ()
   | O_coprod (m1,m2,o1,o2) -> ucheck env m1; ucheck env m2; ocheck env o1; ocheck env o2
   | O_ii1 (t,t',o) -> tcheck env t; tcheck env t'; ocheck env o

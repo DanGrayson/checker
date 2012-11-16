@@ -156,10 +156,10 @@ let show_command () =
    Printf.printf "   Variable ";
    let UContext(uvars,ueqns) = (!environment).uc in 
    Printf.printf "%s.\n"
-     ((String.concat " " (List.map Printer.uvartostring uvars)) ^ " : Univ" ^ (String.concat "" (List.map Printer.ueqntostring ueqns)));
+     ((String.concat " " (List.map Printer.uvartostring' uvars)) ^ " : Univ" ^ (String.concat "" (List.map Printer.ueqntostring ueqns)));
   );
   (
-   Printf.printf "   Variable"; List.iter (fun x -> Printf.printf " %s" (Printer.tvartostring x)) (List.rev (!environment).tc); Printf.printf " : Type.\n";
+   Printf.printf "   Variable"; List.iter (fun x -> Printf.printf " %s" (Printer.tvartostring' x)) (List.rev (!environment).tc); Printf.printf " : Type.\n";
   );
   (
    let p = List.rev_append (!environment).definitions [] in List.iter (fun x -> Printf.printf "   "; printdefinition (snd x)) p;

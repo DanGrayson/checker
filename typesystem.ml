@@ -65,7 +65,7 @@ let fresh =
     incr genctr; 
     if !genctr < 0 then raise GensymCounterOverflow;
     OVarGen (!genctr, x)) in
-  function
+  fun v -> match strip_pos v with 
       OVar x | OVarGen(_,x) -> newgen x
     | OVarUnused as v -> v
     | OVarEmptyHole as v -> v
@@ -310,7 +310,9 @@ let emptyUTContext = emptyUContext, emptyTContext
 (** o-context; a list of o-variables with T-expressions representing their declared type. *)
 type oContext = (oVar' * tExpr) list				  (* [Gamma] *)
 let emptyOContext : oContext = []
-      
+
+type oSubs = (oVar' * oExpr) list
+
 type judgementBody =
   | EmptyJ
 	(** Gamma |> *)

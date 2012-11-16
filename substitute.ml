@@ -1,33 +1,34 @@
 open Typesystem
 
-let rec tsubstfresh subs (v,t) = 
+let rec tsubstfresh (subs:oSubs) (v,t) = 
   let v' = fresh v 
-  in let subs' = (v, with_pos_of v (Ovariable v')) :: subs
-  in (v', tsubst subs' t)
-and t2substfresh subs (v,w,t) = 
+  in let subs' = (strip_pos v, with_pos_of v (Ovariable v')) :: subs
+  in (with_pos_of v v', tsubst subs' t)
+and t2substfresh (subs:oSubs) (v,w,t) = 
   let v' = fresh v and w' = fresh w 
-  in let subs' = (w, with_pos_of w (Ovariable w')) :: (v, with_pos_of v (Ovariable v')) :: subs 
-  in (v', w', tsubst subs' t)
+  in let subs' = (strip_pos w, with_pos_of w (Ovariable w')) :: (strip_pos v, with_pos_of v (Ovariable v')) :: subs 
+  in (with_pos_of v v', with_pos_of w w', tsubst subs' t)
 and osubstfresh subs (v,o) = 
   let v' = fresh v 
-  in let subs' = (v, with_pos_of v (Ovariable v')) :: subs in (v', osubst subs' o)
+  in let subs' = (strip_pos v, with_pos_of v (Ovariable v')) :: subs
+  in (with_pos_of v v', osubst subs' o)
 and oosubstfresh subs (v,o,k) =
   let v' = fresh v 
-  in let subs' = (v, with_pos_of v (Ovariable v')) :: subs 
-  in (v', osubst subs' o, osubstfresh subs' k)
+  in let subs' = (strip_pos v, with_pos_of v (Ovariable v')) :: subs 
+  in (with_pos_of v v', osubst subs' o, osubstfresh subs' k)
 and ooosubstfresh subs (v,o,k) = 
   let v' = fresh v 
-  in let subs' = (v, with_pos_of v (Ovariable v')) :: subs 
-  in (v', osubst subs' o, oosubstfresh subs' k)
+  in let subs' = (strip_pos v, with_pos_of v (Ovariable v')) :: subs 
+  in (with_pos_of v v', osubst subs' o, oosubstfresh subs' k)
 and ttosubstfresh subs (v,t,k) = 
   let v' = fresh v 
-  in let subs' = (v, with_pos_of v (Ovariable v')) :: subs 
-  in (v', tsubst subs t, tosubstfresh subs' k)
+  in let subs' = (strip_pos v, with_pos_of v (Ovariable v')) :: subs 
+  in (with_pos_of v v', tsubst subs t, tosubstfresh subs' k)
 and tosubstfresh subs (v,t,k) = 
   let v' = fresh v 
-  in let subs' = (v, with_pos_of v (Ovariable v')) :: subs 
-  in (v', tsubst subs t, osubstfresh subs' k)
-and tsubst subs (pos,t) = pos,(
+  in let subs' = (strip_pos v, with_pos_of v (Ovariable v')) :: subs 
+  in (with_pos_of v v', tsubst subs t, osubstfresh subs' k)
+and tsubst subs (pos, t) = with_pos pos (
   match t with
     Tvariable _ -> t
   | TEmptyHole -> t
@@ -44,7 +45,7 @@ and tsubst subs (pos,t) = pos,(
   | Id (t,x,y) -> Id (tsubst subs t,osubst subs x,osubst subs y)
   | T_def (d,u,t,c) -> raise NotImplemented
   | T_nat -> t)
-and osubst subs (pos,o) = pos,(
+and osubst (subs:oSubs) (pos,o) = with_pos pos (
   match o with
     Ovariable v -> (try strip_pos(List.assoc v subs) with Not_found -> o)
   | OEmptyHole -> o

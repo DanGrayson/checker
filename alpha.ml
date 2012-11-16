@@ -2,17 +2,20 @@
 
 open Typesystem
 
-let addalpha x x' alpha = if x=x' then alpha else (x,x') :: alpha
-let testalpha x x' =
+type alpha_eq = (oVar' * oVar') list
+
+let addalpha x x' (alpha:alpha_eq) = if x=x' then alpha else (strip_pos x, strip_pos x') :: alpha
+let testalpha'  x x' =
   let rec test = ( 
     function
 	[] -> x=x'
       | (y,y') :: alpha -> if x=y then x'=y' else if x'=y' then false else test alpha)
   in test
+let testalpha  x x' = let x = strip_pos x and x' = strip_pos x' in testalpha' x x'
 
 let ueq (a:uExpr) b = a = b
 
-let rec teq alpha a b = a == b || match (a,b) with ((a,_),(b,_)) -> (a == b || teq' alpha (a,b))
+let rec teq alpha a b = a == b || let a = strip_pos a and b = strip_pos b in a == b || teq' alpha (a,b)
 
 and teq' alpha = function
   | (El t, El t')
@@ -32,10 +35,10 @@ and teq' alpha = function
   | (a,a')
     -> a = a'
 
-and oeq alpha a b = a == b || match (a,b) with ((a,_),(b,_)) -> (a == b || oeq' alpha (a,b))
+and oeq alpha a b = a == b || let a = strip_pos a and b = strip_pos b in a == b || oeq' alpha (a,b)
 
 and oeq' alpha = function
-  | Ovariable a, Ovariable b -> testalpha a b alpha
+  | Ovariable a, Ovariable b -> testalpha' a b alpha
   | (O_lambda(t,(x,u)),O_lambda(t',(x',u')))
     -> teq alpha t t' && let alpha = addalpha x x' alpha in oeq alpha u u'
   | (O_ev(f,o,(x,u)),O_ev(f',o',(x',u')))

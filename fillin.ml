@@ -42,27 +42,27 @@ and tfillin env (pos,t) = pos,(
   | Id (t,x,y) -> Id (tfillin env t,ofillin env x,ofillin env y)
   | T_def (d,u,t,o) -> T_def (d,u,List.map (tfillin env) t,List.map (ofillin env) o)
   | T_nat -> t)
-and ofillin env (pos,o) = pos,(
+and ofillin env ((pos:position),o) = pos,(
   match o with
     Ovariable v -> o
   | Onumeral _ -> o
   | OEmptyHole | ONumberedEmptyHole _ -> raise (TypingError(pos,"empty o-expression hole, no method for filling"))
   | O_u _ -> o
   | O_j _ -> o
-  | O_ev(f,p,(OVarUnused, (loc, TEmptyHole))) -> (
+  | O_ev(f,p,((_, OVarEmptyHole), (_, TEmptyHole))) -> (
     match strip_pos(Tau.tau env f) with
-      | Pi(t1,(x,t2)) -> O_ev(ofillin env f,ofillin env p,tfillin_binder (obind (x,t1) env) (x,t2))
+      | Pi(t1,(x,t2)) -> O_ev(ofillin env f,ofillin env p,tfillin_binder (obind (strip_pos x,t1) env) (x,t2))
       | _ -> raise (TypingError(get_pos f,"expected a product type"))
     )
   | O_ev(f,p,(v,t)) -> O_ev(ofillin env f,ofillin env p,tfillin_binder env (v,t))
-  | O_lambda (t,(v,p)) -> O_lambda (tfillin env t,ofillin_binder (obind (v,t) env) (v,p))
-  | O_forall (m,m',o,(v,o')) -> O_forall (m,m',ofillin env o,ofillin_binder (obind (v,nowhere(El o)) env) (v,o'))
+  | O_lambda (t,(v,p)) -> O_lambda (tfillin env t,ofillin_binder (obind (strip_pos v,t) env) (v,p))
+  | O_forall (m,m',o,(v,o')) -> O_forall (m,m',ofillin env o,ofillin_binder (obind (strip_pos v,nowhere(El o)) env) (v,o'))
   | O_pair (a,b,(x,t)) -> O_pair (ofillin env a,ofillin env b,tfillin_binder env (x,t))
   | O_pr1 (t,(x,t'),o) -> O_pr1 (tfillin env t,tfillin_binder env (x,t'),ofillin env o)
   | O_pr2 (t,(x,t'),o) -> O_pr2 (tfillin env t,tfillin_binder env (x,t'),ofillin env o)
   | O_total (m1,m2,o1,(x,o2)) -> O_total (m1,m2,ofillin env o1,ofillin_binder env (x,o2))
   | O_pt -> o
-  | O_pt_r (o,(x,t)) -> O_pt_r (ofillin env o, tfillin_binder (obind (x,nowhere T_Pt) env) (x,t))
+  | O_pt_r (o,(x,t)) -> O_pt_r (ofillin env o, tfillin_binder (obind (strip_pos x,nowhere T_Pt) env) (x,t))
   | O_tt -> o
   | O_coprod (m1,m2,o1,o2) -> O_coprod (m1,m2,ofillin env o1,ofillin env o2)
   | O_ii1 (t,t',o) -> O_ii1 (tfillin env t,tfillin env t',ofillin env o)
