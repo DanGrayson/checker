@@ -49,6 +49,8 @@ parse
   | "[Coprod]" { WCoprod }
   | "[Coprod;" { WCoprod2 }
   | "[Empty]" { WEmpty }
+  | "[empty]" { Wempty }
+  | "[empty_r]" { Wempty_r }
   | "[IC;" { WIC }
   | "[Id]" { WId }
   | "[ev;" { Wev }

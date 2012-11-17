@@ -72,9 +72,9 @@ and otostring' = function
   | O_coprod _
   | O_ii1 _
   | O_ii2 _
-  | Sum _
-  | O_empty
-  | O_empty_r _
+  | Sum _ -> raise NotImplemented
+  | O_empty -> "[empty]()"
+  | O_empty_r (t,o) -> "[empty_r](" ^ (ttostring t) ^ "," ^ (otostring o) ^ ")"
   | O_c _
   | O_ic_r _
   | O_ic _
@@ -82,8 +82,7 @@ and otostring' = function
   | O_refl _
   | O_J _
   | O_rr0 _
-  | O_rr1 _
-     -> "<...>"
+  | O_rr1 _ -> raise NotImplemented
 and tlisttostring s = String.concat "," (List.map ttostring s)
 and olisttostring s = String.concat "," (List.map otostring s)
 

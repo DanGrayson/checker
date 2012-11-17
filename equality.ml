@@ -77,8 +77,8 @@ and oeq alpha oa ob = oa == ob || let a = strip_pos oa and b = strip_pos ob in a
   | O_ii1 (t,u,o), O_ii1 (t',u',o') -> raise NotImplemented
   | O_ii2 (t,u,o), O_ii2 (t',u',o') -> raise NotImplemented
   | Sum (p,q,t,u,o,(x,s)), Sum (p',q',t',u',o',(x',s')) -> raise NotImplemented
-  | O_empty, O_empty -> raise NotImplemented
-  | O_empty_r (t,o), O_empty_r (t',o') -> raise NotImplemented
+  | O_empty, O_empty -> true
+  | O_empty_r (t,o), O_empty_r (t',o') -> teq alpha t t' && true (* eta rule for Empty implies o=o' *)
   | O_c (tA,a,(x,tB,(y,tD,(z,q))),b,f), O_c (tA',a',(x',tB',(y',tD',(z',q'))),b',f') -> raise NotImplemented
   | O_ic_r (tA,a,(x,tB,(y,tD,(z,q))),i,(xx,v,tS),t), O_ic_r (tA',a',(x',tB',(y',tD',(z',q'))),i',(xx',v',tS'),t') -> raise NotImplemented
   | O_ic (m1,m2,m3,oA,a,(x,oB,(y,oD,(z,q)))), O_ic (m1',m2',m3',oA',a',(x',oB',(y',oD',(z',q')))) -> raise NotImplemented

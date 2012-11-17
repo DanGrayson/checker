@@ -196,7 +196,8 @@ and ocheck (env:environment_type) o = match strip_pos o with
   | O_empty -> ()
   | O_empty_r (t,o) -> 
       tcheck env t; 
-      ocheck env o
+      ocheck env o;
+      overify env o (nowhere T_Empty)
   | O_c (tA,a,(x,tB,(y,tD,(z,q))),b,f) -> 
       tcheck env tA; 
       ocheck env a; 

@@ -41,7 +41,7 @@ let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code ha
 %token Wlbrace Wrbrace Wbar Wunderscore
 %token Wgreaterequal Wgreater Wlessequal Wless Wsemi
 %token KUniv Kumax KType KPi Klambda KSigma
-%token WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty WIC WId
+%token WEl WPi Wev Wu Wj WU Wlambda Wforall WSigma WCoprod WCoprod2 WEmpty Wempty Wempty_r WIC WId
 %token WTau WtPrint WoPrint WuPrint WoDefinition WtDefinition WShow WExit WVariable WoAlpha WtAlpha WuAlpha Weof
 %token WuCheck WtCheck WoCheck
 %token Wflush
@@ -53,7 +53,7 @@ let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code ha
 %right Warrow
 %left Prec_application
 %right Klambda
-%nonassoc Wforall Wunderscore Wunderscore_numeral Nat Wu Wlparen Wlambda Wj Wev IDENTIFIER Wodef
+%nonassoc Wforall Wunderscore Wunderscore_numeral Nat Wu Wlparen Wlambda Wj Wev IDENTIFIER Wodef Wempty_r Wempty
 
 %%
 
@@ -103,7 +103,7 @@ command:
 | WExit Wperiod
     { Toplevel.Exit }
 
-unusedtokens: Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile Wempty Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile Wbar UVar_token { () }
+unusedtokens: Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile Wempty Wempty_r Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile Wbar UVar_token { () }
 
 uParm: vars=nonempty_list(IDENTIFIER) Wcolon KUniv eqns=preceded(Wsemi,uEquation)*
     { UParm (UContext ((List.map make_uVar vars),eqns)) }
@@ -178,6 +178,10 @@ oExpr0:
     { O_lambda(t,(x,o)) }
 | Wforall x=oVar Wrbracket Wlparen u1=uExpr Wcomma u2=uExpr Wcomma o1=oExpr Wcomma o2=oExpr Wrparen
     { O_forall(u1,u2,o1,(x,o2)) }
+| Wempty Wlparen Wrparen
+    { O_empty }
+| Wempty_r Wlparen t=tExpr Wcomma o=oExpr Wrparen
+    { O_empty_r(t,o) }
 | Wodef name=IDENTIFIER Wrbracket Wlparen 
     u=separated_list(Wcomma,uExpr) 
     Wrparen { O_def(name,u,[],[]) }

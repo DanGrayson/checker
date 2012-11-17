@@ -31,9 +31,9 @@ let rec tau (env:environment_type) o = (
   | O_coprod _
   | O_ii1 _
   | O_ii2 _
-  | Sum _
-  | O_empty
-  | O_empty_r _
+  | Sum _ -> raise NotImplemented
+  | O_empty -> with_pos_of o T_Empty
+  | O_empty_r (t,o) -> t
   | O_c _
   | O_ic_r _
   | O_ic _
