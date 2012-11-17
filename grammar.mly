@@ -36,7 +36,7 @@ let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code ha
 %type <unit> unusedtokens
 %token <string> IDENTIFIER
 %token <Typesystem.uVar> UVar_token 
-%token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow Wequalequal Wequal Wturnstile Wtriangle Wcolonequal
+%token Wlparen Wrparen Wlbracket Wrbracket Wplus Kplus1 Wcomma Wperiod Wslash Wcolon Wstar Warrow Wequalequal Wequal Wturnstile Wtriangle Wcolonequal
 %token Wlbrace Wrbrace Wbar Wunderscore
 %token Wgreaterequal Wgreater Wlessequal Wless Wsemi
 %token KUniv Kumax KType KPi Klambda KSigma
@@ -107,7 +107,8 @@ command:
 unusedtokens: 
     Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile Wempty
     Wempty_r Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile
-    Wlbracket Wbar UVar_token { () }
+    Wlbracket Wbar UVar_token Wplus
+    { () }
 
 uParm: vars=nonempty_list(IDENTIFIER) Wcolon KUniv eqns=preceded(Wsemi,uEquation)*
     { UParm (UContext ((List.map make_uVar vars),eqns)) }
@@ -256,9 +257,9 @@ uExpr0:
     { UNumberedEmptyHole $1 }
 | u=uVar0
     { Uvariable u }
-| u=uExpr Wplus n=Nat
-    { Uplus (u,n) }
-| Kumax Wlparen u=uExpr Wcomma v=uExpr Wrparen
+| Kplus1 u=uExpr
+    { Uplus (u,1) }
+| Kumax u=uExpr v=uExpr
     { Umax (u,v)  }
 | Wudef name=IDENTIFIER Wrbracket Wlparen 
     u=separated_list(Wcomma,uExpr) 

@@ -78,6 +78,7 @@ parse
   | ','  { Wcomma }
   | '/'  { Wslash }
   | '+'  { Wplus }
+  | "plus1"  { Kplus1 }
   | ':'  { Wcolon }
   | '='  { Wequal }
   | '=' '=' { Wequalequal }

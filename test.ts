@@ -12,7 +12,7 @@ tCheck [El]([u](u2)).
 tCheck [U](u4).
 oCheck [j](u1, u2).
 tCheck *[u](u1).
-uCheck max(u1+1+0+4,u0).
+uCheck max plus1 u1 u0.
 tCheck [Sigma;x](T,T').
 tCheck Sigma x:T, Sigma y:U, V -> W .
 tCheck [Coprod](T,T').
@@ -37,8 +37,8 @@ oAlpha lambda g:T->U, lambda x:T, g h
 oAlpha lambda g:T->U, lambda x:T, g x
    ==  lambda h:T->U, lambda y:T, h h  .
 
-tCheck Pi x : T1, [U](u0+14).
-tCheck Pi x : T1, [U](u0+14).
+tCheck Pi x : T1, [U](plus1 plus1 u0).
+tCheck Pi x : T1, [U](plus1 u0).
 
 uCheck u1.
 tCheck T.
@@ -65,11 +65,11 @@ Tau [forall;x](u1,u2,o,o').
 
 oDefinition E1 (u:Univ)(K:Type)(x:K) := x : K.
 tDefinition E2 (u1 u2 u3:Univ)(K:Type) := K->K .
-tDefinition E3 (u1 u2 u3 : Univ)(K:Type)(x1: K -> [U](u1))(x2: [U](u0+1)) := [U](u2) .
-oDefinition E5 (u1 u2 u3 : Univ; max(u1,u2)=max(u2,u3); u1 >= u2+1 )(K:Type)(x1: K -> [U](u1))(x2: [U](u0+1)) := [j](x1, x2) : [U](u2) .
+tDefinition E3 (u1 u2 u3 : Univ)(K:Type)(x1: K -> [U](u1))(x2: [U](plus1 u0)) := [U](u2) .
+oDefinition E5 (u1 u2 u3 : Univ; max u1 u2 = max u2 u3; u1 >= plus1 u2 )(K:Type)(x1: K -> [U](u1))(x2: [U](plus1 u0)) := [j](x1, x2) : [U](u2) .
 oDefinition E7 (T U:Type)(t:T)(u:U)(f:T->U) := f t.
 oDefinition E7 (K L:Type)(t:K)(g:K -> [U](u0))(u:L)(f:Pi x:K, *g x) := f t.
-oDefinition E6 (u1 u2 u3 : Univ)(X1 X2:Type)(x1: X1 -> [U](u1))(x2: [U](u0+1)) := [j](x1, x2) .
+oDefinition E6 (u1 u2 u3 : Univ)(X1 X2:Type)(x1: X1 -> [U](u1))(x2: [U](plus1 u0)) := [j](x1, x2) .
 
 oCheck lambda f:T->U, lambda o:T, [ev;_](f,o,U).
 oCheck lambda f:T->U, lambda o:T, f o.
@@ -78,66 +78,69 @@ oCheck lambda k:U, lambda g:T -> *k, lambda f:Pi t:T, *g t, lambda o:T, f o.
 oCheck lambda r:U, lambda f:T->U, lambda o:T, lambda x : *r, f o.
 oCheck lambda f:X->T, lambda y:X, [ev;_](f,y,T).
 oCheck lambda f:X->T, lambda y:X, f y.
-# uCheck [udef;foo](u0+1,u1).
+# uCheck [udef;foo](plus1 u0,u1).
 # oCheck lambda x:T, lambda y:U, lambda t:[tdef;foo](u0,u0;T,U;x,y), t.
 oCheck lambda t:[U](u0), lambda f: *(lambda x:[U](u0), x) t -> U, lambda o:*t, f o.
 
 
-    Rule fetch i ::: Pi {G :: Context}, G |- o : T. 		# here o : T is the i-th judgment from the right inside G, starting with i=0.
-    								# we add a deBruijn index if the same variable name occurs further to the right (?)
+ Parsing precedence :: |- : = * 
 
-         Rule ev ::: Pi {G :: Context},
-	      	     Pi {T :: Type},
-		     Pi {x : T}, 
-	      	     Pi {U :: Type},
-	      	     Pi (f, o :: Object),
-  	 	     Pi m :: G |- f : Pi x:T, U,
+
+     Rule fetch i :: Pi {G :: Context}, 
+     		     G |- v : T.			# here v : T is the i-th judgment from the right inside G, starting with i=0.
+    							# Notice that v is a variable.
+    							# We add a deBruijn index if necessary, or perhaps, always.  Perhaps lazily.
+
+          Rule ev :: Pi {G :: Context} {T U :: Type} (f o :: Object),
+  	 	     Pi m :: G |- f : Pi x:T, U,			# "Pi" knows to swallow just one comma, so there's no parsing ambiguity here
 		     Pi n :: G |- o : T,
 		     G |- [ev;x](f,o,U) : U.
 
-      Rule tcast ::: Pi {G :: Context},				# rule 13 in the paper UPTS
-		     Pi {T, T' :: Type},
-		     Pi o :: Object,
+       Rule tcast :: Pi {G :: Context} {T T' :: Type} (o :: Object),               # rule 13 in the paper UPTS
 		     Pi n :: G |- T = T',
-		     Pi {j} :: G |- o : T,
+		     Pi j :: G |- o : T,
 		     G |- o : T'.
 
-    Rule ocastt :::  Pi {G :: Context},
-		     Pi {T :: Type},
-		     Pi {o :: Object},
+     Rule ocastt ::  Pi {G :: Context} {T :: Type} {o :: Object},
 		     Pi j :: G |- o : T,
 		     G |- [ocast](o,j) : T.			# add this as a typing rule, too (for tau)
 
-   Rule ocastred ::: Pi {G :: Context},
-		     Pi {T :: Type},
-		     Pi {o :: Object},
+    Rule ocastred :: Pi {G :: Context} {T :: Type} {o :: Object},
 		     Pi j :: G |- o : T,
 		     G |- [ocast](o,j) = o : T.			# add this as a reduction rule, too, or just use it manually
 
-  Rule tetaempty ::: Pi {G :: Context}, 			# eta reduction for empty
-		     Pi T :: Type,
-		     Pi T' :: Type,
-		     Pi a : Empty,				# this mixing of levels is where undecidability comes in
+   Rule tetaempty :: Pi {G :: Context} (T T' :: Type),		# eta reduction for empty
+		     Pi j :: G |- a : Empty,
 		     G |- T = T'.
 
-  Rule oetaempty ::: Pi {G :: Context}, 			# eta reduction for empty
-		     Pi T :: Type,
-		     Pi a : Empty,
-		     Pi o o' : T,
+   Rule oetaempty :: Pi {G :: Context} {T :: Type} {a o o' :: Object},		# eta reduction for empty
+		     Pi j :: G |- a : Empty,
+		     Pi k :: o : T,
+		     Pi k' :: o' : T,
 		     G |- o = o' : T.
 
- Rule Emptytype :::  Pi {G :: Context},
+  Rule Emptytype ::  Pi {G :: Context},
 		     G |- Empty :: Type.
-
- Rule emptytype :::  Pi {G :: Context},
-		     G |- empty : [U](uuu0).
-
-  Rule starempty ::: Pi {G :: Context},
-		     G |- *empty = Empty.			# add this as a reduction rule, too
 
         Rule uuu0 :: Univ.
 
-    Rule bottom0 ::: Pi {u :: Univ}, uuu0 <= u.			# add this as a "constraint", too
+      Rule Uintro :: Pi {G :: Context} {u :: Univ},
+  		     Pi j :: G |- [U](u) : Type.
+
+       Rule plus1 :: Pi u :: Univ, Univ.
+
+         Rule max :: Pi u v :: Univ, Univ.
+
+      Rule uintro :: Pi {G :: Context} {u :: Univ},
+     		     G |- [u](u) : [U](u+1).
+
+  Rule emptytype ::  Pi {G :: Context},
+		     G |- empty : [U](uuu0).
+
+   Rule starempty :: Pi {G :: Context},
+		     G |- *empty = Empty.		# add this as a reduction rule, too (left to right), in some list(s) of reduction rules
+
+Constraint bottom0 :: Pi {u :: Univ}, uuu0 <= u.	# add this "constraint" every time a new universe variable is introduced, somehow
 
 
 #  Now consider how to make the following expression type check correctly, despite
@@ -147,12 +150,12 @@ oCheck lambda t:[U](u0), lambda f: *(lambda x:[U](u0), x) t -> U, lambda o:*t, f
 #
 #  This is what we do, step by step:
 #
-#  	j1 :=	@tetaempty G X T a ::: G |- X = T.
-#	j2 :=	@fetch 0 ::: G |- x : X.
-#	j3 :=	@tcast G X T x j1 j2 ::: G |- x : T.
-#	j4 :=	@fetch 1 ::: G |- f : T -> U.
-#	j5 :=	@ocastt G T o j3 ::: [ocast](x,j3) : T.
-#	j6 :=	@ev(G,T,x,T,f,[ocast](x,j3),j4,j5) ::: [ev;_](f,[ocast](x,j3),U) : U.
+#  	j1 :=	@tetaempty G X T a :: G |- X = T.
+#	j2 :=	@fetch 0 :: G |- x : X.
+#	j3 :=	@tcast G X T x j1 j2 :: G |- x : T.
+#	j4 :=	@fetch 1 :: G |- f : T -> U.
+#	j5 :=	@ocastt G T o j3 :: [ocast](x,j3) : T.
+#	j6 :=	@ev(G,T,x,T,f,[ocast](x,j3),j4,j5) :: [ev;_](f,[ocast](x,j3),U) : U.
 #
 #	etc., ...
 
