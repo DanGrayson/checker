@@ -24,6 +24,10 @@ RUN = -b
 
 all: TAGS run
 checker.byte checker.native: $(SRCFILES); ocamlbuild $(BFLAGS) $@
+doc: checker.odocl
+	ocamlbuild $(BFLAGS) checker.docdir/index.html
+checker.odocl: Makefile
+	for i in $(SRCFILES) ; do echo $$i ; done >$@
 clean::; ocamlbuild -clean
 TAGS: $(SRCFILES); ( scripts/etags.ocaml $(SRCFILES) && etags test.ts -o - ) >$@
 clean::; rm -f TAGS

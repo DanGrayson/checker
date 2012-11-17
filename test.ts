@@ -82,3 +82,6 @@ oCheck lambda f:X->T, lambda y:X, [ev;_](f,y,T).
 oCheck lambda f:X->T, lambda y:X, f y.
 uCheck [udef;foo](u0+1,u1).
 oCheck lambda x:T, lambda y:U, lambda t:[tdef;foo](u0,u0;T,U;x,y), t.
+oCheck lambda t:[U](u0), lambda f: * (lambda x:[U](u0), x) t -> U, lambda o:*t, f o.
+
+

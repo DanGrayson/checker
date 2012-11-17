@@ -5,27 +5,27 @@
 
 open Typesystem
 
-let rec tau (env:environment_type) o = with_pos_of o (
+let rec tau (env:environment_type) o = (
   match strip_pos o with
   | OEmptyHole -> raise (TypingError(get_pos o, "empty hole, type undetermined, internal error"))
   | ONumberedEmptyHole _ -> raise (TypingError(get_pos o, "empty hole, type undetermined, internal error"))
-  | Onumeral _ -> T_nat
+  | Onumeral _ -> with_pos_of o T_nat
   | Ovariable v -> (
-      try strip_pos(List.assoc v env.oc) 
+      try List.assoc v env.oc
       with
 	Not_found -> 
 	  raise (TypingError(get_pos o, "unbound variable, not in context: " ^ (Printer.ovartostring' v)))
      )
-  | O_u x -> T_U (nowhere(Uplus(x,1)))
-  | O_j (m1,m2) -> Pi(with_pos_of m1 (T_U m1),(with_pos_of m2 OVarUnused,with_pos_of m2 (T_U m2)))
-  | O_ev (o1,o2,(x,t)) -> strip_pos(Substitute.tsubst [(strip_pos x,o2)] t)
-  | O_lambda (t,(x,o)) -> Pi(t, (x, tau (obind (strip_pos x,t) env) o))
-  | O_forall (m1,m2,_,(_,_)) -> T_U (with_pos_of o (Umax(m1, m2)))
+  | O_u x -> with_pos_of o (T_U (nowhere(Uplus(x,1))))
+  | O_j (m1,m2) -> with_pos_of o (Pi(with_pos_of m1 (T_U m1),(with_pos_of m2 OVarUnused,with_pos_of m2 (T_U m2))))
+  | O_ev (o1,o2,(x,t)) -> Substitute.tsubst [(strip_pos x,o2)] t
+  | O_lambda (t,(x,o)) -> with_pos_of o (Pi(t, (x, tau (obind (strip_pos x,t) env) o)))
+  | O_forall (m1,m2,_,(_,_)) -> with_pos_of o (T_U (with_pos_of o (Umax(m1, m2))))
   | O_pair _
   | O_pr1 _
   | O_pr2 _
-  | O_total _
-  | O_pt -> T_U uuu0
+  | O_total _ -> raise NotImplemented
+  | O_pt -> with_pos_of o (T_U uuu0)
   | O_pt_r _ -> raise NotImplemented
   | O_tt
   | O_coprod _

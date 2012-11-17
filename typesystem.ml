@@ -360,6 +360,11 @@ type definition =
   | TDefinition of identifier * ((uContext * tContext * oContext)         * tExpr)
   | ODefinition of identifier * ((uContext * tContext * oContext) * oExpr * tExpr)
 
+
+(** Variable.
+
+    We need the following definition, because u-variables, t-variables, and o-variables are in the same name space,
+    and so we need to store them in the same look-up list. *)
 type var = U of uVar' | T of tVar' | O of oVar'
 
 type environment_type = {

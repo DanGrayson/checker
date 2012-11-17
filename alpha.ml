@@ -13,26 +13,38 @@ let testalpha'  x x' =
   in test
 let testalpha  x x' = let x = strip_pos x and x' = strip_pos x' in testalpha' x x'
 
-let ueq (a:uExpr) b = a = b
+let rec ueq a b = a == b || let a = strip_pos a and b = strip_pos b in a == b || ueq' (a,b)
+and ueq' = function
+  | UEmptyHole, UEmptyHole -> true
+  | UNumberedEmptyHole n, UNumberedEmptyHole n' -> n = n'
+  | Uvariable UVar x, Uvariable UVar x' -> 
+      Printf.printf "%s = %s ? %s\n" x x' (if x = x' then "true" else "false");
+      x = x'
+  | Uplus (x,n), Uplus (x',n') -> ueq x x' && n = n'
+  | Umax (x,y), Umax (x',y') -> ueq x x' && ueq y y'
+  | U_def (d,u), U_def (d',u') -> raise NotImplemented
+  | _ -> false
 
 let rec teq alpha a b = a == b || let a = strip_pos a and b = strip_pos b in a == b || teq' alpha (a,b)
 
 and teq' alpha = function
-  | (El t, El t')
+  | El t, El t'
     -> oeq alpha t t'
-  | (Pi(t,(x,u)),Pi(t',(x',u')))
+  | T_U u, T_U u'
+    -> ueq u u'
+  | Pi(t,(x,u)),Pi(t',(x',u'))
     -> teq alpha t t' && let alpha = addalpha x x' alpha in teq alpha u u'
-  | (Sigma(t,(x,u)),Sigma(t',(x',u')))
+  | Sigma(t,(x,u)),Sigma(t',(x',u'))
     -> teq alpha t t' && let alpha = addalpha x x' alpha in teq alpha u u'
       (* end of TS0 *)
-  | (T_Coprod(t,u),T_Coprod(t',u'))
+  | T_Coprod(t,u),T_Coprod(t',u')
     -> teq alpha t t' && teq alpha u u'
-  | (T_Coprod2(t1,t2,(x1,u1),(x2,u2),o),T_Coprod2(t1',t2',(x1',u1'),(x2',u2'),o'))
+  | T_Coprod2(t1,t2,(x1,u1),(x2,u2),o),T_Coprod2(t1',t2',(x1',u1'),(x2',u2'),o')
     -> teq alpha t1 t1' && teq alpha t2 t2'
 	&& let alpha = addalpha x1 x1' alpha in teq alpha u1 u1' 
 	&& let alpha = addalpha x2 x2' alpha in teq alpha u2 u2' 
 	&& oeq alpha o o'
-  | (a,a')
+  | a, a'
     -> a = a'
 
 and oeq alpha a b = a == b || let a = strip_pos a and b = strip_pos b in a == b || oeq' alpha (a,b)
