@@ -83,51 +83,52 @@ oCheck lambda f:X->T, lambda y:X, f y.
 oCheck lambda t:[U](u0), lambda f: *(lambda x:[U](u0), x) t -> U, lambda o:*t, f o.
 End.
 
-       							# omitted arguments are enclosed in { }
- Parsing precedence :: |- : = * @			# use @ to indicate that omitted arguments will be included
- 							# use :: to indicate judgments one level up, in the meta-type-theory
-							# grouping variables in one Pi means they're independent
+#							# omitted arguments are enclosed in { }
+# Parsing precedence :: |- : = * @			# use @ to indicate that omitted arguments will be included
+#							# use :: to indicate judgments one level up, in the meta-type-theory
+#							# grouping variables in one Pi means they're independent
+#
+#  Declaration of variables:
+#
+#			G :: Context
+#			u :: Univ
+#			T :: Type
+#			o :: Obj
+#
+#	Rule Empty :: Type.				# a constant (global variable)
+#
+#	 Rule uuu0 :: Univ.				# a constant
+#
+#	Rule empty :: Obj.				# a constant
+#
+#  Five types of judgments:
+#
+#			G |-				# this one says that G is a valid context
+#			G |- T type
+#			G |- o : T
+#			G |- T = T'
+#			G |- o = o' : T
 
-  Declaration of variables:
-
-  			G :: Context
-  			u :: Univ
-			T :: Type
-			o :: Obj
-
-       Rule Empty :: Type.				# a constant (global variable)
-
-        Rule uuu0 :: Univ.				# a constant
-
-       Rule empty :: Obj.				# a constant
-
-  Five types of judgments:
-
-  			G |-				# this one says that G is a valid context
-  			G |- T type
-			G |- o : T
-			G |- T = T'
-			G |- o = o' : T
-
-   Rule fetch v j :: Pi {G :: Context}, 		# if G is omitted, take it from the current context
-     		     G |- v$j : T.			# here v : T is j-th rightmost entry in G for the variable v, starting with j=0.
-		     					# j is a sort of de Bruijn index that needs to be updated occasionally
+   Rule fetch v j :: Pi {G :: Context},			# if G is omitted, take it from the current context
+		     G |- v$j : T.			# here v : T is j-th rightmost entry in G for the variable v, starting with j=0.
+							# j is a sort of de Bruijn index that needs to be updated occasionally
 							# abbreviate v$0 to v
 
-    Rule subst i :: Pi {G :: Context},			# i is the index of the variable x in the context G (?); x is not mentioned explicitly (?)
+    Rule subst i :: Pi {G :: Context},			# i is the index of the variable x in the context G (?); we must make it more explicit.
 		    Pi {T :: Type},
-      		    Pi {j :: G |- x : T},		# G contains x:T and j can often be obtained from G using fetch
-		    Pi (U :: Type) (o :: Obj),
+		    Pi {j :: G |- x : T},		# G contains x:T and j can often be obtained from G using fetch
+		    Pi (U :: Type),
+		    Pi (o :: Obj),
 		    Pi (k :: G |- o : T),
 		    G[o/x] |- U[o/x] type.		# this is supposed to be descriptive notation for substitution; in G[o/x] the entry x:T goes away
-		    					# subst i U o k :: G[o/x] |- U[o/x] type.
+							# subst i U o k :: G[o/x] |- U[o/x] type.
 
-          Rule ev :: Pi {G :: Context} {T U :: Type} (f o :: Obj),
-  	 	     Pi m :: G |- f : Pi x:T, U,	# "Pi" knows to swallow just one comma, so there's no parsing ambiguity here
+	  Rule ev :: Pi {G :: Context} {T U :: Type} (f o :: Obj),
+		     Pi m :: G |- f : Pi x:T, U,	# "Pi" knows to swallow just one comma, so there's no parsing ambiguity here
 		     Pi n :: G |- o : T,
 		     G |- [ev;x](f,o,U) : U[o/x].	# subst 0 U o n :: G |- U[o/x] type
 
-       Rule tcast :: Pi {G :: Context} {T T' :: Type} (o :: Obj),               # rule 13 in the paper UPTS
+       Rule tcast :: Pi {G :: Context} {T T' :: Type} (o :: Obj),		# rule 13 in the paper UPTS
 		     Pi n :: G |- T = T',
 		     Pi j :: G |- o : T,
 		     G |- o : T'.
@@ -150,15 +151,22 @@ End.
 		     Pi k' :: o' : T,
 		     G |- o = o' : T.
 
-      Rule Uintro :: Pi {G :: Context} {u :: Univ},
-  		     Pi j :: G |- [U](u) : Type.
+      Rule Uintro :: Pi {G :: Context} {u :: Univ}, Pi j :: G |- [U](u) type.	#  (which version ?)
+		     or
+     Rule Uintro' :: Pi {G :: Context} (u :: Univ), Type.			#  we abbreviate [ Uintro' u ] as [ [U](u) ].
 
-       Rule plus1 :: Pi u :: Univ, Univ.
+        Rule next :: Pi u :: Univ, Univ.				# formerly [ next u ] was called [ u+1 ]
 
-         Rule max :: Pi u v :: Univ, Univ.
+	 Rule max :: Pi u v :: Univ, Univ.
 
       Rule uintro :: Pi {G :: Context} {u :: Univ},
-     		     G |- [u](u) : [U](u+1).
+		     G |- [u](u) : [U](next u).
+
+   Rule starintro :: Pi {G :: Context} {u :: Univ},
+       		     G |- *[u](u) type.
+
+       Rule staru :: Pi {G :: Context} {u :: Univ},
+       		     G |- *[u](u) = [U](u).		# add this as a reduction rule
 
   Rule emptytype ::  Pi {G :: Context},
 		     G |- empty : [U](uuu0).
@@ -170,19 +178,19 @@ Constraint bottom0 :: Pi {u :: Univ}, uuu0 <= u.	# add this "constraint" every t
 
 
 #  Now consider how to make the following expression type check correctly, despite
-#  undecidability, letting G = ( T, U, X : Type, a:Pt, f:T->U, x:X ) .
+#  undecidability, letting G = ( a:Pt, f:T->U, x:X ) .  Here we have variables T, U, X : Type.
 #
-#  		 G |- f x : T
+#		 G |- f x : T
 #
 #  This is what we do, step by step:
 #
-#  	j1 :=	@tetaempty G X T a :: G |- X = T.
+#	j1 :=	@tetaempty G X T a :: G |- X = T.
 #	j2 :=	@fetch 0 :: G |- x : X.
 #	j3 :=	@tcast G X T x j1 j2 :: G |- x : T.
 #	j4 :=	@fetch 1 :: G |- f : T -> U.
-#	j5 :=	@ocastt G T o j3 :: [ocast](x,j3) : T.
-#	j6 :=	ev(x,f,[ocast](x,j3),j4,j5) :: [ev;_](f,[ocast](x,j3),U) : U.
-#
-#	etc., ...
+#	j5 :=	@ocastt G T o j3 :: G |- [ocast](x,j3) : T.
+#	j6 :=	ev(x,f,[ocast](x,j3),j4,j5) :: G |- [ev;_](f,[ocast](x,j3),U) : U.
+#	now using [ocastred] above as a reduction rule, we deduce:
+#	j7 :=	ev(x,f,[ocast](x,j3),j4,j5) :: G |- [ev;_](f,x,U) : U.
 
-oCheck forall x:*y, z.  # fix the location of the holes
+oCheck forall x:*y, z.	# fix the location of the holes

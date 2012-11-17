@@ -1,5 +1,5 @@
 open Typesystem
-type command = 
+type command' = 
   | UPrint of uExpr
   | TPrint of tExpr
   | OPrint of oExpr
@@ -15,3 +15,5 @@ type command =
   | Definition of definition
   | Show
   | End
+
+type command = position * command'

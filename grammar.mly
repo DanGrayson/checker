@@ -62,7 +62,10 @@ uExprEof: a=uExpr Weof {a}
 tExprEof: a=tExpr Weof {a}
 oExprEof: a=oExpr Weof {a}
 
-command:
+command: c=command0 
+  { Position($startpos, $endpos), c }
+
+command0:
 | Weof
     { raise Eof }
 | WVariable vars=nonempty_list(IDENTIFIER) Wcolon KType Wperiod

@@ -185,7 +185,9 @@ let addDefinition x =
 exception StopParsingFile
 
 let process_command lexbuf = (
-  match protect (Grammar.command (Tokens.expr_tokens)) lexbuf lexpos with 
+  let c = protect (Grammar.command (Tokens.expr_tokens)) lexbuf lexpos in
+  let pos = get_pos c in
+  match strip_pos c with 
   | Toplevel.UVariable (uvars,eqns) -> add_uVars uvars eqns
   | Toplevel.TVariable tvars -> add_tVars tvars
   | Toplevel.UPrint x -> uPrintCommand x
@@ -199,7 +201,7 @@ let process_command lexbuf = (
   | Toplevel.UAlpha (x,y) -> uAlphaCommand (x,y)
   | Toplevel.Type x -> typeCommand x
   | Toplevel.Definition x -> addDefinition x
-  | Toplevel.End -> Printf.printf "File \"%s\": ending.\n" lexbuf.Lexing.lex_curr_p.Lexing.pos_fname; flush stdout; raise StopParsingFile
+  | Toplevel.End -> Printf.printf "%s: ending.\n" (error_format_pos pos) ; flush stdout; raise StopParsingFile
   | Toplevel.Show -> show_command()
  )
 
@@ -233,14 +235,8 @@ let _ =
 ]
     parse_file
     "usage: [options] filename ...";
-   (try tPrintCommand 
-   (
-   tExpr_from_string
-   "
-Pi f:T->[U](uuu0), 
-Pi o:T, 
-*f o
-"
-   ) with Error_Handled -> ());
+(*
+   (try tPrintCommand (tExpr_from_string "Pi f:T->[U](uuu0), Pi o:T, *f o" ) with Error_Handled -> ());
    (try oPrintCommand (oExpr_from_string "lambda f:T->U, lambda o:T, f o") with Error_Handled -> ());
+ *)
   leave()
