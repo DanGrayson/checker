@@ -63,13 +63,13 @@ let rec tcheck (env:environment_type) t = match strip_pos t with
       | T _ -> ()
       | O _ -> raise (TypeCheckingFailure (get_pos t, "expected a t-variable but found an o-variable: "^s)))
   | TEmptyHole | TNumberedEmptyHole _ -> raise (TypeCheckingFailure(get_pos t,"empty hole for t-expression found"))
-  | El o -> ocheck env o
+  | T_El o -> ocheck env o
   | T_U _ -> ()
-  | Pi (t1,(v,t2)) -> 
+  | T_Pi (t1,(v,t2)) -> 
       tcheck env t1; 
       tcheck_binder (obind (strip_pos v,t1) env) (v,t2)
 	(* end of TS0 *)
-  | Sigma (t1,(v,t2)) -> 
+  | T_Sigma (t1,(v,t2)) -> 
       tcheck env t1; 
       tcheck_binder (obind (strip_pos v,t1) env) (v,t2)
   | T_Pt -> ()
@@ -132,7 +132,7 @@ and ocheck (env:environment_type) o = match strip_pos o with
       ocheck env f; 
       ocheck env x; 
       match strip_pos(tau env f) with
-	| Pi(s,(w,t')) -> 
+	| T_Pi(s,(w,t')) -> 
 	    if not ( w = v ) 
 	    then raise (
 	      TypeCheckingFailure(get_pos o,"expected identical variables: " ^
@@ -149,7 +149,7 @@ and ocheck (env:environment_type) o = match strip_pos o with
       ucheck env m; 
       ucheck env m'; 
       ocheck env o; 
-      ocheck_binder (obind (strip_pos v,with_pos_of o (El o)) env) (v,o')
+      ocheck_binder (obind (strip_pos v,with_pos_of o (T_El o)) env) (v,o')
 	(* end of TS0 *)
   | O_pair (a,b,(x,t)) -> 
       ocheck env a; 

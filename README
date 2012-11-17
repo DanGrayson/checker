@@ -17,5 +17,13 @@ an attempt at making a toy proof checker for experimental purposes
 
     3. (Gamma ok)=>(Gamma |- Empty : Type)
 
-    4. (Gamma ok)=>(Gamma |- * empty = Empty) 
+Inline long-form notation for definitions, proofs, and derivations, relative to the context
+in effect in the term:
 
+   Provisional: definitions involve lazy substitution from one context into another.
+   		(we might also want lazy substitution within the same context)
+       [udef;name](u1,...; u,...; eqn1,...;R)		here u is a universe level and we add [ name :: |- u : Univ ] to the context and return R
+       [tdef;name](u1,...;T1,...;o1,...; T,R)		here T is a type and we add [ name :: |- T : Type ] to context and return R
+       [odef;name](u1,...;T1,...; o,T,R)		here o is an object of type T and we add [ name :: |- o : T ] to the context
+
+				

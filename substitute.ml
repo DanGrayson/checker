@@ -33,10 +33,10 @@ and tsubst subs (pos, t) = with_pos pos (
     Tvariable _ -> t
   | TEmptyHole -> t
   | TNumberedEmptyHole _ -> t
-  | El o -> El (osubst subs o)
+  | T_El o -> T_El (osubst subs o)
   | T_U _ -> t
-  | Pi (t1,(v,t2)) -> Pi (tsubst subs t1, tsubstfresh subs (v,t2))
-  | Sigma (t1,(v,t2)) -> Sigma (tsubst subs t1, tsubstfresh subs (v,t2))
+  | T_Pi (t1,(v,t2)) -> T_Pi (tsubst subs t1, tsubstfresh subs (v,t2))
+  | T_Sigma (t1,(v,t2)) -> T_Sigma (tsubst subs t1, tsubstfresh subs (v,t2))
   | T_Pt -> t
   | T_Coprod (t,t') -> T_Coprod (tsubst subs t,tsubst subs t')
   | T_Coprod2 (t,t',(x,u),(x',u'),o) -> T_Coprod2 (tsubst subs t,tsubst subs t',tsubstfresh subs (x,u),tsubstfresh subs (x',u'),osubst subs o)

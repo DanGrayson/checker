@@ -124,15 +124,15 @@ and tExpr' =
   | TNumberedEmptyHole of int
         (** A hole to be filled in later, by type checking. *)
   | Tvariable of tVar'
-  | El of oExpr
-	(** [El]; converts an object term into the corresponding type term *)
+  | T_El of oExpr
+	(** [T_El]; converts an object term into the corresponding type term *)
   | T_U of uExpr
 	(** [T_U m]; a u-level expression, as a type *)
-  | Pi of tExpr * tBinding
-	(** [Pi(T,(x,T')) <--> \[Pi;x\](T,T')] *)
+  | T_Pi of tExpr * tBinding
+	(** [T_Pi(T,(x,T')) <--> \[Pi;x\](T,T')] *)
     (* TS1 *)
-  | Sigma of tExpr * tBinding
-	(** [Sigma(T,(x,T')) <--> \[Sigma;x\](T,T')] *)
+  | T_Sigma of tExpr * tBinding
+	(** [T_Sigma(T,(x,T')) <--> \[Sigma;x\](T,T')] *)
     (* TS2 *)
   | T_Pt
       (** Corresponds to [Pt]() in the paper; the unit type *)
@@ -144,7 +144,7 @@ and tExpr' =
       (** The empty type.  
 	  
 	  Voevodsky doesn't list this explicitly in the definition of TS4, but it gets used in derivation rules, so I added it.
-	  Perhaps he intended to write [\[El\](\[empty\]())] for it. *)
+	  Perhaps he intended to write [\[T_El\](\[empty\]())] for it. *)
       (* TS5 *)
   | T_IC of tExpr * oExpr * ttoBinding
 	(** [T_IC(A,a,(x,B,(y,D,(z,q)))) <--> \[IC;x,y,z\](A,a,B,D,q)]
@@ -187,13 +187,13 @@ and oExpr' =
   | O_forall of uExpr * uExpr * oExpr * oBinding
 	(** [O_forall(M,M',o,(x,o')) <--> \[forall;x\]([M],[M'],o,o')]
 	    
-	    [O_forall] is the object term corresponding to [Pi].
+	    [O_forall] is the object term corresponding to [T_Pi].
 	    The type of the term is given by the max of the two u-levels. *)
 	(* TS1 *)
   | O_pair of oExpr * oExpr * tBinding
 	(** [O_pair(a,b,(x,T)) <--> \[pair;x\](a,b,T)]
 	    
-	    An instance of [Sigma]. *)
+	    An instance of [T_Sigma]. *)
   | O_pr1 of tExpr * tBinding * oExpr
 	(** [O_pr1(T,(x,T'),o) <--> \[pr1;x\](T,T',o)] 
 
@@ -235,7 +235,7 @@ and oExpr' =
 				    
 	  The type of [\[empty\]] is the smallest universe, [uuu0]. 
 
-	  Remember to make [El]([empty]()) reduce to [Empty]().
+	  Remember to make [T_El]([empty]()) reduce to [Empty]().
        *)
   | O_empty_r of tExpr * oExpr
 	(** The elimnination rule for the empty type.

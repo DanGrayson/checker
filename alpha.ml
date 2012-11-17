@@ -26,13 +26,13 @@ and ueq' = function
 let rec teq alpha a b = a == b || let a = strip_pos a and b = strip_pos b in a == b || teq' alpha (a,b)
 
 and teq' alpha = function
-  | El t, El t'
+  | T_El t, T_El t'
     -> oeq alpha t t'
   | T_U u, T_U u'
     -> ueq u u'
-  | Pi(t,(x,u)),Pi(t',(x',u'))
+  | T_Pi(t,(x,u)),T_Pi(t',(x',u'))
     -> teq alpha t t' && let alpha = addalpha x x' alpha in teq alpha u u'
-  | Sigma(t,(x,u)),Sigma(t',(x',u'))
+  | T_Sigma(t,(x,u)),T_Sigma(t',(x',u'))
     -> teq alpha t t' && let alpha = addalpha x x' alpha in teq alpha u u'
       (* end of TS0 *)
   | T_Coprod(t,u),T_Coprod(t',u')

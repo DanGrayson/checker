@@ -2,3 +2,6 @@ checker
 TAGS
 _build
 *.byte
+checker.docdir
+checker.odocl
+tmp

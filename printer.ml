@@ -30,10 +30,10 @@ and ttostring' = function
   | TEmptyHole -> "_"
   | TNumberedEmptyHole n -> "_" ^ (string_of_int  n)
   | Tvariable x -> tvartostring' x
-  | El x -> "[El](" ^ (otostring x) ^ ")"
+  | T_El x -> "[T_El](" ^ (otostring x) ^ ")"
   | T_U x -> "[U](" ^ (utostring x) ^ ")"
-  | Pi (t1,(x,t2)) -> "[Pi;" ^ (ovartostring x) ^ "](" ^ (ttostring t1) ^ "," ^ (ttostring t2) ^ ")"
-  | Sigma (t,(x,t')) -> "[Sigma;" ^ (ovartostring x) ^ "](" ^ (ttostring t) ^ "," ^ (ttostring t') ^ ")"
+  | T_Pi (t1,(x,t2)) -> "[T_Pi;" ^ (ovartostring x) ^ "](" ^ (ttostring t1) ^ "," ^ (ttostring t2) ^ ")"
+  | T_Sigma (t,(x,t')) -> "[T_Sigma;" ^ (ovartostring x) ^ "](" ^ (ttostring t) ^ "," ^ (ttostring t') ^ ")"
   | T_Pt -> "[Pt]()"
   | T_Coprod (t,t') -> "[Coprod](" ^ (ttostring t) ^ "," ^ (ttostring t) ^ ")"
   | T_Coprod2 (t,t',(x,u),(x',u'),o) 

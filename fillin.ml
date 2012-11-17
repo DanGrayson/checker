@@ -30,10 +30,10 @@ and tfillin env (pos,t) = with_pos pos (
   match t with
     Tvariable _ -> t
   | TEmptyHole | TNumberedEmptyHole _ -> raise (TypingError(pos,"empty t-expression hole, no method for filling"))
-  | El o -> El (ofillin env o)
+  | T_El o -> T_El (ofillin env o)
   | T_U _ -> t
-  | Pi (t1,(v,t2)) -> Pi (tfillin env t1, tfillin_binder (obind (strip_pos v,t1) env) (v,t2))
-  | Sigma (t1,(v,t2)) -> Sigma (tfillin env t1, tfillin_binder (obind (strip_pos v,t1) env) (v,t2))
+  | T_Pi (t1,(v,t2)) -> T_Pi (tfillin env t1, tfillin_binder (obind (strip_pos v,t1) env) (v,t2))
+  | T_Sigma (t1,(v,t2)) -> T_Sigma (tfillin env t1, tfillin_binder (obind (strip_pos v,t1) env) (v,t2))
   | T_Pt -> t
   | T_Coprod (t,t') -> T_Coprod (tfillin env t,tfillin env t')
   | T_Coprod2 (t,t',(x,u),(x',u'),o) 
@@ -54,14 +54,14 @@ and ofillin env ((pos:position),o) = with_pos pos (
   | O_j _ -> o
   | O_ev(f,p,((_, OVarEmptyHole), (_, TEmptyHole))) -> (
       match strip_pos(Tau.tau env f) with
-      | Pi(t1,(x,t2)) 
+      | T_Pi(t1,(x,t2)) 
 	-> O_ev(ofillin env f,ofillin env p,tfillin_binder (obind (strip_pos x,t1) env) (x,t2))
       | _ 
 	-> raise (TypingError(get_pos f,"expected a product type"))
      )
   | O_ev(f,p,(v,t)) -> O_ev(ofillin env f,ofillin env p,tfillin_binder env (v,t))
   | O_lambda (t,(v,p)) -> O_lambda (tfillin env t,ofillin_binder (obind (strip_pos v,t) env) (v,p))
-  | O_forall (m,m',o,(v,o')) -> O_forall (m,m',ofillin env o,ofillin_binder (obind (strip_pos v,nowhere(El o)) env) (v,o'))
+  | O_forall (m,m',o,(v,o')) -> O_forall (m,m',ofillin env o,ofillin_binder (obind (strip_pos v,nowhere(T_El o)) env) (v,o'))
   | O_pair (a,b,(x,t)) -> O_pair (ofillin env a,ofillin env b,tfillin_binder env (x,t))
   | O_pr1 (t,(x,t'),o) -> O_pr1 (tfillin env t,tfillin_binder env (x,t'),ofillin env o)
   | O_pr2 (t,(x,t'),o) -> O_pr2 (tfillin env t,tfillin_binder env (x,t'),ofillin env o)

@@ -1,4 +1,4 @@
-# this is a comment
+# experiment with notation for rule and inferences.
 
 Variable u0 u1 u2 : Univ ; u0 <= u1; u0 <= u2 .
 Variable T T' T1 T2 U U' V V' W W' A B C D X Y : Type.
@@ -59,7 +59,7 @@ Tau [j](u,u').
 Tau [j](_,u').
 Tau [j](u,_).
 Tau [ev;x](f,o,T).
-Tau [ev;x](f,o,*x).
+Tau [ev;x](f,o, x).
 Tau [lambda;x](T,x).
 Tau [forall;x](u1,u2,o,o').
 
@@ -68,20 +68,60 @@ tDefinition E2 (u1 u2 u3:Univ)(K:Type) := K->K .
 tDefinition E3 (u1 u2 u3 : Univ)(K:Type)(x1: K -> [U](u1))(x2: [U](u0+1)) := [U](u2) .
 oDefinition E5 (u1 u2 u3 : Univ; max(u1,u2)=max(u2,u3); u1 >= u2+1 )(K:Type)(x1: K -> [U](u1))(x2: [U](u0+1)) := [j](x1, x2) : [U](u2) .
 oDefinition E7 (T U:Type)(t:T)(u:U)(f:T->U) := f t.
-oDefinition E7 (K L:Type)(t:K)(g:K -> [U](u0))(u:L)(f:Pi x:K,*g x) := f t.
+oDefinition E7 (K L:Type)(t:K)(g:K -> [U](u0))(u:L)(f:Pi x:K, *g x) := f t.
 oDefinition E6 (u1 u2 u3 : Univ)(X1 X2:Type)(x1: X1 -> [U](u1))(x2: [U](u0+1)) := [j](x1, x2) .
 
 oCheck lambda f:T->U, lambda o:T, [ev;_](f,o,U).
-oCheck lambda f:T->U, lambda o:U, f o.
 oCheck lambda f:T->U, lambda o:T, f o.
 oDefinition E7 := ft.
 oCheck lambda k:U, lambda g:T -> *k, lambda f:Pi t:T, *g t, lambda o:T, f o.
 oCheck lambda r:U, lambda f:T->U, lambda o:T, lambda x : *r, f o.
-oCheck lambda f:X->T, lambda y:X, [ev;_](f,y,U).
 oCheck lambda f:X->T, lambda y:X, [ev;_](f,y,T).
 oCheck lambda f:X->T, lambda y:X, f y.
-uCheck [udef;foo](u0+1,u1).
-oCheck lambda x:T, lambda y:U, lambda t:[tdef;foo](u0,u0;T,U;x,y), t.
-oCheck lambda t:[U](u0), lambda f: * (lambda x:[U](u0), x) t -> U, lambda o:*t, f o.
+# uCheck [udef;foo](u0+1,u1).
+# oCheck lambda x:T, lambda y:U, lambda t:[tdef;foo](u0,u0;T,U;x,y), t.
+oCheck lambda t:[U](u0), lambda f: *(lambda x:[U](u0), x) t -> U, lambda o:*t, f o.
 
+    Rule tcast :::   Pi {G} :: Context 				# rule 13 in the paper UPTS; we use to mark omitted arguments, to be deduced
+		     Pi {T T' :: Type},
+		     Pi {o :: Object},
+		     Pi j :: G |- o : T,
+		     Pi n :: G |- T = T',
+		     G |- o : T'.
 
+    Rule ocast :::   Pi {G :: Context},
+		     Pi {T :: Type},
+		     Pi {o :: Object},
+		     Pi j :: G |- o : T,
+		     G |- [o-cast](o,j) : T			# add this as a typing rule, too (for tau)
+		     and
+		     G |- [o-cast](o,j) = o : T.		# add this as a reduction rule, too
+
+  Rule tetaempty ::: Pi {G :: Context}, 			# eta reduction for empty
+		     Pi T :: Type,
+		     Pi T' :: Type,
+		     Pi a : Empty,				# this mixing of levels is where undecidability comes in
+		     G |- T = T'.
+
+  Rule oetaempty ::: Pi {G :: Context}, 			# eta reduction for empty
+		     Pi T :: Type,
+		     Pi a : Empty,
+		     Pi o o' : T,
+		     G |- o = o' : T.
+
+ Rule Emptytype :::  Pi {G :: Context},
+		     G |- Empty :: Type.
+
+ Rule emptytype :::  Pi {G :: Context},
+		     G |- empty : [U](uuu0).
+
+  Rule starempty ::: Pi {G :: Context},
+		     G |- *empty = Empty.			# add this as a reduction rule, too
+
+        Rule uuu0 :: Univ.
+
+    Rule bottom0 ::: Pi {u :: Univ}, uuu0 <= u.			# add this as a "constraint", too
+
+Exit.
+
+oCheck forall x:*y, z.  # fix the location of the holes

@@ -199,7 +199,7 @@ let process_command lexbuf = (
   | Toplevel.UAlpha (x,y) -> uAlphaCommand (x,y)
   | Toplevel.Type x -> typeCommand x
   | Toplevel.Definition x -> addDefinition x
-  | Toplevel.Exit -> raise StopParsingFile
+  | Toplevel.Exit -> Printf.printf "Exiting.\n"; flush stdout; raise StopParsingFile
   | Toplevel.Show -> show_command()
  )
 
@@ -233,6 +233,8 @@ let _ =
       ]
     parse_file
     "usage: [options] filename ...";
+  (*
   (try tPrintCommand (tExpr_from_string "Pi f:T->[U](uuu0), Pi o:T, *f o") with Error_Handled -> ());
   (try oPrintCommand (oExpr_from_string "lambda f:T->U, lambda o:T, f o") with Error_Handled -> ());
+    *)
   leave()

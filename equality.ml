@@ -29,13 +29,13 @@ and ueq' = function
 
 let rec teq alpha oa ob = oa == ob || let a = strip_pos oa and b = strip_pos ob in a == b || match (a,b) with
   | Tvariable TVar t, Tvariable TVar t' -> t = t'
-  | El t, El t'
+  | T_El t, T_El t'
     -> oeq alpha t t'
   | T_U u, T_U u'
     -> ueq u u'
-  | Pi(t,(x,u)),Pi(t',(x',u'))
+  | T_Pi(t,(x,u)),T_Pi(t',(x',u'))
     -> teq alpha t t' && let alpha = addalpha x x' alpha in teq alpha u u'
-  | Sigma(t,(x,u)),Sigma(t',(x',u'))
+  | T_Sigma(t,(x,u)),T_Sigma(t',(x',u'))
     -> teq alpha t t' && let alpha = addalpha x x' alpha in teq alpha u u'
       (* end of TS0 *)
   | T_Coprod(t,u),T_Coprod(t',u')

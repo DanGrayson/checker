@@ -32,7 +32,8 @@ doc: checker.odocl
 checker.odocl: Makefile
 	for i in $(BASENAMES) ; do echo $$i ; done >$@
 clean::; ocamlbuild -clean
-TAGS: $(SRCFILES); ( scripts/etags.ocaml $(SRCFILES) && etags test.ts -o - ) >$@
+TAGS: $(SRCFILES) test.ts scripts/ts.etags
+	( scripts/etags.ocaml $(SRCFILES) && etags --regex=@scripts/ts.etags test.ts -o - ) >$@
 clean::; rm -f TAGS
 wc:; wc -l $(SRCFILES) Makefile test.ts
 run: checker.byte; OCAMLRUNPARAM=$(RUN) ./$< test.ts

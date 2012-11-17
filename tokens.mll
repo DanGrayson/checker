@@ -56,6 +56,7 @@ parse
   | "[ev;" { Wev }
   | "[lambda;" { Wlambda }
   | "[forall;" { Wforall }
+  | "forall" { Kforall }
   | "Univ" { KUniv }
   | "Type" { KType }
   | "max" { Kumax }
