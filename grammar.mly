@@ -41,7 +41,7 @@ let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code ha
 %token Wgreaterequal Wgreater Wlessequal Wless Wsemi
 %token KUniv Kumax KType KPi Klambda KSigma
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall Kforall WSigma WCoprod WCoprod2 WEmpty Wempty Wempty_r WIC WId
-%token WTau WtPrint WoPrint WuPrint WoDefinition WtDefinition WShow WExit WVariable WoAlpha WtAlpha WuAlpha Weof
+%token WTau WtPrint WoPrint WuPrint WoDefinition WtDefinition WShow WEnd WVariable WoAlpha WtAlpha WuAlpha Weof
 %token WuCheck WtCheck WoCheck
 %token Wflush
 %token Prec_application
@@ -101,8 +101,8 @@ command:
     { Toplevel.Definition (ODefinition (Ident name,(fixParmList parms,o,t))) }
 | WShow Wperiod 
     { Toplevel.Show }
-| WExit Wperiod
-    { Toplevel.Exit }
+| WEnd Wperiod
+    { Toplevel.End }
 
 unusedtokens: 
     Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile Wempty

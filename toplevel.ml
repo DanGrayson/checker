@@ -14,4 +14,4 @@ type command =
   | Type of oExpr
   | Definition of definition
   | Show
-  | Exit
+  | End

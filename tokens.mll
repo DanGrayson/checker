@@ -36,7 +36,7 @@ parse
   | "Variable" { WVariable }
   | "tDefinition" { WtDefinition }
   | "oDefinition" { WoDefinition }
-  | "Exit" { WExit }
+  | "End" { WEnd }
   | "Show" { WShow }
   | "[El]" { WEl }
   | "[U]" { WU }
