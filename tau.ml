@@ -26,8 +26,8 @@ let rec tau (env:environment_type) o = (
   | O_pr2 _
   | O_total _ -> raise NotImplemented
   | O_pt -> with_pos_of o (T_U uuu0)
-  | O_pt_r _ -> raise NotImplemented
-  | O_tt
+  | O_pt_r (o',(x,t)) -> with_pos_of o (Pi(with_pos_of o T_Pt,(x, t)))
+  | O_tt -> with_pos_of o T_Pt
   | O_coprod _
   | O_ii1 _
   | O_ii2 _

@@ -5,18 +5,21 @@ BFLAGS += -use-menhir
 # BFLAGS += -yaccflag --trace
 
 # BFLAGS += -verbose 0
-SRCFILES = 					\
+SRCFILES =					\
 	typesystem.ml				\
 	alpha.ml				\
 	substitute.ml				\
-	fillin.ml				\
 	check.ml				\
+	equality.ml				\
+	fillin.ml				\
 	tau.ml					\
 	printer.ml				\
 	grammar.mly				\
 	tokens.mll				\
 	toplevel.ml				\
 	checker.ml
+
+BASENAMES = $(patsubst %.mly, %, $(patsubst %.mll, %, $(patsubst %.ml, %, $(SRCFILES))))
 
 # add ,p to get the ocamlyacc parser to display a trace
 RUN = -b
@@ -27,7 +30,7 @@ checker.byte checker.native: $(SRCFILES); ocamlbuild $(BFLAGS) $@
 doc: checker.odocl
 	ocamlbuild $(BFLAGS) checker.docdir/index.html
 checker.odocl: Makefile
-	for i in $(SRCFILES) ; do echo $$i ; done >$@
+	for i in $(BASENAMES) ; do echo $$i ; done >$@
 clean::; ocamlbuild -clean
 TAGS: $(SRCFILES); ( scripts/etags.ocaml $(SRCFILES) && etags test.ts -o - ) >$@
 clean::; rm -f TAGS

@@ -17,9 +17,7 @@ let rec ueq a b = a == b || let a = strip_pos a and b = strip_pos b in a == b ||
 and ueq' = function
   | UEmptyHole, UEmptyHole -> true
   | UNumberedEmptyHole n, UNumberedEmptyHole n' -> n = n'
-  | Uvariable UVar x, Uvariable UVar x' -> 
-      Printf.printf "%s = %s ? %s\n" x x' (if x = x' then "true" else "false");
-      x = x'
+  | Uvariable UVar x, Uvariable UVar x' -> x = x'
   | Uplus (x,n), Uplus (x',n') -> ueq x x' && n = n'
   | Umax (x,y), Umax (x',y') -> ueq x x' && ueq y y'
   | U_def (d,u), U_def (d',u') -> raise NotImplemented
