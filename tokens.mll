@@ -4,6 +4,10 @@
  let error_count = ref 0
  let bump_error_count () =
    incr error_count;
+   if !error_count >= 7 then (
+     Printf.fprintf stderr "Too many errors, exiting.\n"; 
+     flush stderr; 
+     exit 1);
    flush stderr
  let lexing_pos lexbuf = 
    let p = Lexing.lexeme_start_p lexbuf in

@@ -28,7 +28,7 @@ and ueq' = function
   | _ -> false
 
 let rec teq alpha oa ob = oa == ob || let a = strip_pos oa and b = strip_pos ob in a == b || match (a,b) with
-  | Tvariable TVar t, Tvariable TVar t' -> t = t'
+  | T_variable TVar t, T_variable TVar t' -> t = t'
   | T_El t, T_El t'
     -> oeq alpha t t'
   | T_U u, T_U u'
@@ -47,13 +47,13 @@ let rec teq alpha oa ob = oa == ob || let a = strip_pos oa and b = strip_pos ob 
 	&& oeq alpha o o'
   | T_Empty, T_Empty -> true
   | T_IC (tA,a,(x,tB,(y,tD,(z,q)))), T_IC (tA',a',(x',tB',(y',tD',(z',q')))) -> raise NotImplemented
-  | Id (t,x,y), Id (t',x',y') -> raise NotImplemented
+  | T_Id (t,x,y), T_Id (t',x',y') -> raise NotImplemented
   | T_def (d,u,t,c), T_def (d',u',t',c') -> raise NotImplemented
   | T_nat, T_nat -> true
   | _ -> false
 
 and oeq alpha oa ob = oa == ob || let a = strip_pos oa and b = strip_pos ob in a == b || match (a,b) with
-  | Ovariable a, Ovariable b -> testalpha' a b alpha
+  | O_variable a, O_variable b -> testalpha' a b alpha
   | (O_lambda(t,(x,u)),O_lambda(t',(x',u')))
     -> teq alpha t t' && let alpha = addalpha x x' alpha in oeq alpha u u'
   | (O_ev(f,o,(x,u)),O_ev(f',o',(x',u'))) -> (
@@ -76,7 +76,7 @@ and oeq alpha oa ob = oa == ob || let a = strip_pos oa and b = strip_pos ob in a
   | O_coprod (m1,m2,o1,o2), O_coprod (m1',m2',o1',o2') -> raise NotImplemented
   | O_ii1 (t,u,o), O_ii1 (t',u',o') -> raise NotImplemented
   | O_ii2 (t,u,o), O_ii2 (t',u',o') -> raise NotImplemented
-  | Sum (p,q,t,u,o,(x,s)), Sum (p',q',t',u',o',(x',s')) -> raise NotImplemented
+  | O_sum (p,q,t,u,o,(x,s)), O_sum (p',q',t',u',o',(x',s')) -> raise NotImplemented
   | O_empty, O_empty -> true
   | O_empty_r (t,o), O_empty_r (t',o') -> teq alpha t t' && true (* eta rule for Empty implies o=o' *)
   | O_c (tA,a,(x,tB,(y,tD,(z,q))),b,f), O_c (tA',a',(x',tB',(y',tD',(z',q'))),b',f') -> raise NotImplemented

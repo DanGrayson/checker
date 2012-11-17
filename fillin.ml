@@ -28,8 +28,8 @@ and tofillin_binder env (v,t,k) =
   in (v, tfillin env t, ofillin_binder env' k)
 and tfillin env (pos,t) = with_pos pos (
   match t with
-    Tvariable _ -> t
-  | TEmptyHole | TNumberedEmptyHole _ -> raise (TypingError(pos,"empty t-expression hole, no method for filling"))
+    T_variable _ -> t
+  | T_EmptyHole | T_NumberedEmptyHole _ -> raise (TypingError(pos,"empty t-expression hole, no method for filling"))
   | T_El o -> T_El (ofillin env o)
   | T_U _ -> t
   | T_Pi (t1,(v,t2)) -> T_Pi (tfillin env t1, tfillin_binder (obind (strip_pos v,t1) env) (v,t2))
@@ -41,18 +41,18 @@ and tfillin env (pos,t) = with_pos pos (
   | T_Empty -> t
   | T_IC (tA,a,(x,tB,(y,tD,(z,q))))
     -> T_IC (tfillin env tA,ofillin env a,ttofillin_binder env (x,tB,(y,tD,(z,q))))
-  | Id (t,x,y) -> Id (tfillin env t,ofillin env x,ofillin env y)
+  | T_Id (t,x,y) -> T_Id (tfillin env t,ofillin env x,ofillin env y)
   | T_def (d,u,t,o) -> T_def (d,u,List.map (tfillin env) t,List.map (ofillin env) o)
   | T_nat -> t)
 and ofillin env ((pos:position),o) = with_pos pos (
   match o with
-    Ovariable v -> o
-  | Onumeral _ -> o
-  | OEmptyHole | ONumberedEmptyHole _ 
+    O_variable v -> o
+  | O_numeral _ -> o
+  | O_emptyHole | O_numberedEmptyHole _ 
     -> raise (TypingError(pos,"empty o-expression hole, no method for filling"))
   | O_u _ -> o
   | O_j _ -> o
-  | O_ev(f,p,((_, OVarEmptyHole), (_, TEmptyHole))) -> (
+  | O_ev(f,p,((_, OVarEmptyHole), (_, T_EmptyHole))) -> (
       match strip_pos(Tau.tau env f) with
       | T_Pi(t1,(x,t2)) 
 	-> O_ev(ofillin env f,ofillin env p,tfillin_binder (obind (strip_pos x,t1) env) (x,t2))
@@ -72,7 +72,7 @@ and ofillin env ((pos:position),o) = with_pos pos (
   | O_coprod (m1,m2,o1,o2) -> O_coprod (m1,m2,ofillin env o1,ofillin env o2)
   | O_ii1 (t,t',o) -> O_ii1 (tfillin env t,tfillin env t',ofillin env o)
   | O_ii2 (t,t',o) -> O_ii2 (tfillin env t,tfillin env t',ofillin env o)
-  | Sum (tT,tT',s,s',o,(x,tS)) -> Sum (tfillin env tT,tfillin env tT',ofillin env s,ofillin env s',ofillin env o,tfillin_binder env (x,tS))
+  | O_sum (tT,tT',s,s',o,(x,tS)) -> O_sum (tfillin env tT,tfillin env tT',ofillin env s,ofillin env s',ofillin env o,tfillin_binder env (x,tS))
   | O_empty -> o 
   | O_empty_r (t,o) -> O_empty_r (tfillin env t,ofillin env o)
   | O_c (tA,a,(x,tB,(y,tD,(z,q))),b,f) 

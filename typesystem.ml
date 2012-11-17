@@ -119,11 +119,11 @@ and oooBinding = oVar * oExpr * ooBinding
 and tExpr = position * tExpr'
 and tExpr' =
   (* TS0 *)
-  | TEmptyHole
+  | T_EmptyHole
         (** a hole to be filled in later  *)
-  | TNumberedEmptyHole of int
+  | T_NumberedEmptyHole of int
         (** A hole to be filled in later, by type checking. *)
-  | Tvariable of tVar'
+  | T_variable of tVar'
   | T_El of oExpr
 	(** [T_El]; converts an object term into the corresponding type term *)
   | T_U of uExpr
@@ -150,7 +150,7 @@ and tExpr' =
 	(** [T_IC(A,a,(x,B,(y,D,(z,q)))) <--> \[IC;x,y,z\](A,a,B,D,q)]
 	 *)
       (* TS6 *)
-  | Id of tExpr * oExpr * oExpr
+  | T_Id of tExpr * oExpr * oExpr
       (** Identity type; paths type. *)
       (* TS7 *)
   | T_def of string * uExpr list * tExpr list * oExpr list
@@ -163,11 +163,11 @@ and tExpr' =
 and oExpr = position * oExpr'
 and oExpr' =
     (* TS0 *)
-  | OEmptyHole
+  | O_emptyHole
         (** a hole to be filled in later *)
-  | ONumberedEmptyHole of int
+  | O_numberedEmptyHole of int
         (** A hole to be filled in later, by type checking. *)
-  | Ovariable of oVar'
+  | O_variable of oVar'
 	(** An o-variable. *)
   | O_u of uExpr
 	(** [u]; universe as an object. *)
@@ -187,13 +187,13 @@ and oExpr' =
   | O_forall of uExpr * uExpr * oExpr * oBinding
 	(** [O_forall(M,M',o,(x,o')) <--> \[forall;x\]([M],[M'],o,o')]
 	    
-	    [O_forall] is the object term corresponding to [T_Pi].
+	    [O_forall] is the object term corresponding to [Pi].
 	    The type of the term is given by the max of the two u-levels. *)
 	(* TS1 *)
   | O_pair of oExpr * oExpr * tBinding
 	(** [O_pair(a,b,(x,T)) <--> \[pair;x\](a,b,T)]
 	    
-	    An instance of [T_Sigma]. *)
+	    An instance of [Sigma]. *)
   | O_pr1 of tExpr * tBinding * oExpr
 	(** [O_pr1(T,(x,T'),o) <--> \[pr1;x\](T,T',o)] 
 
@@ -215,32 +215,32 @@ and oExpr' =
   | O_pt_r of oExpr * tBinding
 	(** [O_pt_r(o,(x,T)) <--> \[pt_r;x\](o,T)]
 	    
-	    [O_pt_r] is the eliminator for [T_Pt]. *)
+	    [O_pt_r] is the eliminator for [Pt]. *)
   | O_tt
       (** [O_tt <--> \[tt\]()]
 	  
-	  [O_tt] is the unique instance of the unit type [T_Pt]. *)
+	  [O_tt] is the unique instance of the unit type [Pt]. *)
       (* TS3 *)
   | O_coprod of uExpr * uExpr * oExpr * oExpr
 	(** The type of the term is given by the [max] of the two u-levels. *)
   | O_ii1 of tExpr * tExpr * oExpr
-	(** The type of a term [O_ii1(T,T',o)] is [T_Coprod(T,T')]; here [o] has type [T] *)
+	(** The type of a term [O_ii1(T,T',o)] is [Coprod(T,T')]; here [o] has type [T] *)
   | O_ii2 of tExpr * tExpr * oExpr
-	(** The type of a term [O_ii2(T,T',o)] is [T_Coprod(T,T')]; here [o] has type [T'] *)
-  | Sum of tExpr * tExpr * oExpr * oExpr * oExpr * tBinding
-	(** The type of a term [Sum(T,T',s,s',o,(x,S))] is [S], with [x] replaced by [o]. *)
+	(** The type of a term [O_ii2(T,T',o)] is [Coprod(T,T')]; here [o] has type [T'] *)
+  | O_sum of tExpr * tExpr * oExpr * oExpr * oExpr * tBinding
+	(** The type of a term [O_sum(T,T',s,s',o,(x,S))] is [S], with [x] replaced by [o]. *)
 	(* TS4 *)
   | O_empty
       (** [ O_empty <--> \[empty\]() ]
 				    
 	  The type of [\[empty\]] is the smallest universe, [uuu0]. 
 
-	  Remember to make [T_El]([empty]()) reduce to [Empty]().
+	  Remember to make [El]([empty]()) reduce to [Empty]().
        *)
   | O_empty_r of tExpr * oExpr
 	(** The elimnination rule for the empty type.
 
-	    The type of [O_empty_r(T,o)] is [T].  Here the type of [o] is [T_Empty], the empty type. *)
+	    The type of [O_empty_r(T,o)] is [T].  Here the type of [o] is [Empty], the empty type. *)
   | O_c of tExpr * oExpr * ttoBinding * oExpr * oExpr
 	(** [O_c(A,a,(x,B,(y,D,(z,q))),b,f) <--> \[c;x,y,z\](A,a,B,D,q,b,f)]
 	    
@@ -270,19 +270,19 @@ and oExpr' =
   | O_rr0 of uExpr * uExpr * oExpr * oExpr * oExpr
 	(** Resizing rule.
 
-	    The type of [O_rr0(M_2,M_1,s,t,e)] is [T_U(M_1)], resized downward from [T_U M_2].
+	    The type of [O_rr0(M_2,M_1,s,t,e)] is [U(M_1)], resized downward from [U M_2].
 
 	    By definition, the subexpressions [t] and [e] are not essential.
 	 *)
   | O_rr1 of uExpr * oExpr * oExpr
 	(** Resizing rule.
 
-	    The type of [O_rr1(M,a,p)] is [T_U uuu0], resized downward from [T_U M].
+	    The type of [O_rr1(M,a,p)] is [U uuu0], resized downward from [U M].
 
 	    By definition, the subexpression [p] is not essential.
 	 *)
   | O_def of string * uExpr list * tExpr list * oExpr list
-  | Onumeral of int 
+  | O_numeral of int 
          (** A numeral.
 	     
 	     We add this variant temporarily to experiment with parsing
@@ -325,33 +325,6 @@ type judgementBody =
 let emptyJudgementBody = EmptyJ
 type judgement = utContext * oContext * judgementBody
 let emptyJudgment : judgement = emptyUTContext,emptyOContext,emptyJudgementBody
-type ruleCitation = Rule of int
-type derivation = 
-  | Derivation of derivation list * ruleCitation * judgement
-type ruleLabel = int
-type ruleParm =
-  | RPNone
-  | RPot of oVar' * tVar'
-  | RPo of oVar'
-let rec getType (o:oVar') = function
-    (o',t) :: _ when o = o' -> t
-  | _ :: gamma -> getType o gamma
-  | [] -> raise VariableNotInContext
-let inferenceRule : ruleLabel * ruleParm * derivation list -> derivation = function
-
-    (1,RPNone,[])
-    -> Derivation([],Rule 1,emptyJudgment)
-
-  | (2,RPot (o,t),([Derivation(_,_,((uc,tc),oc,EmptyJ))] as derivs))
-    -> Derivation(derivs,Rule 2,((uc,tc),(o,nowhere(Tvariable t)) :: oc,EmptyJ))
-
-  | (3,RPo o,([Derivation(_,_,(utc,gamma,_))] as derivs))
-    -> Derivation(derivs,Rule 3,(utc,gamma,TypeJ(nowhere(Ovariable o),getType o gamma)))
-
-  | _ -> raise NoMatchingRule
-let d1 = inferenceRule(1,RPNone,[])
-let d2 = inferenceRule(2,RPot (OVar "x", TVar "X"), [d1])
-let d3 = inferenceRule(3,RPo (OVar "x"), [d2])
 
 (* Abbreviations, conventions, and definitions; from the paper *)
 

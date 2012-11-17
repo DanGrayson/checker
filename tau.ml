@@ -7,10 +7,10 @@ open Typesystem
 
 let rec tau (env:environment_type) o = (
   match strip_pos o with
-  | OEmptyHole -> raise (TypingError(get_pos o, "empty hole, type undetermined, internal error"))
-  | ONumberedEmptyHole _ -> raise (TypingError(get_pos o, "empty hole, type undetermined, internal error"))
-  | Onumeral _ -> with_pos_of o T_nat
-  | Ovariable v -> (
+  | O_emptyHole -> raise (TypingError(get_pos o, "empty hole, type undetermined, internal error"))
+  | O_numberedEmptyHole _ -> raise (TypingError(get_pos o, "empty hole, type undetermined, internal error"))
+  | O_numeral _ -> with_pos_of o T_nat
+  | O_variable v -> (
       try List.assoc v env.oc
       with
 	Not_found -> 
@@ -31,7 +31,7 @@ let rec tau (env:environment_type) o = (
   | O_coprod _
   | O_ii1 _
   | O_ii2 _
-  | Sum _ -> raise NotImplemented
+  | O_sum _ -> raise NotImplemented
   | O_empty -> with_pos_of o T_Empty
   | O_empty_r (t,o) -> t
   | O_c _

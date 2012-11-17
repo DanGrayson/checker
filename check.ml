@@ -54,7 +54,7 @@ let rec ucheck (env:environment_type) u = match strip_pos u with
   | U_def _ -> raise (TypingUnimplemented (get_pos u, "u-definition"))
 
 let rec tcheck (env:environment_type) t = match strip_pos t with
-    Tvariable TVar s -> (
+    T_variable TVar s -> (
       match (
 	try List.assoc s env.lookup_order
 	with Not_found -> raise (TypeCheckingFailure (get_pos t, "encountered unbound t-variable: "^s)))
@@ -62,7 +62,7 @@ let rec tcheck (env:environment_type) t = match strip_pos t with
 	U _ -> raise (TypeCheckingFailure (get_pos t, "expected a t-variable but found a u-variable: "^s))
       | T _ -> ()
       | O _ -> raise (TypeCheckingFailure (get_pos t, "expected a t-variable but found an o-variable: "^s)))
-  | TEmptyHole | TNumberedEmptyHole _ -> raise (TypeCheckingFailure(get_pos t,"empty hole for t-expression found"))
+  | T_EmptyHole | T_NumberedEmptyHole _ -> raise (TypeCheckingFailure(get_pos t,"empty hole for t-expression found"))
   | T_El o -> ocheck env o
   | T_U _ -> ()
   | T_Pi (t1,(v,t2)) -> 
@@ -88,7 +88,7 @@ let rec tcheck (env:environment_type) t = match strip_pos t with
       ocheck env a; 
       ttocheck_binder env (x,tB,(y,tD,(z,q)));
       raise (TypingUnimplemented (get_pos t, "IC"))
-  | Id (t,x,y) -> 
+  | T_Id (t,x,y) -> 
       tcheck env t; 
       ocheck env x; 
       ocheck env y; 
@@ -113,7 +113,7 @@ and tverify env t1 t2 =			(* verify that t1 = t2 *)
 				   get_pos t2,"other type: " ^ (Printer.ttostring t2)))
   else ()      
 and ocheck (env:environment_type) o = match strip_pos o with
-  Ovariable OVar s -> (
+  O_variable OVar s -> (
     match
       try List.assoc s env.lookup_order
       with Not_found -> raise (TypeCheckingFailure (get_pos o, "encountered unbound o-variable: "^s))
@@ -121,11 +121,11 @@ and ocheck (env:environment_type) o = match strip_pos o with
       U _ -> raise (TypeCheckingFailure (get_pos o, "expected an o-variable but found a u-variable: "^s))
     | T _ -> raise (TypeCheckingFailure (get_pos o, "expected an o-variable but found a t-variable: "^s))
     | O _ -> ())
-  | Ovariable OVarGen (i,s) -> ()
-  | Ovariable OVarUnused -> raise InternalError
-  | Ovariable OVarEmptyHole -> raise InternalError
-  | Onumeral _ -> ()
-  | OEmptyHole | ONumberedEmptyHole _ -> raise InternalError
+  | O_variable OVarGen (i,s) -> ()
+  | O_variable OVarUnused -> raise InternalError
+  | O_variable OVarEmptyHole -> raise InternalError
+  | O_numeral _ -> ()
+  | O_emptyHole | O_numberedEmptyHole _ -> raise InternalError
   | O_u u -> ucheck env u
   | O_j (u,v) -> ucheck env u; ucheck env v
   | O_ev(f,x,(v,t)) -> (
@@ -186,7 +186,7 @@ and ocheck (env:environment_type) o = match strip_pos o with
       tcheck env t; 
       tcheck env t'; 
       ocheck env o
-  | Sum (tT,tT',s,s',o,(x,tS)) -> 
+  | O_sum (tT,tT',s,s',o,(x,tS)) -> 
       tcheck env tT; 
       tcheck env tT'; 
       ocheck env s; 

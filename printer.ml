@@ -27,13 +27,13 @@ let tvartostring v = tvartostring' (strip_pos v)
 let rec ttostring = function
   | (_,t) -> ttostring' t
 and ttostring' = function
-  | TEmptyHole -> "_"
-  | TNumberedEmptyHole n -> "_" ^ (string_of_int  n)
-  | Tvariable x -> tvartostring' x
-  | T_El x -> "[T_El](" ^ (otostring x) ^ ")"
+  | T_EmptyHole -> "_"
+  | T_NumberedEmptyHole n -> "_" ^ (string_of_int  n)
+  | T_variable x -> tvartostring' x
+  | T_El x -> "[El](" ^ (otostring x) ^ ")"
   | T_U x -> "[U](" ^ (utostring x) ^ ")"
-  | T_Pi (t1,(x,t2)) -> "[T_Pi;" ^ (ovartostring x) ^ "](" ^ (ttostring t1) ^ "," ^ (ttostring t2) ^ ")"
-  | T_Sigma (t,(x,t')) -> "[T_Sigma;" ^ (ovartostring x) ^ "](" ^ (ttostring t) ^ "," ^ (ttostring t') ^ ")"
+  | T_Pi (t1,(x,t2)) -> "[Pi;" ^ (ovartostring x) ^ "](" ^ (ttostring t1) ^ "," ^ (ttostring t2) ^ ")"
+  | T_Sigma (t,(x,t')) -> "[Sigma;" ^ (ovartostring x) ^ "](" ^ (ttostring t) ^ "," ^ (ttostring t') ^ ")"
   | T_Pt -> "[Pt]()"
   | T_Coprod (t,t') -> "[Coprod](" ^ (ttostring t) ^ "," ^ (ttostring t) ^ ")"
   | T_Coprod2 (t,t',(x,u),(x',u'),o) 
@@ -46,22 +46,22 @@ and ttostring' = function
   | T_IC (tA,a,(x,tB,(y,tD,(z,q))))
     -> "[IC;" ^ (ovartostring x) ^ "," ^ (ovartostring y) ^ "," ^ (ovartostring z) ^ "]("
       ^ (ttostring tA) ^ "," ^ (otostring a) ^ "," ^ (ttostring tB) ^ "," ^ (ttostring tD) ^ "," ^ (otostring q) ^ ")"
-  | Id (t,x,y) -> "[Id](" ^ (ttostring t) ^ "," ^ (otostring x) ^ "," ^ (otostring y) ^ ")"
+  | T_Id (t,x,y) -> "[Id](" ^ (ttostring t) ^ "," ^ (otostring x) ^ "," ^ (otostring y) ^ ")"
   | T_def (d,u,t,o) -> "[tdef;" ^ d ^ "](" ^ (ulisttostring u) ^ ";" ^ (tlisttostring t) ^ ";" ^ (olisttostring o) ^ ")"
   | T_nat -> "nat"
 and otostring = function
   | (_,o) -> otostring' o
 and otostring' = function
-  | OEmptyHole -> "_"
-  | ONumberedEmptyHole n -> "_" ^ (string_of_int  n)
-  | Ovariable x -> ovartostring' x
+  | O_emptyHole -> "_"
+  | O_numberedEmptyHole n -> "_" ^ (string_of_int  n)
+  | O_variable x -> ovartostring' x
   | O_u x -> "[u](" ^ (utostring x) ^ ")"
   | O_j (x,y) -> "[j](" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
   | O_ev (f,o,(x,t)) -> "[ev;" ^ (ovartostring x) ^ "](" ^ (otostring f) ^ "," ^ (otostring o) ^ "," ^ (ttostring t) ^ ")"
   | O_lambda (t,(x,o)) -> "[lambda;" ^ (ovartostring x) ^ "](" ^ (ttostring t) ^ "," ^ (otostring o) ^ ")"
   | O_forall (u,u',o,(x,o')) -> "[forall;" ^ (ovartostring x) ^ "](" ^ (utostring u) ^ "," ^ (utostring u') ^ "," ^ (otostring o) ^ "," ^ (otostring o') ^ ")"
   | O_def (d,u,t,o) -> "[odef;" ^ d ^ "](" ^ (ulisttostring u) ^ ";" ^ (tlisttostring t) ^ ";" ^ (olisttostring o) ^ ")"
-  | Onumeral i -> string_of_int i
+  | O_numeral i -> string_of_int i
   | O_pair _
   | O_pr1 _
   | O_pr2 _
@@ -72,7 +72,7 @@ and otostring' = function
   | O_coprod _
   | O_ii1 _
   | O_ii2 _
-  | Sum _ -> raise NotImplemented
+  | O_sum _ -> raise NotImplemented
   | O_empty -> "[empty]()"
   | O_empty_r (t,o) -> "[empty_r](" ^ (ttostring t) ^ "," ^ (otostring o) ^ ")"
   | O_c _

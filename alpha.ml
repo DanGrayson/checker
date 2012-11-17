@@ -48,7 +48,7 @@ and teq' alpha = function
 and oeq alpha a b = a == b || let a = strip_pos a and b = strip_pos b in a == b || oeq' alpha (a,b)
 
 and oeq' alpha = function
-  | Ovariable a, Ovariable b -> testalpha' a b alpha
+  | O_variable a, O_variable b -> testalpha' a b alpha
   | (O_lambda(t,(x,u)),O_lambda(t',(x',u')))
     -> teq alpha t t' && let alpha = addalpha x x' alpha in oeq alpha u u'
   | (O_ev(f,o,(x,u)),O_ev(f',o',(x',u')))

@@ -82,20 +82,37 @@ oCheck lambda f:X->T, lambda y:X, f y.
 # oCheck lambda x:T, lambda y:U, lambda t:[tdef;foo](u0,u0;T,U;x,y), t.
 oCheck lambda t:[U](u0), lambda f: *(lambda x:[U](u0), x) t -> U, lambda o:*t, f o.
 
-    Rule tcast :::   Pi {G} :: Context 				# rule 13 in the paper UPTS; we use to mark omitted arguments, to be deduced
-		     Pi {T T' :: Type},
-		     Pi {o :: Object},
-		     Pi j :: G |- o : T,
+
+    Rule fetch i ::: Pi {G :: Context}, G |- o : T. 		# here o : T is the i-th judgment from the right inside G, starting with i=0.
+    								# we add a deBruijn index if the same variable name occurs further to the right (?)
+
+         Rule ev ::: Pi {G :: Context},
+	      	     Pi {T :: Type},
+		     Pi {x : T}, 
+	      	     Pi {U :: Type},
+	      	     Pi (f, o :: Object),
+  	 	     Pi m :: G |- f : Pi x:T, U,
+		     Pi n :: G |- o : T,
+		     G |- [ev;x](f,o,U) : U.
+
+      Rule tcast ::: Pi {G :: Context},				# rule 13 in the paper UPTS
+		     Pi {T, T' :: Type},
+		     Pi o :: Object,
 		     Pi n :: G |- T = T',
+		     Pi {j} :: G |- o : T,
 		     G |- o : T'.
 
-    Rule ocast :::   Pi {G :: Context},
+    Rule ocastt :::  Pi {G :: Context},
 		     Pi {T :: Type},
 		     Pi {o :: Object},
 		     Pi j :: G |- o : T,
-		     G |- [o-cast](o,j) : T			# add this as a typing rule, too (for tau)
-		     and
-		     G |- [o-cast](o,j) = o : T.		# add this as a reduction rule, too
+		     G |- [ocast](o,j) : T.			# add this as a typing rule, too (for tau)
+
+   Rule ocastred ::: Pi {G :: Context},
+		     Pi {T :: Type},
+		     Pi {o :: Object},
+		     Pi j :: G |- o : T,
+		     G |- [ocast](o,j) = o : T.			# add this as a reduction rule, too, or just use it manually
 
   Rule tetaempty ::: Pi {G :: Context}, 			# eta reduction for empty
 		     Pi T :: Type,
@@ -122,6 +139,21 @@ oCheck lambda t:[U](u0), lambda f: *(lambda x:[U](u0), x) t -> U, lambda o:*t, f
 
     Rule bottom0 ::: Pi {u :: Univ}, uuu0 <= u.			# add this as a "constraint", too
 
-Exit.
+
+#  Now consider how to make the following expression type check correctly, despite
+#  undecidability, letting G = ( T, U, X : Type, a:Pt, f:T->U, x:X ) .
+#
+#  		 G |- f x : T
+#
+#  This is what we do, step by step:
+#
+#  	j1 :=	@tetaempty G X T a ::: G |- X = T.
+#	j2 :=	@fetch 0 ::: G |- x : X.
+#	j3 :=	@tcast G X T x j1 j2 ::: G |- x : T.
+#	j4 :=	@fetch 1 ::: G |- f : T -> U.
+#	j5 :=	@ocastt G T o j3 ::: [ocast](x,j3) : T.
+#	j6 :=	@ev(G,T,x,T,f,[ocast](x,j3),j4,j5) ::: [ev;_](f,[ocast](x,j3),U) : U.
+#
+#	etc., ...
 
 oCheck forall x:*y, z.  # fix the location of the holes
