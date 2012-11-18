@@ -27,6 +27,8 @@ BASENAMES = $(patsubst %.mly, %, $(patsubst %.mll, %, $(patsubst %.ml, %, $(SRCF
 RUN = -b
 # RUN = -b,p
 
+%.cmo: %.ml; ocamlbuild $(BFLAGS) $*.cmo
+
 all: TAGS run doc
 checker.byte checker.native: $(SRCFILES); ocamlbuild $(BFLAGS) $@
 doc: checker.odocl
