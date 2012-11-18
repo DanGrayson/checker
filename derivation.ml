@@ -2,7 +2,6 @@
 
 open Typesystem
 
-
 type judgementBody =
   | J_c
 	(**{v Gamma |> v}*)
@@ -24,8 +23,24 @@ type derivation = {
     d_judg : judgement;
     d_rule : rule_application }
 and rule_application =
+  | R_append of r_append
+  | R_empty of r_empty
   | R_tcast of r_tcast
   | R_ev of r_ev
+and r_empty = unit
+      (**{v
+ 	 ---------------------------------  empty (rule 4)
+ 	       Gamma |>
+	 v}*)
+and r_append = {
+    r_append_name : string;
+    r_append_d : derivation
+  }
+      (**{v
+	 d  :: Gamma |- 
+ 	 ---------------------------------  append (rule 5)
+ 	       Gamma |- X type
+	 v}*)
 and r_tcast = { 
     r_tcast_ot : derivation; 
     r_tcast_tt : derivation }
@@ -33,7 +48,7 @@ and r_tcast = {
  	 ot :: Gamma |- o : T
 	 tt :: Gamma |- T = T'
  	 --------------------------------- tcast (rule 13)
- 	 Gamma |- o : T'
+ 	       Gamma |- o : T'
 	 v}*)
 and r_ev = { 
     r_ev_f  : derivation; 
@@ -44,8 +59,8 @@ and r_ev = {
 	 f  :: Gamma |- f : Pi x:T, U
 	 o  :: Gamma |- o : T'
 	 tt :: Gamma |- T = T'
-	 --------------------------------- ev (rule 25)
-	 Gamma |- [ev;x](f,o,U) : U[o/x]
+	 ------------------------------------------ ev (rule 25)
+	       Gamma |- [ev;x](f,o,U) : U[o/x]
 v}*)
 
 
@@ -58,4 +73,16 @@ v}*)
 		     Pi k :: o : T,
 		     Pi k' :: o' : T,
 		     Gamma |- o = o' : T.
+*)
+
+(* TEMPLATE
+and r_ = {
+    r_ : derivation; 
+    r_ : derivation
+  }
+      (**{v
+	  :: Gamma |- 
+ 	 ---------------------------------  (rule )
+ 	       Gamma |- 
+	 v}*)
 *)

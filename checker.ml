@@ -59,11 +59,16 @@ let protect parser lexbuf posfun =
 	raise Error_Handled
 
 let definition_name = function
-  | TDefinition(name,_) -> name
-  | ODefinition(name,_) -> name
+  | TDefinition(name,_) 
+  | ODefinition(name,_) 
+  | TeqDefinition(name,_) 
+  | OeqDefinition(name,_) -> name
 let printdefinition = function
-  | TDefinition(name,_) as x -> Printf.printf "%s\n" (Printer.definitiontostring x)
-  | ODefinition(name,_) as x -> Printf.printf "%s\n" (Printer.definitiontostring x)
+  | TDefinition(name,_)
+  | ODefinition(name,_)
+  | TeqDefinition(name,_)
+  | OeqDefinition(name,_) as x
+    -> Printf.printf "%s\n" (Printer.definitiontostring x)
 
 let lexpos lexbuf = 
   let p = Tokens.lexing_pos lexbuf in
@@ -94,37 +99,37 @@ let tfix t = Fillin.tfillin !environment t
 let ofix o = Fillin.ofillin !environment o
 
 let tPrintCommand x =
-  Printf.printf "tPrint: %s\n" (Printer.ttostring x);
+  Printf.printf "Print type: %s\n" (Printer.ttostring x);
   flush stdout;
   let x' = protect tfix x nopos in
   if not (Alpha.tequal x' x) then Printf.printf "      : %s\n" (Printer.ttostring x');
   flush stdout
 
 let uCheckCommand x =
-  Printf.printf "uCheck: %s\n" (Printer.utostring x);
+  Printf.printf "Check ulevel: %s\n" (Printer.utostring x);
   flush stdout;
   protect1 (fun () -> Check.ucheck !environment x)
 
 let tCheckCommand x =
-  Printf.printf "tCheck: %s\n" (Printer.ttostring x);
+  Printf.printf "Check type: %s\n" (Printer.ttostring x);
   flush stdout;
   protect1 (fun () -> Check.tcheck !environment x)
 
 let oCheckCommand x =
   let x = Fillin.ofillin !environment x in
-  Printf.printf "oCheck: %s\n" (Printer.otostring x);
+  Printf.printf "Check: %s\n" (Printer.otostring x);
   flush stdout;
   protect1 (fun () -> Check.ocheck !environment x)
   
 let oPrintCommand x =
-  Printf.printf "oPrint: %s\n" (Printer.otostring x); 
+  Printf.printf "Print: %s\n" (Printer.otostring x); 
   flush stdout;
   let x' = protect ofix x nopos in
   if not (Alpha.oequal x' x) then Printf.printf "      : %s\n" (Printer.otostring x');
   flush stdout
 
 let uPrintCommand x =
-  Printf.printf "uPrint: %s\n" (Printer.utostring x);
+  Printf.printf "Print ulevel: %s\n" (Printer.utostring x);
   flush stdout
 
 let tAlphaCommand (x,y) =
@@ -175,7 +180,7 @@ let show_command () =
    Printf.printf "   Variable ";
    let UContext(uvars,ueqns) = (!environment).uc in 
    Printf.printf "%s.\n"
-     ((String.concat " " (List.map Printer.uvartostring' uvars)) ^ " : Univ" ^ (String.concat "" (List.map Printer.ueqntostring ueqns)));
+     ((String.concat " " (List.map Printer.uvartostring' (List.rev uvars))) ^ " : Univ" ^ (String.concat "" (List.map Printer.ueqntostring ueqns)));
   );
   (
    Printf.printf "   Variable"; List.iter (fun x -> Printf.printf " %s" (Printer.tvartostring' x)) (List.rev (!environment).tc); Printf.printf " : Type.\n";

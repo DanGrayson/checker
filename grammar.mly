@@ -41,10 +41,10 @@ let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code ha
 %token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow Wequalequal Wequal Wturnstile Wtriangle Wcolonequal
 %token Wlbrace Wrbrace Wbar Wunderscore
 %token Wgreaterequal Wgreater Wlessequal Wless Wsemi
-%token KUlevel Kumax KType KPi Klambda KSigma
+%token KUlevel Kumax KType KPi Klambda KSigma Kulevel
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall Kforall WSigma WCoprod WCoprod2 WEmpty Wempty Wempty_r WIC WId
-%token WTau WtPrint WoPrint WuPrint WoDefinition WtDefinition WShow WEnd WVariable WoAlpha WtAlpha WuAlpha Weof
-%token WuCheck WtCheck WoCheck WCheckUniverses
+%token WTau WPrint WDefine Wtype Wequality WShow WEnd WVariable WoAlpha WtAlpha WuAlpha Weof
+%token WCheck WCheckUniverses
 %token Wflush
 %token Prec_application
 %token Wudef Wtdef Wodef
@@ -74,17 +74,17 @@ command0:
     { Toplevel.TVariable vars }
 | WVariable vars=nonempty_list(IDENTIFIER) Wcolon KUlevel eqns=preceded(Wsemi,uEquation)* Wperiod
     { Toplevel.UVariable (vars,eqns) }
-| WuPrint u=uExpr Wperiod
+| WPrint Kulevel u=uExpr Wperiod
     { Toplevel.UPrint u }
-| WtPrint t=tExpr Wperiod
+| WPrint Wtype t=tExpr Wperiod
     { Toplevel.TPrint t }
-| WoPrint o=oExpr Wperiod
+| WPrint o=oExpr Wperiod
     { Toplevel.OPrint o }
-| WuCheck u=uExpr Wperiod
+| WCheck Kulevel u=uExpr Wperiod
     { Toplevel.UCheck u }
-| WtCheck t=tExpr Wperiod
+| WCheck Wtype t=tExpr Wperiod
     { Toplevel.TCheck t }
-| WoCheck o=oExpr Wperiod
+| WCheck o=oExpr Wperiod
     { Toplevel.OCheck o }
 | WCheckUniverses Wperiod
     { Toplevel.CheckUniverses }
@@ -96,16 +96,17 @@ command0:
     { Toplevel.UAlpha (u1, u2) }
 | WTau o=oExpr Wperiod
     { Toplevel.Type o }
-| WtDefinition name=IDENTIFIER parms=parmList Wcolonequal t=tExpr Wperiod 
+
+| WDefine Wtype name=IDENTIFIER parms=parmList Wcolonequal t=tExpr Wperiod 
     { Toplevel.Definition (TDefinition (Ident name,(fixParmList parms,t))) }
-| WoDefinition v=IDENTIFIER p=parmList Wcolonequal o=oExpr Wperiod 
-    {
-     let (uc,tc,oc) = fixParmList p in
-     let o = List.fold_right (fun (x,t) o -> nowhere( O_lambda (t, (nowhere x,o)))) oc o in
-     Toplevel.Definition ( ODefinition (Ident v,((uc,tc,emptyOContext),o,nowhere T_EmptyHole)) ) 
-   }
-| WoDefinition name=IDENTIFIER parms=parmList Wcolonequal o=oExpr Wcolon t=tExpr Wperiod 
+| WDefine name=IDENTIFIER parms=parmList Wcolonequal o=oExpr Wcolon t=tExpr Wperiod 
     { Toplevel.Definition (ODefinition (Ident name,(fixParmList parms,o,t))) }
+
+| WDefine Wtype Wequality name=IDENTIFIER parms=parmList Wcolonequal t1=tExpr Wequalequal t2=tExpr Wperiod 
+    { Toplevel.Definition (TeqDefinition (Ident name,(fixParmList parms,t1,t2))) }
+| WDefine Wequality name=IDENTIFIER parms=parmList Wcolonequal o1=oExpr Wequalequal o2=oExpr Wcolon t=tExpr Wperiod 
+    { Toplevel.Definition (OeqDefinition (Ident name,(fixParmList parms,o1,o2,t))) }
+
 | WShow Wperiod 
     { Toplevel.Show }
 | WEnd Wperiod

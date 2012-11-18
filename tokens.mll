@@ -33,19 +33,14 @@ let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' ]
 let white = [ ' ' '\r' '\n' ]*
 rule expr_tokens = parse
   | "Check" white "Universes" { WCheckUniverses }
-  | "uPrint" { WuPrint }
-  | "tPrint" { WtPrint }
-  | "oPrint" { WoPrint }
+  | "Print" { WPrint }
   | "uAlpha" { WuAlpha }
   | "tAlpha" { WtAlpha }
   | "oAlpha" { WoAlpha }
-  | "uCheck" { WuCheck }
-  | "tCheck" { WtCheck }
-  | "oCheck" { WoCheck }
+  | "Check" { WCheck }
   | "Tau" { WTau }
   | "Variable" { WVariable }
-  | "tDefinition" { WtDefinition }
-  | "oDefinition" { WoDefinition }
+  | "Define" { WDefine } | "type" { Wtype } | "equality" { Wequality }
   | "End" { WEnd }
   | "Show" { WShow }
   | "[El]" { WEl }
@@ -72,6 +67,7 @@ rule expr_tokens = parse
   | "[forall;" { Wforall }
   | "forall" { Kforall }
   | "Ulevel" { KUlevel }
+  | "ulevel" { Kulevel }
   | "Type" { KType }
   | "max" { Kumax }
   | "|" { Wbar }

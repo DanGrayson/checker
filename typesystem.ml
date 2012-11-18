@@ -315,8 +315,10 @@ type oSubs = (oVar' * oExpr) list
 
 type identifier = Ident of string
 type definition = 
-  | TDefinition of identifier * ((uContext * tContext * oContext)         * tExpr)
-  | ODefinition of identifier * ((uContext * tContext * oContext) * oExpr * tExpr)
+  | TDefinition   of identifier * ((uContext * tContext * oContext)         * tExpr)
+  | ODefinition   of identifier * ((uContext * tContext * oContext) * oExpr * tExpr)
+  | TeqDefinition of identifier * ((uContext * tContext * oContext)         * tExpr * tExpr)
+  | OeqDefinition of identifier * ((uContext * tContext * oContext) * oExpr * oExpr * tExpr)
 
 
 (** Variable.

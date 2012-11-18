@@ -105,5 +105,11 @@ let parmstostring = function
       (String.concat "" (List.map (fun x -> "(" ^ (octostring x) ^ ")") oc))
 	
 let definitiontostring = function
-  | TDefinition (Ident name,(c,  t)) -> "tDefinition "^name^(parmstostring c)^" := "                    ^(ttostring t)^"."
-  | ODefinition (Ident name,(c,o,t)) -> "oDefinition "^name^(parmstostring c)^" := "^(otostring o)^" : "^(ttostring t)^"."
+  | TDefinition   (Ident n,(c,  t   ))
+    -> "Define type "         ^n^(parmstostring c)^" := "^(ttostring t)^"."
+  | ODefinition   (Ident n,(c,o,t   )) ->
+      "Define "               ^n^(parmstostring c)^" := "^(otostring o)^" : "^(ttostring t)^"."
+  | TeqDefinition (Ident n,(c,t,t'  ))
+    -> "Define type equality "^n^(parmstostring c)^" := "^(ttostring t)^" == "^(ttostring t')^"."
+  | OeqDefinition (Ident n,(c,o,o',t)) 
+    -> "Define equality "     ^n^(parmstostring c)^" := "^(otostring o)^" == "^(otostring o')^" : "^(ttostring t)^"."

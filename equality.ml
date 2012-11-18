@@ -7,12 +7,12 @@ let beta1 f o = match strip_pos f with
 | _ -> raise InternalError
 
 let addalpha x x' (alpha:alpha_eq) = if x=x' then alpha else (strip_pos x, strip_pos x') :: alpha
-let testalpha'  x x' =
+let testalpha'  x x' alpha =
   let rec test = ( 
     function
 	[] -> x=x'
       | (y,y') :: alpha -> if x=y then x'=y' else if x'=y' then false else test alpha)
-  in test
+  in test alpha
 let testalpha  x x' = let x = strip_pos x and x' = strip_pos x' in testalpha' x x'
 
 let rec ueq a b = a == b || let a = strip_pos a and b = strip_pos b in a == b || ueq' (a,b)
@@ -57,7 +57,7 @@ and oeq alpha oa ob = oa == ob || let a = strip_pos oa and b = strip_pos ob in a
   | (O_ev(f,o,(x,u)),O_ev(f',o',(x',u'))) -> (
       if oeq alpha f f' && oeq alpha o o' && let alpha = addalpha x x' alpha in teq alpha u u'
       then true
-      else oeq alpha (beta1 f o) (beta1 f' o')
+      else oeq alpha (beta1 f o) (beta1 f' o') (* we do both sides, to preserve symmetry of our algorithm *)
      )
   | (O_ev(f,o,_), y) -> oeq alpha (beta1 f o) (with_pos_of ob y)
   | (y, O_ev(f,o,_)) -> oeq alpha (with_pos_of oa y) (beta1 f o)
