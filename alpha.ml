@@ -1,5 +1,3 @@
-(** In this file we implement structural comparison of expressions, modulo alpha equivalence and source code positions. *)
-
 open Typesystem
 
 type alpha_eq = (oVar' * oVar') list

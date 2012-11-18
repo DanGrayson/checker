@@ -1,3 +1,5 @@
+(** the lexical analyzer for the type theory *)
+
 {
  open Grammar
  open Typesystem
@@ -14,15 +16,21 @@
    p.Lexing.pos_fname ^ ":" ^
    (string_of_int p.Lexing.pos_lnum) ^ ":" ^
    (string_of_int (p.Lexing.pos_cnum-p.Lexing.pos_bol+1))
+ let tab lexbuf =
+   let p = lexbuf.Lexing.lex_curr_p in
+   let bol = p.Lexing.pos_bol in
+   let cnum = p.Lexing.pos_cnum in
+   let col = cnum - bol in
+   let col = (col + 7) / 8 * 8 in
+   let bol = cnum - col in
+   lexbuf.Lexing.lex_curr_p <- { p with Lexing.pos_bol = bol }
 }
-let white = [ ' ' '\t' '\r' ]
 let newline = [ '\n' ]
 let nzdigit = [ '1'-'9' ]
 let digit = [ '0'-'9' ]
 let first = [ 'A'-'Z' 'a'-'z' ]
 let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' ]
-rule expr_tokens = 
-parse
+rule expr_tokens = parse
   | "uPrint" { WuPrint }
   | "tPrint" { WtPrint }
   | "oPrint" { WoPrint }
@@ -61,7 +69,7 @@ parse
   | "[lambda;" { Wlambda }
   | "[forall;" { Wforall }
   | "forall" { Kforall }
-  | "Univ" { KUniv }
+  | "Ulevel" { KUlevel }
   | "Type" { KType }
   | "max" { Kumax }
   | "|" { Wbar }
@@ -78,7 +86,6 @@ parse
   | ','  { Wcomma }
   | '/'  { Wslash }
   | '+'  { Wplus }
-  | "plus1"  { Kplus1 }
   | ':'  { Wcolon }
   | '='  { Wequal }
   | '=' '=' { Wequalequal }
@@ -91,9 +98,10 @@ parse
   | ':' '='  { Wcolonequal }
   | '|' '-'  { Wturnstile }
   | '|' '>'  { Wtriangle }
-  | digit+ as n { Nat (int_of_string n) }
+  | digit+ as n { Nat (int_of_string n) } (* eventually check for overflow and leading 0 *)
   | first after* as id { IDENTIFIER id }
-  | white { expr_tokens lexbuf }
+  | [ '\t' ] { tab lexbuf; expr_tokens lexbuf }
+  | [ ' ' '\r' ] { expr_tokens lexbuf }
   | '#' [ ^ '\n' ]* { expr_tokens lexbuf }
   | newline { Lexing.new_line lexbuf; expr_tokens lexbuf }
   | _ as c { Printf.fprintf stderr "%s: invalid character: '%c'\n" (lexing_pos lexbuf) c; 
@@ -103,6 +111,7 @@ parse
   | eof { Weof }
 and command_flush = parse
   | eof { Weof }
+  | '#' [ ^ '\n' ]* { expr_tokens lexbuf }
   | newline { command_flush lexbuf }
   | '.' { Wflush }
   | _ { command_flush lexbuf }

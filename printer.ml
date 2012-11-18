@@ -1,3 +1,5 @@
+(** Functions for converting expressions to strings for printing *)
+
 open Typesystem
 
 let ovartostring' = function
@@ -85,12 +87,6 @@ and otostring' = function
   | O_rr1 _ -> raise NotImplemented
 and tlisttostring s = String.concat "," (List.map ttostring s)
 and olisttostring s = String.concat "," (List.map otostring s)
-
-let jtostring = function
-  | EmptyJ _ -> "context judgement"
-  | TypeJ _ -> "type judgement"
-  | TEqualityJ _ -> "type equality judgement"
-  | OEqualityJ _ -> "object equality judgement"
 
 let octostring (v,t) = (ovartostring' v) ^ ":" ^ (ttostring t)
 

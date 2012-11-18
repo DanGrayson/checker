@@ -7,7 +7,11 @@ type judgementBody =
   | J_c
 	(**{v Gamma |> v}*)
   | J_t of tExpr
-	(**{v Gamma |- T type  v}*)
+	(**{v Gamma |- T type v}*)
+	(* 
+	   TS doesn't mention this one, so in this implementation we will consider
+	   [ Gamma |- T type ] and [ Gamma, x:T |> ] to be alpha equivalent, for compatibility with TS 
+	 *)
   | J_o of oExpr * tExpr
 	(**{v Gamma |- o : T v}*)
   | J_tt of tExpr * tExpr
@@ -26,31 +30,32 @@ and r_tcast = {
     r_tcast_ot : derivation; 
     r_tcast_tt : derivation }
       (**{v
- 	 ot :: G |- o : T
-	 tt :: G |- T = T'
+ 	 ot :: Gamma |- o : T
+	 tt :: Gamma |- T = T'
  	 --------------------------------- tcast (rule 13)
- 	 G |- o : T'
+ 	 Gamma |- o : T'
 	 v}*)
 and r_ev = { 
     r_ev_f  : derivation; 
     r_ev_o  : derivation;
-    r_ev_tt : derivation }
+    r_ev_tt : derivation 		(* it was a suggestion of Andrej Bauer to add this prerequisite *)
+  }
       (**{v
-	 f  :: G |- f : Pi x:T, U
-	 o  :: G |- o : T'
-	 tt :: G |- T = T'
+	 f  :: Gamma |- f : Pi x:T, U
+	 o  :: Gamma |- o : T'
+	 tt :: Gamma |- T = T'
 	 --------------------------------- ev (rule 25)
-	 G |- [ev;x](f,o,U) : U[o/x]
+	 Gamma |- [ev;x](f,o,U) : U[o/x]
 v}*)
 
 
-(*   Rule tetaempty :: Pi {G : MContext} (T T' : MType),		# eta reduction for empty
-		     Pi j :: G |- a : Empty,
-		     G |- T = T'.
+(*   Rule tetaempty :: Pi {Gamma : MContext} (T T' : MType),		# eta reduction for empty
+		     Pi j :: Gamma |- a : Empty,
+		     Gamma |- T = T'.
 
-   Rule oetaempty :: Pi {G : MContext} {T : MType} {a o o' : MObject},		# eta reduction for empty
-		     Pi j :: G |- a : Empty,
+   Rule oetaempty :: Pi {Gamma : MContext} {T : MType} {a o o' : MObject},		# eta reduction for empty
+		     Pi j :: Gamma |- a : Empty,
 		     Pi k :: o : T,
 		     Pi k' :: o' : T,
-		     G |- o = o' : T.
+		     Gamma |- o = o' : T.
 *)

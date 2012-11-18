@@ -1,5 +1,7 @@
-(** In this file, we write a function for filling in the unknown types in an expression, which could not be determined during parsing.
-    For example, the third branch of an [ev;_] needs to be filled in, based on the context, using tau.
+(** Filling in the unknown types in an expression, after parsing.
+
+    For example, the third branch of [\[ev;x\](f,o,_)], written in short form
+    [f o], needs to be filled in, based on the context, using [tau].
 
     This file is not completely implemented: some binders are ignored.
  *)

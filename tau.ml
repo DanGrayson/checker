@@ -1,8 +1,3 @@
-  (* 
-     Here we implement the function "tau" from the paper.  It produces the type of an o-expression o in a context g,
-     even if the expression is not yet known to be well-formed.
-   *)
-
 open Typesystem
 
 let rec tau (env:environment_type) o = (

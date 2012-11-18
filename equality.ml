@@ -1,5 +1,3 @@
-(** In this file, we implement definitional equality. *)
-
 open Typesystem
 
 type alpha_eq = (oVar' * oVar') list

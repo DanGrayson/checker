@@ -1,4 +1,9 @@
+(** top level code
+*)
+
 open Typesystem
+open Derivation				(*otherwise unused*)
+open Universe				(*otherwise unused*)
 
 let leave () = exit (if !Tokens.error_count > 0 then 1 else 0)
 let nopos x = error_format_pos Nowhere

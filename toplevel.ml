@@ -1,3 +1,5 @@
+(** Declaration of toplevel commands *)
+
 open Typesystem
 type command' = 
   | UPrint of uExpr

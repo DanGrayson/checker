@@ -1,3 +1,5 @@
+(** the grammar of the type theory *)
+
 %{ 
 open Typesystem
 
@@ -36,10 +38,10 @@ let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code ha
 %type <unit> unusedtokens
 %token <string> IDENTIFIER
 %token <Typesystem.uVar> UVar_token 
-%token Wlparen Wrparen Wlbracket Wrbracket Wplus Kplus1 Wcomma Wperiod Wslash Wcolon Wstar Warrow Wequalequal Wequal Wturnstile Wtriangle Wcolonequal
+%token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow Wequalequal Wequal Wturnstile Wtriangle Wcolonequal
 %token Wlbrace Wrbrace Wbar Wunderscore
 %token Wgreaterequal Wgreater Wlessequal Wless Wsemi
-%token KUniv Kumax KType KPi Klambda KSigma
+%token KUlevel Kumax KType KPi Klambda KSigma
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall Kforall WSigma WCoprod WCoprod2 WEmpty Wempty Wempty_r WIC WId
 %token WTau WtPrint WoPrint WuPrint WoDefinition WtDefinition WShow WEnd WVariable WoAlpha WtAlpha WuAlpha Weof
 %token WuCheck WtCheck WoCheck
@@ -70,7 +72,7 @@ command0:
     { raise Eof }
 | WVariable vars=nonempty_list(IDENTIFIER) Wcolon KType Wperiod
     { Toplevel.TVariable vars }
-| WVariable vars=nonempty_list(IDENTIFIER) Wcolon KUniv eqns=preceded(Wsemi,uEquation)* Wperiod
+| WVariable vars=nonempty_list(IDENTIFIER) Wcolon KUlevel eqns=preceded(Wsemi,uEquation)* Wperiod
     { Toplevel.UVariable (vars,eqns) }
 | WuPrint u=uExpr Wperiod
     { Toplevel.UPrint u }
@@ -113,7 +115,7 @@ unusedtokens:
     Wlbracket Wbar UVar_token Wplus
     { () }
 
-uParm: vars=nonempty_list(IDENTIFIER) Wcolon KUniv eqns=preceded(Wsemi,uEquation)*
+uParm: vars=nonempty_list(IDENTIFIER) Wcolon KUlevel eqns=preceded(Wsemi,uEquation)*
     { UParm (UContext ((List.map make_uVar vars),eqns)) }
 tParm: vars=nonempty_list(IDENTIFIER) Wcolon KType 
     { TParm (List.map make_tVar vars) }
@@ -260,9 +262,9 @@ uExpr0:
     { UNumberedEmptyHole $1 }
 | u=uVar0
     { Uvariable u }
-| Kplus1 u=uExpr
-    { Uplus (u,1) }
-| Kumax u=uExpr v=uExpr
+| u=uExpr Wplus n=Nat
+    { Uplus (u,n) }
+| Kumax Wlparen u=uExpr Wcomma v=uExpr Wrparen
     { Umax (u,v)  }
 | Wudef name=IDENTIFIER Wrbracket Wlparen 
     u=separated_list(Wcomma,uExpr) 

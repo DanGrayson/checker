@@ -4,4 +4,4 @@ _build
 *.byte
 checker.docdir
 checker.odocl
-tmp
+

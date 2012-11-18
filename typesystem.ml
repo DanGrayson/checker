@@ -1,6 +1,4 @@
-(**
-
-Type system TS
+(** Voevodsky's type system TS
 
 @author Dan Grayson
 
@@ -290,7 +288,7 @@ and oExpr' =
 	     o-expressions (S(S(S(S O)))) or as universe levels.  *)
 
 (** 
-    A universe context [UC = (Fu,A)] is represented a list of universe variables [Fu] and a list of
+    A universe context [UC = (Fu,A)] is represented by a list of universe variables [Fu] and a list of
     equations [M_i = N_i] between two u-level expressions formed from the variables in [Fu]
     that defines the admissible subset [A] of the functions [Fu -> nat].  It's just the subset
     that matters.
@@ -312,19 +310,6 @@ type oContext = (oVar' * tExpr) list				  (* [Gamma] *)
 let emptyOContext : oContext = []
 
 type oSubs = (oVar' * oExpr) list
-
-type judgementBody =
-  | EmptyJ
-	(** Gamma |> *)
-  | TypeJ of oExpr * tExpr
-	(** Gamma |- o : T *)
-  | TEqualityJ of tExpr * tExpr
-	(** Gamma |- T = T' *)
-  | OEqualityJ of oExpr * oExpr * tExpr
-	(** Gamma |- o = o' : T *)
-let emptyJudgementBody = EmptyJ
-type judgement = utContext * oContext * judgementBody
-let emptyJudgment : judgement = emptyUTContext,emptyOContext,emptyJudgementBody
 
 (* Abbreviations, conventions, and definitions; from the paper *)
 
@@ -353,12 +338,3 @@ let obind (v,t) env = match v with
   | OVarGen (_,_) -> { env with oc = (v,t) :: env.oc }
   | OVarUnused -> env
   | OVarEmptyHole -> env
-
-(*
- For emacs:
- Local Variables:
-  coding: latin-1
-  compile-command: "make run "
-  comment-column: 70
- End:
-*)
