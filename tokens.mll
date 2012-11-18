@@ -30,7 +30,9 @@ let nzdigit = [ '1'-'9' ]
 let digit = [ '0'-'9' ]
 let first = [ 'A'-'Z' 'a'-'z' ]
 let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' ]
+let white = [ ' ' '\r' '\n' ]*
 rule expr_tokens = parse
+  | "Check" white "Universes" { WCheckUniverses }
   | "uPrint" { WuPrint }
   | "tPrint" { WtPrint }
   | "oPrint" { WoPrint }

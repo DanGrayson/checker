@@ -3,7 +3,7 @@
 
 open Typesystem
 open Derivation				(*otherwise unused*)
-open Universe				(*otherwise unused*)
+open Universe
 
 let leave () = exit (if !Tokens.error_count > 0 then 1 else 0)
 let nopos x = error_format_pos Nowhere
@@ -149,6 +149,14 @@ let uAlphaCommand = fun (x,y) ->
   Printf.printf "      : %s\n" (Printer.utostring y);
   flush stdout
 
+let checkUniversesCommand pos =
+  try
+    Universe.consistency (!environment.uc)
+  with Universe.UniverseInconsistency 
+    ->Printf.fprintf stderr "%s: universe inconsistency\n" (error_format_pos pos); 
+      flush stderr;
+      Tokens.bump_error_count()
+
 let typeCommand x = (
   try 
     let tx = Tau.tau !environment x in
@@ -208,6 +216,7 @@ let process_command lexbuf = (
   | Toplevel.Definition x -> addDefinition x
   | Toplevel.End -> Printf.printf "%s: ending.\n" (error_format_pos pos) ; flush stdout; raise StopParsingFile
   | Toplevel.Show -> show_command()
+  | Toplevel.CheckUniverses -> checkUniversesCommand pos
  )
 
 let parse_file filename =

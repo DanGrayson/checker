@@ -15,6 +15,7 @@ type command' =
   | OAlpha of oExpr * oExpr
   | Type of oExpr
   | Definition of definition
+  | CheckUniverses
   | Show
   | End
 

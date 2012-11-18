@@ -1,6 +1,8 @@
 # experiment with notation for rule and inferences.
 
-Variable u0 u1 u2 : Ulevel ; u0 <= u1; u0 <= u2 .
+Variable u0 u1 u2 : Ulevel ; u0 < u1; u1 < u2.
+Check Universes.
+
 Variable T T' T1 T2 U U' V V' W W' A B C D X Y : Type.
 Show.
 
