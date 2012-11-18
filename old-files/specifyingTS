@@ -1,0 +1,189 @@
+
+#							# omitted arguments are enclosed in { }
+# Parsing precedence :: |- : = * @			# use @ to indicate that omitted arguments will be included
+#							# use :: to indicate proofs judgments, one level up, in the meta-type-theory
+#							# grouping variables in one Pi means they're independent
+#
+
+# We define the type of "derivations" of "judgments" inductively by
+# constructors called "rules" whose parameters, written in a formal language,
+# involve meta-variables at a "higher level" representing the contexts,
+# u-levels, t-expressions, and o-expressions of TS.
+# 
+# For example, consider the following rule:
+# 
+# 	  G |- o : T         G |- T = T'
+# 	--------------------------------- tcast (rule 13 in the paper UPTS)
+# 		   G |- o : T'
+# 
+# Let TT' denote a given derivation of G |- T = T', and let oT denote a given
+# derivation of G |- o : T.  Then we may denote the derivation oT' of G |- o : T'
+# resulting from application of the rule as
+# 
+# 	  	tcast oT TT'.
+# 
+# We wish to have syntax for describing such rules, so we introduce the notation
+# 
+#    		p :: J
+# 
+# to mean that p is a derivation of the judgment J.  Then we can rephrase the
+# rule slightly:
+# 
+# 	  oT :: G |- T = T'         TT' :: G |- o : T
+# 	  -------------------------------------------
+# 		 tcast oT TT' :: G |- o : T'
+#        	
+# The formal parameters of the rule are represented by the meta-variables G, o,
+# T, and T'.  We could describe the rule in linear format this way, by inserting
+# such things as "Pi", "::", ",", as follows:
+# 
+# 	  Pi oT :: G |- o : T,   Pi TT' :: G |- T = T',
+# 		     G |- o : T'.
+# 
+# Don't confuse this "Pi" with the "[pi;x]" of TS.  We decorate the rule with the
+# name and the parameters, as follows:
+# 
+#        Rule tcast :: Pi {G : MContext} {T T' : MType} {o : MObject},
+# 		     Pi oT :: G |- o : T,
+# 		     Pi TT' :: G |- T = T',
+# 		     G |- o : T'.
+# 
+# Since the derivation rules don't refer to each other, we could also write it
+# this way:
+# 
+#        Rule tcast :: Pi {G : MContext} {T T' : MType} {o : MObject},
+# 		     (G |- o : T) => (G |- T = T') => (G |- o : T').
+# 
+# Don't confuse "=>" with the "->" of TS.
+
+#  Four types of judgments:
+#
+#			G |- T type
+#			G |- o : T
+#			G |- T = T'
+#			G |- o = o' : T
+
+#  Four types of meta-variables:
+#
+#			G : MContext
+#			u : MUlevel
+#			T : MType
+#			o : MObject
+
+#  Four types of definitions:
+#
+#    tDefinition foo1 : Pi (u1 ... : Ulevel), (T1 ... : Type), (o1:O1) ... , T.
+#    oDefinition foo2 : Pi (u1 ... : Ulevel), (T1 ... : Type), (o1:O1) ... , o : T.
+#   ttDefinition foo3 : Pi (u1 ... : Ulevel), (T1 ... : Type), (o1:O1) ... , T = T'.
+#   ooDefinition foo4 : Pi (u1 ... : Ulevel), (T1 ... : Type), (o1:O1) ... , o = o' : T.
+
+
+	  Rule ev :: Pi {G : MContext} {T U : MType} (f o : MObject),
+		     Pi m :: G |- f : Pi x:T, U,	# "Pi" knows to swallow just one comma, so there's no parsing ambiguity here
+		     Pi n :: G |- o : T,
+		     G |- [ev;x](f,o,U) : U[o/x].	# subst 0 U o n :: G |- U[o/x] type
+							# Knowing the name of the variable x is irrelevant, because it's the rightmost
+							# variable bound in U.
+
+       Rule tcast :: Pi {G : MContext} {T T' : MType} {o : MObject},		# rule 13 in the paper UPTS
+		     Pi oT :: G |- o : T,		# regard oo as a stand-in for o
+		     Pi TT' :: G |- T = T',
+		     G |- o : T'.			# regard [tcast oT TT'] as a stand-in for the cast of oo from type T to type T'
+
+   Rule tetaempty :: Pi {G : MContext} (T T' : MType),		# eta reduction for empty
+		     Pi j :: G |- a : Empty,
+		     G |- T = T'.
+
+   Rule oetaempty :: Pi {G : MContext} {T : MType} {a o o' : MObject},		# eta reduction for empty
+		     Pi j :: G |- a : Empty,
+		     Pi k :: o : T,
+		     Pi k' :: o' : T,
+		     G |- o = o' : T.
+
+      Rule Uintro :: Pi {G : MContext} {u : MUlevel}, G |- [U](u) type. #  we abbreviate [ Uintro G u ] as [ [U](u) ].
+		     or (?)
+     Rule Uintro' :: Pi (u : MUlevel), MType.				#  we abbreviate [ Uintro' u ] as [ [U](u) ].
+
+#			Here [ Uintro G u ] knows what context it's in, and [ Uintro' u ] doesn't.
+#			That's analogous to [ [u](m) ] knowing what universe it's in, and [ [U](m) ] not.
+
+
+	Rule next :: Pi u : MUlevel, Ulevel.				# formerly [ next u ] was called [ u+1 ]
+
+	 Rule max :: Pi u v : MUlevel, Ulevel.
+
+      Rule uintro :: Pi {G : MContext} {u : MUlevel},
+		     G |- [u](u) : [U](next u).
+
+   Rule starintro :: Pi {G : MContext} {u : MUlevel},
+		     G |- *[u](u) type.
+
+       Rule staru :: Pi {G : MContext} {u : MUlevel},
+		     G |- *[u](u) = [U](u).		# add this as a reduction rule
+
+  Rule emptytype ::  Pi {G : MContext},
+		     G |- empty : [U](uuu0).
+
+   Rule starempty :: Pi {G : MContext},
+		     G |- *empty = Empty.		# add this as a reduction rule, too (left to right), in some list(s) of reduction rules
+
+Constraint bottom0 :: Pi {u : MUlevel}, uuu0 <= u.	# add this "constraint" every time a new universe variable is introduced, somehow
+
+#   Some introduction rules for things in TS:
+
+#	Rule Empty : Type.				# a constant (global variable)
+#
+#	Rule uuu0 : Ulevel.				# a constant
+#
+#	Rule empty : MObject.				# a constant
+
+# We imagine that the context goes along for the ride on the outside, i.e.,
+
+   Definition foo :: Pi {E : Externalcontext} {G : MContext}, {u1 ... : Ulevel} {T1 ... : MType} {o1:O1 ... }, E ||- G |- T type.
+
+# Here the context contains only things like [ v : T ], but the external context contains
+# things like [ u : Ulevel ] [ T : MType ].
+
+# Since typechecking is undecidable, definitions need proofs!
+# Expanded form of definitions, with proofs.
+
+    tDefinition foo :: Pi {u1 ... : Ulevel} {q1::T1 ...} {p1::o1:O1 ... }, |- T type	 ::= p.
+    oDefinition foo :: Pi {u1 ... : Ulevel} {q1::T1 ...} {p1::o1:O1 ... }, |- o : T	 ::= p.
+   ttDefinition foo :: Pi {u1 ... : Ulevel} {q1::T1 ...} {p1::o1:O1 ... }, |- T = T'	 ::= p.
+   ooDefinition foo :: Pi {u1 ... : Ulevel} {q1::T1 ...} {p1::o1:O1 ... }, |- o = o' : T ::= p.
+
+# Here q1::T1	 is short-hand for q1 :: G |- T1 type,
+# and  p1::o1:O1 is short-hand for p1 :: G |- o1 : O1, where G is the ambient context at that point.
+
+
+PseudoRule fetch v j :: Pi {G : MContext},		# if G is omitted, take it from the current context
+		     G |- v$j : T.			# here v : T is j-th rightmost entry in G for the variable v, starting with j=0.
+							# j is a sort of de Bruijn index that needs to be updated occasionally
+							# abbreviate v$0 to v
+
+PseudoRule subst i :: Pi {G : MContext},		# i is the index of the variable x in the context G (?); we must make it more explicit.	 (???)
+		    Pi {T U : MType} (o : MObject),
+		    Pi (m :: G |- Pi x:T, U),
+		    Pi (k :: G |- o : T),
+		    G[o/x] |- U[o/x] type.		# this is supposed to be descriptive notation for substitution
+							# in G[o/x] the entry x:T goes away
+							# subst i U o k :: G[o/x] |- U[o/x] type.
+
+#  Now consider how to make the following expression type check correctly, despite
+#  undecidability, letting G = ( a:Empty, f:T->U, x:X ) .  Here we have variables T, U, X : MType.
+#
+#		 G |- f x : T
+#
+#  This is what we do, step by step:
+#
+#	j1 :=	@tetaempty G X T a :: G |- X = T.
+#	j2 :=	@fetch 0 :: G |- x : X.
+#	j3 :=	@tcast G X T x j1 j2 :: G |- x : T.
+#	j4 :=	@fetch 1 :: G |- f : T -> U.
+#	j5 :=	@ocastt G T o j3 :: G |- [ocast](x,j3) : T.
+#	j6 :=	ev(x,f,[ocast](x,j3),j4,j5) :: G |- [ev;_](f,[ocast](x,j3),U) : U.
+#	now using [ocastred] above as a reduction rule, we deduce:
+#	j7 :=	ev(x,f,[ocast](x,j3),j4,j5) :: G |- [ev;_](f,x,U) : U.
+
+# Oops, rewrite: in j1, for example, the expression [ @tetaempty G X T a ] needs to be
+# within the scope of the expressions X T a, and that is specified by G.
