@@ -73,17 +73,17 @@ and r_t_append = {
     r_t_append_d : derivation;
   }
       (**{v
-	 d  :: G |- 
- 	 ---------------------------------  t_append X (rule 5)
+	 d  :: G |> 
+ 	 ---------------------------------  t_append X, for X in FV (rule 5)
  	       G |- X type
 	 v}*)
 and r_fetch = {
-    r_fetch_name : string;
+    r_fetch_i : int;
     r_fetch_d : derivation;
   }
       (**{v
-	 d  :: G,x:X,G' |- 
- 	 ---------------------------------  fetch x (rule 6)
+	 d  :: G,x:X,G' |> 
+ 	 ---------------------------------  fetch i, where i is the length of G' (rule 6)
  	       G,x:X,G' |- x:X
 	 v}*)
 and r_teq_refl = {
