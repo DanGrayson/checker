@@ -162,7 +162,7 @@ and oExpr = position * oExpr'
 and oExpr' =
     (* TS0 *)
   | O_emptyHole
-        (** a hole to be filled in later *)
+      (** a hole to be filled in later *)
   | O_numberedEmptyHole of int
         (** A hole to be filled in later, by type checking. *)
   | O_variable of oVar'
@@ -281,17 +281,17 @@ and oExpr' =
 	 *)
   | O_def of string * uExpr list * tExpr list * oExpr list
   | O_numeral of int 
-         (** A numeral.
-	     
-	     We add this variant temporarily to experiment with parsing
-	     conflicts, when numerals such as 4, can be considered either as
-	     o-expressions (S(S(S(S O)))) or as universe levels.  *)
-
+        (** A numeral.
+	    
+	    We add this variant temporarily to experiment with parsing
+	    conflicts, when numerals such as 4, can be considered either as
+	    o-expressions (S(S(S(S O)))) or as universe levels.  *)
+	
 (** Redesign the structure of expressions, for versatility *)
 type expr = Expr of exprHead * expr list
 and exprHead =
   | PP of position
-  | HH_binder of oVar
+  | BB_binder of oVar
   | UU of uHead
   | TT of tHead
   | OO of oHead
@@ -317,9 +317,11 @@ and tHead =
   | TT_IC
   | TT_Id
   | TT_def_app of string
+  | TT_nat
 and oHead =
   | OO_variable of oVar'
   | OO_emptyHole
+  | OO_numeral of int
   | OO_numberedEmptyHole of int
   | OO_u
   | OO_j
@@ -353,26 +355,102 @@ let withpos pos = function
 | Expr(PP _, u) -> Expr(PP pos,  u )
 |            u  -> Expr(PP pos, [u])
 
-let isu u = match u with
+let isU u = match u with
 | Expr(PP _, [Expr(UU _, _)])
 | Expr(UU _, _) -> true
 | _ -> false
+let chku u = if not (isU u) then raise InternalError; u
+let chkulist us = List.iter (fun u -> let _ = chku u in ()) us; us
 
-let chku u = if not (isu u) then raise InternalError
+let isT t = match t with
+| Expr(PP _, [Expr(TT _, _)])
+| Expr(TT _, _) -> true
+| _ -> false
+let chkt t = if not (isT t) then raise InternalError; t
+let chktlist ts = List.iter (fun t -> let _ = chkt t in ()) ts; ts
 
-let chkulist us = List.iter chku us
+let isO t = match t with
+| Expr(PP _, [Expr(OO _, _)])
+| Expr(OO _, _) -> true
+| _ -> false
+let chko o = if not (isO o) then raise InternalError; o
+let chkolist os = List.iter (fun o -> let _ = chko o in ()) os; os
 
-let make_UU_variable u = Expr(UU(UU_variable u), [])
+let make_UU h a = Expr(UU h, a)
+let make_TT h a = Expr(TT h, a)
+let make_OO h a = Expr(OO h, a)
 
-let make_UU_plus u i  = chku u; Expr(UU(UU_plus i), [u])
+let make_BB_binder1 v x = Expr(BB_binder v, [x])
+let make_BB_binder2 v x y = Expr(BB_binder v, [x;y])
 
-let make_UU_max u v = chku u; chku v; Expr(UU(UU_max), [u;v])
+let make_UU_variable u = make_UU (UU_variable u) []
+let make_UU_plus u i  = make_UU (UU_plus i) [chku u]
+let make_UU_max u v = make_UU UU_max [chku u;chku v]
+let make_UU_EmptyHole () = make_UU UU_EmptyHole []
+let make_UU_NumberedEmptyHole i = make_UU (UU_NumberedEmptyHole i) []
+let make_UU_def_app name us = make_UU (UU_def_app name) (chkulist us)
 
-let make_UU_EmptyHole () = Expr(UU(UU_EmptyHole), [])
+let make_TT_variable x = make_TT (TT_variable x) []
+let make_TT_EmptyHole = make_TT TT_Empty []
+let make_TT_NumberedEmptyHole n = make_TT (TT_NumberedEmptyHole n) []
+let make_TT_El x = make_TT TT_El [chko x]
+let make_TT_U x = make_TT TT_U [chku x]
+let make_TT_Pi    t1 (x,t2) = make_TT TT_Pi    [chkt t1; make_BB_binder1 x (chkt t2)]
+let make_TT_Sigma t1 (x,t2) = make_TT TT_Sigma [chkt t1; make_BB_binder1 x (chkt t2)]
+let make_TT_Pt = make_TT TT_Pt []
+let make_TT_Coprod t t' = make_TT TT_Coprod [chkt t;chkt t']
+let make_TT_Coprod2 t t' (x,u) (x',u') o = make_TT TT_Coprod2 [chkt t; chkt t'; make_BB_binder1 x (chkt u); make_BB_binder1 x' (chkt u'); chko o]
+let make_TT_Empty = make_TT TT_Empty []
+let make_TT_IC tA a (x,tB,(y,tD,(z,q))) =
+  make_TT TT_IC [chkt tA; (chko a); make_BB_binder2 x (chkt tB) (make_BB_binder2 y (chkt tD) (make_BB_binder1 z (chko q)))]
+let make_TT_Id t x y = make_TT TT_Id [chkt t;chko x;chko y]
+let make_TT_def name u t o = make_TT (TT_def_app name) (List.flatten [chkulist u;chktlist t;chkolist o])
+let make_TT_nat = make_TT TT_nat []
 
-let make_UU_NumberedEmptyHole i = Expr(UU(UU_NumberedEmptyHole i), [])
+let make_OO_variable v = make_OO (OO_variable v) []
+let make_OO_emptyHole = make_OO OO_emptyHole []
+let make_OO_numberedEmptyHole n = make_OO (OO_numberedEmptyHole n) []
+let make_OO_numeral n = make_OO (OO_numeral n) []
+let make_OO_u m = make_OO OO_u [m]
+let make_OO_j m n = make_OO OO_j [m;n]
+let make_OO_ev f p (v,t) = make_OO OO_ev [f;p;make_BB_binder1 v t]
+let make_OO_lambda t (v,p) = make_OO OO_lambda [t; make_BB_binder1 v p]
+let make_OO_forall m m' o (v,o') = make_OO OO_forall [m;m';o;make_BB_binder1 v o']
+let make_OO_pair a b (x,t) = make_OO OO_pair [a;b;make_BB_binder1 x t]
+let make_OO_pr1 t (x,t') o = make_OO OO_pr1 [t;make_BB_binder1 x t']
+let make_OO_pr2 t (x,t') o = make_OO OO_pr2 [t;make_BB_binder1 x t']
+let make_OO_total m1 m2 o1 (x,o2) = make_OO OO_total [m1;m2;o1;make_BB_binder1 x o2]
+let make_OO_pt = make_OO OO_pt []
+let make_OO_pt_r o (x,t) = make_OO OO_pt_r [o;make_BB_binder1 x t]
+let make_OO_tt = make_OO OO_tt []
+let make_OO_coprod m1 m2 o1 o2 = make_OO OO_coprod [m1; m2; o1; o2]
+let make_OO_ii1 t t' o = make_OO OO_ii1 [t;t';o]
+let make_OO_ii2 t t' o = make_OO OO_ii2 [t;t';o]
+let make_OO_sum tT tT' s s' o (x,tS) = make_OO OO_sum [tT; tT'; s; s'; o; make_BB_binder1 x tS]
+let make_OO_empty = make_OO OO_empty []
+let make_OO_empty_r t o = make_OO OO_empty_r [chkt t;chko o]
+let make_OO_c tA a (x,tB,(y,tD,(z,q))) b f = make_OO OO_c [chko a; make_BB_binder2 x tB (make_BB_binder2 y tD (make_BB_binder1 z q))]
 
-let make_UU_def_app name us = chkulist us; Expr(UU(UU_def_app name), us)
+let make_OO_ic_r tA a (x,tB,(y,tD,(z,q))) i (x',(v,tS)) t = make_OO OO_ic_r [
+  chkt tA; 
+  chko a;
+  make_BB_binder2 x (chkt tB) (make_BB_binder2 y (chkt tD) (make_BB_binder1 z q));
+  chko i; 
+  make_BB_binder1  x' (make_BB_binder1 v tS); 
+  chkt t]
+let make_OO_ic m1 m2 m3 oA a (x,oB,(y,oD,(z,q))) = make_OO OO_ic [
+  chku m1;
+  chku m2;
+  chku m3;
+  chko oA;
+  chko a;
+  make_BB_binder2 x (chko oB) (make_BB_binder2 y (chko oD) (make_BB_binder1 z (chko q)))]
+let make_OO_paths m t x y = make_OO OO_paths [chku m; chkt t; chko x; chko y]
+let make_OO_refl t o = make_OO OO_refl [chkt t; chko o]
+let make_OO_J tT a b q i (x,(e,tS)) = make_OO OO_J [chkt tT; chko a; chko b; chko q; chko i; make_BB_binder1 x (make_BB_binder1 e (chkt tS))]
+let make_OO_rr0 m2 m1 s t e = make_OO OO_rr0 [chku m2; chku m1; chko s; chko t; chko e]
+let make_OO_rr1 m a p = make_OO OO_rr1 [chku m; chko a; chko p]
+let make_OO_def name u t c = make_OO (OO_def_app name) (List.flatten [chkulist u; chktlist t; chkolist c])
 
 let rec uconvert (u:uExpr) : expr = (
   match u with (pos,u') -> withpos pos (
@@ -384,6 +462,65 @@ let rec uconvert (u:uExpr) : expr = (
     | UNumberedEmptyHole i -> make_UU_NumberedEmptyHole i
     | U_def (name,us) ->  make_UU_def_app name (List.map uconvert us)
   ))
+
+let rec tconvert (t:tExpr) : expr = (
+  match t with (pos,t') -> withpos pos (
+    match t' with
+  | T_EmptyHole -> make_TT_EmptyHole
+  | T_NumberedEmptyHole n -> make_TT_NumberedEmptyHole n
+  | T_variable x -> make_TT_variable x
+  | T_El x -> make_TT_El (oconvert x)
+  | T_U x -> make_TT_U (uconvert x)
+  | T_Pi (t1,(x,t2)) -> make_TT_Pi (tconvert t1) (x,tconvert t2)
+  | T_Sigma (t,(x,t')) -> make_TT_Sigma (tconvert t) (x,tconvert t')
+  | T_Pt -> make_TT_Pt
+  | T_Coprod (t,t') -> make_TT_Coprod (tconvert t) (tconvert t')
+  | T_Coprod2 (t,t',(x,u),(x',u'),o) -> make_TT_Coprod2 (tconvert t) (tconvert t') (x,tconvert u) (x',tconvert u') (oconvert o)
+  | T_Empty -> make_TT_Empty
+  | T_IC (tA,a,(x,tB,(y,tD,(z,q)))) -> make_TT_IC (tconvert tA) (oconvert a) (x,tconvert tB,(y,tconvert tD,(z,oconvert q)))
+  | T_Id (t,x,y) -> make_TT_Id (tconvert t) (oconvert x) (oconvert y)
+  | T_def (name,u,t,o) -> make_TT_def name (List.map uconvert u) (List.map tconvert t) (List.map oconvert o)
+  | T_nat -> make_TT_nat
+  ))
+and oconvert (o:oExpr) : expr = (
+  match o with (pos,o') -> withpos pos (
+    match o' with 
+  | O_variable v -> make_OO_variable v
+  | O_emptyHole -> make_OO_emptyHole 
+  | O_numberedEmptyHole n -> make_OO_numberedEmptyHole n
+  | O_numeral n -> make_OO_numeral n
+  | O_u m -> make_OO_u (uconvert m)
+  | O_j (m,n) -> make_OO_j (uconvert m) (uconvert n)
+  | O_ev (f,p,(v,t)) -> make_OO_ev (oconvert f) (oconvert p) (v,tconvert t)
+  | O_lambda (t,(v,p)) -> make_OO_lambda (tconvert t) (v,oconvert p)
+  | O_forall (m,m',o,(v,o')) -> make_OO_forall (uconvert m) (uconvert m') (oconvert o) (v,oconvert o')
+  | O_pair (a,b,(x,t)) -> make_OO_pair (oconvert a) (oconvert b) (x,tconvert t)
+  | O_pr1 (t,(x,t'),o) -> make_OO_pr1 (tconvert t) (x,tconvert t') (oconvert o)
+  | O_pr2 (t,(x,t'),o) -> make_OO_pr2 (tconvert t) (x,tconvert t') (oconvert o)
+  | O_total (m1,m2,o1,(x,o2)) -> make_OO_total (uconvert m1) (uconvert m2) (oconvert o1) (x,oconvert o2)
+  | O_pt -> make_OO_pt 
+  | O_pt_r (o,(x,t)) -> make_OO_pt_r (oconvert o) (x,tconvert t)
+  | O_tt -> make_OO_tt 
+  | O_coprod (m1,m2,o1,o2) -> make_OO_coprod (uconvert m1) (uconvert m2) (oconvert o1) (oconvert o2)
+  | O_ii1 (t,t',o) -> make_OO_ii1 (tconvert t) (tconvert t') (oconvert o)
+  | O_ii2 (t,t',o) -> make_OO_ii2 (tconvert t) (tconvert t') (oconvert o)
+  | O_sum (tT,tT',s,s',o,(x,tS)) -> make_OO_sum (tconvert tT) (tconvert tT') (oconvert s) (oconvert s') (oconvert o) (x,tconvert tS)
+  | O_empty -> make_OO_empty 
+  | O_empty_r (t,o) -> make_OO_empty_r (tconvert t) (oconvert o)
+  | O_c (tA,a,(x,tB,(y,tD,(z,q))),b,f) -> 
+      make_OO_c (tconvert tA) (oconvert a) (x,tconvert tB,(y,tconvert tD,(z,oconvert q))) (oconvert b) (oconvert f)
+  | O_ic_r (tA,a,(x,tB,(y,tD,(z,q))),i,(x',v,tS),t) -> 
+      make_OO_ic_r (tconvert tA) (oconvert a) (x,tconvert tB,(y,tconvert tD,(z,oconvert q))) (oconvert i) (x',(v,tconvert tS)) (oconvert t)
+  | O_ic (m1,m2,m3,oA,a,(x,oB,(y,oD,(z,q)))) -> 
+      make_OO_ic (uconvert m1) (uconvert m2) (uconvert m3) (oconvert oA) (oconvert a) (x,oconvert oB,(y,oconvert oD,(z,oconvert q)))
+  | O_paths (m,t,x,y) -> make_OO_paths (uconvert m) (oconvert t) (oconvert x) (oconvert y)
+  | O_refl (t,o) -> make_OO_refl (tconvert t) (oconvert o)
+  | O_J (tT,a,b,q,i,(x,e,tS)) -> 
+      make_OO_J (tconvert tT) (oconvert a) (oconvert b) (oconvert q) (oconvert i) (x, (e, tconvert tS))
+  | O_rr0 (m2,m1,s,t,e) -> make_OO_rr0 (uconvert m2) (uconvert m1) (oconvert s) (oconvert t) (oconvert e)
+  | O_rr1 (m,a,p) -> make_OO_rr1 (uconvert m) (oconvert a) (oconvert p)
+  | O_def (name,u,t,c) -> make_OO_def name (List.map uconvert u) (List.map tconvert t) (List.map oconvert c
+   )))
 
 (** 
     A universe context [UC = (Fu,A)] is represented by a list of universe variables [Fu] and a list of
@@ -438,3 +575,10 @@ let obind (v,t) env = match v with
   | OVarGen (_,_) -> { env with oc = (v,t) :: env.oc }
   | OVarUnused -> env
   | OVarEmptyHole -> env
+
+
+(*
+  Local Variables:
+  compile-command: "ocamlbuild typesystem.cmo "
+  End:
+ *)
