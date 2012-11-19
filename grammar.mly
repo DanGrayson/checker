@@ -255,7 +255,11 @@ tExpr0:
     o=separated_list(Wcomma,oExpr) 
     Wrparen { T_def(name,u,t,o) }
 uExpr: u=uExpr0 
-    {Position($startpos, $endpos), u}
+    {
+     let u = Position($startpos, $endpos), u in
+     let _ = uconvert u in 		(*testing*)
+     u
+   }
 | u=parenthesized(uExpr)
     {u}
 uExpr0:

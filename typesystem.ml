@@ -287,6 +287,104 @@ and oExpr' =
 	     conflicts, when numerals such as 4, can be considered either as
 	     o-expressions (S(S(S(S O)))) or as universe levels.  *)
 
+(** Redesign the structure of expressions, for versatility *)
+type expr = Expr of exprHead * expr list
+and exprHead =
+  | PP of position
+  | HH_binder of oVar
+  | UU of uHead
+  | TT of tHead
+  | OO of oHead
+and uHead =
+  | UU_variable of uVar'
+  | UU_plus of int
+  | UU_max
+  | UU_EmptyHole
+  | UU_NumberedEmptyHole of int
+  | UU_def_app of string
+and tHead =
+  | TT_variable of tVar'
+  | TT_EmptyHole
+  | TT_NumberedEmptyHole of int
+  | TT_El
+  | TT_U
+  | TT_Pi
+  | TT_Sigma
+  | TT_Pt
+  | TT_Coprod
+  | TT_Coprod2
+  | TT_Empty
+  | TT_IC
+  | TT_Id
+  | TT_def_app of string
+and oHead =
+  | OO_variable of oVar'
+  | OO_emptyHole
+  | OO_numberedEmptyHole of int
+  | OO_u
+  | OO_j
+  | OO_ev
+  | OO_lambda
+  | OO_forall
+  | OO_pair
+  | OO_pr1
+  | OO_pr2
+  | OO_total
+  | OO_pt
+  | OO_pt_r
+  | OO_tt
+  | OO_coprod
+  | OO_ii1
+  | OO_ii2
+  | OO_sum
+  | OO_empty
+  | OO_empty_r
+  | OO_c
+  | OO_ic_r
+  | OO_ic
+  | OO_paths
+  | OO_refl
+  | OO_J
+  | OO_rr0
+  | OO_rr1
+  | OO_def_app of string
+
+let withpos pos = function
+| Expr(PP _, u) -> Expr(PP pos,  u )
+|            u  -> Expr(PP pos, [u])
+
+let isu u = match u with
+| Expr(PP _, [Expr(UU _, _)])
+| Expr(UU _, _) -> true
+| _ -> false
+
+let chku u = if not (isu u) then raise InternalError
+
+let chkulist us = List.iter chku us
+
+let make_UU_variable u = Expr(UU(UU_variable u), [])
+
+let make_UU_plus u i  = chku u; Expr(UU(UU_plus i), [u])
+
+let make_UU_max u v = chku u; chku v; Expr(UU(UU_max), [u;v])
+
+let make_UU_EmptyHole () = Expr(UU(UU_EmptyHole), [])
+
+let make_UU_NumberedEmptyHole i = Expr(UU(UU_NumberedEmptyHole i), [])
+
+let make_UU_def_app name us = chkulist us; Expr(UU(UU_def_app name), us)
+
+let rec uconvert (u:uExpr) : expr = (
+  match u with (pos,u') -> withpos pos (
+    match u' with
+    | Uvariable v -> make_UU_variable v
+    | Uplus (u,i) -> make_UU_plus (uconvert u) i
+    | Umax (u,v) -> make_UU_max (uconvert u) (uconvert v)
+    | UEmptyHole -> make_UU_EmptyHole ()
+    | UNumberedEmptyHole i -> make_UU_NumberedEmptyHole i
+    | U_def (name,us) ->  make_UU_def_app name (List.map uconvert us)
+  ))
+
 (** 
     A universe context [UC = (Fu,A)] is represented by a list of universe variables [Fu] and a list of
     equations [M_i = N_i] between two u-level expressions formed from the variables in [Fu]
