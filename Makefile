@@ -7,8 +7,8 @@ BFLAGS += -use-menhir
 # BFLAGS += -verbose 0
 SRCFILES =					\
 	typesystem.ml				\
-	alpha.ml				\
 	universe.ml				\
+	alpha.ml				\
 	substitute.ml				\
 	check.ml				\
 	equality.ml				\

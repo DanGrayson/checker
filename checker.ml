@@ -102,7 +102,7 @@ let tPrintCommand x =
   Printf.printf "Print type: %s\n" (Printer.ttostring x);
   flush stdout;
   let x' = protect tfix x nopos in
-  if not (Alpha.tequal x' x) then Printf.printf "      : %s\n" (Printer.ttostring x');
+  if not (Alpha.UEqual.tequiv (!environment).uc x' x) then Printf.printf "      : %s\n" (Printer.ttostring x');
   flush stdout
 
 let uCheckCommand x =
@@ -125,7 +125,7 @@ let oPrintCommand x =
   Printf.printf "Print: %s\n" (Printer.otostring x); 
   flush stdout;
   let x' = protect ofix x nopos in
-  if not (Alpha.oequal x' x) then Printf.printf "      : %s\n" (Printer.otostring x');
+  if not (Alpha.UEqual.oequiv (!environment).uc x' x) then Printf.printf "      : %s\n" (Printer.otostring x');
   flush stdout
 
 let uPrintCommand x =
@@ -135,7 +135,7 @@ let uPrintCommand x =
 let tAlphaCommand (x,y) =
   let x = protect tfix x nopos in
   let y = protect tfix y nopos in
-  Printf.printf "tAlpha: %s\n" (if (Alpha.tequal x y) then "true" else "false");
+  Printf.printf "tAlpha: %s\n" (if (Alpha.UEqual.tequiv (!environment).uc x y) then "true" else "false");
   Printf.printf "      : %s\n" (Printer.ttostring x);
   Printf.printf "      : %s\n" (Printer.ttostring y);
   flush stdout
@@ -143,13 +143,13 @@ let tAlphaCommand (x,y) =
 let oAlphaCommand = fun (x,y) ->
   let x = protect ofix x nopos in
   let y = protect ofix y nopos in
-  Printf.printf "oAlpha: %s\n" (if (Alpha.oequal x y) then "true" else "false");
+  Printf.printf "oAlpha: %s\n" (if (Alpha.UEqual.oequiv (!environment).uc x y) then "true" else "false");
   Printf.printf "      : %s\n" (Printer.otostring x);
   Printf.printf "      : %s\n" (Printer.otostring y);
   flush stdout
 
 let uAlphaCommand = fun (x,y) -> 
-  Printf.printf "uAlpha: %s\n" (if (Alpha.uequal x y) then "true" else "false");
+  Printf.printf "uAlpha: %s\n" (if (Alpha.UEqual.uequiv (!environment).uc x y) then "true" else "false");
   Printf.printf "      : %s\n" (Printer.utostring x);
   Printf.printf "      : %s\n" (Printer.utostring y);
   flush stdout
