@@ -12,7 +12,7 @@ Define type equality e := X == Y.
 
 Show.
 
-Check lambda x:T, lambda y:U, [odef;foo](u1,u2;T,U;x,y).
+# Check lambda x:T, lambda y:U, [odef;foo](u1,u2;T,U;x,y).
 
 Check lambda x:T, x.
 Check type T.

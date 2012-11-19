@@ -152,7 +152,11 @@ tVar0: IDENTIFIER { TVar $1 }
 uVar0: IDENTIFIER { UVar $1 }
 
 oExpr: o=oExpr0
-    {Position($startpos, $endpos), o}
+    {
+     let o = Position($startpos, $endpos), o in
+     let _ = oconvert o in 		(*testing*)
+     o
+   }
 | o=parenthesized(oExpr) 
     {o}
 oExpr0:
@@ -203,7 +207,11 @@ oExpr0:
     { O_numeral n }			(* experimental *)
 
 tExpr: t=tExpr0 
-    {Position($startpos, $endpos), t}
+    {
+     let t = Position($startpos, $endpos), t in
+     let _ = tconvert t in 		(*testing*)
+     t
+   }
 | t=parenthesized(tExpr)
     {t}
 tExpr0:
