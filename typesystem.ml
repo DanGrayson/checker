@@ -285,21 +285,14 @@ and oExpr' =
 (** Redesign the structure of expressions, for versatility *)
 type expr = 
   | Expr of exprHead * expr list
-  | UU_variable of uVar'
+  | UU of uExpr'
   | TT_variable of tVar'
   | OO_variable of oVar'
   | POS of position * expr
 and exprHead =
   | OO_binder of oVar
-  | UU of uHead
   | TT of tHead
   | OO of oHead
-and uHead =
-  | UU_plus of int
-  | UU_max
-  | UU_EmptyHole
-  | UU_NumberedEmptyHole of int
-  | UU_def_app of string
 and tHead =
   | TT_EmptyHole
   | TT_NumberedEmptyHole of int
@@ -351,8 +344,7 @@ let withpos pos u = POS (pos, u)
 
 let rec isU = function
 | POS(_,x) -> isU x
-| UU_variable _ -> true
-| Expr(UU _, _) -> true
+| UU _ -> true
 | _ -> false
 let chku u = if not (isU u) then raise InternalError; u
 let chkulist us = List.iter (fun u -> let _ = chku u in ()) us; us
@@ -373,21 +365,14 @@ let rec isO = function
 let chko o = if not (isO o) then raise InternalError; o
 let chkolist os = List.iter (fun o -> let _ = chko o in ()) os; os
 
-let make_UU h a = Expr(UU h, a)
+let make_UU u = UU u
 let make_TT h a = Expr(TT h, a)
 let make_OO h a = Expr(OO h, a)
-let make_UU_variable u = UU_variable u
 let make_TT_variable x = TT_variable x
 let make_OO_variable v = OO_variable v
 
 let make_OO_binder1 v x = Expr(OO_binder v, [x])
 let make_OO_binder2 v x y = Expr(OO_binder v, [x;y])
-
-let make_UU_plus u i  = make_UU (UU_plus i) [chku u]
-let make_UU_max u v = make_UU UU_max [chku u;chku v]
-let make_UU_EmptyHole () = make_UU UU_EmptyHole []
-let make_UU_NumberedEmptyHole i = make_UU (UU_NumberedEmptyHole i) []
-let make_UU_def_app name us = make_UU (UU_def_app name) (chkulist us)
 
 let make_TT_EmptyHole = make_TT TT_Empty []
 let make_TT_NumberedEmptyHole n = make_TT (TT_NumberedEmptyHole n) []
@@ -451,16 +436,7 @@ let make_OO_rr0 m2 m1 s t e = make_OO OO_rr0 [chku m2; chku m1; chko s; chko t; 
 let make_OO_rr1 m a p = make_OO OO_rr1 [chku m; chko a; chko p]
 let make_OO_def name u t c = make_OO (OO_def_app name) (List.flatten [chkulist u; chktlist t; chkolist c])
 
-let rec uconvert (u:uExpr) : expr = (
-  match u with (pos,u') -> withpos pos (
-    match u' with
-    | Uvariable v -> make_UU_variable v
-    | Uplus (u,i) -> make_UU_plus (uconvert u) i
-    | Umax (u,v) -> make_UU_max (uconvert u) (uconvert v)
-    | UEmptyHole -> make_UU_EmptyHole ()
-    | UNumberedEmptyHole i -> make_UU_NumberedEmptyHole i
-    | U_def (name,us) ->  make_UU_def_app name (List.map uconvert us)
-  ))
+let rec uconvert (u:uExpr) : expr = match u with (pos,u') -> withpos pos (make_UU u')
 
 let rec tconvert (t:tExpr) : expr = (
   match t with (pos,t') -> withpos pos (
