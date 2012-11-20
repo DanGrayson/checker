@@ -2,93 +2,136 @@
 
 open Typesystem
 
+let uvartostring' (UVar x) = x
+let uvartostring v = uvartostring' (strip_pos_var v)
+
+let tvartostring' (TVar x) = x
+let tvartostring v = tvartostring' (strip_pos_var v)
+
 let ovartostring' = function
   | OVar x -> x
   | OVarGen(i,x) -> x ^ "_" ^ (string_of_int i)
   | OVarEmptyHole -> "_"
   | OVarUnused -> "_"
-let ovartostring v = ovartostring' (strip_pos v)
+let ovartostring v = ovartostring' (strip_pos_var v)
 
-let uvartostring' (UVar x) = x
-let uvartostring v = uvartostring' (strip_pos v)
-
-let rec utostring u = match strip_pos u with
+let rec utostring u = match u with
   | UEmptyHole -> "_"
   | UNumberedEmptyHole n -> "_" ^ (string_of_int n)
   | Uvariable x -> uvartostring' x
   | Uplus (x,n) -> "(" ^ (utostring x) ^ "+" ^ (string_of_int n) ^ ")"
   | Umax (x,y) -> "max(" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
-  | U_def (d,u) -> "[udef;" ^ d ^ "](" ^ (ulisttostring u) ^ ")"
-and ulisttostring s = String.concat "," (List.map utostring s)
+  | U_def (d,u) -> "[udef;" ^ d ^ "](" ^ (elisttostring u) ^ ")"
+and elisttostring s = String.concat "," (List.map utostring s)
 
 let ueqntostring (u,v) = "; " ^ (utostring u) ^ "=" ^ (utostring v)
 
-let tvartostring' (TVar x) = x
-let tvartostring v = tvartostring' (strip_pos v)
+let rec etostring = function
+  | POS(_,e) -> etostring e
+  | UU u -> utostring u
+  | TT_variable t -> tvartostring' t
+  | OO_variable o -> ovartostring' o
+  | Expr(h,args) -> (
+      let args = List.map strip_pos args in 
+      match h with
+      | OO_binder x -> "[BIND;" ^ (ovartostring x) ^ "]" ^ (parenelisttostring args)
+      | TT th -> (
+	  match th with 
+	  | TT_EmptyHole -> "_"
+	  | TT_NumberedEmptyHole n -> "_" ^ (string_of_int  n)
+	  | TT_El -> "[El]" ^ (parenelisttostring args)
+	  | TT_U -> "[U]" ^ (parenelisttostring args)
+	  | TT_Pi -> (
+	      match args with
+	      | [t1; b] -> (
+		  match b with
+		  | Expr( OO_binder x, [t2] ) -> "[Pi;" ^ (ovartostring x) ^ "](" ^ (etostring t1) ^ "," ^ (etostring t2) ^ ")"
+		  | _ -> raise InternalError)
+	      | _ -> raise InternalError)
+	  | TT_Sigma -> (
+	      match args with [t1; b] -> (
+		match b with
+		| Expr( OO_binder x, [t2] ) -> "[Sigma;" ^ (ovartostring x) ^ "](" ^ (etostring t1) ^ "," ^ (etostring t2) ^ ")"
+		| _ -> raise InternalError)
+	      | _ -> raise InternalError)
+	  | TT_Pt -> "[Pt]()"
+	  | TT_Coprod -> "[Coprod]" ^ (parenelisttostring args)
+	  | TT_Coprod2 -> (
+	      match args with 
+	      | [t;t';Expr( OO_binder x, [u] );Expr( OO_binder x', [u'] );o] ->
+		  "[Coprod;" ^ (ovartostring x) ^ "," ^ (ovartostring x') ^ "](" 
+		  ^ (etostring t) ^ "," ^ (etostring t) ^ ","
+		  ^ (etostring u) ^ "," ^ (etostring u') ^ ","
+		  ^ (etostring o)
+		  ^ ")"
+	      | _ -> raise InternalError)
+	  | TT_Empty -> "[Empty]" ^ (parenelisttostring args)
+	  | TT_IC -> (
+	      match args with 
+		[tA;a;Expr( OO_binder x, [tB;c])] -> (
+		  match strip_pos c with 
+		  | Expr( OO_binder y, [tD;d]) -> (
+		      match strip_pos d with
+		      | Expr( OO_binder z, [q]) -> 
+			  "[IC;" ^ (ovartostring x) ^ "," ^ (ovartostring y) ^ "," ^ (ovartostring z) ^ "]("
+			  ^ (etostring tA) ^ "," ^ (etostring a) ^ "," ^ (etostring tB) ^ "," ^ (etostring tD) ^ "," ^ (etostring q) ^ ")"
+		      | _ -> raise InternalError)
+		  | _ -> raise InternalError)
+	      | _ -> raise InternalError)
+	  | TT_Id -> "[Id]" ^ (parenelisttostring args)
+	  | TT_def_app d -> "[tdef;" ^ d ^ "]" ^ (parenelisttostring args)
+	  | TT_nat -> "nat" 
+	 )
+      | OO oh -> (
+	  match oh with
+	  | OO_emptyHole -> "_"
+	  | OO_numberedEmptyHole n -> "_" ^ (string_of_int  n)
+	  | OO_u -> "[u]" ^ (parenelisttostring args)
+	  | OO_j -> "[j]" ^ (parenelisttostring args)
+	  | OO_ev -> (
+	      match args with 
+	      | [f;o;Expr(OO_binder x,[t])] ->
+		  "[ev;" ^ (ovartostring x) ^ "](" ^ (etostring f) ^ "," ^ (etostring o) ^ "," ^ (etostring t) ^ ")"
+	      | _ -> raise InternalError)
+	  | OO_lambda -> (
+	      match args with 
+	      | [t;Expr(OO_binder x,[o])] ->
+		  "[lambda;" ^ (ovartostring x) ^ "](" ^ (etostring t) ^ "," ^ (etostring o) ^ ")"
+	      | _ -> raise InternalError)
+	  | OO_forall -> (
+	      match args with 
+	      | [u;u';o;Expr(OO_binder x,[o'])] ->
+		  "[forall;" ^ (ovartostring x) ^ "](" ^ (etostring u) ^ "," ^ (etostring u') ^ "," ^ (etostring o) ^ "," ^ (etostring o') ^ ")"
+	      | _ -> raise InternalError)
+	  | OO_def_app d -> "[tdef;" ^ d ^ "]" ^ (parenelisttostring args)
+	  | OO_numeral i -> string_of_int i
+	  | OO_pair -> "[pair]" ^ (parenelisttostring args)
+	  | OO_pr1 -> "[pr1]" ^ (parenelisttostring args)
+	  | OO_pr2 -> "[pr2]" ^ (parenelisttostring args)
+	  | OO_total -> "[total]" ^ (parenelisttostring args)
+	  | OO_pt -> "[pt]" ^ (parenelisttostring args)
+	  | OO_pt_r -> "[pt_r]" ^ (parenelisttostring args)
+	  | OO_tt -> "[tt]" ^ (parenelisttostring args)
+	  | OO_coprod -> "[coprod]" ^ (parenelisttostring args)
+	  | OO_ii1 -> "[ii1]" ^ (parenelisttostring args)
+	  | OO_ii2 -> "[ii2]" ^ (parenelisttostring args)
+	  | OO_sum -> "[sum]" ^ (parenelisttostring args)
+	  | OO_empty -> "[empty]()"
+	  | OO_empty_r -> "[empty_r]" ^ (parenelisttostring args)
+	  | OO_c -> "[c]" ^ (parenelisttostring args)
+	  | OO_ic_r -> "[ic_r]" ^ (parenelisttostring args)
+	  | OO_ic -> "[ic]" ^ (parenelisttostring args)
+	  | OO_paths -> "[paths]" ^ (parenelisttostring args)
+	  | OO_refl -> "[refl]" ^ (parenelisttostring args)
+	  | OO_J -> "[J]" ^ (parenelisttostring args)
+	  | OO_rr0 -> "[rr0]" ^ (parenelisttostring args)
+	  | OO_rr1 -> "[rr1]" ^ (parenelisttostring args)
+	 )
+     )
+and elisttostring s = String.concat "," (List.map etostring s)
+and parenelisttostring s = String.concat "" [ "("; elisttostring s; ")" ]
 
-let rec ttostring = function
-  | (_,t) -> ttostring' t
-and ttostring' = function
-  | T_EmptyHole -> "_"
-  | T_NumberedEmptyHole n -> "_" ^ (string_of_int  n)
-  | T_variable x -> tvartostring' x
-  | T_El x -> "[El](" ^ (otostring x) ^ ")"
-  | T_U x -> "[U](" ^ (utostring x) ^ ")"
-  | T_Pi (t1,(x,t2)) -> "[Pi;" ^ (ovartostring x) ^ "](" ^ (ttostring t1) ^ "," ^ (ttostring t2) ^ ")"
-  | T_Sigma (t,(x,t')) -> "[Sigma;" ^ (ovartostring x) ^ "](" ^ (ttostring t) ^ "," ^ (ttostring t') ^ ")"
-  | T_Pt -> "[Pt]()"
-  | T_Coprod (t,t') -> "[Coprod](" ^ (ttostring t) ^ "," ^ (ttostring t) ^ ")"
-  | T_Coprod2 (t,t',(x,u),(x',u'),o) 
-    -> "[Coprod;" ^ (ovartostring x) ^ "," ^ (ovartostring x') ^ "](" 
-      ^ (ttostring t) ^ "," ^ (ttostring t) ^ ","
-      ^ (ttostring u) ^ "," ^ (ttostring u') ^ ","
-      ^ (otostring o)
-      ^ ")"
-  | T_Empty -> "[Empty]()"
-  | T_IC (tA,a,(x,tB,(y,tD,(z,q))))
-    -> "[IC;" ^ (ovartostring x) ^ "," ^ (ovartostring y) ^ "," ^ (ovartostring z) ^ "]("
-      ^ (ttostring tA) ^ "," ^ (otostring a) ^ "," ^ (ttostring tB) ^ "," ^ (ttostring tD) ^ "," ^ (otostring q) ^ ")"
-  | T_Id (t,x,y) -> "[Id](" ^ (ttostring t) ^ "," ^ (otostring x) ^ "," ^ (otostring y) ^ ")"
-  | T_def (d,u,t,o) -> "[tdef;" ^ d ^ "](" ^ (ulisttostring u) ^ ";" ^ (tlisttostring t) ^ ";" ^ (olisttostring o) ^ ")"
-  | T_nat -> "nat"
-and otostring = function
-  | (_,o) -> otostring' o
-and otostring' = function
-  | O_emptyHole -> "_"
-  | O_numberedEmptyHole n -> "_" ^ (string_of_int  n)
-  | O_variable x -> ovartostring' x
-  | O_u x -> "[u](" ^ (utostring x) ^ ")"
-  | O_j (x,y) -> "[j](" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
-  | O_ev (f,o,(x,t)) -> "[ev;" ^ (ovartostring x) ^ "](" ^ (otostring f) ^ "," ^ (otostring o) ^ "," ^ (ttostring t) ^ ")"
-  | O_lambda (t,(x,o)) -> "[lambda;" ^ (ovartostring x) ^ "](" ^ (ttostring t) ^ "," ^ (otostring o) ^ ")"
-  | O_forall (u,u',o,(x,o')) -> "[forall;" ^ (ovartostring x) ^ "](" ^ (utostring u) ^ "," ^ (utostring u') ^ "," ^ (otostring o) ^ "," ^ (otostring o') ^ ")"
-  | O_def (d,u,t,o) -> "[odef;" ^ d ^ "](" ^ (ulisttostring u) ^ ";" ^ (tlisttostring t) ^ ";" ^ (olisttostring o) ^ ")"
-  | O_numeral i -> string_of_int i
-  | O_pair _
-  | O_pr1 _
-  | O_pr2 _
-  | O_total _
-  | O_pt
-  | O_pt_r _
-  | O_tt
-  | O_coprod _
-  | O_ii1 _
-  | O_ii2 _
-  | O_sum _ -> raise NotImplemented
-  | O_empty -> "[empty]()"
-  | O_empty_r (t,o) -> "[empty_r](" ^ (ttostring t) ^ "," ^ (otostring o) ^ ")"
-  | O_c _
-  | O_ic_r _
-  | O_ic _
-  | O_paths _
-  | O_refl _
-  | O_J _
-  | O_rr0 _
-  | O_rr1 _ -> raise NotImplemented
-and tlisttostring s = String.concat "," (List.map ttostring s)
-and olisttostring s = String.concat "," (List.map otostring s)
-
-let octostring (v,t) = (ovartostring' v) ^ ":" ^ (ttostring t)
+let octostring (v,t) = (ovartostring' v) ^ ":" ^ (etostring t)
 
 let parmstostring = function
   | ((UContext(uvars,ueqns):uContext),(tc:tContext),(oc:oContext)) 
@@ -106,10 +149,10 @@ let parmstostring = function
 	
 let definitiontostring = function
   | TDefinition   (Ident n,(c,  t   ))
-    -> "Define type "         ^n^(parmstostring c)^" := "^(ttostring t)^"."
+    -> "Define type "         ^n^(parmstostring c)^" := "^(etostring t)^"."
   | ODefinition   (Ident n,(c,o,t   )) ->
-      "Define "               ^n^(parmstostring c)^" := "^(otostring o)^" : "^(ttostring t)^"."
+      "Define "               ^n^(parmstostring c)^" := "^(etostring o)^" : "^(etostring t)^"."
   | TeqDefinition (Ident n,(c,t,t'  ))
-    -> "Define type equality "^n^(parmstostring c)^" := "^(ttostring t)^" == "^(ttostring t')^"."
+    -> "Define type equality "^n^(parmstostring c)^" := "^(etostring t)^" == "^(etostring t')^"."
   | OeqDefinition (Ident n,(c,o,o',t)) 
-    -> "Define equality "     ^n^(parmstostring c)^" := "^(otostring o)^" == "^(otostring o')^" : "^(ttostring t)^"."
+    -> "Define equality "     ^n^(parmstostring c)^" := "^(etostring o)^" == "^(etostring o')^" : "^(etostring t)^"."

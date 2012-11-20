@@ -29,11 +29,10 @@ let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code ha
   in fix [] [] [] p
 
 %}
-%start command unusedtokens uExprEof tExprEof oExprEof
+%start command unusedtokens tExprEof oExprEof
 %type <Toplevel.command> command
-%type <Typesystem.uExpr> uExprEof
-%type <Typesystem.tExpr> tExprEof
-%type <Typesystem.oExpr> oExprEof
+%type <Typesystem.expr> tExprEof
+%type <Typesystem.expr> oExprEof
 %token <int> Nat Wunderscore_numeral
 %type <unit> unusedtokens
 %token <string> IDENTIFIER
@@ -47,7 +46,7 @@ let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code ha
 %token WCheck WCheckUniverses
 %token Wflush
 %token Prec_application
-%token Wudef Wtdef Wodef
+%token Wtdef Wodef
 
 /* precedences, lowest first */
 %right KPi KSigma
@@ -60,7 +59,6 @@ let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code ha
 
 %%
 
-uExprEof: a=uExpr Weof {a}
 tExprEof: a=tExpr Weof {a}
 oExprEof: a=oExpr Weof {a}
 
@@ -129,13 +127,13 @@ uEquation:
 | u=uExpr Wequal v=uExpr 
     { (u,v) }
 | u=uExpr Wgreaterequal v=uExpr 
-    { nowhere(Umax(u,v)), u }
+    { (Umax(u,v)), u }
 | u=uExpr Wlessequal v=uExpr 
-    { nowhere(Umax(u,v)), v }
+    { (Umax(u,v)), v }
 | u=uExpr Wgreater v=uExpr 
-    { nowhere(Umax(u,nowhere(Uplus(v,1)))), u }
+    { (Umax(u,(Uplus(v,1)))), u }
 | u=uExpr Wless v=uExpr 
-    { nowhere(Umax(nowhere(Uplus(u,1)),v)), v }
+    { (Umax((Uplus(u,1)),v)), v }
 
 parenthesized(X): x=delimited(Wlparen,X,Wrparen) {x}
 list_of_parenthesized(X): list(parenthesized(X)) {$1}
@@ -152,122 +150,112 @@ tVar0: IDENTIFIER { TVar $1 }
 uVar0: IDENTIFIER { UVar $1 }
 
 oExpr: o=oExpr0
-    {
-     let o = Position($startpos, $endpos), o in
-     let _ = oconvert o in 		(*testing*)
-     o
-   }
+    { with_pos (Position($startpos, $endpos)) o }
 | o=parenthesized(oExpr) 
     {o}
 oExpr0:
 | Wunderscore
-    { O_emptyHole }
+    { make_OO_emptyHole }
 | Wunderscore_numeral 
-    { O_numberedEmptyHole $1 }
+    { make_OO_numberedEmptyHole $1 }
 | x=oVar0
-    { O_variable x }
-| Wu Wlparen u=uExpr Wrparen
-    { O_u u }
-| Wj Wlparen u=uExpr Wcomma v=uExpr Wrparen
-    { O_j(u,v) }
+    { make_OO_variable x }
+| Wu Wlparen u=euExpr Wrparen
+    { make_OO_u u }
+| Wj Wlparen u=euExpr Wcomma v=euExpr Wrparen
+    { make_OO_j u v }
 | Wev x=oVar Wrbracket Wlparen f=oExpr Wcomma o=oExpr Wcomma t=tExpr Wrparen
-    { O_ev(f,o,(x,t)) }
+    { make_OO_ev f o (x,t) }
 | Wev Wunderscore Wrbracket Wlparen f=oExpr Wcomma o=oExpr Wcomma t=tExpr Wrparen
-    { O_ev(f,o,(nowhere OVarUnused,t)) }
+    { make_OO_ev f o ((Nowhere, OVarUnused), t) }
 | f=oExpr o=oExpr
     %prec Prec_application
-    { O_ev(f,o,(nowhere OVarEmptyHole,nowhere T_EmptyHole)) }
+    { make_OO_ev f o ((Nowhere, OVarEmptyHole), make_TT_EmptyHole) }
 | Wlambda x=oVar Wrbracket Wlparen t=tExpr Wcomma o=oExpr Wrparen
-    { O_lambda(t,(x,o)) }
+    { make_OO_lambda t (x,o) }
 | Klambda x=oVar Wcolon t=tExpr Wcomma o=oExpr
     %prec Klambda
-    { O_lambda(t,(x,o)) }
-| Wforall x=oVar Wrbracket Wlparen u1=uExpr Wcomma u2=uExpr Wcomma o1=oExpr Wcomma o2=oExpr Wrparen
-    { O_forall(u1,u2,o1,(x,o2)) }
+    { make_OO_lambda t (x,o) }
+| Wforall x=oVar Wrbracket Wlparen u1=euExpr Wcomma u2=euExpr Wcomma o1=oExpr Wcomma o2=oExpr Wrparen
+    { make_OO_forall u1 u2 o1 (x,o2) }
 | Kforall x=oVar Wcolon Wstar o1=oExpr Wcomma o2=oExpr (* not sure about this syntax *)
     %prec Kforall
-    { O_forall(nowhere UEmptyHole,nowhere UEmptyHole, o1,(x,o2)) }
+    { make_OO_forall (make_UU UEmptyHole) (make_UU UEmptyHole) o1 (x,o2) }
 | Wempty Wlparen Wrparen
-    { O_empty }
+    { make_OO_empty }
 | Wempty_r Wlparen t=tExpr Wcomma o=oExpr Wrparen
-    { O_empty_r(t,o) }
+    { make_OO_empty_r t o }
 | Wodef name=IDENTIFIER Wrbracket Wlparen 
-    u=separated_list(Wcomma,uExpr) 
-    Wrparen { O_def(name,u,[],[]) }
+    u=separated_list(Wcomma,euExpr) 
+    Wrparen { make_OO_def_app name u [] [] }
 | Wodef name=IDENTIFIER Wrbracket Wlparen 
-    u=separated_list(Wcomma,uExpr) Wsemi
+    u=separated_list(Wcomma,euExpr) Wsemi
     t=separated_list(Wcomma,tExpr) 
-    Wrparen { O_def(name,u,t,[]) }
+    Wrparen { make_OO_def_app name u t [] }
 | Wodef name=IDENTIFIER Wrbracket Wlparen 
-    u=separated_list(Wcomma,uExpr) Wsemi
+    u=separated_list(Wcomma,euExpr) Wsemi
     t=separated_list(Wcomma,tExpr) Wsemi
     o=separated_list(Wcomma,oExpr) 
-    Wrparen { O_def(name,u,t,o) }
+    Wrparen { make_OO_def_app name u t o }
 | n=Nat
-    { O_numeral n }			(* experimental *)
+    { make_OO_numeral n }			(* experimental *)
 
 tExpr: t=tExpr0 
-    {
-     let t = Position($startpos, $endpos), t in
-     let _ = tconvert t in 		(*testing*)
-     t
-   }
+    { with_pos (Position($startpos, $endpos)) t }
 | t=parenthesized(tExpr)
-    {t}
+    { t }
 tExpr0:
 | Wunderscore
-    { T_EmptyHole }
+    { make_TT_EmptyHole }
 | Wunderscore_numeral 
-    { T_NumberedEmptyHole $1 }
+    { make_TT_NumberedEmptyHole $1 }
 | t=tVar0
-    { T_variable t }
+    { make_TT_variable t }
 | WEl Wlparen o=oExpr Wrparen
-    { T_El o }
+    { make_TT_El o }
 | Wstar o=oExpr
-    { T_El o }
-| WU Wlparen u=uExpr Wrparen
-    { T_U u }
+    { make_TT_El o }
+| WU Wlparen u=euExpr Wrparen
+    { make_TT_U u }
 | WPi x=oVar Wrbracket Wlparen t1=tExpr Wcomma t2=tExpr Wrparen 
-    { T_Pi(t1,(x,t2)) }
+    { make_TT_Pi t1 (x,t2) }
 | KPi x=oVar Wcolon t1=tExpr Wcomma t2=tExpr
     %prec KPi
-    { T_Pi(t1,(x,t2)) }
+    { make_TT_Pi t1 (x,t2) }
 | t=tExpr Warrow u=tExpr
-    { T_Pi(t,(nowhere OVarUnused,u)) }
+    { make_TT_Pi t ((Nowhere, OVarUnused),u) }
 | WSigma x=oVar Wrbracket Wlparen t1=tExpr Wcomma t2=tExpr Wrparen
-    { T_Sigma(t1,(x,t2)) }
+    { make_TT_Sigma t1 (x,t2) }
 | KSigma x=oVar Wcolon t1=tExpr Wcomma t2=tExpr
     %prec KSigma
-    { T_Sigma(t1,(x,t2)) }
+    { make_TT_Sigma t1 (x,t2) }
 | WCoprod Wlparen t1=tExpr Wcomma t2=tExpr Wrparen
-    { T_Coprod(t1,t2) }
+    { make_TT_Coprod t1 t2 }
 | WCoprod2 x1=oVar Wcomma x2=oVar Wrbracket Wlparen t1=tExpr Wcomma t2=tExpr Wcomma s1=tExpr Wcomma s2=tExpr Wcomma o=oExpr Wrparen
-    { T_Coprod2(t1,t2,(x1,s1),(x2,s2),o) }
+    { make_TT_Coprod2 t1 t2 (x1,s1) (x2,s2) o }
 | WEmpty Wlparen Wrparen 
-    { T_Empty }
+    { make_TT_Empty }
 | WIC x=oVar Wcomma y=oVar Wcomma z=oVar Wrbracket
     Wlparen tA=tExpr Wcomma a=oExpr Wcomma tB=tExpr Wcomma tD=tExpr Wcomma q=oExpr Wrparen 
-    { T_IC(tA,a,(x,tB,(y,tD,(z,q)))) }
+    { make_TT_IC tA a (x,tB,(y,tD,(z,q))) }
 | WId Wlparen t=tExpr Wcomma a=oExpr Wcomma b=oExpr Wrparen 
-    { T_Id(t,a,b) }
+    { make_TT_Id t a b }
 | Wtdef name=IDENTIFIER Wrbracket Wlparen 
-    u=separated_list(Wcomma,uExpr) 
-    Wrparen { T_def(name,u,[],[]) }
+    u=separated_list(Wcomma,euExpr) 
+    Wrparen { make_TT_def_app name u [] [] }
 | Wtdef name=IDENTIFIER Wrbracket Wlparen 
-    u=separated_list(Wcomma,uExpr) Wsemi
+    u=separated_list(Wcomma,euExpr) Wsemi
     t=separated_list(Wcomma,tExpr) 
-    Wrparen { T_def(name,u,t,[]) }
+    Wrparen { make_TT_def_app name u t [] }
 | Wtdef name=IDENTIFIER Wrbracket Wlparen 
-    u=separated_list(Wcomma,uExpr) Wsemi
+    u=separated_list(Wcomma,euExpr) Wsemi
     t=separated_list(Wcomma,tExpr) Wsemi
     o=separated_list(Wcomma,oExpr) 
-    Wrparen { T_def(name,u,t,o) }
+    Wrparen { make_TT_def_app name u t o }
+euExpr: u=uExpr
+    { make_UU u }
 uExpr: u=uExpr0 
-    {
-     let u = Position($startpos, $endpos), u in
-     let _ = uconvert u in 		(*testing*)
-     u
-   }
+    {u}
 | u=parenthesized(uExpr)
     {u}
 uExpr0:
@@ -281,6 +269,3 @@ uExpr0:
     { Uplus (u,n) }
 | Kumax Wlparen u=uExpr Wcomma v=uExpr Wrparen
     { Umax (u,v)  }
-| Wudef name=IDENTIFIER Wrbracket Wlparen 
-    u=separated_list(Wcomma,uExpr) 
-    Wrparen { U_def(name,u) }

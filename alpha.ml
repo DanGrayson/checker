@@ -11,7 +11,7 @@ module Make(Ueq: Universe.Equivalence) = struct
 
   type alpha_eq = (oVar' * oVar') list
 	
-  let addalpha x x' (alpha:alpha_eq) = if x=x' then alpha else (strip_pos x, strip_pos x') :: alpha
+  let addalpha x x' (alpha:alpha_eq) = if x=x' then alpha else (x, x') :: alpha
   let testalpha'  x x' =
     let rec test = ( 
       function
@@ -22,44 +22,22 @@ module Make(Ueq: Universe.Equivalence) = struct
 
   let uequiv = Ueq.equiv
     
-  let rec teq uc alpha =
-    let rec teq alpha a b = a == b || let a = strip_pos a and b = strip_pos b in a == b || teq' alpha (a,b)
-    and teq' alpha = function
-      | T_El t, T_El t'
-	-> oeq uc alpha t t'
-      | T_U u, T_U u'
-	-> uequiv uc u u'
-      | T_Pi(t,(x,u)),T_Pi(t',(x',u'))
-	-> teq alpha t t' && let alpha = addalpha x x' alpha in teq alpha u u'
-      | T_Sigma(t,(x,u)),T_Sigma(t',(x',u'))
-	-> teq alpha t t' && let alpha = addalpha x x' alpha in teq alpha u u'
-	  (* end of TS0 *)
-      | T_Coprod(t,u),T_Coprod(t',u')
-	-> teq alpha t t' && teq alpha u u'
-      | T_Coprod2(t1,t2,(x1,u1),(x2,u2),o),T_Coprod2(t1',t2',(x1',u1'),(x2',u2'),o')
-	-> teq alpha t1 t1' && teq alpha t2 t2'
-	    && let alpha = addalpha x1 x1' alpha in teq alpha u1 u1' 
-	    && let alpha = addalpha x2 x2' alpha in teq alpha u2 u2' 
-	    && oeq uc alpha o o'
-      | a, a' -> a = a'
-    in teq alpha
-
-  and oeq uc alpha =
-    let rec oeq alpha a b = a == b || let a = strip_pos a and b = strip_pos b in a == b || oeq' alpha (a,b)
-    and oeq' alpha = function
-      | O_variable a, O_variable b -> testalpha' a b alpha
-      | (O_lambda(t,(x,u)),O_lambda(t',(x',u')))
-	-> teq uc alpha t t' && let alpha = addalpha x x' alpha in oeq alpha u u'
-      | (O_ev(f,o,(x,u)),O_ev(f',o',(x',u')))
-	-> oeq alpha f f' && oeq alpha o o' && let alpha = addalpha x x' alpha in teq uc alpha u u'
-      | O_forall(m,n,o,(x,p)) , O_forall(m',n',o',(x',p'))
-	-> uequiv uc m m' && uequiv uc n n' && oeq alpha o o'&& let alpha = addalpha x x' alpha in oeq alpha p p'
-	  (* end of TS0 *)
+  let rec eq uc alpha =
+    let rec eq alpha a b = a == b || let a = strip_pos a and b = strip_pos b in a == b || eq' alpha a b
+    and eq' alpha x y = match (x,y) with 
+      | Expr(h,a), Expr(h',a') -> (
+	  match (h,h') with
+	  | OO_binder x, OO_binder x' -> (
+	      let alpha = addalpha (strip_pos_var x) (strip_pos_var x') alpha 
+	      in List.for_all2 (eq alpha) a a'
+	     )
+	  | _ -> h = h' && List.length a = List.length a' && List.for_all2 (eq' alpha) a a')
+      | UU u, UU u' -> uequiv uc u u'
+      | OO_variable t,OO_variable t' -> testalpha' t t' alpha
       | (a,a') -> a = a'
-    in oeq alpha
+    in eq alpha
 
-  let tequiv uc = teq uc []
-  let oequiv uc = oeq uc []
+  let equiv uc = eq uc []
 
 end
 

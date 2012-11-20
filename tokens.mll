@@ -47,7 +47,6 @@ rule expr_tokens = parse
   | "[U]" { WU }
   | "[u]" { Wu }
   | "[j]" { Wj }
-  | "[udef;" { Wudef }
   | "[tdef;" { Wtdef }
   | "[odef;" { Wodef }
   | "[Pi;" { WPi }

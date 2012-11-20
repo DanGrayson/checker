@@ -25,8 +25,7 @@ exception UniverseInconsistency
 
 let chk uv (lhs,rhs) =
   let index name = memi name uv in
-  let rec ev u = ev' (strip_pos u)
-  and ev' = function
+  let rec ev = function
     | UEmptyHole -> raise InternalError
     | UNumberedEmptyHole n -> raise InternalError
     | Uvariable u -> index u
@@ -42,7 +41,7 @@ let consistency uc =
 
 module Equal = struct
   let equiv uc = 			(* structural equality *)
-    let rec ueq a b = a == b || let a = strip_pos a and b = strip_pos b in a == b || ueq' (a,b)
+    let rec ueq a b = a == b || ueq' (a,b)
     and ueq' = function
       | UEmptyHole, UEmptyHole -> true
       | UNumberedEmptyHole n, UNumberedEmptyHole n' -> n = n'
