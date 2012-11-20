@@ -21,6 +21,9 @@ let rec subst subs =
     | OO_variable v as o -> (try List.assoc v subs with Not_found -> o)
     | Expr(label,branches) -> (
       match label with 
-      | BB (pos,v)  -> let v' = newfresh v in let subs = (v,OO_variable v') :: subs in Expr(BB (pos,v'), List.map (subst subs) branches)
-      | OO _ | TT _ -> Expr (label, substlist branches)
-   ) in subst1
+      | BB (pos,v) -> 
+	  let v' = newfresh v in
+	  let subs = (v,OO_variable v') :: subs in 
+	  Expr(BB (pos,v'), List.map (subst subs) branches)
+      | OO _ | TT _ -> Expr (label, substlist branches))
+  in subst1

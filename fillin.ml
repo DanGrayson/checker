@@ -16,9 +16,7 @@ and fillin pos env = function
     | UU _ as u -> u
     | Expr(label,branches) -> (
 	match label with
-(*
-	| BB _ -> raise InternalError (* what type do we bind the variable to? *)
-*)
+	| BB _ -> raise (TypingUnimplemented(pos,"unimplemented binder type"))
 	| OO OO_emptyHole | OO OO_numberedEmptyHole _ -> raise (TypingError(pos,"empty o-expression hole, no method for filling"))
 	| TT TT_EmptyHole | TT TT_NumberedEmptyHole _ -> raise (TypingError(pos,"empty t-expression hole, no method for filling"))
 	| OO OO_ev -> (

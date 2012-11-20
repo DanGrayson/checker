@@ -38,6 +38,11 @@ let protect parser lexbuf posfun =
     try parser lexbuf
     with 
       Eof -> leave()
+    | TypingUnimplemented (p,s) -> 
+	Printf.fprintf stderr "%s: type checking unimplemented: %s\n" (error_format_pos p) s;
+	flush stderr;
+	Tokens.bump_error_count();
+	raise Error_Handled
     | Failure s -> 
 	Printf.fprintf stderr "%s: failure: %s\n" (posfun lexbuf) s;
 	flush stderr;
