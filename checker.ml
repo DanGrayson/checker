@@ -11,20 +11,28 @@ exception Error_Handled
 
 let protect1 f =
   try f () with
-    TypingUnimplemented (p,s) -> 
+  | TypingError (p,s) ->
+      Printf.fprintf stderr "%s: %s\n" (error_format_pos p) s;
+      flush stderr;
+      Tokens.bump_error_count();
+      raise Error_Handled
+  | TypingUnimplemented (p,s) -> 
       Printf.fprintf stderr "%s: type checking unimplemented: %s\n" (error_format_pos p) s;
       flush stderr;
-      Tokens.bump_error_count()
+      Tokens.bump_error_count();
+      raise Error_Handled
   | Check.TypeCheckingFailure (p,s) -> 
       Printf.fprintf stderr "%s: type checking failure: %s\n" (error_format_pos p) s;
       flush stderr;
-      Tokens.bump_error_count()
+      Tokens.bump_error_count();
+      raise Error_Handled
   | Check.TypeCheckingFailure3 (p1,s1,p2,s2,p3,s3) -> 
       Printf.fprintf stderr "%s: type checking failure: %s\n" (error_format_pos p1) s1;
       Printf.fprintf stderr "%s:      %s\n" (error_format_pos p2) s2;
       Printf.fprintf stderr "%s:      %s\n" (error_format_pos p3) s3;
       flush stderr;
-      Tokens.bump_error_count()
+      Tokens.bump_error_count();
+      raise Error_Handled
 
 let protect parser lexbuf posfun =
     try parser lexbuf
@@ -114,7 +122,7 @@ let tCheckCommand x =
   protect1 (fun () -> Check.tcheck !environment x)
 
 let oCheckCommand x =
-  let x = Fillin.fillin !environment x in
+  let x = protect1 ( fun () -> Fillin.fillin !environment x ) in
   Printf.printf "Check: %s\n" (Printer.etostring x);
   flush stdout;
   protect1 (fun () -> Check.ocheck !environment x)

@@ -96,8 +96,9 @@ type expr =
 and tExpr = expr			(*temporary*)
 and oExpr = expr			(*temporary*)
 and label =
-  | OO_binder of oVar
-	(** the variable is bound in each of the expressions of the list above *)
+  | BB of oVar
+	(** the variable is bound in each of the expressions of the list *)
+	(* we never wrap an expression with this label with a position *)
   | TT of tHead
   | OO of oHead
 and tHead =
@@ -267,13 +268,18 @@ and oHead =
         (** A hole to be filled in later, by type checking. *)
   | OO_def_app of string
 
+let rec get_u = function
+  | POS (_,e) -> get_u e
+  | UU u -> u
+  | _ -> raise InternalError
+
 let with_pos pos u = POS (pos, u)
 let rec strip_pos = function
 | POS(_,x) -> strip_pos x
 | e -> e
 let get_pos = function
 | POS(pos,_) -> pos
-| _ -> raise InternalError
+| _ -> Nowhere
 let nowhere x = with_pos Nowhere x
 
 let rec isU = function
@@ -305,21 +311,21 @@ let make_OO h a = Expr(OO h, a)
 let make_TT_variable x = TT_variable x
 let make_OO_variable v = OO_variable v
 
-let make_OO_binder1 v x = Expr(OO_binder v, [x])
-let make_OO_binder2 v x y = Expr(OO_binder v, [x;y])
+let make_BB1 v x = Expr(BB v, [x])
+let make_BB2 v x y = Expr(BB v, [x;y])
 
 let make_TT_EmptyHole = make_TT TT_Empty []
 let make_TT_NumberedEmptyHole n = make_TT (TT_NumberedEmptyHole n) []
 let make_TT_El x = make_TT TT_El [chko x]
 let make_TT_U x = make_TT TT_U [chku x]
-let make_TT_Pi    t1 (x,t2) = make_TT TT_Pi    [chkt t1; make_OO_binder1 x (chkt t2)]
-let make_TT_Sigma t1 (x,t2) = make_TT TT_Sigma [chkt t1; make_OO_binder1 x (chkt t2)]
+let make_TT_Pi    t1 (x,t2) = make_TT TT_Pi    [chkt t1; make_BB1 x (chkt t2)]
+let make_TT_Sigma t1 (x,t2) = make_TT TT_Sigma [chkt t1; make_BB1 x (chkt t2)]
 let make_TT_Pt = make_TT TT_Pt []
 let make_TT_Coprod t t' = make_TT TT_Coprod [chkt t;chkt t']
-let make_TT_Coprod2 t t' (x,u) (x',u') o = make_TT TT_Coprod2 [chkt t; chkt t'; make_OO_binder1 x (chkt u); make_OO_binder1 x' (chkt u'); chko o]
+let make_TT_Coprod2 t t' (x,u) (x',u') o = make_TT TT_Coprod2 [chkt t; chkt t'; make_BB1 x (chkt u); make_BB1 x' (chkt u'); chko o]
 let make_TT_Empty = make_TT TT_Empty []
 let make_TT_IC tA a (x,tB,(y,tD,(z,q))) =
-  make_TT TT_IC [chkt tA; chko a; make_OO_binder2 x (chkt tB) (make_OO_binder2 y (chkt tD) (make_OO_binder1 z (chko q)))]
+  make_TT TT_IC [chkt tA; chko a; make_BB2 x (chkt tB) (make_BB2 y (chkt tD) (make_BB1 z (chko q)))]
 let make_TT_Id t x y = make_TT TT_Id [chkt t;chko x;chko y]
 let make_TT_def_app name u t o = make_TT (TT_def_app name) (List.flatten [chkulist u;chktlist t;chkolist o])
 let make_TT_nat = make_TT TT_nat []
@@ -329,44 +335,56 @@ let make_OO_numberedEmptyHole n = make_OO (OO_numberedEmptyHole n) []
 let make_OO_numeral n = make_OO (OO_numeral n) []
 let make_OO_u m = make_OO OO_u [chku m]
 let make_OO_j m n = make_OO OO_j [chku m; chku n]
-let make_OO_ev f p (v,t) = make_OO OO_ev [chko f;chko p;make_OO_binder1 v (chkt t)]
+let make_OO_ev f p (v,t) = make_OO OO_ev [chko f;chko p;make_BB1 v (chkt t)]
 let make_OO_ev_hole f p = make_OO OO_ev [chko f;chko p] (* fill in third argument later *)
-let make_OO_lambda t (v,p) = make_OO OO_lambda [chkt t; make_OO_binder1 v (chko p)]
-let make_OO_forall m m' o (v,o') = make_OO OO_forall [chku m;chku m';chko o;make_OO_binder1 v (chko o')]
-let make_OO_pair a b (x,t) = make_OO OO_pair [chko a;chko b;make_OO_binder1 x (chkt t)]
-let make_OO_pr1 t (x,t') o = make_OO OO_pr1 [chkt t;make_OO_binder1 x (chkt t'); chko o]
-let make_OO_pr2 t (x,t') o = make_OO OO_pr2 [chkt t;make_OO_binder1 x (chkt t'); chko o]
-let make_OO_total m1 m2 o1 (x,o2) = make_OO OO_total [chku m1;chku m2;chko o1;make_OO_binder1 x (chko o2)]
+let make_OO_lambda t (v,p) = make_OO OO_lambda [chkt t; make_BB1 v (chko p)]
+let make_OO_forall m m' o (v,o') = make_OO OO_forall [chku m;chku m';chko o;make_BB1 v (chko o')]
+let make_OO_pair a b (x,t) = make_OO OO_pair [chko a;chko b;make_BB1 x (chkt t)]
+let make_OO_pr1 t (x,t') o = make_OO OO_pr1 [chkt t;make_BB1 x (chkt t'); chko o]
+let make_OO_pr2 t (x,t') o = make_OO OO_pr2 [chkt t;make_BB1 x (chkt t'); chko o]
+let make_OO_total m1 m2 o1 (x,o2) = make_OO OO_total [chku m1;chku m2;chko o1;make_BB1 x (chko o2)]
 let make_OO_pt = make_OO OO_pt []
-let make_OO_pt_r o (x,t) = make_OO OO_pt_r [chko o;make_OO_binder1 x (chkt t)]
+let make_OO_pt_r o (x,t) = make_OO OO_pt_r [chko o;make_BB1 x (chkt t)]
 let make_OO_tt = make_OO OO_tt []
 let make_OO_coprod m1 m2 o1 o2 = make_OO OO_coprod [chku m1; chku m2; chko o1; chko o2]
 let make_OO_ii1 t t' o = make_OO OO_ii1 [chkt t;chkt t';chko o]
 let make_OO_ii2 t t' o = make_OO OO_ii2 [chkt t;chkt t';chko o]
-let make_OO_sum tT tT' s s' o (x,tS) = make_OO OO_sum [chkt tT; chkt tT'; chko s; chko s'; chko o; make_OO_binder1 x (chkt tS)]
+let make_OO_sum tT tT' s s' o (x,tS) = make_OO OO_sum [chkt tT; chkt tT'; chko s; chko s'; chko o; make_BB1 x (chkt tS)]
 let make_OO_empty = make_OO OO_empty []
 let make_OO_empty_r t o = make_OO OO_empty_r [chkt t; chko o]
 let make_OO_c tA a (x,tB,(y,tD,(z,q))) b f = make_OO OO_c [
   chko a; 
-  make_OO_binder2 
-    x
+  make_BB2 x
     (chkt tB)
-    (make_OO_binder2 
-       y
+    (make_BB2 y
        (chkt tD)
-       (make_OO_binder1 z (chko q))) ]
+       (make_BB1 z
+	  (chko q))) ]
 let make_OO_ic_r tA a (x,tB,(y,tD,(z,q))) i (x',(v,tS)) t = make_OO OO_ic_r [
   chkt tA; chko a;
-  make_OO_binder2 x (chkt tB) (make_OO_binder2 y (chkt tD) (make_OO_binder1 z (chko q)));
-  chko i; make_OO_binder1  x' (make_OO_binder1 v (chkt tS)); 
+  make_BB2 x
+    (chkt tB) 
+    (make_BB2 y
+       (chkt tD)
+       (make_BB1 z
+	  (chko q)));
+  chko i; 
+  make_BB1  x'
+    (make_BB1 v
+       (chkt tS)); 
   chko t]
 let make_OO_ic m1 m2 m3 oA a (x,oB,(y,oD,(z,q))) = make_OO OO_ic [
   chku m1; chku m2; chku m3;
   chko oA; chko a;
-  make_OO_binder2 x (chko oB) (make_OO_binder2 y (chko oD) (make_OO_binder1 z (chko q)))]
+  make_BB2 x
+    (chko oB)
+    (make_BB2 y
+       (chko oD)
+       (make_BB1 z
+	  (chko q))) ]
 let make_OO_paths m t x y = make_OO OO_paths [chku m; chkt t; chko x; chko y]
 let make_OO_refl t o = make_OO OO_refl [chkt t; chko o]
-let make_OO_J tT a b q i (x,(e,tS)) = make_OO OO_J [chkt tT; chko a; chko b; chko q; chko i; make_OO_binder1 x (make_OO_binder1 e (chkt tS))]
+let make_OO_J tT a b q i (x,(e,tS)) = make_OO OO_J [chkt tT; chko a; chko b; chko q; chko i; make_BB1 x (make_BB1 e (chkt tS))]
 let make_OO_rr0 m2 m1 s t e = make_OO OO_rr0 [chku m2; chku m1; chko s; chko t; chko e]
 let make_OO_rr1 m a p = make_OO OO_rr1 [chku m; chko a; chko p]
 let make_OO_def_app name u t c = make_OO (OO_def_app name) (List.flatten [chkulist u; chktlist t; chkolist c])

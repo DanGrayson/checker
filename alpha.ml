@@ -27,7 +27,7 @@ module Make(Ueq: Universe.Equivalence) = struct
     and eq' alpha x y = match (x,y) with 
       | Expr(h,a), Expr(h',a') -> (
 	  match (h,h') with
-	  | OO_binder x, OO_binder x' -> (
+	  | BB x, BB x' -> (
 	      let alpha = addalpha (strip_pos_var x) (strip_pos_var x') alpha 
 	      in List.for_all2 (eq alpha) a a'
 	     )

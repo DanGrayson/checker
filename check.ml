@@ -5,23 +5,30 @@ exception TypeCheckingFailure of position * string
 exception TypeCheckingFailure2 of position * string * position * string
 exception TypeCheckingFailure3 of position * string * position * string * position * string
 
-let rec ucheck (env:environment_type) u = match strip_pos u with
+let ucheck _ _ = ()
+let tcheck _ _ = ()
+let ocheck _ _ = ()
+
+
+(*
+
+let rec ucheck (env:environment_type) u = match u with
   | Uvariable UVar s -> (
       match (
 	try List.assoc s env.lookup_order
-	with Not_found -> raise (TypeCheckingFailure (get_pos u, "encountered unbound u-variable: "^s)))
+	with Not_found -> raise (TypeCheckingFailure (Nowhere, "encountered unbound u-variable: "^s)))
       with 
 	U _ -> ()
-      | T _ -> raise (TypeCheckingFailure (get_pos u, "expected a u-variable but found a t-variable: "^s))
-      | O _ -> raise (TypeCheckingFailure (get_pos u, "expected a u-variable but found an o-variable: "^s)))
+      | T _ -> raise (TypeCheckingFailure (Nowhere, "expected a u-variable but found a t-variable: "^s))
+      | O _ -> raise (TypeCheckingFailure (Nowhere, "expected a u-variable but found an o-variable: "^s)))
   | Uplus (u,n) -> 
       ucheck env u
   | Umax (u,v) -> 
       ucheck env u; 
       ucheck env v
   | UEmptyHole
-  | UNumberedEmptyHole _ -> raise (TypeCheckingFailure(get_pos u, "empty hole for u-expression found"))
-  | U_def _ -> raise (TypingUnimplemented (get_pos u, "u-definition"))
+  | UNumberedEmptyHole _ -> raise (TypeCheckingFailure(Nowhere, "empty hole for u-expression found"))
+  | U_def _ -> raise (TypingUnimplemented (Nowhere, "u-definition"))
 
 let rec tcheck (env:environment_type) t = match strip_pos t with
     T_variable TVar s -> (
@@ -238,6 +245,7 @@ and tocheck_binder env (v,t,k) : unit =
 and ttocheck_binder env (v,t,k) : unit = 
   let env' = env			(*?*) 
   in tcheck env t; tocheck_binder env' k
+ *)
 
 let ucheck_okay env x = try ucheck env x; true with TypeCheckingFailure _ -> false
 let tcheck_okay env x = try tcheck env x; true with TypeCheckingFailure _ -> false

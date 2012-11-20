@@ -15,17 +15,20 @@ and fillin pos env = function
     | OO_variable _ as o -> o
     | UU _ as u -> u
     | Expr(label,branches) -> (
-	match label with 
+	match label with
+(*
+	| BB _ -> raise InternalError (* what type do we bind the variable to? *)
+*)
 	| OO OO_emptyHole | OO OO_numberedEmptyHole _ -> raise (TypingError(pos,"empty o-expression hole, no method for filling"))
 	| TT TT_EmptyHole | TT TT_NumberedEmptyHole _ -> raise (TypingError(pos,"empty t-expression hole, no method for filling"))
 	| OO OO_ev -> (
 	    match branches with 
 	      [f;p] -> (
 		match strip_pos(Tau.tau env f) with
-		| Expr(TT TT_Pi, [t1; Expr(OO_binder ((pos,v) as x),[t2])])
+		| Expr(TT TT_Pi, [t1; Expr(BB ((pos,v) as x),[t2])])
 		  -> Expr(OO OO_ev, [fillin pos env f; 
 				  fillin pos env p; 
-				  fillin pos (obind (v,t1) env) (make_OO_binder1 x t2)])
+				  fillin pos (obind (v,t1) env) (make_BB1 x t2)])
 		| _ -> raise (TypingError(get_pos f,"expected a product type")))
 	    | _ -> Expr (label, fillinlist pos env branches)
 	   )

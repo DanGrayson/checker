@@ -80,6 +80,7 @@ Define E7 (K L:Type)(t:K)(g:K -> [U](u0))(u:L)(f:Pi x:K, *g x) := f t : _.
 Define E6 (u1 u2 u3 : Ulevel)(X1 X2:Type)(x1: X1 -> [U](u1))(x2: [U](u0+1)) := [j](x1, x2) : _ .
 
 Check lambda f:T->U, lambda o:T, [ev;_](f,o,U).
+Check lambda f:T->U, lambda o:T, f x.
 Check lambda f:T->U, lambda o:T, f o.
 Define E7 := ft : _ .
 Check lambda k:U, lambda g:T -> *k, lambda f:Pi t:T, *g t, lambda o:T, f o.

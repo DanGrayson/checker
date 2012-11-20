@@ -32,9 +32,8 @@ let rec etostring = function
   | TT_variable t -> tvartostring' t
   | OO_variable o -> ovartostring' o
   | Expr(h,args) -> (
-      let args = List.map strip_pos args in 
       match h with
-      | OO_binder x -> "[BIND;" ^ (ovartostring x) ^ "]" ^ (parenelisttostring args)
+      | BB x -> "[BIND;" ^ (ovartostring x) ^ "]" ^ (parenelisttostring args)
       | TT th -> (
 	  match th with 
 	  | TT_EmptyHole -> "_"
@@ -43,22 +42,16 @@ let rec etostring = function
 	  | TT_U -> "[U]" ^ (parenelisttostring args)
 	  | TT_Pi -> (
 	      match args with
-	      | [t1; b] -> (
-		  match b with
-		  | Expr( OO_binder x, [t2] ) -> "[Pi;" ^ (ovartostring x) ^ "](" ^ (etostring t1) ^ "," ^ (etostring t2) ^ ")"
-		  | _ -> raise InternalError)
+	      | [t1; Expr( BB x, [t2] )] -> "[Pi;" ^ (ovartostring x) ^ "](" ^ (etostring t1) ^ "," ^ (etostring t2) ^ ")"
 	      | _ -> raise InternalError)
 	  | TT_Sigma -> (
-	      match args with [t1; b] -> (
-		match b with
-		| Expr( OO_binder x, [t2] ) -> "[Sigma;" ^ (ovartostring x) ^ "](" ^ (etostring t1) ^ "," ^ (etostring t2) ^ ")"
-		| _ -> raise InternalError)
+	      match args with [t1; Expr( BB x, [t2] )] -> "[Sigma;" ^ (ovartostring x) ^ "](" ^ (etostring t1) ^ "," ^ (etostring t2) ^ ")"
 	      | _ -> raise InternalError)
-	  | TT_Pt -> "[Pt]()"
+	  | TT_Pt -> "[Pt]" ^ (parenelisttostring args)
 	  | TT_Coprod -> "[Coprod]" ^ (parenelisttostring args)
 	  | TT_Coprod2 -> (
 	      match args with 
-	      | [t;t';Expr( OO_binder x, [u] );Expr( OO_binder x', [u'] );o] ->
+	      | [t;t'; Expr(BB x,[u]);Expr(BB x', [u']);o] ->
 		  "[Coprod;" ^ (ovartostring x) ^ "," ^ (ovartostring x') ^ "](" 
 		  ^ (etostring t) ^ "," ^ (etostring t) ^ ","
 		  ^ (etostring u) ^ "," ^ (etostring u') ^ ","
@@ -68,15 +61,9 @@ let rec etostring = function
 	  | TT_Empty -> "[Empty]" ^ (parenelisttostring args)
 	  | TT_IC -> (
 	      match args with 
-		[tA;a;Expr( OO_binder x, [tB;c])] -> (
-		  match strip_pos c with 
-		  | Expr( OO_binder y, [tD;d]) -> (
-		      match strip_pos d with
-		      | Expr( OO_binder z, [q]) -> 
-			  "[IC;" ^ (ovartostring x) ^ "," ^ (ovartostring y) ^ "," ^ (ovartostring z) ^ "]("
-			  ^ (etostring tA) ^ "," ^ (etostring a) ^ "," ^ (etostring tB) ^ "," ^ (etostring tD) ^ "," ^ (etostring q) ^ ")"
-		      | _ -> raise InternalError)
-		  | _ -> raise InternalError)
+		[tA; a; Expr(BB x, [tB;Expr( BB y, [tD;Expr( BB z, [q])])])]
+		-> "[IC;" ^ (ovartostring x) ^ "," ^ (ovartostring y) ^ "," ^ (ovartostring z) ^ "]("
+		  ^ (etostring tA) ^ "," ^ (etostring a) ^ "," ^ (etostring tB) ^ "," ^ (etostring tD) ^ "," ^ (etostring q) ^ ")"
 	      | _ -> raise InternalError)
 	  | TT_Id -> "[Id]" ^ (parenelisttostring args)
 	  | TT_def_app d -> "[tdef;" ^ d ^ "]" ^ (parenelisttostring args)
@@ -90,17 +77,17 @@ let rec etostring = function
 	  | OO_j -> "[j]" ^ (parenelisttostring args)
 	  | OO_ev -> (
 	      match args with 
-	      | [f;o;Expr(OO_binder x,[t])] ->
+	      | [f;o;Expr(BB x,[t])] ->
 		  "[ev;" ^ (ovartostring x) ^ "](" ^ (etostring f) ^ "," ^ (etostring o) ^ "," ^ (etostring t) ^ ")"
 	      | _ -> raise InternalError)
 	  | OO_lambda -> (
 	      match args with 
-	      | [t;Expr(OO_binder x,[o])] ->
+	      | [t;Expr(BB x,[o])] ->
 		  "[lambda;" ^ (ovartostring x) ^ "](" ^ (etostring t) ^ "," ^ (etostring o) ^ ")"
 	      | _ -> raise InternalError)
 	  | OO_forall -> (
 	      match args with 
-	      | [u;u';o;Expr(OO_binder x,[o'])] ->
+	      | [u;u';o;Expr(BB x,[o'])] ->
 		  "[forall;" ^ (ovartostring x) ^ "](" ^ (etostring u) ^ "," ^ (etostring u') ^ "," ^ (etostring o) ^ "," ^ (etostring o') ^ ")"
 	      | _ -> raise InternalError)
 	  | OO_def_app d -> "[tdef;" ^ d ^ "]" ^ (parenelisttostring args)
