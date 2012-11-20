@@ -23,8 +23,8 @@ module Make(Ueq: Universe.Equivalence) = struct
   let uequiv = Ueq.equiv
     
   let rec eq uc alpha =
-    let rec eq alpha a b = a == b || let a = strip_pos a and b = strip_pos b in a == b || eq' alpha a b
-    and eq' alpha x y = match (x,y) with 
+    let rec eq alpha a b = a == b || eq' alpha a b
+    and eq' alpha x y = match (strip_pos x, strip_pos y) with 
       | Expr(h,a), Expr(h',a') -> (
 	  match (h,h') with
 	  | BB x, BB x' -> (

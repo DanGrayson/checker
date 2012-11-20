@@ -98,7 +98,7 @@ and oExpr = expr			(*temporary*)
 and label =
   | BB of oVar
 	(** the variable is bound in each of the expressions of the list *)
-	(* we never wrap an expression with this label with a position *)
+	(* we never wrap an expression with this label with a position, so pattern matching is feasible *)
   | TT of tHead
   | OO of oHead
 and tHead =
