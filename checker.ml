@@ -119,7 +119,7 @@ let tPrintCommand x =
 let uCheckCommand x =
   Printf.printf "Check ulevel: %s\n" (Printer.utostring x);
   flush stdout;
-  protect1 (fun () -> Check.ucheck !environment x)
+  protect1 (fun () -> Check.uexprcheck !environment x)
 
 let tCheckCommand x =
   Printf.printf "Check type: %s\n" (Printer.etostring x);

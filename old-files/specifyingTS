@@ -98,61 +98,36 @@ There are also constructors for all the terms of TS:
 
 		     Here is the LF formulation, where U o denotes the LF application.
 
-		     has-type ([ev;x](f,o,U)) (U o)
-
-		     We need a way to distinguish LF applications, such as (U o), which is
-		     actually substitution, from TS applications of [ev], such as (f o).
-		     We could use U[o] for the LF application, since it looks like substitution.
-		     Then we have to rewrite the LF expressions above:
-
-			<lambda> [T] [U]   		lambda x:T, U
-			    <ev> [f] [o] [T]		[ev;x](f,o,T)
-			    <Pi> [T] [U]		Pi x:T, U
-
-		     Perhaps that's not so bad, since complex expressions have to
-		     parenthesized anyway to appear as arguments.
-
-		     Note: terms with multiple free variables know which one is first, so that
-		     U[o/x][p/y] can be abbreviated to U o p if x is first.
+		        has-type (<ev> f o U) (U o)
 
 
+        Rule tcast : Pi (T T' : Texpr) (o : Oexpr),		# rule 13 in the paper UPTS
+		     Pi oT : [o : T],		# regard oo as a stand-in for o
+		     Pi TT' : [T = T'],
+		     [o : T'].			# regard [tcast oT TT'] as a stand-in for the cast of oo from type T to type T'
 
-       Rule tcast : Pi (T T' : Texpr) (o : Oexpr),		# rule 13 in the paper UPTS
-		     Pi oT : o : T,		# regard oo as a stand-in for o
-		     Pi TT' : T = T',
-		     o : T'.			# regard [tcast oT TT'] as a stand-in for the cast of oo from type T to type T'
+# eta reduction for empty, on types:
+    Rule tetaempty : Pi (T T' : Texpr), [a : Empty] -> [T = T'].
 
-   Rule tetaempty : Pi (T T' : Texpr),		# eta reduction for empty
-		     Pi j : a : Empty,
-		     T = T'.
+# eta reduction for empty, on objects:
+    Rule oetaempty : Pi (T : Texpr) (a o o' : Oexpr), [a : Empty] -> [o : T] -> [o' : T] -> [o = o' : T].
 
-   Rule oetaempty : Pi (T : Texpr) (a o o' : Oexpr),		# eta reduction for empty
-		     Pi j : a : Empty,
-		     Pi k : o : T,
-		     Pi k' : o' : T,
-		     o = o' : T.
-
-      Rule Uintro : Pi (u : Ulevel), [U](u) type. #  we abbreviate [ Uintro u ] as [ [U](u) ].
+       Rule Uintro : Pi (u : Ulevel), [ [U](u) : Type ].
 		     or (?)
-     Rule Uintro' : Pi (u : Ulevel), Texpr.				#  we abbreviate [ Uintro' u ] as [ [U](u) ].
+      Rule Uintro' : Pi (u : Ulevel), Texpr.				#  we abbreviate [ Uintro' u ] as [ [U](u) ].
 
 #			Here [ Uintro u ] knows what context it's in, and [ Uintro' u ] doesn't.
 #			That's analogous to [ [u](m) ] knowing what universe it's in, and [ [U](m) ] not.
 
-      Rule uintro : Pi (u : Ulevel),
-		     [u](u) : [U](next u).
+       Rule uintro : Pi (u : Ulevel), [[u](u) : [U](next u)].
 
-   Rule starintro : Pi (u : Ulevel),
-		     *[u](u) type.
+    Rule starintro : Pi (u : Ulevel), [ *[u](u) type ].
 
-       Rule staru : Pi (u : Ulevel),
-		     *[u](u) = [U](u).		# add this as a reduction rule
+       Rule staru : Pi (u : Ulevel), [ *[u](u) = [U](u) ].		# add this as a reduction rule
 
-  Rule emptytype :  Pi,
-		     empty : [U](uuu0).
+   Rule emptytype : Pi, [ empty : [U](uuu0) ].
 
-   Rule starempty : Pi,
-		     *empty = Empty.		# add this as a reduction rule, too (left to right), in some list(s) of reduction rules
+   Rule starempty : Pi, [ *empty = Empty ].		# add this as a reduction rule, too (left to right), in some list(s) of reduction rules
 
 Constraint bottom0 : Pi (u : Ulevel), uuu0 <= u.	# add this "constraint" every time a new universe variable is introduced, somehow
 
@@ -165,46 +140,11 @@ Constraint bottom0 : Pi (u : Ulevel), uuu0 <= u.	# add this "constraint" every t
 	Rule next : Pi u : Ulevel, Ulevel.		# formerly [ next u ] is [ u+1 ]
 	Rule max  : Pi u v : Ulevel, Ulevel.
 
-# We imagine that the context goes along for the ride on the outside, i.e.,
-
-   Definition foo : Pi (E : Externalcontext), (u1 ... : Ulevel) (T1 ... : Texpr) (o1:O1 ... ), E ||- T type.
-
-# Here the context contains only things like [ v : T ], but the external context contains
-# things like [ u : Ulevel ] [ T : Texpr ].
-
-# Here q1:T1	 is short-hand for q1 : T1 type,
-# and  p1:o1:O1 is short-hand for p1 : o1 : O1
-
-#  Now consider how to make the following expression type check correctly, despite
-#  undecidability, letting G = ( a:Empty, f:T->U, x:X ) .  Here we have variables T, U, X : Texpr.
-#
-#		 f x : T
-#
-#  This is what we do, step by step:
-#
-#	j1 :=	@tetaempty G X T a : X = T.
-#	j2 :=	@fetch 0 : x : X.
-#	j3 :=	@tcast G X T x j1 j2 : x : T.
-#	j4 :=	@fetch 1 : f : T -> U.
-#	j5 :=	@ocastt G T o j3 : [ocast](x,j3) : T.
-#	j6 :=	ev(x,f,[ocast](x,j3),j4,j5) : [ev;_](f,[ocast](x,j3),U) : U.
-#	now using [ocastred] above as a reduction rule, we deduce:
-#	j7 :=	ev(x,f,[ocast](x,j3),j4,j5) : [ev;_](f,x,U) : U.
-
-# Oops, rewrite: in j1, for example, the expression [ @tetaempty G X T a ] needs to be
-# within the scope of the expressions X T a, and that is specified by G.
-
 #  Four types of definitions:
 #
-#    tDefinition foo1 : Pi (u1 ... : Ulevel), (T1 ... : Type), (o1:O1) ... , T.
-#    oDefinition foo2 : Pi (u1 ... : Ulevel), (T1 ... : Type), (o1:O1) ... , o : T.
-#   ttDefinition foo3 : Pi (u1 ... : Ulevel), (T1 ... : Type), (o1:O1) ... , T = T'.
-#   ooDefinition foo4 : Pi (u1 ... : Ulevel), (T1 ... : Type), (o1:O1) ... , o = o' : T.
+#    tDefinition foo1 : Pi (u1 ... : Ulevel), (T1 ... : Type), (o1:O1) ... , [ T : Type ].
+#    oDefinition foo2 : Pi (u1 ... : Ulevel), (T1 ... : Type), (o1:O1) ... , [ o : T ].
+#   ttDefinition foo3 : Pi (u1 ... : Ulevel), (T1 ... : Type), (o1:O1) ... , [ T = T' ].
+#   ooDefinition foo4 : Pi (u1 ... : Ulevel), (T1 ... : Type), (o1:O1) ... , [ o = o' : T ].
 
-# Since typechecking is undecidable, definitions need proofs!
-# Expanded form of definitions, with proofs.
-
-    tDefinition foo : Pi (u1 ... : Ulevel) (q1:T1 ...) (p1:o1:O1 ... ), T type	 := p.
-    oDefinition foo : Pi (u1 ... : Ulevel) (q1:T1 ...) (p1:o1:O1 ... ), o : T	 := p.
-   ttDefinition foo : Pi (u1 ... : Ulevel) (q1:T1 ...) (p1:o1:O1 ... ), T = T'	 := p.
-   ooDefinition foo : Pi (u1 ... : Ulevel) (q1:T1 ...) (p1:o1:O1 ... ), o = o' : T := p.
+#   Somehow we might like to use foo1 inside the square brackets to denote the T, and foo2 inside to denote the o.

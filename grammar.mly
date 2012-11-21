@@ -255,7 +255,7 @@ tExpr0:
 euExpr: u=uExpr
     { make_UU u }
 uExpr: u=uExpr0 
-    {u}
+    {Upos (Position($startpos, $endpos), u)}
 | u=parenthesized(uExpr)
     {u}
 uExpr0:

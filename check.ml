@@ -5,42 +5,213 @@ exception TypeCheckingFailure of position * string
 exception TypeCheckingFailure2 of position * string * position * string
 exception TypeCheckingFailure3 of position * string * position * string * position * string
 
-let ucheck _ _ = ()
-let tcheck _ _ = ()
-let ocheck _ _ = ()
+let rec uexprcheck pos env = 
+  let rec ucheckexpr' env = function
+    | Upos (pos,u) -> uexprcheck pos env u
+    | Uvariable UVar s -> (
+	match (
+	  try List.assoc s env.lookup_order
+	  with Not_found -> raise (TypeCheckingFailure (pos, "encountered unbound u-variable: "^s)))
+	with 
+	  U _ -> ()
+	| T _ -> raise (TypeCheckingFailure (pos, "expected a u-variable but found a t-variable: "^s))
+	| O _ -> raise (TypeCheckingFailure (pos, "expected a u-variable but found an o-variable: "^s)))
+    | Uplus (u,n) -> ucheckexpr' env u
+    | Umax (u,v) -> ucheckexpr' env u; ucheckexpr' env v
+    | U_def _ -> raise NotImplemented
+    | UEmptyHole | UNumberedEmptyHole _ -> raise (TypeCheckingFailure(pos, "empty hole for u-expression found"))
+  in ucheckexpr' env
 
+let rec ucheck pos env =
+  let rec ucheck' env = function
+    | POS(pos,e) -> ucheck pos env e
+    | UU u -> uexprcheck pos env u
+    | _ -> raise InternalError
+  in ucheck' env
+
+let rec tcheck pos env = 
+  let rec tcheck' env = function
+    | POS(pos,e) -> tcheck pos env e
+    | UU u -> uexprcheck pos env u
+    | TT_variable TVar s -> (
+	match (
+	  try List.assoc s env.lookup_order
+	  with Not_found -> raise (TypeCheckingFailure (pos, "encountered unbound t-variable: "^s)))
+	with 
+	  U _ -> raise (TypeCheckingFailure (pos, "expected a t-variable but found a u-variable: "^s))
+	| T _ -> ()
+	| O _ -> raise (TypeCheckingFailure (pos, "expected a t-variable but found an o-variable: "^s)))
+    | OO_variable o -> raise InternalError
+    | Expr(h,args) -> (
+	match h with
+	| BB x -> raise InternalError
+	| TT th -> (
+	    match th with 
+	    | TT_EmptyHole | TT_NumberedEmptyHole _ -> raise (TypeCheckingFailure(pos,"empty hole for t-expression found"))
+	    | TT_El -> ocheckl pos env args
+	    | TT_U -> ucheckn 1 pos env args
+	    | TT_Pi -> (
+		match args with
+		| [t1; Expr( BB x, [t2] )] -> ()
+		| _ -> raise InternalError)
+	    | TT_Sigma -> (
+		match args with [t1; Expr( BB x, [t2] )] -> ()
+		| _ -> raise InternalError)
+	    | TT_Pt -> ()
+	    | TT_Coprod -> ()
+	    | TT_Coprod2 -> (
+		match args with 
+		| [t;t'; Expr(BB x,[u]);Expr(BB x', [u']);o] -> ()
+		| _ -> raise InternalError)
+	    | TT_Empty -> ()
+	    | TT_IC -> (
+		match args with [tA; a; Expr(BB x, [tB;Expr( BB y, [tD;Expr( BB z, [q])])])] -> ()
+		| _ -> raise InternalError)
+	    | TT_Id -> ()
+	    | TT_def_app d -> ()
+	    | TT_nat -> ()
+	   )
+	| OO oh -> (
+	    match oh with
+	    | OO_emptyHole -> ()
+	    | OO_numberedEmptyHole n -> ()
+	    | OO_u -> ()
+	    | OO_j -> ()
+	    | OO_ev -> (
+		match args with 
+		| [f;o;Expr(BB x,[t])] -> ()
+		| [f;o] -> ()
+		| _ -> raise InternalError)
+	    | OO_lambda -> (
+		match args with 
+		| [t;Expr(BB x,[o])] -> ()
+		| _ -> raise InternalError)
+	    | OO_forall -> (
+		match args with 
+		| [u;u';o;Expr(BB x,[o'])] -> ()
+		| _ -> raise InternalError)
+	    | OO_def_app d -> ()
+	    | OO_numeral i -> ()
+	    | OO_pair -> ()
+	    | OO_pr1 -> ()
+	    | OO_pr2 -> ()
+	    | OO_total -> ()
+	    | OO_pt -> ()
+	    | OO_pt_r -> ()
+	    | OO_tt -> ()
+	    | OO_coprod -> ()
+	    | OO_ii1 -> ()
+	    | OO_ii2 -> ()
+	    | OO_sum -> ()
+	    | OO_empty -> ()
+	    | OO_empty_r -> ()
+	    | OO_c -> ()
+	    | OO_ic_r -> ()
+	    | OO_ic -> ()
+	    | OO_paths -> ()
+	    | OO_refl -> ()
+	    | OO_J -> ()
+	    | OO_rr0 -> ()
+	    | OO_rr1 -> ()
+	   )
+       )
+  in tcheck' env
+and ocheck pos env = function
+  | POS(pos,e) -> ()
+  | UU u -> ()
+  | TT_variable t -> ()
+  | OO_variable o -> ()
+  | Expr(h,args) -> (
+      match h with
+      | BB x -> raise InternalError	(* should have been handled higher up *)
+      | TT th -> (
+	  match th with 
+	  | TT_EmptyHole -> ()
+	  | TT_NumberedEmptyHole n -> ()
+	  | TT_El -> ()
+	  | TT_U -> ()
+	  | TT_Pi -> (
+	      match args with
+	      | [t1; Expr( BB x, [t2] )] -> ()
+	      | _ -> raise InternalError)
+	  | TT_Sigma -> (
+	      match args with [t1; Expr( BB x, [t2] )] -> ()
+	      | _ -> raise InternalError)
+	  | TT_Pt -> ()
+	  | TT_Coprod -> ()
+	  | TT_Coprod2 -> (
+	      match args with 
+	      | [t;t'; Expr(BB x,[u]);Expr(BB x', [u']);o] -> ()
+	      | _ -> raise InternalError)
+	  | TT_Empty -> ()
+	  | TT_IC -> (
+	      match args with [tA; a; Expr(BB x, [tB;Expr( BB y, [tD;Expr( BB z, [q])])])] -> ()
+	      | _ -> raise InternalError)
+	  | TT_Id -> ()
+	  | TT_def_app d -> ()
+	  | TT_nat -> ()
+	 )
+      | OO oh -> (
+	  match oh with
+	  | OO_emptyHole -> ()
+	  | OO_numberedEmptyHole n -> ()
+	  | OO_u -> ()
+	  | OO_j -> ()
+	  | OO_ev -> (
+	      match args with 
+	      | [f;o;Expr(BB x,[t])] -> ()
+	      | [f;o] -> ()
+	      | _ -> raise InternalError)
+	  | OO_lambda -> (
+	      match args with 
+	      | [t;Expr(BB x,[o])] -> ()
+	      | _ -> raise InternalError)
+	  | OO_forall -> (
+	      match args with 
+	      | [u;u';o;Expr(BB x,[o'])] -> ()
+	      | _ -> raise InternalError)
+	  | OO_def_app d -> ()
+	  | OO_numeral i -> ()
+	  | OO_pair -> ()
+	  | OO_pr1 -> ()
+	  | OO_pr2 -> ()
+	  | OO_total -> ()
+	  | OO_pt -> ()
+	  | OO_pt_r -> ()
+	  | OO_tt -> ()
+	  | OO_coprod -> ()
+	  | OO_ii1 -> ()
+	  | OO_ii2 -> ()
+	  | OO_sum -> ()
+	  | OO_empty -> ()
+	  | OO_empty_r -> ()
+	  | OO_c -> ()
+	  | OO_ic_r -> ()
+	  | OO_ic -> ()
+	  | OO_paths -> ()
+	  | OO_refl -> ()
+	  | OO_J -> ()
+	  | OO_rr0 -> ()
+	  | OO_rr1 -> ()
+	 )
+     )
+and ucheckn i pos env a =
+  if i != List.length a then raise InternalError;
+  List.iter (ucheck pos env) a
+and tcheckn i pos env a =
+  if i != List.length a then raise InternalError;
+  List.iter (tcheck pos env) a
+and ocheckn i pos env a =
+  if i != List.length a then raise InternalError;
+  List.iter (ocheck pos env) a
+and ucheckl pos env a = List.iter (ucheck pos env) a
+and tcheckl pos env a = List.iter (tcheck pos env) a
+and ocheckl pos env a = List.iter (ocheck pos env) a
 
 (*
 
-let rec ucheck (env:environment_type) u = match u with
-  | Uvariable UVar s -> (
-      match (
-	try List.assoc s env.lookup_order
-	with Not_found -> raise (TypeCheckingFailure (Nowhere, "encountered unbound u-variable: "^s)))
-      with 
-	U _ -> ()
-      | T _ -> raise (TypeCheckingFailure (Nowhere, "expected a u-variable but found a t-variable: "^s))
-      | O _ -> raise (TypeCheckingFailure (Nowhere, "expected a u-variable but found an o-variable: "^s)))
-  | Uplus (u,n) -> 
-      ucheck env u
-  | Umax (u,v) -> 
-      ucheck env u; 
-      ucheck env v
-  | UEmptyHole
-  | UNumberedEmptyHole _ -> raise (TypeCheckingFailure(Nowhere, "empty hole for u-expression found"))
-  | U_def _ -> raise (TypingUnimplemented (Nowhere, "u-definition"))
-
 let rec tcheck (env:environment_type) t = match strip_pos t with
-    T_variable TVar s -> (
-      match (
-	try List.assoc s env.lookup_order
-	with Not_found -> raise (TypeCheckingFailure (get_pos t, "encountered unbound t-variable: "^s)))
-      with 
-	U _ -> raise (TypeCheckingFailure (get_pos t, "expected a t-variable but found a u-variable: "^s))
-      | T _ -> ()
-      | O _ -> raise (TypeCheckingFailure (get_pos t, "expected a t-variable but found an o-variable: "^s)))
-  | T_EmptyHole | T_NumberedEmptyHole _ -> raise (TypeCheckingFailure(get_pos t,"empty hole for t-expression found"))
-  | T_El o -> ocheck env o
+  | T_El o -> ()
   | T_U _ -> ()
   | T_Pi (t1,(v,t2)) -> 
       tcheck env t1; 
@@ -245,7 +416,13 @@ and tocheck_binder env (v,t,k) : unit =
 and ttocheck_binder env (v,t,k) : unit = 
   let env' = env			(*?*) 
   in tcheck env t; tocheck_binder env' k
- *)
+
+*)
+
+let ucheck = ucheck Nowhere
+let tcheck = tcheck Nowhere
+let ocheck = ocheck Nowhere
+let uexprcheck = uexprcheck Nowhere
 
 let ucheck_okay env x = try ucheck env x; true with TypeCheckingFailure _ -> false
 let tcheck_okay env x = try tcheck env x; true with TypeCheckingFailure _ -> false

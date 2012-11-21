@@ -15,7 +15,8 @@ let ovartostring' = function
   | OVarUnused -> "_"
 let ovartostring v = ovartostring' (strip_pos_var v)
 
-let rec utostring u = match u with
+let rec utostring = function
+  | Upos (_,u) -> utostring u
   | UEmptyHole -> "_"
   | UNumberedEmptyHole n -> "_" ^ (string_of_int n)
   | Uvariable x -> uvartostring' x

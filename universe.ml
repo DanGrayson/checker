@@ -26,6 +26,7 @@ exception UniverseInconsistency
 let chk uv (lhs,rhs) =
   let index name = memi name uv in
   let rec ev = function
+    | Upos (_,u) -> ev u
     | UEmptyHole -> raise InternalError
     | UNumberedEmptyHole n -> raise InternalError
     | Uvariable u -> index u

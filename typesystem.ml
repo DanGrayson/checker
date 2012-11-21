@@ -72,6 +72,7 @@ let get_pos_var : position * 'a -> position = fst
     of a given list.
  *)
 type uExpr =
+  | Upos of position * uExpr
   | Uvariable of uVar'
 	(** A u-level variable. *)
   | Uplus of uExpr * int
@@ -305,6 +306,92 @@ let rec isO = function
 | _ -> false
 let chko o = if not (isO o) then raise InternalError; o
 let chkolist os = List.iter (fun o -> let _ = chko o in ()) os; os
+
+type expr_descriptor =
+  | U_spot
+  | T_spot
+  | O_spot
+  | B_spot of expr_descriptor list
+
+let template = function
+  | POS(pos,e) -> ()
+  | UU u -> ()
+  | TT_variable t -> ()
+  | OO_variable o -> ()
+  | Expr(h,args) -> (
+      match h with
+      | BB x -> raise InternalError	(* should have been handled higher up *)
+      | TT th -> (
+	  match th with 
+	  | TT_EmptyHole -> ()
+	  | TT_NumberedEmptyHole n -> ()
+	  | TT_El -> ()
+	  | TT_U -> ()
+	  | TT_Pi -> (
+	      match args with
+	      | [t1; Expr( BB x, [t2] )] -> ()
+	      | _ -> raise InternalError)
+	  | TT_Sigma -> (
+	      match args with [t1; Expr( BB x, [t2] )] -> ()
+	      | _ -> raise InternalError)
+	  | TT_Pt -> ()
+	  | TT_Coprod -> ()
+	  | TT_Coprod2 -> (
+	      match args with 
+	      | [t;t'; Expr(BB x,[u]);Expr(BB x', [u']);o] -> ()
+	      | _ -> raise InternalError)
+	  | TT_Empty -> ()
+	  | TT_IC -> (
+	      match args with [tA; a; Expr(BB x, [tB;Expr( BB y, [tD;Expr( BB z, [q])])])] -> ()
+	      | _ -> raise InternalError)
+	  | TT_Id -> ()
+	  | TT_def_app d -> ()
+	  | TT_nat -> ()
+	 )
+      | OO oh -> (
+	  match oh with
+	  | OO_emptyHole -> ()
+	  | OO_numberedEmptyHole n -> ()
+	  | OO_u -> ()
+	  | OO_j -> ()
+	  | OO_ev -> (
+	      match args with 
+	      | [f;o;Expr(BB x,[t])] -> ()
+	      | [f;o] -> ()
+	      | _ -> raise InternalError)
+	  | OO_lambda -> (
+	      match args with 
+	      | [t;Expr(BB x,[o])] -> ()
+	      | _ -> raise InternalError)
+	  | OO_forall -> (
+	      match args with 
+	      | [u;u';o;Expr(BB x,[o'])] -> ()
+	      | _ -> raise InternalError)
+	  | OO_def_app d -> ()
+	  | OO_numeral i -> ()
+	  | OO_pair -> ()
+	  | OO_pr1 -> ()
+	  | OO_pr2 -> ()
+	  | OO_total -> ()
+	  | OO_pt -> ()
+	  | OO_pt_r -> ()
+	  | OO_tt -> ()
+	  | OO_coprod -> ()
+	  | OO_ii1 -> ()
+	  | OO_ii2 -> ()
+	  | OO_sum -> ()
+	  | OO_empty -> ()
+	  | OO_empty_r -> ()
+	  | OO_c -> ()
+	  | OO_ic_r -> ()
+	  | OO_ic -> ()
+	  | OO_paths -> ()
+	  | OO_refl -> ()
+	  | OO_J -> ()
+	  | OO_rr0 -> ()
+	  | OO_rr1 -> ()
+	 )
+     )
 
 let make_UU u = UU u
 let make_TT h a = Expr(TT h, a)
