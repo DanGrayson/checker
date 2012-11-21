@@ -7,20 +7,20 @@ open Typesystem
 type j_c = unit
 	(**{v Gamma |> v}*)
 
-type j_t = tExpr
+type j_t = expr
 	(**{v Gamma |- T type v}*)
 	(* 
 	   TS doesn't mention this one, so in this implementation we will consider
 	   [ Gamma |- T type ] and [ Gamma, x:T |> ] to be alpha equivalent, for compatibility with TS 
 	 *)
 
-type j_o = oExpr * tExpr
+type j_o = expr * expr
 	(**{v Gamma |- o : T v}*)
 
-type j_teq = tExpr * tExpr
+type j_teq = expr * expr
 	(**{v Gamma |- T = T' v}*)
 
-type j_oeq = oExpr * oExpr * tExpr
+type j_oeq = expr * expr * expr
 	(**{v Gamma |- o = o' : T v}*)
 
 type judgmentBody =

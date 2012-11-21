@@ -3,17 +3,17 @@
 open Typesystem
 type command' = 
   | UPrint of uExpr
-  | TPrint of tExpr
-  | OPrint of oExpr
+  | TPrint of expr
+  | OPrint of expr
   | UCheck of uExpr
-  | TCheck of tExpr
-  | OCheck of oExpr
+  | TCheck of expr
+  | OCheck of expr
   | UVariable of string list * (uExpr * uExpr) list
   | TVariable of string list
   | UAlpha of uExpr * uExpr
-  | TAlpha of tExpr * tExpr
-  | OAlpha of oExpr * oExpr
-  | Type of oExpr
+  | TAlpha of expr * expr
+  | OAlpha of expr * expr
+  | Type of expr
   | Definition of definition
   | CheckUniverses
   | Show

@@ -3,8 +3,8 @@ open Typesystem
 module type S =
     sig
       val uequal : uContext -> uExpr -> uExpr -> bool
-      val tequal : uContext -> tExpr -> tExpr -> bool
-      val oequal : uContext -> oExpr -> oExpr -> bool
+      val tequal : uContext -> expr -> expr -> bool
+      val oequal : uContext -> expr -> expr -> bool
     end
 
 module Make(Ueq: Universe.Equivalence) = struct

@@ -17,7 +17,7 @@ Show.
 Check lambda x:T, x.
 Check type T.
 Check type [El]([u](u2)).
-Check type [U](u4).
+Check type [U](u1).
 Check [j](u1, u2).
 Check type *[u](u1).
 Check ulevel max (u1+1, u0).
@@ -56,6 +56,7 @@ Show.
 Check lambda e:U, lambda x : T, e.
 
 Check lambda g:T -> *[u](u1), lambda f:Pi t:T, *g t, lambda o:T, f o.
+Check lambda g:T -> *[u](u1), lambda f:Pi t:T, *g t, lambda o:T, f f.
 
 Check type T -> U -> X -> Y.
 

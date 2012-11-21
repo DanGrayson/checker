@@ -30,7 +30,7 @@ let rec taupos (pos:position) env o =
 		| _ -> raise InternalError)
 	    | OO_lambda -> (
 		match args with 
-		| [t;Expr(BB x,[o])] -> make_TT_Pi t (x, tau (obind (strip_pos_var x,t) env) o)
+		| [t;Expr(BB x,[o])] -> make_TT_Pi t (x, tau (obind (x,t) env) o)
 		| _ -> raise InternalError)
 	    | OO_forall -> (
 		match args with 

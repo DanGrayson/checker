@@ -1,3 +1,3 @@
 (** Substitution *)
 
-val subst : Typesystem.oSubs -> Typesystem.tExpr -> Typesystem.tExpr
+val subst : Typesystem.oSubs -> Typesystem.expr -> Typesystem.expr

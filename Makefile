@@ -7,21 +7,25 @@ BFLAGS += -use-menhir
 # BFLAGS += -verbose 0
 SRCFILES =					\
 	typesystem.ml				\
+	derivation.ml				\
 	universe.ml				\
 	alpha.ml				\
 	substitute.ml				\
+	substitute.mli				\
+	check.mli				\
 	check.ml				\
 	equality.ml				\
+	equality.mli				\
 	fillin.ml				\
 	tau.ml					\
-	derivation.ml				\
+	tau.mli					\
 	printer.ml				\
 	grammar.mly				\
 	tokens.mll				\
 	toplevel.ml				\
 	checker.ml
 
-BASENAMES = $(patsubst %.mly, %, $(patsubst %.mll, %, $(patsubst %.ml, %, $(SRCFILES))))
+BASENAMES = $(shell for i in $(patsubst %.mli, %, $(patsubst %.mly, %, $(patsubst %.mll, %, $(patsubst %.ml, %, $(SRCFILES))))) ; do echo $$i ; done | uniq)
 
 # add ,p to get the ocamlyacc parser to display a trace
 RUN = -b
@@ -36,7 +40,7 @@ doc: checker.odocl
 checker.odocl: Makefile
 	for i in $(BASENAMES) ; do echo $$i ; done >$@
 clean::; ocamlbuild -clean
-TAGS: $(SRCFILES) test.ts scripts/ts.etags
+TAGS: $(SRCFILES) test.ts scripts/ts.etags Makefile
 	( scripts/etags.ocaml $(SRCFILES) && etags --regex=@scripts/ts.etags test.ts -o - ) >$@
 clean::; rm -f TAGS checker.odocl
 wc:; wc -l $(SRCFILES) Makefile test.ts

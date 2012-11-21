@@ -95,8 +95,6 @@ type expr =
 	(** An o-variable. *)
   | POS of position * expr
 	(** a wrapper that gives the position in the source code, for error messages *)
-and tExpr = expr			(*temporary*)
-and oExpr = expr			(*temporary*)
 and label =
   | BB of oVar
 	(** the variable is bound in each of the expressions of the list *)
@@ -344,7 +342,10 @@ let template = function
 	  | TT_IC -> (
 	      match args with [tA; a; Expr(BB x, [tB;Expr( BB y, [tD;Expr( BB z, [q])])])] -> ()
 	      | _ -> raise InternalError)
-	  | TT_Id -> ()
+	  | TT_Id -> (
+	      match args with
+		[tX; x; x'] -> ()
+	      | _ -> raise InternalError)
 	  | TT_def_app d -> ()
 	  | TT_nat -> ()
 	 )
@@ -496,19 +497,19 @@ type utContext = uContext * tContext
 let emptyUTContext = emptyUContext, emptyTContext
 
 (** o-context; a list of o-variables with T-expressions representing their declared type. *)
-type oContext = (oVar' * tExpr) list				  (* [Gamma] *)
+type oContext = (oVar' * expr) list				  (* [Gamma] *)
 let emptyOContext : oContext = []
 
-type oSubs = (oVar' * oExpr) list
+type oSubs = (oVar' * expr) list
 
 (* Abbreviations, conventions, and definitions; from the paper *)
 
 type identifier = Ident of string
 type definition = 
-  | TDefinition   of identifier * ((uContext * tContext * oContext)         * tExpr)
-  | ODefinition   of identifier * ((uContext * tContext * oContext) * oExpr * tExpr)
-  | TeqDefinition of identifier * ((uContext * tContext * oContext)         * tExpr * tExpr)
-  | OeqDefinition of identifier * ((uContext * tContext * oContext) * oExpr * oExpr * tExpr)
+  | TDefinition   of identifier * ((uContext * tContext * oContext)         * expr)
+  | ODefinition   of identifier * ((uContext * tContext * oContext) * expr * expr)
+  | TeqDefinition of identifier * ((uContext * tContext * oContext)         * expr * expr)
+  | OeqDefinition of identifier * ((uContext * tContext * oContext) * expr * expr * expr)
 
 
 (** Variable.
@@ -525,12 +526,13 @@ type environment_type = {
     lookup_order : (string * var) list	(* put definitions in here later *)
   }
 
-let obind (v,t) env = match v with
+let obind' (v,t) env = match v with
     OVar name -> { env with oc = (v,t) :: env.oc; lookup_order = (name, O v) :: env.lookup_order }
   | OVarGen (_,_) -> { env with oc = (v,t) :: env.oc }
   | OVarUnused -> env
   | OVarEmptyHole -> env
 
+let obind (v,t) env = obind' (strip_pos_var v, t) env
 
 (*
   Local Variables:
