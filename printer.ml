@@ -79,6 +79,8 @@ let rec etostring = function
 	      match args with 
 	      | [f;o;Expr(BB x,[t])] ->
 		  "[ev;" ^ (ovartostring x) ^ "](" ^ (etostring f) ^ "," ^ (etostring o) ^ "," ^ (etostring t) ^ ")"
+	      | [f;o] ->
+		  "[ev;_](" ^ (etostring f) ^ "," ^ (etostring o)
 	      | _ -> raise InternalError)
 	  | OO_lambda -> (
 	      match args with 

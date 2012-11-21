@@ -170,7 +170,7 @@ oExpr0:
     { make_OO_ev f o ((Nowhere, OVarUnused), t) }
 | f=oExpr o=oExpr
     %prec Prec_application
-    { make_OO_ev f o ((Nowhere, OVarEmptyHole), make_TT_EmptyHole) }
+    { make_OO_ev_hole f o }
 | Wlambda x=oVar Wrbracket Wlparen t=tExpr Wcomma o=oExpr Wrparen
     { make_OO_lambda t (x,o) }
 | Klambda x=oVar Wcolon t=tExpr Wcomma o=oExpr

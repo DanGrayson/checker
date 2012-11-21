@@ -13,6 +13,7 @@ polymorphic type system}, by Vladimir Voevodsky, the version dated October,
   *)
 
 let debug_mode = ref false
+let trap () = ()
 
 type position =
   | Position of Lexing.position * Lexing.position (** start, end *)
@@ -338,7 +339,7 @@ let make_OO_j m n = make_OO OO_j [chku m; chku n]
 let make_OO_ev f p (v,t) = make_OO OO_ev [chko f;chko p;make_BB1 v (chkt t)]
 let make_OO_ev_hole f p = make_OO OO_ev [chko f;chko p] (* fill in third argument later *)
 let make_OO_lambda t (v,p) = make_OO OO_lambda [chkt t; make_BB1 v (chko p)]
-let make_OO_forall m m' o (v,o') = make_OO OO_forall [chku m;chku m';chko o;make_BB1 v (chko o')]
+let make_OO_forall m m' n (v,o') = make_OO OO_forall [chku m;chku m';chko n;make_BB1 v (chko o')]
 let make_OO_pair a b (x,t) = make_OO OO_pair [chko a;chko b;make_BB1 x (chkt t)]
 let make_OO_pr1 t (x,t') o = make_OO OO_pr1 [chkt t;make_BB1 x (chkt t'); chko o]
 let make_OO_pr2 t (x,t') o = make_OO OO_pr2 [chkt t;make_BB1 x (chkt t'); chko o]

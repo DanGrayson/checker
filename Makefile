@@ -43,3 +43,10 @@ wc:; wc -l $(SRCFILES) Makefile test.ts
 run: checker.byte; OCAMLRUNPARAM=$(RUN) ./$< test.ts
 run_nofile: checker.byte; OCAMLRUNPARAM=$(RUN) ./$<
 run.native: checker.native; OCAMLRUNPARAM=$(RUN) ./$< <test.ts
+debug:
+	@ echo "enter:"
+	@ echo "  set arg test.ts"
+	@ echo "  goto 100"
+	@ echo "  br Typesystem.trap"
+	@ echo "  r"
+	ocamldebug -I _build checker.byte 
