@@ -1,6 +1,5 @@
-(** the grammar of the type theory *)
-
 %{ 
+
 open Typesystem
 
 type parm =
