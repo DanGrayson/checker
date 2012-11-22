@@ -34,7 +34,6 @@ let white = [ ' ' '\r' '\n' ]*
 rule expr_tokens = parse
   | "Check" white "Universes" { WCheckUniverses }
   | "Print" { WPrint }
-  | "LFPrint" { WLFPrint }
   | "uAlpha" { WuAlpha }
   | "tAlpha" { WtAlpha }
   | "oAlpha" { WoAlpha }

@@ -42,7 +42,7 @@ let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code ha
 %token Wgreaterequal Wgreater Wlessequal Wless Wsemi
 %token KUlevel Kumax KType KPi Klambda KSigma Kulevel
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall Kforall WSigma WCoprod WCoprod2 WEmpty Wempty Wempty_r WIC WId
-%token WTau WLFPrint WPrint WDefine Wtype Wequality WShow WEnd WVariable WoAlpha WtAlpha WuAlpha Weof
+%token WTau WPrint WDefine Wtype Wequality WShow WEnd WVariable WoAlpha WtAlpha WuAlpha Weof
 %token WCheck WCheckUniverses
 %token Wflush
 %token Prec_application
@@ -78,10 +78,6 @@ command0:
     { Toplevel.TPrint t }
 | WPrint o=oExpr Wperiod
     { Toplevel.OPrint o }
-| WLFPrint Wtype t=tExpr Wperiod
-    { Toplevel.LFTPrint t }
-| WLFPrint o=oExpr Wperiod
-    { Toplevel.LFOPrint o }
 | WCheck Kulevel u=uExpr Wperiod
     { Toplevel.UCheck u }
 | WCheck Wtype t=tExpr Wperiod

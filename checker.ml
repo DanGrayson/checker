@@ -110,13 +110,18 @@ let fix t = Fillin.fillin !environment t
 
 let tPrintCommand x =
   Printf.printf "Print type: %s\n" (Printer.etostring x);
+  Printf.printf " ... LFPrint Type: %s\n" (Printer.lftostring x);
   flush stdout;
   let x' = protect fix x Error.nopos in
   if not (Alpha.UEqual.equiv (!environment).uc x' x) then Printf.printf "      : %s\n" (Printer.etostring x');
   flush stdout
-
-let lftPrintCommand x =
-  Printf.printf "LFPrint Type: %s\n" (Printer.lftostring x);
+  
+let oPrintCommand x =
+  Printf.printf "Print: %s\n" (Printer.etostring x); 
+  Printf.printf " ... LFPrint Obj : %s\n" (Printer.lftostring x); 
+  flush stdout;
+  let x' = protect fix x Error.nopos in
+  if not (Alpha.UEqual.equiv (!environment).uc x' x) then Printf.printf "      : %s\n" (Printer.etostring x');
   flush stdout
 
 let uCheckCommand x =
@@ -126,25 +131,16 @@ let uCheckCommand x =
 
 let tCheckCommand x =
   Printf.printf "Check type: %s\n" (Printer.etostring x);
+  Printf.printf "        LF: %s\n" (Printer.lftostring x);
   flush stdout;
   protect1 (fun () -> Check.tcheck !environment x)
 
 let oCheckCommand x =
   let x = protect1 ( fun () -> Fillin.fillin !environment x ) in
   Printf.printf "Check: %s\n" (Printer.etostring x);
+  Printf.printf "   LF: %s\n" (Printer.lftostring x);
   flush stdout;
   protect1 (fun () -> Check.ocheck !environment x)
-  
-let oPrintCommand x =
-  Printf.printf "Print: %s\n" (Printer.etostring x); 
-  flush stdout;
-  let x' = protect fix x Error.nopos in
-  if not (Alpha.UEqual.equiv (!environment).uc x' x) then Printf.printf "      : %s\n" (Printer.etostring x');
-  flush stdout
-  
-let lfoPrintCommand x =
-  Printf.printf "LFPrint Obj : %s\n" (Printer.lftostring x); 
-  flush stdout
 
 let uPrintCommand x =
   Printf.printf "Print ulevel: %s\n" (Printer.utostring x);
@@ -229,8 +225,6 @@ let process_command lexbuf = (
     | Toplevel.UPrint x -> uPrintCommand x
     | Toplevel.TPrint x -> tPrintCommand x
     | Toplevel.OPrint x -> oPrintCommand x
-    | Toplevel.LFTPrint x -> lftPrintCommand x
-    | Toplevel.LFOPrint x -> lfoPrintCommand x
     | Toplevel.UCheck x -> uCheckCommand x
     | Toplevel.TCheck x -> tCheckCommand x
     | Toplevel.OCheck x -> oCheckCommand x

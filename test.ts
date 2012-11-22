@@ -13,36 +13,6 @@ Define type equality e := X == Y.
 
 Show.
 
-# test LF printing
-
-LFPrint lambda x:T, x.
-LFPrint type T.
-LFPrint type [El]([u](u2)).
-LFPrint type [U](u1).
-LFPrint [j](u1, u2).
-LFPrint type *[u](u1).
-LFPrint type [Sigma;x](T,T').
-LFPrint type Sigma x:T, Sigma y:U, V -> X .
-LFPrint type [Coprod](T,T').
-LFPrint type [Empty]().
-LFPrint lambda x:T, lambda y:T, lambda t:[Id](T,x,y), t.
-LFPrint lambda o:T, lambda o':T, [forall;x](u1,u2,o,o').
-LFPrint type Pi x : T, [U](u0+1).
-LFPrint type Pi x : T, [U](u0).
-LFPrint type T.
-LFPrint lambda x:T, x.
-LFPrint lambda e:U, lambda x : T, e.
-LFPrint lambda g:T -> *[u](u1), lambda f:Pi t:T, *g t, lambda o:T, f o.
-LFPrint type T -> U -> X -> Y.
-LFPrint lambda f:(X->X)->U, f lambda x:X, x.
-LFPrint lambda f:T->U, lambda o:T, [ev;_](f,o,U).
-LFPrint lambda f:T->U, lambda o:T, f o.
-LFPrint lambda k:U, lambda g:T -> *k, lambda f:Pi t:T, *g t, lambda o:T, f o.
-LFPrint lambda r:U, lambda f:T->U, lambda o:T, lambda x : *r, f o.
-LFPrint lambda f:X->T, lambda y:X, [ev;_](f,y,T).
-LFPrint lambda f:X->T, lambda y:X, f y.
-
-
 # Check lambda x:T, lambda y:U, [odef;foo](u1,u2;T,U;x,y).
 
 Check lambda x:T, x.
