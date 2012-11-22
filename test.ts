@@ -82,7 +82,6 @@ Check lambda f:T->U, lambda o:T, [ev;_](f,o,U).
 Check lambda f:T->U, lambda o:T, f o.
 Define E7 := ft : _ .
 Check lambda k:U, lambda g:T -> *k, lambda f:Pi t:T, *g t, lambda o:T, f o.
-Check lambda k:U, lambda g:T -> *k, lambda f:Pi t:T, *g t, lambda o:T, f f.
 Check lambda r:U, lambda f:T->U, lambda o:T, lambda x : *r, f o.
 Check lambda f:X->T, lambda y:X, [ev;_](f,y,T).
 Check lambda f:X->T, lambda y:X, f y.

@@ -10,12 +10,13 @@ SRCFILES =					\
 	derivation.ml				\
 	universe.ml				\
 	alpha.ml				\
+	reduction.ml				\
 	substitute.ml				\
 	substitute.mli				\
-	check.mli				\
-	check.ml				\
 	equality.ml				\
 	equality.mli				\
+	check.mli				\
+	check.ml				\
 	fillin.ml				\
 	tau.ml					\
 	tau.mli					\

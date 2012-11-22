@@ -2,10 +2,6 @@ open Typesystem
 
 type alpha_eq = (oVar' * oVar') list
 
-let beta1 f o = match strip_pos f with
-  Expr(OO OO_lambda, [t;Expr(BB x,[b])]) -> Substitute.subst [(strip_pos_var x,o)] b
-| _ -> raise InternalError
-
 let addalpha x x' (alpha:alpha_eq) =
   let x = strip_pos_var x in
   let x' = strip_pos_var x' in 
@@ -38,10 +34,11 @@ and eq alpha e e' = match (e,e') with
     | UU u, UU u' -> ueq' (u,u')
     | TT_variable t, TT_variable t' -> t = t'
     | OO_variable o, OO_variable o' -> testalpha' o o' alpha
-    | Expr(OO OO_ev,[f;o;Expr(BB x,[t])]),Expr(OO OO_ev,[f';o';Expr(BB x',[t'])]) ->
-	(eq alpha f f' && eq alpha o o') || (eq alpha (beta1 f o) (beta1 f' o'))
-    | Expr(OO OO_ev,[f;o;Expr(BB x,[t])]), e' -> eq alpha (beta1 f o) e'
-    | e, Expr(OO OO_ev,[f';o';Expr(BB x',[t'])]) -> eq alpha e (beta1 f' o')
+    |   Expr(OO OO_ev,[Expr(OO OO_lambda,_) as f ;o ;Expr(BB x ,[t ])]),
+	Expr(OO OO_ev,[Expr(OO OO_lambda,_) as f';o';Expr(BB x',[t'])]) ->
+	(eq alpha f f' && eq alpha o o') || (eq alpha (Reduction.beta1 f o) (Reduction.beta1 f' o'))
+    | Expr(OO OO_ev,[Expr(OO OO_lambda,_) as f;o;Expr(BB x,[t])]), e' -> eq alpha (Reduction.beta1 f o) e'
+    | e, Expr(OO OO_ev,[Expr(OO OO_lambda,_) as f';o';Expr(BB x',[t'])]) -> eq alpha e (Reduction.beta1 f' o')
     | Expr(h,args), Expr(h',args') -> (
 	match h,h' with
 	| BB x,BB x' -> let alpha = addalpha x x' alpha in eql alpha args args'
