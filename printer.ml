@@ -105,6 +105,6 @@ and lftostring = function
   | UU u -> utostring u
   | TT_variable t -> tvartostring' t
   | OO_variable o -> ovartostring' o
-  | LAMBDA(x,bodies) -> "LAMBDA " ^ (ovartostring x) ^ " : Obj," ^ (String.concat "" (List.map (fun x -> ", " ^ (lftostring x)) bodies))
+  | LAMBDA(x,bodies) -> "(LAMBDA " ^ (ovartostring x) ^ " : Obj" ^ (String.concat "" (List.map (fun x -> ", " ^ (lftostring x)) bodies)) ^ ")"
   | APPLY(h,args) -> lfl (head_to_string h) args
 
