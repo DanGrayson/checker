@@ -16,7 +16,7 @@ let rec tau (pos:Error.position) env = function
 	    | OO_numberedEmptyHole n -> raise (Error.TypingError(pos, "empty hole, type undetermined, internal error"))
 	    | OO_u -> (
 		match args with 
-		| [x] -> make_TT_U (with_pos pos (UU (Uplus(get_u x,1))))
+		| [POS(_,UU u)] -> make_TT_U (POS(pos, (make_UU (Uplus(u,1)))))
 		| _ -> raise Error.Internal)
 	    | OO_j -> (
 		match args with 
