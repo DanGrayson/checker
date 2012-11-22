@@ -38,4 +38,3 @@ val ocheck : Typesystem.environment_type -> Typesystem.expr -> unit
 val ucheck_okay : Typesystem.environment_type -> Typesystem.expr -> bool
 val tcheck_okay : Typesystem.environment_type -> Typesystem.expr -> bool
 val ocheck_okay : Typesystem.environment_type -> Typesystem.expr -> bool
-

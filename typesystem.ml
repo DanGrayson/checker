@@ -330,21 +330,23 @@ let template = function
 	      | [t1; Expr( BB x, [t2] )] -> ()
 	      | _ -> raise InternalError)
 	  | TT_Sigma -> (
-	      match args with [t1; Expr( BB x, [t2] )] -> ()
+	      match args with
+	      | [t1; Expr( BB x, [t2] )] -> ()
 	      | _ -> raise InternalError)
 	  | TT_Pt -> ()
 	  | TT_Coprod -> ()
 	  | TT_Coprod2 -> (
-	      match args with 
+	      match args with
 	      | [t;t'; Expr(BB x,[u]);Expr(BB x', [u']);o] -> ()
 	      | _ -> raise InternalError)
 	  | TT_Empty -> ()
 	  | TT_IC -> (
-	      match args with [tA; a; Expr(BB x, [tB;Expr( BB y, [tD;Expr( BB z, [q])])])] -> ()
+	      match args with
+	      | [tA; a; Expr(BB x, [tB;Expr( BB y, [tD;Expr( BB z, [q])])])] -> ()
 	      | _ -> raise InternalError)
 	  | TT_Id -> (
 	      match args with
-		[tX; x; x'] -> ()
+	      | [tX; x; x'] -> ()
 	      | _ -> raise InternalError)
 	  | TT_def_app d -> ()
 	  | TT_nat -> ()
@@ -356,16 +358,16 @@ let template = function
 	  | OO_u -> ()
 	  | OO_j -> ()
 	  | OO_ev -> (
-	      match args with 
+	      match args with
 	      | [f;o;Expr(BB x,[t])] -> ()
 	      | [f;o] -> ()
 	      | _ -> raise InternalError)
 	  | OO_lambda -> (
-	      match args with 
+	      match args with
 	      | [t;Expr(BB x,[o])] -> ()
 	      | _ -> raise InternalError)
 	  | OO_forall -> (
-	      match args with 
+	      match args with
 	      | [u;u';o;Expr(BB x,[o'])] -> ()
 	      | _ -> raise InternalError)
 	  | OO_def_app d -> ()

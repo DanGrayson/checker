@@ -80,8 +80,8 @@ let rec tcheck pos env =
        )
   in tcheck' env
 and ocheck pos env = function
-  | POS(pos,e) -> ()
-  | UU u -> ()
+  | POS(pos,e) -> ocheck pos env e
+  | UU u -> uexprcheck pos env u
   | TT_variable t -> ()
   | OO_variable OVarGen (i,s) -> raise NotImplemented
   | OO_variable OVarUnused -> raise InternalError
@@ -112,10 +112,7 @@ and ocheck pos env = function
 		  match strip_pos(tau env f) with
 		  | Expr(TT TT_Pi, [s; Expr(BB w,[t'])]) ->
 		      if not ( w = v ) 
-		      then raise (
-			TypeCheckingFailure(pos,"expected identical variables: " ^
-					    (Printer.ovartostring w) ^ ", " ^
-					    (Printer.ovartostring v) ^ ")"));
+		      then raise NotImplemented;
 		      overify pos env x s;
 		      let env = obind (v,s) env in 
 		      tverify pos env t t'
@@ -178,12 +175,12 @@ and tcheckl pos env a = List.iter (tcheck pos env) a
 and ocheckl pos env a = List.iter (ocheck pos env) a
 and overify pos env o t =			(* verify that o has type t *)
   let t' = (tau env o) in
-  if not (tequal t' t)
+  if not (equal t' t)
   then raise (TypeCheckingFailure3 (get_pos o, "expected term "^(Printer.etostring o),
 				   get_pos t', "of type "^(Printer.etostring t'),
 				   get_pos t , "to have type "^(Printer.etostring t)))
 and tverify pos env t1 t2 =			(* verify that t1 = t2 *)
-  if not (tequal t1 t2)
+  if not (equal t1 t2)
   then raise (TypeCheckingFailure3 (get_pos t2, "expected equal types",
 				   get_pos t1,"first type: " ^ (Printer.etostring t1),
 				   get_pos t2,"other type: " ^ (Printer.etostring t2)))
