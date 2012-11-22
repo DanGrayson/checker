@@ -8,9 +8,9 @@ let rec taupos (pos:Error.position) env o =
 	try List.assoc v env.oc
 	with Not_found -> 
 	    raise (Error.TypingError(get_pos o, "unbound variable, not in context: " ^ (ovartostring' v))))
-    | Expr(h,args) -> (
+    | APPLY(h,args) -> (
 	match h with
-	| BB _ -> raise Error.Internal
+	| LAMBDA _ -> raise Error.Internal
 	| TT _ -> raise Error.Internal
 	| OO oh -> (
 	    match oh with
@@ -26,11 +26,11 @@ let rec taupos (pos:Error.position) env o =
 		| _ -> raise Error.Internal)
 	    | OO_ev -> (
 		match args with 
-		| [f;o;Expr(BB x,[t])] -> Substitute.subst [(strip_pos_var x,o)] t
+		| [f;o;APPLY(LAMBDA x,[t])] -> Substitute.subst [(strip_pos_var x,o)] t
 		| _ -> raise Error.Internal)
 	    | OO_lambda -> (
 		match args with 
-		| [t;Expr(BB x,[o])] -> make_TT_Pi t (x, tau (obind (x,t) env) o)
+		| [t;APPLY(LAMBDA x,[o])] -> make_TT_Pi t (x, tau (obind (x,t) env) o)
 		| _ -> raise Error.Internal)
 	    | OO_forall -> (
 		match args with 

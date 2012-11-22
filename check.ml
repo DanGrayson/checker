@@ -39,9 +39,9 @@ let rec tcheck pos env =
 	| T _ -> ()
 	| O _ -> raise (Error.TypeCheckingFailure (pos, "expected a t-variable but found an o-variable: "^s)))
     | OO_variable o -> raise Error.Internal
-    | Expr(h,args) -> (
+    | APPLY(h,args) -> (
 	match h with
-	| BB x -> raise Error.Internal
+	| LAMBDA x -> raise Error.Internal
 	| TT th -> (
 	    match th with 
 	    | TT_EmptyHole | TT_NumberedEmptyHole _ -> raise (Error.TypeCheckingFailure(pos,"empty hole for t-expression found"))
@@ -49,7 +49,7 @@ let rec tcheck pos env =
 	    | TT_U -> ucheckn 1 pos env args
 	    | TT_Sigma | TT_Pi -> (
 		match args with
-		| [t1; Expr( BB x, [t2] )] -> tcheck' env t1; tcheck_binder pos env x t1 t2
+		| [t1; APPLY( LAMBDA x, [t2] )] -> tcheck' env t1; tcheck_binder pos env x t1 t2
 		| _ -> raise Error.Internal)
 	    | TT_Pt -> ()
 	    | TT_Coprod -> (
@@ -58,11 +58,11 @@ let rec tcheck pos env =
 		| _ -> raise Error.Internal)
 	    | TT_Coprod2 -> (
 		match args with 
-		| [t;t'; Expr(BB x,[u]);Expr(BB x', [u']);o] -> raise Error.NotImplemented
+		| [t;t'; APPLY(LAMBDA x,[u]);APPLY(LAMBDA x', [u']);o] -> raise Error.NotImplemented
 		| _ -> raise Error.Internal)
 	    | TT_Empty -> ()
 	    | TT_IC -> (
-		match args with [tA; a; Expr(BB x, [tB;Expr( BB y, [tD;Expr( BB z, [q])])])] -> raise Error.NotImplemented
+		match args with [tA; a; APPLY(LAMBDA x, [tB;APPLY( LAMBDA y, [tD;APPLY( LAMBDA z, [q])])])] -> raise Error.NotImplemented
 		| _ -> raise Error.Internal)
 	    | TT_Id -> (
 	      match args with
@@ -90,9 +90,9 @@ and ocheck pos env = function
 	U _ -> raise (Error.TypeCheckingFailure (pos, "expected an o-variable but found a u-variable: "^s))
       | T _ -> raise (Error.TypeCheckingFailure (pos, "expected an o-variable but found a t-variable: "^s))
       | O _ -> ())
-  | Expr(h,args) -> (
+  | APPLY(h,args) -> (
       match h with
-      | BB x -> raise Error.Internal	(* should have been handled higher up *)
+      | LAMBDA x -> raise Error.Internal	(* should have been handled higher up *)
       | TT th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a t-expression"))
       | OO oh -> (
 	  match oh with
@@ -102,11 +102,11 @@ and ocheck pos env = function
 	  | OO_ev -> (
 	      match args with 
 	      | [f;o] -> raise Error.Internal (* type should have been filled in by now *)
-	      | [f;x;Expr(BB v,[t])] -> (
+	      | [f;x;APPLY(LAMBDA v,[t])] -> (
 		  ocheck pos env f; 
 		  ocheck pos env x; 
 		  match strip_pos(tau env f) with
-		  | Expr(TT TT_Pi, [s; Expr(BB w,[t'])]) ->
+		  | APPLY(TT TT_Pi, [s; APPLY(LAMBDA w,[t'])]) ->
 		      if not ( w = v ) 
 		      then raise Error.NotImplemented;
 		      overify pos env x s;
@@ -116,15 +116,15 @@ and ocheck pos env = function
 	      | _ -> raise Error.Internal)
 	  | OO_lambda -> (
 	      match args with 
-	      | [t;Expr(BB x,[o])] -> tcheck pos env t; ocheck_binder pos env x t o
+	      | [t;APPLY(LAMBDA x,[o])] -> tcheck pos env t; ocheck_binder pos env x t o
 	      | _ -> raise Error.Internal)
 	  | OO_forall -> (
 	      match args with 
-	      | [m;m';o;Expr(BB v,[o'])] ->
+	      | [m;m';o;APPLY(LAMBDA v,[o'])] ->
 		  ucheck pos env m; 
 		  ucheck pos env m'; 	(* probably have to check something here ... *)
 		  ocheck pos env o; 
-		  ocheck_binder pos env v (Expr(TT TT_El, [o])) o'
+		  ocheck_binder pos env v (APPLY(TT TT_El, [o])) o'
 	      | _ -> raise Error.Internal)
 	  | OO_def_app d -> ()
 	  | OO_pair -> raise Error.NotImplemented

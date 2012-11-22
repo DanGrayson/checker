@@ -19,89 +19,56 @@ let rec etostring = function
   | UU u -> utostring u
   | TT_variable t -> tvartostring' t
   | OO_variable o -> ovartostring' o
-  | Expr(h,args) -> (
+  | APPLY(h,args) -> (
       match h with
-      | BB x -> "[BIND;" ^ (ovartostring x) ^ "]" ^ (parenelisttostring args)
       | TT th -> (
 	  match th with 
-	  | TT_EmptyHole -> "_"
-	  | TT_NumberedEmptyHole n -> "_" ^ (string_of_int  n)
-	  | TT_El -> "[El]" ^ (parenelisttostring args)
-	  | TT_U -> "[U]" ^ (parenelisttostring args)
 	  | TT_Pi -> (
 	      match args with
-	      | [t1; Expr( BB x, [t2] )] -> "[Pi;" ^ (ovartostring x) ^ "](" ^ (etostring t1) ^ "," ^ (etostring t2) ^ ")"
+	      | [t1; APPLY( LAMBDA x, [t2] )] -> "[Pi;" ^ (ovartostring x) ^ "](" ^ (etostring t1) ^ "," ^ (etostring t2) ^ ")"
 	      | _ -> raise Error.Internal)
 	  | TT_Sigma -> (
-	      match args with [t1; Expr( BB x, [t2] )] -> "[Sigma;" ^ (ovartostring x) ^ "](" ^ (etostring t1) ^ "," ^ (etostring t2) ^ ")"
+	      match args with [t1; APPLY( LAMBDA x, [t2] )] -> "[Sigma;" ^ (ovartostring x) ^ "](" ^ (etostring t1) ^ "," ^ (etostring t2) ^ ")"
 	      | _ -> raise Error.Internal)
-	  | TT_Pt -> "[Pt]" ^ (parenelisttostring args)
-	  | TT_Coprod -> "[Coprod]" ^ (parenelisttostring args)
 	  | TT_Coprod2 -> (
 	      match args with 
-	      | [t;t'; Expr(BB x,[u]);Expr(BB x', [u']);o] ->
+	      | [t;t'; APPLY(LAMBDA x,[u]);APPLY(LAMBDA x', [u']);o] ->
 		  "[Coprod;" ^ (ovartostring x) ^ "," ^ (ovartostring x') ^ "](" 
 		  ^ (etostring t) ^ "," ^ (etostring t) ^ ","
 		  ^ (etostring u) ^ "," ^ (etostring u') ^ ","
 		  ^ (etostring o)
 		  ^ ")"
 	      | _ -> raise Error.Internal)
-	  | TT_Empty -> "[Empty]" ^ (parenelisttostring args)
 	  | TT_IC -> (
 	      match args with 
-		[tA; a; Expr(BB x, [tB;Expr( BB y, [tD;Expr( BB z, [q])])])]
+		[tA; a; APPLY(LAMBDA x, [tB;APPLY( LAMBDA y, [tD;APPLY( LAMBDA z, [q])])])]
 		-> "[IC;" ^ (ovartostring x) ^ "," ^ (ovartostring y) ^ "," ^ (ovartostring z) ^ "]("
 		  ^ (etostring tA) ^ "," ^ (etostring a) ^ "," ^ (etostring tB) ^ "," ^ (etostring tD) ^ "," ^ (etostring q) ^ ")"
 	      | _ -> raise Error.Internal)
-	  | TT_Id -> "[Id]" ^ (parenelisttostring args)
-	  | TT_def_app d -> "[tdef;" ^ d ^ "]" ^ (parenelisttostring args)
+	  | _ -> "[" ^ (thead_to_string th) ^ "]" ^ (parenelisttostring args)
 	 )
       | OO oh -> (
 	  match oh with
-	  | OO_emptyHole -> "_"
-	  | OO_numberedEmptyHole n -> "_" ^ (string_of_int  n)
-	  | OO_u -> "[u]" ^ (parenelisttostring args)
-	  | OO_j -> "[j]" ^ (parenelisttostring args)
 	  | OO_ev -> (
 	      match args with 
-	      | [f;o;Expr(BB x,[t])] ->
+	      | [f;o;APPLY(LAMBDA x,[t])] ->
 		  "[ev;" ^ (ovartostring x) ^ "](" ^ (etostring f) ^ "," ^ (etostring o) ^ "," ^ (etostring t) ^ ")"
 	      | [f;o] ->
 		  "[ev;_](" ^ (etostring f) ^ "," ^ (etostring o)
 	      | _ -> raise Error.Internal)
 	  | OO_lambda -> (
 	      match args with 
-	      | [t;Expr(BB x,[o])] ->
+	      | [t;APPLY(LAMBDA x,[o])] ->
 		  "[lambda;" ^ (ovartostring x) ^ "](" ^ (etostring t) ^ "," ^ (etostring o) ^ ")"
 	      | _ -> raise Error.Internal)
 	  | OO_forall -> (
 	      match args with 
-	      | [u;u';o;Expr(BB x,[o'])] ->
+	      | [u;u';o;APPLY(LAMBDA x,[o'])] ->
 		  "[forall;" ^ (ovartostring x) ^ "](" ^ (etostring u) ^ "," ^ (etostring u') ^ "," ^ (etostring o) ^ "," ^ (etostring o') ^ ")"
 	      | _ -> raise Error.Internal)
-	  | OO_def_app d -> "[tdef;" ^ d ^ "]" ^ (parenelisttostring args)
-	  | OO_pair -> "[pair]" ^ (parenelisttostring args)
-	  | OO_pr1 -> "[pr1]" ^ (parenelisttostring args)
-	  | OO_pr2 -> "[pr2]" ^ (parenelisttostring args)
-	  | OO_total -> "[total]" ^ (parenelisttostring args)
-	  | OO_pt -> "[pt]" ^ (parenelisttostring args)
-	  | OO_pt_r -> "[pt_r]" ^ (parenelisttostring args)
-	  | OO_tt -> "[tt]" ^ (parenelisttostring args)
-	  | OO_coprod -> "[coprod]" ^ (parenelisttostring args)
-	  | OO_ii1 -> "[ii1]" ^ (parenelisttostring args)
-	  | OO_ii2 -> "[ii2]" ^ (parenelisttostring args)
-	  | OO_sum -> "[sum]" ^ (parenelisttostring args)
-	  | OO_empty -> "[empty]()"
-	  | OO_empty_r -> "[empty_r]" ^ (parenelisttostring args)
-	  | OO_c -> "[c]" ^ (parenelisttostring args)
-	  | OO_ic_r -> "[ic_r]" ^ (parenelisttostring args)
-	  | OO_ic -> "[ic]" ^ (parenelisttostring args)
-	  | OO_paths -> "[paths]" ^ (parenelisttostring args)
-	  | OO_refl -> "[refl]" ^ (parenelisttostring args)
-	  | OO_J -> "[J]" ^ (parenelisttostring args)
-	  | OO_rr0 -> "[rr0]" ^ (parenelisttostring args)
-	  | OO_rr1 -> "[rr1]" ^ (parenelisttostring args)
+	  | _ -> "[" ^ (ohead_to_string oh) ^ "]" ^ (parenelisttostring args)
 	 )
+      | _ -> "[" ^ (head_to_string h) ^ "]" ^ (parenelisttostring args)
      )
 and elisttostring s = String.concat "," (List.map etostring s)
 and parenelisttostring s = String.concat "" [ "("; elisttostring s; ")" ]
@@ -138,5 +105,5 @@ and lftostring = function
   | UU u -> utostring u
   | TT_variable t -> tvartostring' t
   | OO_variable o -> ovartostring' o
-  | Expr(h,args) -> lfl (head_to_string h) args
+  | APPLY(h,args) -> lfl (head_to_string h) args
 

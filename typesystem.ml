@@ -68,7 +68,8 @@ type uExpr =
   | U_def of string * uExpr list
 	
 type expr = 
-  | Expr of label * expr list
+  | APPLY of label * expr list
+	(** APPLY is function application in LF *)
   | UU of uExpr
 	(** A u-level expression. *)
   | TT_variable of tVar'
@@ -78,7 +79,7 @@ type expr =
   | POS of position * expr
 	(** a wrapper that gives the position in the source code, for error messages *)
 and label =
-  | BB of oVar
+  | LAMBDA of oVar
 	(** the variable is bound in each of the expressions of the list *)
 	(* we never wrap an expression with this label with a position, so pattern matching is feasible *)
   | TT of tHead
@@ -285,7 +286,7 @@ let thead_to_string = function
   | TT_Id -> "Id"
   | TT_def_app d -> "tdef;" ^ d
 let head_to_string = function
-  | BB x -> "lambda " ^ (ovartostring x) ^ " : Obj,"
+  | LAMBDA x -> "LAMBDA " ^ (ovartostring x) ^ " : Obj,"
   | TT h -> "[" ^ thead_to_string h ^ "]"
   | OO h -> "[" ^ ohead_to_string h ^ "]"
 
@@ -313,7 +314,7 @@ let chkulist us = List.iter (fun u -> let _ = chku u in ()) us; us
 let rec isT = function
 | POS(_,x) -> isT x
 | TT_variable _ -> true
-| Expr(TT _, _) -> true
+| APPLY(TT _, _) -> true
 | _ -> false
 let chkt t = if not (isT t) then raise Error.Internal; t
 let chktlist ts = List.iter (fun t -> let _ = chkt t in ()) ts; ts
@@ -321,7 +322,7 @@ let chktlist ts = List.iter (fun t -> let _ = chkt t in ()) ts; ts
 let rec isO = function
 | POS(_,x) -> isO x
 | OO_variable _ -> true
-| Expr(OO _, _) -> true
+| APPLY(OO _, _) -> true
 | _ -> false
 let chko o = if not (isO o) then raise Error.Internal; o
 let chkolist os = List.iter (fun o -> let _ = chko o in ()) os; os
@@ -337,9 +338,9 @@ let template = function
   | UU u -> ()
   | TT_variable t -> ()
   | OO_variable o -> ()
-  | Expr(h,args) -> (
+  | APPLY(h,args) -> (
       match h with
-      | BB x -> raise Error.Internal	(* should have been handled higher up *)
+      | LAMBDA x -> raise Error.Internal	(* should have been handled higher up *)
       | TT th -> (
 	  match th with 
 	  | TT_EmptyHole -> ()
@@ -348,22 +349,22 @@ let template = function
 	  | TT_U -> ()
 	  | TT_Pi -> (
 	      match args with
-	      | [t1; Expr( BB x, [t2] )] -> ()
+	      | [t1; APPLY( LAMBDA x, [t2] )] -> ()
 	      | _ -> raise Error.Internal)
 	  | TT_Sigma -> (
 	      match args with
-	      | [t1; Expr( BB x, [t2] )] -> ()
+	      | [t1; APPLY( LAMBDA x, [t2] )] -> ()
 	      | _ -> raise Error.Internal)
 	  | TT_Pt -> ()
 	  | TT_Coprod -> ()
 	  | TT_Coprod2 -> (
 	      match args with
-	      | [t;t'; Expr(BB x,[u]);Expr(BB x', [u']);o] -> ()
+	      | [t;t'; APPLY(LAMBDA x,[u]);APPLY(LAMBDA x', [u']);o] -> ()
 	      | _ -> raise Error.Internal)
 	  | TT_Empty -> ()
 	  | TT_IC -> (
 	      match args with
-	      | [tA; a; Expr(BB x, [tB;Expr( BB y, [tD;Expr( BB z, [q])])])] -> ()
+	      | [tA; a; APPLY(LAMBDA x, [tB;APPLY( LAMBDA y, [tD;APPLY( LAMBDA z, [q])])])] -> ()
 	      | _ -> raise Error.Internal)
 	  | TT_Id -> (
 	      match args with
@@ -379,16 +380,16 @@ let template = function
 	  | OO_j -> ()
 	  | OO_ev -> (
 	      match args with
-	      | [f;o;Expr(BB x,[t])] -> ()
+	      | [f;o;APPLY(LAMBDA x,[t])] -> ()
 	      | [f;o] -> ()
 	      | _ -> raise Error.Internal)
 	  | OO_lambda -> (
 	      match args with
-	      | [t;Expr(BB x,[o])] -> ()
+	      | [t;APPLY(LAMBDA x,[o])] -> ()
 	      | _ -> raise Error.Internal)
 	  | OO_forall -> (
 	      match args with
-	      | [u;u';o;Expr(BB x,[o'])] -> ()
+	      | [u;u';o;APPLY(LAMBDA x,[o'])] -> ()
 	      | _ -> raise Error.Internal)
 	  | OO_def_app d -> ()
 	  | OO_pair -> ()
@@ -416,13 +417,13 @@ let template = function
      )
 
 let make_UU u = UU u
-let make_TT h a = Expr(TT h, a)
-let make_OO h a = Expr(OO h, a)
+let make_TT h a = APPLY(TT h, a)
+let make_OO h a = APPLY(OO h, a)
 let make_TT_variable x = TT_variable x
 let make_OO_variable v = OO_variable v
 
-let make_BB1 v x = Expr(BB v, [x])
-let make_BB2 v x y = Expr(BB v, [x;y])
+let make_BB1 v x = APPLY(LAMBDA v, [x])
+let make_BB2 v x y = APPLY(LAMBDA v, [x;y])
 
 let make_TT_EmptyHole = make_TT TT_Empty []
 let make_TT_NumberedEmptyHole n = make_TT (TT_NumberedEmptyHole n) []

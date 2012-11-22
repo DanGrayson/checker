@@ -34,14 +34,14 @@ and eq alpha e e' = match (e,e') with
     | UU u, UU u' -> ueq' (u,u')
     | TT_variable t, TT_variable t' -> t = t'
     | OO_variable o, OO_variable o' -> testalpha' o o' alpha
-    |   Expr(OO OO_ev,[Expr(OO OO_lambda,_) as f ;o ;Expr(BB x ,[t ])]),
-	Expr(OO OO_ev,[Expr(OO OO_lambda,_) as f';o';Expr(BB x',[t'])]) ->
+    |   APPLY(OO OO_ev,[APPLY(OO OO_lambda,_) as f ;o ;APPLY(LAMBDA x ,[t ])]),
+	APPLY(OO OO_ev,[APPLY(OO OO_lambda,_) as f';o';APPLY(LAMBDA x',[t'])]) ->
 	(eq alpha f f' && eq alpha o o') || (eq alpha (Reduction.beta1 f o) (Reduction.beta1 f' o'))
-    | Expr(OO OO_ev,[Expr(OO OO_lambda,_) as f;o;Expr(BB x,[t])]), e' -> eq alpha (Reduction.beta1 f o) e'
-    | e, Expr(OO OO_ev,[Expr(OO OO_lambda,_) as f';o';Expr(BB x',[t'])]) -> eq alpha e (Reduction.beta1 f' o')
-    | Expr(h,args), Expr(h',args') -> (
+    | APPLY(OO OO_ev,[APPLY(OO OO_lambda,_) as f;o;APPLY(LAMBDA x,[t])]), e' -> eq alpha (Reduction.beta1 f o) e'
+    | e, APPLY(OO OO_ev,[APPLY(OO OO_lambda,_) as f';o';APPLY(LAMBDA x',[t'])]) -> eq alpha e (Reduction.beta1 f' o')
+    | APPLY(h,args), APPLY(h',args') -> (
 	match h,h' with
-	| BB x,BB x' -> let alpha = addalpha x x' alpha in eql alpha args args'
+	| LAMBDA x,LAMBDA x' -> let alpha = addalpha x x' alpha in eql alpha args args'
 	| h,h' -> h = h' && eql alpha args args')
     | _ -> false
 let equal a b = eq [] a b
