@@ -1,4 +1,4 @@
-(** Declaration of toplevel commands *)
+(** Declaration of toplevel commands. *)
 
 open Typesystem
 type command' = 

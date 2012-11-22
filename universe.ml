@@ -1,4 +1,4 @@
-(** Here we implement a naive algorithm for checking consistency of a universe context.
+(** A naive algorithm for checking consistency of a universe context.
 
     We set the i-th universe level variable to [100 * i], evaluate, and see
     whether the resulting equalities of natural numbers are true.  That amounts to

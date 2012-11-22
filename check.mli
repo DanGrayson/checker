@@ -1,4 +1,4 @@
-(** In this file we do typechecking.  
+(** Type checking.  
 
     For a t-expression, this just amounts to being well-formed, since types
     have no type.  For an o-expression, it's a meta-theorem that the type turns

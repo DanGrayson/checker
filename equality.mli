@@ -1,3 +1,3 @@
-(** In this file, we implement definitional equality. *)
+(** Definitional equality. *)
 
 val equal : Typesystem.expr -> Typesystem.expr -> bool

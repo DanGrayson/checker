@@ -1,4 +1,4 @@
-(** Voevodsky's type system TS
+(** Voevodsky's type system TS mixed with the type system LF of Logical Frameworks (Edinburgh style).
 
 @author Dan Grayson
 

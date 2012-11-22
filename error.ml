@@ -1,4 +1,4 @@
-(** exceptions, error message handling, and source code positions *)
+(** Exceptions, error message handling, and source code positions. *)
 
 exception UniverseInconsistency
 exception GeneralError of string

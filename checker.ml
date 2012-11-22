@@ -1,4 +1,4 @@
-(** top level code *)
+(** Top level code. *)
 
 open Typesystem
 open Derivation				(*otherwise unused*)
