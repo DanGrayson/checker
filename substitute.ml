@@ -4,7 +4,7 @@ let newfresh =
   let genctr = ref 0 in 
   let newgen x = (
     incr genctr; 
-    if !genctr < 0 then raise GensymCounterOverflow;
+    if !genctr < 0 then raise Error.GensymCounterOverflow;
     OVarGen (!genctr, x)) in
   fun v -> match v with 
       OVar x | OVarGen(_,x) -> newgen x

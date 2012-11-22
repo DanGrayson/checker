@@ -6,6 +6,8 @@ BFLAGS += -use-menhir
 
 # BFLAGS += -verbose 0
 SRCFILES =					\
+	debugging.ml \
+	error.ml \
 	typesystem.ml				\
 	derivation.ml				\
 	universe.ml				\
@@ -52,6 +54,6 @@ debug:
 	@ echo "enter:"
 	@ echo "  set arg test.ts"
 	@ echo "  goto 100"
-	@ echo "  br Typesystem.trap"
-	@ echo "  r"
+	@ echo "  break Debugging.trap"
+	@ echo "  run"
 	ocamldebug -I _build checker.byte 

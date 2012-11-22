@@ -19,4 +19,4 @@ type command' =
   | Show
   | End
 
-type command = position * command'
+type command = Error.position * command'

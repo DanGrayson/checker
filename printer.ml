@@ -44,10 +44,10 @@ let rec etostring = function
 	  | TT_Pi -> (
 	      match args with
 	      | [t1; Expr( BB x, [t2] )] -> "[Pi;" ^ (ovartostring x) ^ "](" ^ (etostring t1) ^ "," ^ (etostring t2) ^ ")"
-	      | _ -> raise InternalError)
+	      | _ -> raise Error.Internal)
 	  | TT_Sigma -> (
 	      match args with [t1; Expr( BB x, [t2] )] -> "[Sigma;" ^ (ovartostring x) ^ "](" ^ (etostring t1) ^ "," ^ (etostring t2) ^ ")"
-	      | _ -> raise InternalError)
+	      | _ -> raise Error.Internal)
 	  | TT_Pt -> "[Pt]" ^ (parenelisttostring args)
 	  | TT_Coprod -> "[Coprod]" ^ (parenelisttostring args)
 	  | TT_Coprod2 -> (
@@ -58,14 +58,14 @@ let rec etostring = function
 		  ^ (etostring u) ^ "," ^ (etostring u') ^ ","
 		  ^ (etostring o)
 		  ^ ")"
-	      | _ -> raise InternalError)
+	      | _ -> raise Error.Internal)
 	  | TT_Empty -> "[Empty]" ^ (parenelisttostring args)
 	  | TT_IC -> (
 	      match args with 
 		[tA; a; Expr(BB x, [tB;Expr( BB y, [tD;Expr( BB z, [q])])])]
 		-> "[IC;" ^ (ovartostring x) ^ "," ^ (ovartostring y) ^ "," ^ (ovartostring z) ^ "]("
 		  ^ (etostring tA) ^ "," ^ (etostring a) ^ "," ^ (etostring tB) ^ "," ^ (etostring tD) ^ "," ^ (etostring q) ^ ")"
-	      | _ -> raise InternalError)
+	      | _ -> raise Error.Internal)
 	  | TT_Id -> "[Id]" ^ (parenelisttostring args)
 	  | TT_def_app d -> "[tdef;" ^ d ^ "]" ^ (parenelisttostring args)
 	  | TT_nat -> "nat" 
@@ -82,17 +82,17 @@ let rec etostring = function
 		  "[ev;" ^ (ovartostring x) ^ "](" ^ (etostring f) ^ "," ^ (etostring o) ^ "," ^ (etostring t) ^ ")"
 	      | [f;o] ->
 		  "[ev;_](" ^ (etostring f) ^ "," ^ (etostring o)
-	      | _ -> raise InternalError)
+	      | _ -> raise Error.Internal)
 	  | OO_lambda -> (
 	      match args with 
 	      | [t;Expr(BB x,[o])] ->
 		  "[lambda;" ^ (ovartostring x) ^ "](" ^ (etostring t) ^ "," ^ (etostring o) ^ ")"
-	      | _ -> raise InternalError)
+	      | _ -> raise Error.Internal)
 	  | OO_forall -> (
 	      match args with 
 	      | [u;u';o;Expr(BB x,[o'])] ->
 		  "[forall;" ^ (ovartostring x) ^ "](" ^ (etostring u) ^ "," ^ (etostring u') ^ "," ^ (etostring o) ^ "," ^ (etostring o') ^ ")"
-	      | _ -> raise InternalError)
+	      | _ -> raise Error.Internal)
 	  | OO_def_app d -> "[tdef;" ^ d ^ "]" ^ (parenelisttostring args)
 	  | OO_numeral i -> string_of_int i
 	  | OO_pair -> "[pair]" ^ (parenelisttostring args)

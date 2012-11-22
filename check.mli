@@ -28,9 +28,6 @@
 
     Failure to type is signaled with an exception. *)
 
-exception TypeCheckingFailure of Typesystem.position * string
-exception TypeCheckingFailure2 of Typesystem.position * string * Typesystem.position * string
-exception TypeCheckingFailure3 of Typesystem.position * string * Typesystem.position * string * Typesystem.position * string
 val uexprcheck : Typesystem.environment_type -> Typesystem.uExpr -> unit
 val ucheck : Typesystem.environment_type -> Typesystem.expr -> unit
 val tcheck : Typesystem.environment_type -> Typesystem.expr -> unit

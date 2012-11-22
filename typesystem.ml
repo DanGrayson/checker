@@ -12,36 +12,7 @@ polymorphic type system}, by Vladimir Voevodsky, the version dated October,
 
   *)
 
-let debug_mode = ref false
-let trap () = ()
-
-type position =
-  | Position of Lexing.position * Lexing.position (** start, end *)
-  | Nowhere
-let error_format_pos = function
-  | Position(p,q) 
-    -> "File \"" ^ p.Lexing.pos_fname ^ "\", " 
-      ^ (if p.Lexing.pos_lnum = q.Lexing.pos_lnum
-	 then "line " ^ (string_of_int p.Lexing.pos_lnum) 
-	 else "lines " ^ (string_of_int p.Lexing.pos_lnum) ^ "-" ^ (string_of_int q.Lexing.pos_lnum))
-      ^ ", " 
-      ^ (let i = p.Lexing.pos_cnum-p.Lexing.pos_bol+1
-         and j = q.Lexing.pos_cnum-q.Lexing.pos_bol in
-         if i = j
-	 then "character " ^ (string_of_int i)
-         else "characters " ^ (string_of_int i) ^ "-" ^ (string_of_int j))
-  | Nowhere -> "nowhere:0:0"
-
-exception TypingError of position * string
-exception TypingUnimplemented of position * string
-exception GeneralError of string
-exception GensymCounterOverflow
-exception NotImplemented
-exception Unimplemented of string
-exception InternalError
-exception VariableNotInContext
-exception NoMatchingRule
-exception Eof
+open Error
 
 (** Universe variable. *)
 type uVar = position * uVar'
@@ -271,7 +242,7 @@ and oHead =
 let rec get_u = function
   | POS (_,e) -> get_u e
   | UU u -> u
-  | _ -> raise InternalError
+  | _ -> raise Error.Internal
 
 let with_pos pos u = POS (pos, u)
 let rec strip_pos = function
@@ -279,14 +250,14 @@ let rec strip_pos = function
 | e -> e
 let get_pos = function
 | POS(pos,_) -> pos
-| _ -> Nowhere
-let nowhere x = with_pos Nowhere x
+| _ -> Error.Nowhere
+let nowhere x = with_pos Error.Nowhere x
 
 let rec isU = function
 | POS(_,x) -> isU x
 | UU _ -> true
 | _ -> false
-let chku u = if not (isU u) then raise InternalError; u
+let chku u = if not (isU u) then raise Error.Internal; u
 let chkulist us = List.iter (fun u -> let _ = chku u in ()) us; us
 
 let rec isT = function
@@ -294,7 +265,7 @@ let rec isT = function
 | TT_variable _ -> true
 | Expr(TT _, _) -> true
 | _ -> false
-let chkt t = if not (isT t) then raise InternalError; t
+let chkt t = if not (isT t) then raise Error.Internal; t
 let chktlist ts = List.iter (fun t -> let _ = chkt t in ()) ts; ts
 
 let rec isO = function
@@ -302,7 +273,7 @@ let rec isO = function
 | OO_variable _ -> true
 | Expr(OO _, _) -> true
 | _ -> false
-let chko o = if not (isO o) then raise InternalError; o
+let chko o = if not (isO o) then raise Error.Internal; o
 let chkolist os = List.iter (fun o -> let _ = chko o in ()) os; os
 
 type expr_descriptor =
@@ -318,7 +289,7 @@ let template = function
   | OO_variable o -> ()
   | Expr(h,args) -> (
       match h with
-      | BB x -> raise InternalError	(* should have been handled higher up *)
+      | BB x -> raise Error.Internal	(* should have been handled higher up *)
       | TT th -> (
 	  match th with 
 	  | TT_EmptyHole -> ()
@@ -328,26 +299,26 @@ let template = function
 	  | TT_Pi -> (
 	      match args with
 	      | [t1; Expr( BB x, [t2] )] -> ()
-	      | _ -> raise InternalError)
+	      | _ -> raise Error.Internal)
 	  | TT_Sigma -> (
 	      match args with
 	      | [t1; Expr( BB x, [t2] )] -> ()
-	      | _ -> raise InternalError)
+	      | _ -> raise Error.Internal)
 	  | TT_Pt -> ()
 	  | TT_Coprod -> ()
 	  | TT_Coprod2 -> (
 	      match args with
 	      | [t;t'; Expr(BB x,[u]);Expr(BB x', [u']);o] -> ()
-	      | _ -> raise InternalError)
+	      | _ -> raise Error.Internal)
 	  | TT_Empty -> ()
 	  | TT_IC -> (
 	      match args with
 	      | [tA; a; Expr(BB x, [tB;Expr( BB y, [tD;Expr( BB z, [q])])])] -> ()
-	      | _ -> raise InternalError)
+	      | _ -> raise Error.Internal)
 	  | TT_Id -> (
 	      match args with
 	      | [tX; x; x'] -> ()
-	      | _ -> raise InternalError)
+	      | _ -> raise Error.Internal)
 	  | TT_def_app d -> ()
 	  | TT_nat -> ()
 	 )
@@ -361,15 +332,15 @@ let template = function
 	      match args with
 	      | [f;o;Expr(BB x,[t])] -> ()
 	      | [f;o] -> ()
-	      | _ -> raise InternalError)
+	      | _ -> raise Error.Internal)
 	  | OO_lambda -> (
 	      match args with
 	      | [t;Expr(BB x,[o])] -> ()
-	      | _ -> raise InternalError)
+	      | _ -> raise Error.Internal)
 	  | OO_forall -> (
 	      match args with
 	      | [u;u';o;Expr(BB x,[o'])] -> ()
-	      | _ -> raise InternalError)
+	      | _ -> raise Error.Internal)
 	  | OO_def_app d -> ()
 	  | OO_numeral i -> ()
 	  | OO_pair -> ()

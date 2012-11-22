@@ -16,24 +16,22 @@
 open Typesystem
 
 let rec memi' i x = function
-    [] -> raise InternalError
+    [] -> raise Error.Internal
   | a::l -> if a = x then i else memi' (i+1) x l
 
 let memi x = memi' 0 x
-
-exception UniverseInconsistency
 
 let chk uv (lhs,rhs) =
   let index name = memi name uv in
   let rec ev = function
     | Upos (_,u) -> ev u
-    | UEmptyHole -> raise InternalError
-    | UNumberedEmptyHole n -> raise InternalError
+    | UEmptyHole -> raise Error.Internal
+    | UNumberedEmptyHole n -> raise Error.Internal
     | Uvariable u -> index u
     | Uplus (x,n) -> ev x + n
     | Umax (x,y) -> max (ev x) (ev y)
-    | U_def (d,u) -> raise InternalError in
-  let chk lhs rhs = if (ev lhs) = (ev rhs) then raise UniverseInconsistency in
+    | U_def (d,u) -> raise Error.Internal in
+  let chk lhs rhs = if (ev lhs) = (ev rhs) then raise Error.UniverseInconsistency in
   chk lhs rhs
     
 let consistency uc = 
@@ -49,7 +47,7 @@ module Equal = struct
       | Uvariable UVar x, Uvariable UVar x' -> x = x'
       | Uplus (x,n), Uplus (x',n') -> ueq x x' && n = n'
       | Umax (x,y), Umax (x',y') -> ueq x x' && ueq y y'
-      | U_def (d,u), U_def (d',u') -> raise NotImplemented
+      | U_def (d,u), U_def (d',u') -> raise Error.NotImplemented
       | _ -> false
     in ueq
 end	  
@@ -61,7 +59,7 @@ module EquivA = struct
       chk uv (lhs,rhs);
       true
     with
-      UniverseInconsistency -> false
+      Error.UniverseInconsistency -> false
 end
 
 module type Equivalence = sig

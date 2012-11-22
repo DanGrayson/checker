@@ -5,31 +5,30 @@ open Derivation				(*otherwise unused*)
 open Universe
 
 let leave () = exit (if !Tokens.error_count > 0 then 1 else 0)
-let nopos x = error_format_pos Nowhere
 
 exception Error_Handled
 
 let protect1 f =
   try f () with
-  | TypingError (p,s) ->
-      Printf.fprintf stderr "%s: %s\n" (error_format_pos p) s;
+  | Error.TypingError (p,s) ->
+      Printf.fprintf stderr "%s: %s\n" (Error.error_format_pos p) s;
       flush stderr;
       Tokens.bump_error_count();
       raise Error_Handled
-  | TypingUnimplemented (p,s) -> 
-      Printf.fprintf stderr "%s: type checking unimplemented: %s\n" (error_format_pos p) s;
+  | Error.TypingUnimplemented (p,s) -> 
+      Printf.fprintf stderr "%s: type checking unimplemented: %s\n" (Error.error_format_pos p) s;
       flush stderr;
       Tokens.bump_error_count();
       raise Error_Handled
-  | Check.TypeCheckingFailure (p,s) -> 
-      Printf.fprintf stderr "%s: type checking failure: %s\n" (error_format_pos p) s;
+  | Error.TypeCheckingFailure (p,s) -> 
+      Printf.fprintf stderr "%s: type checking failure: %s\n" (Error.error_format_pos p) s;
       flush stderr;
       Tokens.bump_error_count();
       raise Error_Handled
-  | Check.TypeCheckingFailure3 (p1,s1,p2,s2,p3,s3) -> 
-      Printf.fprintf stderr "%s: type checking failure: %s\n" (error_format_pos p1) s1;
-      Printf.fprintf stderr "%s:      %s\n" (error_format_pos p2) s2;
-      Printf.fprintf stderr "%s:      %s\n" (error_format_pos p3) s3;
+  | Error.TypeCheckingFailure3 (p1,s1,p2,s2,p3,s3) -> 
+      Printf.fprintf stderr "%s: type checking failure: %s\n" (Error.error_format_pos p1) s1;
+      Printf.fprintf stderr "%s:      %s\n" (Error.error_format_pos p2) s2;
+      Printf.fprintf stderr "%s:      %s\n" (Error.error_format_pos p3) s3;
       flush stderr;
       Tokens.bump_error_count();
       raise Error_Handled
@@ -37,9 +36,9 @@ let protect1 f =
 let protect parser lexbuf posfun =
     try parser lexbuf
     with 
-      Eof -> leave()
-    | TypingUnimplemented (p,s) -> 
-	Printf.fprintf stderr "%s: type checking unimplemented: %s\n" (error_format_pos p) s;
+      Error.Eof -> leave()
+    | Error.TypingUnimplemented (p,s) -> 
+	Printf.fprintf stderr "%s: type checking unimplemented: %s\n" (Error.error_format_pos p) s;
 	flush stderr;
 	Tokens.bump_error_count();
 	raise Error_Handled
@@ -48,17 +47,17 @@ let protect parser lexbuf posfun =
 	flush stderr;
 	Tokens.bump_error_count();
 	raise (Failure s)
-    | TypingError (p,s) ->
-	Printf.fprintf stderr "%s: %s\n" (error_format_pos p) s;
+    | Error.TypingError (p,s) ->
+	Printf.fprintf stderr "%s: %s\n" (Error.error_format_pos p) s;
 	flush stderr;
 	Tokens.bump_error_count();
 	raise Error_Handled
-    | GeneralError s ->
+    | Error.GeneralError s ->
 	Printf.fprintf stderr "%s: %s\n" (posfun lexbuf) s;
 	flush stderr;
 	Tokens.bump_error_count();
 	raise Error_Handled
-    | Unimplemented s ->
+    | Error.Unimplemented s ->
 	Printf.fprintf stderr "%s: feature not yet implemented: %s\n" (posfun lexbuf) s;
 	flush stderr;
 	Tokens.bump_error_count();
@@ -112,7 +111,7 @@ let fix t = Fillin.fillin !environment t
 let tPrintCommand x =
   Printf.printf "Print type: %s\n" (Printer.etostring x);
   flush stdout;
-  let x' = protect fix x nopos in
+  let x' = protect fix x Error.nopos in
   if not (Alpha.UEqual.equiv (!environment).uc x' x) then Printf.printf "      : %s\n" (Printer.etostring x');
   flush stdout
 
@@ -135,7 +134,7 @@ let oCheckCommand x =
 let oPrintCommand x =
   Printf.printf "Print: %s\n" (Printer.etostring x); 
   flush stdout;
-  let x' = protect fix x nopos in
+  let x' = protect fix x Error.nopos in
   if not (Alpha.UEqual.equiv (!environment).uc x' x) then Printf.printf "      : %s\n" (Printer.etostring x');
   flush stdout
 
@@ -144,16 +143,16 @@ let uPrintCommand x =
   flush stdout
 
 let tAlphaCommand (x,y) =
-  let x = protect fix x nopos in
-  let y = protect fix y nopos in
+  let x = protect fix x Error.nopos in
+  let y = protect fix y Error.nopos in
   Printf.printf "tAlpha: %s\n" (if (Alpha.UEqual.equiv (!environment).uc x y) then "true" else "false");
   Printf.printf "      : %s\n" (Printer.etostring x);
   Printf.printf "      : %s\n" (Printer.etostring y);
   flush stdout
 
 let oAlphaCommand = fun (x,y) ->
-  let x = protect fix x nopos in
-  let y = protect fix y nopos in
+  let x = protect fix x Error.nopos in
+  let y = protect fix y Error.nopos in
   Printf.printf "oAlpha: %s\n" (if (Alpha.UEqual.equiv (!environment).uc x y) then "true" else "false");
   Printf.printf "      : %s\n" (Printer.etostring x);
   Printf.printf "      : %s\n" (Printer.etostring y);
@@ -168,8 +167,8 @@ let uAlphaCommand = fun (x,y) ->
 let checkUniversesCommand pos =
   try
     Universe.consistency (!environment.uc)
-  with Universe.UniverseInconsistency 
-    ->Printf.fprintf stderr "%s: universe inconsistency\n" (error_format_pos pos); 
+  with Error.UniverseInconsistency 
+    ->Printf.fprintf stderr "%s: universe inconsistency\n" (Error.error_format_pos pos); 
       flush stderr;
       Tokens.bump_error_count()
 
@@ -179,9 +178,9 @@ let typeCommand x = (
     Printf.printf "Tau: %s : %s\n" (Printer.etostring x) (Printer.etostring tx);
     flush stdout;
   with 
-  | GeneralError s -> raise NotImplemented
-  | TypingError (p,s) 
-    -> Printf.fprintf stderr "%s: %s\n" (error_format_pos p) s; 
+  | Error.GeneralError s -> raise Error.NotImplemented
+  | Error.TypingError (p,s) 
+    -> Printf.fprintf stderr "%s: %s\n" (Error.error_format_pos p) s; 
       flush stderr;
       Tokens.bump_error_count())
     
@@ -230,7 +229,7 @@ let process_command lexbuf = (
     | Toplevel.UAlpha (x,y) -> uAlphaCommand (x,y)
     | Toplevel.Type x -> typeCommand x
     | Toplevel.Definition x -> addDefinition x
-    | Toplevel.End -> Printf.printf "%s: ending.\n" (error_format_pos pos) ; flush stdout; raise StopParsingFile
+    | Toplevel.End -> Printf.printf "%s: ending.\n" (Error.error_format_pos pos) ; flush stdout; raise StopParsingFile
     | Toplevel.Show -> show_command()
     | Toplevel.CheckUniverses -> checkUniversesCommand pos
  )
@@ -261,7 +260,7 @@ let tExpr_from_string = parse_string Grammar.tExprEof
 
 let _ = 
   Arg.parse [
-  ("--debug" , Arg.Set debug_mode, "turn on debug mode")
+  ("--debug" , Arg.Set Debugging.debug_mode, "turn on debug mode")
 ]
     parse_file
     "usage: [options] filename ...";

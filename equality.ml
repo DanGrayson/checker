@@ -24,7 +24,7 @@ and ueq' = function
   | Uvariable UVar x, Uvariable UVar x' -> x = x'
   | Uplus (x,n), Uplus (x',n') -> ueq' (x,x') && n = n'
   | Umax (x,y), Umax (x',y') -> ueq' (x,x') && ueq' (y,y')
-  | U_def (d,u), U_def (d',u') -> raise NotImplemented
+  | U_def (d,u), U_def (d',u') -> raise Error.NotImplemented
   | _ -> false
 
 let rec eql alpha a b = List.length a = List.length b && List.for_all2 (eq alpha) a b

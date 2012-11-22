@@ -12,10 +12,10 @@ let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code ha
   let rec fix us ts os p =
     match p with 
     | UParm u :: p -> 
-	if List.length ts > 0 or List.length os > 0 then raise (GeneralError "expected universe-level variables first");
+	if List.length ts > 0 or List.length os > 0 then raise (Error.GeneralError "expected universe-level variables first");
 	fix (u::us) ts os p
     | TParm t :: p -> 
-	if List.length os > 0 then raise (Typesystem.Unimplemented "a type parameter after an object parameter");
+	if List.length os > 0 then raise (Error.Unimplemented "a type parameter after an object parameter");
 	fix us (t::ts) os p
     | OParm o :: p -> fix us ts (o::os) p
     | [] -> ( 
@@ -24,7 +24,7 @@ let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code ha
 	and uc = match (List.rev_append us []) with
 	| [] -> emptyUContext
 	| (uc :: []) -> uc
-	| _ -> raise (Typesystem.Unimplemented "merging of universe level variable lists")
+	| _ -> raise (Error.Unimplemented "merging of universe level variable lists")
 	in (uc,tc,oc))
   in fix [] [] [] p
 
@@ -63,11 +63,11 @@ tExprEof: a=tExpr Weof {a}
 oExprEof: a=oExpr Weof {a}
 
 command: c=command0 
-  { Position($startpos, $endpos), c }
+  { Error.Position($startpos, $endpos), c }
 
 command0:
 | Weof
-    { raise Eof }
+    { raise Error.Eof }
 | WVariable vars=nonempty_list(IDENTIFIER) Wcolon KType Wperiod
     { Toplevel.TVariable vars }
 | WVariable vars=nonempty_list(IDENTIFIER) Wcolon KUlevel eqns=preceded(Wsemi,uEquation)* Wperiod
@@ -144,13 +144,13 @@ parm:
 | oParm { $1 } 
 
 
-oVar: oVar0 { Position($startpos, $endpos), $1 }
+oVar: oVar0 { Error.Position($startpos, $endpos), $1 }
 oVar0: IDENTIFIER { OVar $1 }
 tVar0: IDENTIFIER { TVar $1 }
 uVar0: IDENTIFIER { UVar $1 }
 
 oExpr: o=oExpr0
-    { with_pos (Position($startpos, $endpos)) o }
+    { with_pos (Error.Position($startpos, $endpos)) o }
 | o=parenthesized(oExpr) 
     {o}
 oExpr0:
@@ -167,7 +167,7 @@ oExpr0:
 | Wev x=oVar Wrbracket Wlparen f=oExpr Wcomma o=oExpr Wcomma t=tExpr Wrparen
     { make_OO_ev f o (x,t) }
 | Wev Wunderscore Wrbracket Wlparen f=oExpr Wcomma o=oExpr Wcomma t=tExpr Wrparen
-    { make_OO_ev f o ((Nowhere, OVarUnused), t) }
+    { make_OO_ev f o ((Error.Nowhere, OVarUnused), t) }
 | f=oExpr o=oExpr
     %prec Prec_application
     { make_OO_ev_hole f o }
@@ -201,7 +201,7 @@ oExpr0:
     { make_OO_numeral n }			(* experimental *)
 
 tExpr: t=tExpr0 
-    { with_pos (Position($startpos, $endpos)) t }
+    { with_pos (Error.Position($startpos, $endpos)) t }
 | t=parenthesized(tExpr)
     { t }
 tExpr0:
@@ -223,7 +223,7 @@ tExpr0:
     %prec KPi
     { make_TT_Pi t1 (x,t2) }
 | t=tExpr Warrow u=tExpr
-    { make_TT_Pi t ((Nowhere, OVarUnused),u) }
+    { make_TT_Pi t ((Error.Nowhere, OVarUnused),u) }
 | WSigma x=oVar Wrbracket Wlparen t1=tExpr Wcomma t2=tExpr Wrparen
     { make_TT_Sigma t1 (x,t2) }
 | KSigma x=oVar Wcolon t1=tExpr Wcomma t2=tExpr
@@ -255,7 +255,7 @@ tExpr0:
 euExpr: u=uExpr
     { make_UU u }
 uExpr: u=uExpr0 
-    {Upos (Position($startpos, $endpos), u)}
+    {Upos (Error.Position($startpos, $endpos), u)}
 | u=parenthesized(uExpr)
     {u}
 uExpr0:
