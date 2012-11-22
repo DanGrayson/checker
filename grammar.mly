@@ -180,7 +180,7 @@ oExpr0:
     { make_OO_forall u1 u2 o1 (x,o2) }
 | Kforall x=oVar Wcolon Wstar o1=oExpr Wcomma o2=oExpr (* not sure about this syntax *)
     %prec Kforall
-    { make_OO_forall (make_UU UEmptyHole) (make_UU UEmptyHole) o1 (x,o2) }
+    { make_OO_forall (nowhere (make_UU UEmptyHole)) (nowhere (make_UU UEmptyHole)) o1 (x,o2) }
 | Wempty Wlparen Wrparen
     { make_OO_empty }
 | Wempty_r Wlparen t=tExpr Wcomma o=oExpr Wrparen
@@ -251,7 +251,7 @@ tExpr0:
     o=separated_list(Wcomma,oExpr) 
     Wrparen { make_TT_def_app name u t o }
 euExpr: u=uExpr
-    { make_UU u }
+    { nowhere (make_UU u) }
 uExpr: u=uExpr0 
     {Upos (Error.Position($startpos, $endpos), u)}
 | u=parenthesized(uExpr)

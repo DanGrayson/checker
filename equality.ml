@@ -29,20 +29,34 @@ and ueq' = function
 
 let rec eql alpha a b = List.length a = List.length b && List.for_all2 (eq alpha) a b
 and eq alpha e e' = match (e,e') with
-    | POS(_,e), e' -> eq alpha e e'
-    | e, POS(_,e') -> eq alpha e e'
-    | UU u, UU u' -> ueq' (u,u')
-    | TT_variable t, TT_variable t' -> t = t'
-    | OO_variable o, OO_variable o' -> testalpha' o o' alpha
-    |   APPLY(OO OO_ev,[APPLY(OO OO_lambda,_) as f ;o ;LAMBDA( x ,[t ])]),
-	APPLY(OO OO_ev,[APPLY(OO OO_lambda,_) as f';o';LAMBDA( x',[t'])]) ->
-	(eq alpha f f' && eq alpha o o') || (eq alpha (Reduction.beta1 f o) (Reduction.beta1 f' o'))
-    | APPLY(OO OO_ev,[APPLY(OO OO_lambda,_) as f;o;LAMBDA( x,[t])]), e' -> eq alpha (Reduction.beta1 f o) e'
-    | e, APPLY(OO OO_ev,[APPLY(OO OO_lambda,_) as f';o';LAMBDA( x',[t'])]) -> eq alpha e (Reduction.beta1 f' o')
     | LAMBDA (x,bodies),LAMBDA(x',bodies') -> let alpha = addalpha x x' alpha in eql alpha bodies bodies'
-    | APPLY(h,args), APPLY(h',args') -> (
-	match h,h' with
-	| h,h' -> h = h' && eql alpha args args')
-    | _ -> false
+    | POS(pos,e), POS(pos',e') -> (
+	match (e,e') with
+
+	| UU u, UU u' 
+	  -> ueq' (u,u')
+
+	| TT_variable t, TT_variable t' 
+	  -> t = t'
+
+	| OO_variable o, OO_variable o' 
+	  -> testalpha' o o' alpha
+
+	|   APPLY(OO OO_ev,[POS(_,APPLY(OO OO_lambda,_)) as f ;o ;LAMBDA( x ,[t ])]),
+	    APPLY(OO OO_ev,[POS(_,APPLY(OO OO_lambda,_)) as f';o';LAMBDA( x',[t'])]) 
+	  -> (eq alpha f f' && eq alpha o o') || (eq alpha (Reduction.beta1 f o) (Reduction.beta1 f' o'))
+
+	| APPLY(OO OO_ev,[POS(_,APPLY(OO OO_lambda,_)) as f;o;LAMBDA( x,[t])]), e'
+	  -> eq alpha (Reduction.beta1 f o) (POS(pos',e'))
+
+	| e, APPLY(OO OO_ev,[POS(_,APPLY(OO OO_lambda,_)) as f';o';LAMBDA( x',[t'])])
+	  -> eq alpha (POS(pos,e)) (Reduction.beta1 f' o')
+
+	| APPLY(h,args), APPLY(h',args')
+	  -> h = h' && eql alpha args args'
+
+	| _,_ -> false)
+    | _,_ -> false
+
 let equal a b = eq [] a b
 

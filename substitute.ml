@@ -12,16 +12,16 @@ let newfresh =
     | OVarEmptyHole as v -> v
 
 (** This version substitutes only for o-variables. *)
-let rec subst subs =
-  let rec substlist es = List.map subst1 es
-  and subst1 = function
-    | POS(pos,e) -> POS(pos,subst1 e)
-    | UU _ as u -> u
-    | TT_variable _ as t -> t
-    | OO_variable v as o -> (try List.assoc v subs with Not_found -> o)
-    | LAMBDA( (pos,v), bodies) -> 
-	let v' = newfresh v in
-	let subs = (v,OO_variable v') :: subs in 
-	LAMBDA( (pos,v'), (List.map (subst subs) bodies))
-    | APPLY(label,args) -> APPLY(label,substlist args)
-  in subst1
+let rec substlist subs es = List.map (subst subs) es
+and subst subs = function
+  | LAMBDA((pos,v), bodies) -> 
+      let w = newfresh v in
+      let v' = POS(pos, OO_variable w) in
+      let subs = (v,v') :: subs in 
+      LAMBDA((pos,w), List.map (subst subs) bodies)
+  | POS(pos,e) as d -> match e with 
+    | APPLY(label,args) -> POS(pos, APPLY(label,substlist subs args))
+    | OO_variable v -> (try List.assoc v subs with Not_found -> d)
+    | UU _ | TT_variable _ -> d
+  
+

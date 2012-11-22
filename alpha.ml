@@ -23,18 +23,19 @@ module Make(Ueq: Universe.Equivalence) = struct
   let uequiv = Ueq.equiv
     
   let rec eq uc alpha =
-    let rec eq alpha a b = a == b || eq' alpha a b
-    and eq' alpha x y = match (strip_pos x, strip_pos y) with 
-      | LAMBDA (x,bodies), LAMBDA (x',bodies') -> (
+    let rec eq alpha x y = x = y || match (x, y) with 
+      | LAMBDA (x,bodies), LAMBDA (x',bodies') ->
 	  let alpha = addalpha (strip_pos_var x) (strip_pos_var x') alpha 
 	  in List.for_all2 (eq alpha) bodies bodies'
-	 )
-      | APPLY(h,args), APPLY(h',args') -> (
-	  match (h,h') with
-	  | _ -> h = h' && List.length args = List.length args' && List.for_all2 (eq' alpha) args args')
-      | UU u, UU u' -> uequiv uc u u'
-      | OO_variable t,OO_variable t' -> testalpha' t t' alpha
-      | (a,a') -> a = a'
+      | POS(_,x), POS(_,y) -> (
+	  x == y || match (x,y) with
+	  | APPLY(h,args), APPLY(h',args') -> (
+	      match (h,h') with
+	      | _ -> h = h' && List.length args = List.length args' && List.for_all2 (eq alpha) args args')
+	  | UU u, UU u' -> uequiv uc u u'
+	  | OO_variable t,OO_variable t' -> testalpha' t t' alpha
+	  | (a,a') -> a = a')
+      | _ -> false
     in eq alpha
 
   let equiv uc = eq uc []

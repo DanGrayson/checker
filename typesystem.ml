@@ -72,9 +72,14 @@ type expr =
 	(** LAMBDA is the lambda of LF.
 	    
 	    The variable is bound in each of the expressions of the list, and
-	    the lambda expression is to be thought of as returning a tuple.
-	
-	    We never wrap an expression of this type with a position, so pattern matching is feasible *)
+	    the lambda expression is to be thought of as returning a tuple, with one
+	    member for each expression in the list.
+
+	    Notice that we can't wrap a LAMBDA expression inside a position.  We do
+	    that to make OCAML pattern matching feasible.*)
+  | POS of position * bare_expr
+	(** a wrapper that gives the position in the source code, for error messages *)
+and bare_expr =
   | APPLY of label * expr list
 	(** APPLY is function application in LF *)
   | UU of uExpr
@@ -83,8 +88,6 @@ type expr =
 	(** A t-variable. *)
   | OO_variable of oVar'
 	(** An o-variable. *)
-  | POS of position * expr
-	(** a wrapper that gives the position in the source code, for error messages *)
 and label =
   | TT of tHead
   | OO of oHead
@@ -294,39 +297,45 @@ let head_to_string = function
   | OO h -> "[" ^ ohead_to_string h ^ "]"
 
 let rec get_u = function
-  | POS (_,e) -> get_u e
-  | UU u -> u
+  | POS (_,UU u) -> u
   | _ -> raise Error.Internal
 
-let with_pos pos u = POS (pos, u)
-let rec strip_pos = function
-| POS(_,x) -> strip_pos x
-| e -> e
+let with_pos pos e = POS (pos, e)
+let strip_pos = function
+  | POS(_,x) -> x
+  | _ -> raise Error.Internal
 let get_pos = function
-| POS(pos,_) -> pos
-| _ -> Error.Nowhere
+  | POS(pos,_) -> pos
+  | _ -> Error.Nowhere
+let with_pos_of x e = POS (get_pos x, e)
 let nowhere x = with_pos Error.Nowhere x
 
-let rec isU = function
-| POS(_,x) -> isU x
-| UU _ -> true
-| _ -> false
+let isU = function
+  | POS(_,UU _) -> true
+  | _ -> false
 let chku u = if not (isU u) then raise Error.Internal; u
 let chkulist us = List.iter (fun u -> let _ = chku u in ()) us; us
 
-let rec isT = function
-| POS(_,x) -> isT x
-| TT_variable _ -> true
-| APPLY(TT _, _) -> true
-| _ -> false
+let rec isT = 
+  let isT' = function
+    | TT_variable _ -> true
+    | APPLY(TT _, _) -> true
+    | _ -> false
+  in function
+    | POS(_,x) -> isT' x
+    | LAMBDA(x,bodies) -> raise Error.Internal
 let chkt t = if not (isT t) then raise Error.Internal; t
 let chktlist ts = List.iter (fun t -> let _ = chkt t in ()) ts; ts
 
-let rec isO = function
-| POS(_,x) -> isO x
-| OO_variable _ -> true
-| APPLY(OO _, _) -> true
-| _ -> false
+let rec isO = 
+  let isO' = function
+    | OO_variable _ -> true
+    | APPLY(OO _, _) -> true
+    | _ -> false
+  in function
+    | POS(_,x) -> isO' x
+    | LAMBDA(x,bodies) -> raise Error.Internal
+
 let chko o = if not (isO o) then raise Error.Internal; o
 let chkolist os = List.iter (fun o -> let _ = chko o in ()) os; os
 
@@ -337,87 +346,87 @@ type expr_descriptor =
   | B_spot of expr_descriptor list
 
 let template = function
-  | POS(pos,e) -> ()
-  | UU u -> ()
-  | TT_variable t -> ()
-  | OO_variable o -> ()
   | LAMBDA(x,bodies) -> ()
-  | APPLY(h,args) -> (
-      match h with
-      | TT th -> (
-	  match th with 
-	  | TT_EmptyHole -> ()
-	  | TT_NumberedEmptyHole n -> ()
-	  | TT_El -> ()
-	  | TT_U -> ()
-	  | TT_Pi -> (
-	      match args with
-	      | [t1; LAMBDA( x, [t2] )] -> ()
-	      | _ -> raise Error.Internal)
-	  | TT_Sigma -> (
-	      match args with
-	      | [t1; LAMBDA( x, [t2] )] -> ()
-	      | _ -> raise Error.Internal)
-	  | TT_Pt -> ()
-	  | TT_Coprod -> ()
-	  | TT_Coprod2 -> (
-	      match args with
-	      | [t;t'; LAMBDA( x,[u]);LAMBDA( x', [u']);o] -> ()
-	      | _ -> raise Error.Internal)
-	  | TT_Empty -> ()
-	  | TT_IC -> (
-	      match args with
-	      | [tA; a; LAMBDA( x, [tB;LAMBDA( y, [tD;LAMBDA( z, [q])])])] -> ()
-	      | _ -> raise Error.Internal)
-	  | TT_Id -> (
-	      match args with
-	      | [tX; x; x'] -> ()
-	      | _ -> raise Error.Internal)
-	  | TT_def_app d -> ()
-	 )
-      | OO oh -> (
-	  match oh with
-	  | OO_emptyHole -> ()
-	  | OO_numberedEmptyHole n -> ()
-	  | OO_u -> ()
-	  | OO_j -> ()
-	  | OO_ev -> (
-	      match args with
-	      | [f;o;LAMBDA( x,[t])] -> ()
-	      | [f;o] -> ()
-	      | _ -> raise Error.Internal)
-	  | OO_lambda -> (
-	      match args with
-	      | [t;LAMBDA( x,[o])] -> ()
-	      | _ -> raise Error.Internal)
-	  | OO_forall -> (
-	      match args with
-	      | [u;u';o;LAMBDA( x,[o'])] -> ()
-	      | _ -> raise Error.Internal)
-	  | OO_def_app d -> ()
-	  | OO_pair -> ()
-	  | OO_pr1 -> ()
-	  | OO_pr2 -> ()
-	  | OO_total -> ()
-	  | OO_pt -> ()
-	  | OO_pt_r -> ()
-	  | OO_tt -> ()
-	  | OO_coprod -> ()
-	  | OO_ii1 -> ()
-	  | OO_ii2 -> ()
-	  | OO_sum -> ()
-	  | OO_empty -> ()
-	  | OO_empty_r -> ()
-	  | OO_c -> ()
-	  | OO_ic_r -> ()
-	  | OO_ic -> ()
-	  | OO_paths -> ()
-	  | OO_refl -> ()
-	  | OO_J -> ()
-	  | OO_rr0 -> ()
-	  | OO_rr1 -> ()
-	 )
-     )
+  | POS(pos,e) -> match e with
+    | UU u -> ()
+    | TT_variable t -> ()
+    | OO_variable o -> ()
+    | APPLY(h,args) -> (
+	match h with
+	| TT th -> (
+	    match th with 
+	    | TT_EmptyHole -> ()
+	    | TT_NumberedEmptyHole n -> ()
+	    | TT_El -> ()
+	    | TT_U -> ()
+	    | TT_Pi -> (
+		match args with
+		| [t1; LAMBDA( x, [t2] )] -> ()
+		| _ -> raise Error.Internal)
+	    | TT_Sigma -> (
+		match args with
+		| [t1; LAMBDA( x, [t2] )] -> ()
+		| _ -> raise Error.Internal)
+	    | TT_Pt -> ()
+	    | TT_Coprod -> ()
+	    | TT_Coprod2 -> (
+		match args with
+		| [t;t'; LAMBDA( x,[u]);LAMBDA( x', [u']);o] -> ()
+		| _ -> raise Error.Internal)
+	    | TT_Empty -> ()
+	    | TT_IC -> (
+		match args with
+		| [tA; a; LAMBDA( x, [tB;LAMBDA( y, [tD;LAMBDA( z, [q])])])] -> ()
+		| _ -> raise Error.Internal)
+	    | TT_Id -> (
+		match args with
+		| [tX; x; x'] -> ()
+		| _ -> raise Error.Internal)
+	    | TT_def_app d -> ()
+	   )
+	| OO oh -> (
+	    match oh with
+	    | OO_emptyHole -> ()
+	    | OO_numberedEmptyHole n -> ()
+	    | OO_u -> ()
+	    | OO_j -> ()
+	    | OO_ev -> (
+		match args with
+		| [f;o;LAMBDA( x,[t])] -> ()
+		| [f;o] -> ()
+		| _ -> raise Error.Internal)
+	    | OO_lambda -> (
+		match args with
+		| [t;LAMBDA( x,[o])] -> ()
+		| _ -> raise Error.Internal)
+	    | OO_forall -> (
+		match args with
+		| [u;u';o;LAMBDA( x,[o'])] -> ()
+		| _ -> raise Error.Internal)
+	    | OO_def_app d -> ()
+	    | OO_pair -> ()
+	    | OO_pr1 -> ()
+	    | OO_pr2 -> ()
+	    | OO_total -> ()
+	    | OO_pt -> ()
+	    | OO_pt_r -> ()
+	    | OO_tt -> ()
+	    | OO_coprod -> ()
+	    | OO_ii1 -> ()
+	    | OO_ii2 -> ()
+	    | OO_sum -> ()
+	    | OO_empty -> ()
+	    | OO_empty_r -> ()
+	    | OO_c -> ()
+	    | OO_ic_r -> ()
+	    | OO_ic -> ()
+	    | OO_paths -> ()
+	    | OO_refl -> ()
+	    | OO_J -> ()
+	    | OO_rr0 -> ()
+	    | OO_rr1 -> ()
+	   )
+       )
 
 let make_UU u = UU u
 let make_TT h a = APPLY(TT h, a)
