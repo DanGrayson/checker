@@ -19,11 +19,9 @@ let rec subst subs =
     | UU _ as u -> u
     | TT_variable _ as t -> t
     | OO_variable v as o -> (try List.assoc v subs with Not_found -> o)
-    | APPLY(label,branches) -> (
-      match label with 
-      | LAMBDA (pos,v) -> 
-	  let v' = newfresh v in
-	  let subs = (v,OO_variable v') :: subs in 
-	  APPLY(LAMBDA (pos,v'), List.map (subst subs) branches)
-      | OO _ | TT _ -> APPLY (label, substlist branches))
+    | LAMBDA( (pos,v), bodies) -> 
+	let v' = newfresh v in
+	let subs = (v,OO_variable v') :: subs in 
+	LAMBDA( (pos,v'), (List.map (subst subs) bodies))
+    | APPLY(label,args) -> APPLY(label,substlist args)
   in subst1

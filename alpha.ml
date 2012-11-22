@@ -25,13 +25,13 @@ module Make(Ueq: Universe.Equivalence) = struct
   let rec eq uc alpha =
     let rec eq alpha a b = a == b || eq' alpha a b
     and eq' alpha x y = match (strip_pos x, strip_pos y) with 
-      | APPLY(h,a), APPLY(h',a') -> (
+      | LAMBDA (x,bodies), LAMBDA (x',bodies') -> (
+	  let alpha = addalpha (strip_pos_var x) (strip_pos_var x') alpha 
+	  in List.for_all2 (eq alpha) bodies bodies'
+	 )
+      | APPLY(h,args), APPLY(h',args') -> (
 	  match (h,h') with
-	  | LAMBDA x, LAMBDA x' -> (
-	      let alpha = addalpha (strip_pos_var x) (strip_pos_var x') alpha 
-	      in List.for_all2 (eq alpha) a a'
-	     )
-	  | _ -> h = h' && List.length a = List.length a' && List.for_all2 (eq' alpha) a a')
+	  | _ -> h = h' && List.length args = List.length args' && List.for_all2 (eq' alpha) args args')
       | UU u, UU u' -> uequiv uc u u'
       | OO_variable t,OO_variable t' -> testalpha' t t' alpha
       | (a,a') -> a = a'

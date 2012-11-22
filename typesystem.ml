@@ -68,6 +68,13 @@ type uExpr =
   | U_def of string * uExpr list
 	
 type expr = 
+  | LAMBDA of oVar * expr list
+	(** LAMBDA is the lambda of LF.
+	    
+	    The variable is bound in each of the expressions of the list, and
+	    the lambda expression is to be thought of as returning a tuple.
+	
+	    We never wrap an expression of this type with a position, so pattern matching is feasible *)
   | APPLY of label * expr list
 	(** APPLY is function application in LF *)
   | UU of uExpr
@@ -79,9 +86,6 @@ type expr =
   | POS of position * expr
 	(** a wrapper that gives the position in the source code, for error messages *)
 and label =
-  | LAMBDA of oVar
-	(** the variable is bound in each of the expressions of the list *)
-	(* we never wrap an expression with this label with a position, so pattern matching is feasible *)
   | TT of tHead
   | OO of oHead
 and tHead =
@@ -286,7 +290,6 @@ let thead_to_string = function
   | TT_Id -> "Id"
   | TT_def_app d -> "tdef;" ^ d
 let head_to_string = function
-  | LAMBDA x -> "LAMBDA " ^ (ovartostring x) ^ " : Obj,"
   | TT h -> "[" ^ thead_to_string h ^ "]"
   | OO h -> "[" ^ ohead_to_string h ^ "]"
 
@@ -338,9 +341,9 @@ let template = function
   | UU u -> ()
   | TT_variable t -> ()
   | OO_variable o -> ()
+  | LAMBDA(x,bodies) -> ()
   | APPLY(h,args) -> (
       match h with
-      | LAMBDA x -> raise Error.Internal	(* should have been handled higher up *)
       | TT th -> (
 	  match th with 
 	  | TT_EmptyHole -> ()
@@ -349,22 +352,22 @@ let template = function
 	  | TT_U -> ()
 	  | TT_Pi -> (
 	      match args with
-	      | [t1; APPLY( LAMBDA x, [t2] )] -> ()
+	      | [t1; LAMBDA( x, [t2] )] -> ()
 	      | _ -> raise Error.Internal)
 	  | TT_Sigma -> (
 	      match args with
-	      | [t1; APPLY( LAMBDA x, [t2] )] -> ()
+	      | [t1; LAMBDA( x, [t2] )] -> ()
 	      | _ -> raise Error.Internal)
 	  | TT_Pt -> ()
 	  | TT_Coprod -> ()
 	  | TT_Coprod2 -> (
 	      match args with
-	      | [t;t'; APPLY(LAMBDA x,[u]);APPLY(LAMBDA x', [u']);o] -> ()
+	      | [t;t'; LAMBDA( x,[u]);LAMBDA( x', [u']);o] -> ()
 	      | _ -> raise Error.Internal)
 	  | TT_Empty -> ()
 	  | TT_IC -> (
 	      match args with
-	      | [tA; a; APPLY(LAMBDA x, [tB;APPLY( LAMBDA y, [tD;APPLY( LAMBDA z, [q])])])] -> ()
+	      | [tA; a; LAMBDA( x, [tB;LAMBDA( y, [tD;LAMBDA( z, [q])])])] -> ()
 	      | _ -> raise Error.Internal)
 	  | TT_Id -> (
 	      match args with
@@ -380,16 +383,16 @@ let template = function
 	  | OO_j -> ()
 	  | OO_ev -> (
 	      match args with
-	      | [f;o;APPLY(LAMBDA x,[t])] -> ()
+	      | [f;o;LAMBDA( x,[t])] -> ()
 	      | [f;o] -> ()
 	      | _ -> raise Error.Internal)
 	  | OO_lambda -> (
 	      match args with
-	      | [t;APPLY(LAMBDA x,[o])] -> ()
+	      | [t;LAMBDA( x,[o])] -> ()
 	      | _ -> raise Error.Internal)
 	  | OO_forall -> (
 	      match args with
-	      | [u;u';o;APPLY(LAMBDA x,[o'])] -> ()
+	      | [u;u';o;LAMBDA( x,[o'])] -> ()
 	      | _ -> raise Error.Internal)
 	  | OO_def_app d -> ()
 	  | OO_pair -> ()
@@ -422,8 +425,8 @@ let make_OO h a = APPLY(OO h, a)
 let make_TT_variable x = TT_variable x
 let make_OO_variable v = OO_variable v
 
-let make_BB1 v x = APPLY(LAMBDA v, [x])
-let make_BB2 v x y = APPLY(LAMBDA v, [x;y])
+let make_BB1 v x = LAMBDA( v, [x])
+let make_BB2 v x y = LAMBDA( v, [x;y])
 
 let make_TT_EmptyHole = make_TT TT_Empty []
 let make_TT_NumberedEmptyHole n = make_TT (TT_NumberedEmptyHole n) []
