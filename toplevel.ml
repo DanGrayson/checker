@@ -5,6 +5,8 @@ type command' =
   | UPrint of uExpr
   | TPrint of expr
   | OPrint of expr
+  | LFTPrint of expr
+  | LFOPrint of expr
   | UCheck of uExpr
   | TCheck of expr
   | OCheck of expr

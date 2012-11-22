@@ -42,7 +42,7 @@ let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code ha
 %token Wgreaterequal Wgreater Wlessequal Wless Wsemi
 %token KUlevel Kumax KType KPi Klambda KSigma Kulevel
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall Kforall WSigma WCoprod WCoprod2 WEmpty Wempty Wempty_r WIC WId
-%token WTau WPrint WDefine Wtype Wequality WShow WEnd WVariable WoAlpha WtAlpha WuAlpha Weof
+%token WTau WLFPrint WPrint WDefine Wtype Wequality WShow WEnd WVariable WoAlpha WtAlpha WuAlpha Weof
 %token WCheck WCheckUniverses
 %token Wflush
 %token Prec_application
@@ -54,7 +54,7 @@ let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code ha
 %left Prec_application
 %right Klambda Kforall
 %nonassoc Wforall Wunderscore Wunderscore_numeral 
-  Nat Wu Wlparen Wlambda Wj Wev
+  Wu Wlparen Wlambda Wj Wev
   IDENTIFIER Wodef Wempty_r Wempty
 
 %%
@@ -78,6 +78,10 @@ command0:
     { Toplevel.TPrint t }
 | WPrint o=oExpr Wperiod
     { Toplevel.OPrint o }
+| WLFPrint Wtype t=tExpr Wperiod
+    { Toplevel.LFTPrint t }
+| WLFPrint o=oExpr Wperiod
+    { Toplevel.LFOPrint o }
 | WCheck Kulevel u=uExpr Wperiod
     { Toplevel.UCheck u }
 | WCheck Wtype t=tExpr Wperiod
@@ -197,8 +201,6 @@ oExpr0:
     t=separated_list(Wcomma,tExpr) Wsemi
     o=separated_list(Wcomma,oExpr) 
     Wrparen { make_OO_def_app name u t o }
-| n=Nat
-    { make_OO_numeral n }			(* experimental *)
 
 tExpr: t=tExpr0 
     { with_pos (Error.Position($startpos, $endpos)) t }

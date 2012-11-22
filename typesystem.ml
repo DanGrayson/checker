@@ -14,17 +14,25 @@ polymorphic type system}, by Vladimir Voevodsky, the version dated October,
 
 open Error
 
-(** Universe variable. *)
+(** Variables *)
+let strip_pos_var : position * 'a -> 'a = snd
+let get_pos_var : position * 'a -> position = fst
+
+(** Universe variable, probably obsolete. *)
 type uVar = position * uVar'
 and uVar' = UVar of string
 let make_uVar c = UVar c
+let uvartostring' (UVar x) = x
+let uvartostring v = uvartostring' (strip_pos_var v)
 
-(** Type variable. *)
+(** Type variable, probably obsolete. *)
 type tVar = position * tVar'
 and tVar' = TVar of string
 let make_tVar c = TVar c
+let tvartostring' (TVar x) = x
+let tvartostring v = tvartostring' (strip_pos_var v)
 
-(** Object variable. *)
+(** Object variable, probably obsolete. *)
 type oVar = position * oVar'
 and oVar' =
     OVar of string
@@ -32,9 +40,12 @@ and oVar' =
   | OVarUnused
   | OVarEmptyHole
 let make_oVar c = OVar c
-
-let strip_pos_var : position * 'a -> 'a = snd
-let get_pos_var : position * 'a -> position = fst
+let ovartostring' = function
+  | OVar x -> x
+  | OVarGen(i,x) -> x ^ "_" ^ (string_of_int i)
+  | OVarEmptyHole -> "_"
+  | OVarUnused -> "_"
+let ovartostring v = ovartostring' (strip_pos_var v)
 
 (** A u-level expression, [M], is constructed inductively as: [n], [v], [M+n], or
     [max(M,M')], where [v] is a universe variable and [n] is a natural number.
@@ -109,10 +120,6 @@ and tHead =
   | TT_NumberedEmptyHole of int
         (** A hole to be filled in later, by type checking. *)
   | TT_def_app of string
-  | TT_nat
-      (** nat 
-
-	  The type of natural numbers. *)
 and oHead =
     (* TS0: *)
   | OO_u
@@ -229,15 +236,58 @@ and oHead =
       (* end of TS *)
   | OO_emptyHole
       (** a hole to be filled in later *)
-  | OO_numeral of int
-        (** A numeral.
-	    
-	    We add this variant temporarily to experiment with parsing
-	    conflicts, when numerals such as 4, can be considered either as
-	    o-expressions (S(S(S(S O)))) or as universe levels.  *)
   | OO_numberedEmptyHole of int
         (** A hole to be filled in later, by type checking. *)
   | OO_def_app of string
+
+let ohead_to_string = function
+  | OO_emptyHole -> "_"
+  | OO_numberedEmptyHole n -> "_" ^ (string_of_int n)
+  | OO_u -> "u"
+  | OO_j -> "j"
+  | OO_ev -> "ev"
+  | OO_lambda -> "lambda"
+  | OO_forall -> "forall"
+  | OO_def_app d -> "odef;" ^ d
+  | OO_pair -> "pair"
+  | OO_pr1 -> "pr1"
+  | OO_pr2 -> "pr2"
+  | OO_total -> "total"
+  | OO_pt -> "pt"
+  | OO_pt_r -> "pt_r"
+  | OO_tt -> "tt"
+  | OO_coprod -> "coprod"
+  | OO_ii1 -> "ii1"
+  | OO_ii2 -> "ii2"
+  | OO_sum -> "sum"
+  | OO_empty -> "empty"
+  | OO_empty_r -> "empty_r"
+  | OO_c -> "c"
+  | OO_ic_r -> "ic_r"
+  | OO_ic -> "ic"
+  | OO_paths -> "paths"
+  | OO_refl -> "refl"
+  | OO_J -> "J"
+  | OO_rr0 -> "rr0"
+  | OO_rr1 -> "rr1"
+let thead_to_string = function
+  | TT_EmptyHole -> "__"
+  | TT_NumberedEmptyHole n -> "__" ^ (string_of_int n)
+  | TT_El -> "El"
+  | TT_U -> "U"
+  | TT_Pi -> "Pi"
+  | TT_Sigma -> "Sigma"
+  | TT_Pt -> "Pt"
+  | TT_Coprod -> "Coprod"
+  | TT_Coprod2 -> "Coprod2"
+  | TT_Empty -> "Empty"
+  | TT_IC -> "IC"
+  | TT_Id -> "Id"
+  | TT_def_app d -> "tdef;" ^ d
+let head_to_string = function
+  | BB x -> "lambda " ^ (ovartostring x) ^ " : Obj,"
+  | TT h -> "[" ^ thead_to_string h ^ "]"
+  | OO h -> "[" ^ ohead_to_string h ^ "]"
 
 let rec get_u = function
   | POS (_,e) -> get_u e
@@ -320,7 +370,6 @@ let template = function
 	      | [tX; x; x'] -> ()
 	      | _ -> raise Error.Internal)
 	  | TT_def_app d -> ()
-	  | TT_nat -> ()
 	 )
       | OO oh -> (
 	  match oh with
@@ -342,7 +391,6 @@ let template = function
 	      | [u;u';o;Expr(BB x,[o'])] -> ()
 	      | _ -> raise Error.Internal)
 	  | OO_def_app d -> ()
-	  | OO_numeral i -> ()
 	  | OO_pair -> ()
 	  | OO_pr1 -> ()
 	  | OO_pr2 -> ()
@@ -390,11 +438,9 @@ let make_TT_IC tA a (x,tB,(y,tD,(z,q))) =
   make_TT TT_IC [chkt tA; chko a; make_BB2 x (chkt tB) (make_BB2 y (chkt tD) (make_BB1 z (chko q)))]
 let make_TT_Id t x y = make_TT TT_Id [chkt t;chko x;chko y]
 let make_TT_def_app name u t o = make_TT (TT_def_app name) (List.flatten [chkulist u;chktlist t;chkolist o])
-let make_TT_nat = make_TT TT_nat []
 
 let make_OO_emptyHole = make_OO OO_emptyHole []
 let make_OO_numberedEmptyHole n = make_OO (OO_numberedEmptyHole n) []
-let make_OO_numeral n = make_OO (OO_numeral n) []
 let make_OO_u m = make_OO OO_u [chku m]
 let make_OO_j m n = make_OO OO_j [chku m; chku n]
 let make_OO_ev f p (v,t) = make_OO OO_ev [chko f;chko p;make_BB1 v (chkt t)]

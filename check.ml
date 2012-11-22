@@ -71,7 +71,6 @@ let rec tcheck pos env =
 		  overify pos env x t; overify pos env y t)
 	      | _ -> raise Error.Internal)
 	    | TT_def_app d -> raise Error.NotImplemented
-	    | TT_nat -> ()
 	   )
 	| OO _ -> raise (Error.TypeCheckingFailure(pos, "expected a t-expression but found an o-expression"))
        )
@@ -128,7 +127,6 @@ and ocheck pos env = function
 		  ocheck_binder pos env v (Expr(TT TT_El, [o])) o'
 	      | _ -> raise Error.Internal)
 	  | OO_def_app d -> ()
-	  | OO_numeral i -> ()
 	  | OO_pair -> raise Error.NotImplemented
 	  | OO_pr1 -> raise Error.NotImplemented
 	  | OO_pr2 -> raise Error.NotImplemented

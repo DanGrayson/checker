@@ -2,19 +2,6 @@
 
 open Typesystem
 
-let uvartostring' (UVar x) = x
-let uvartostring v = uvartostring' (strip_pos_var v)
-
-let tvartostring' (TVar x) = x
-let tvartostring v = tvartostring' (strip_pos_var v)
-
-let ovartostring' = function
-  | OVar x -> x
-  | OVarGen(i,x) -> x ^ "_" ^ (string_of_int i)
-  | OVarEmptyHole -> "_"
-  | OVarUnused -> "_"
-let ovartostring v = ovartostring' (strip_pos_var v)
-
 let rec utostring = function
   | Upos (_,u) -> utostring u
   | UEmptyHole -> "_"
@@ -68,7 +55,6 @@ let rec etostring = function
 	      | _ -> raise Error.Internal)
 	  | TT_Id -> "[Id]" ^ (parenelisttostring args)
 	  | TT_def_app d -> "[tdef;" ^ d ^ "]" ^ (parenelisttostring args)
-	  | TT_nat -> "nat" 
 	 )
       | OO oh -> (
 	  match oh with
@@ -94,7 +80,6 @@ let rec etostring = function
 		  "[forall;" ^ (ovartostring x) ^ "](" ^ (etostring u) ^ "," ^ (etostring u') ^ "," ^ (etostring o) ^ "," ^ (etostring o') ^ ")"
 	      | _ -> raise Error.Internal)
 	  | OO_def_app d -> "[tdef;" ^ d ^ "]" ^ (parenelisttostring args)
-	  | OO_numeral i -> string_of_int i
 	  | OO_pair -> "[pair]" ^ (parenelisttostring args)
 	  | OO_pr1 -> "[pr1]" ^ (parenelisttostring args)
 	  | OO_pr2 -> "[pr2]" ^ (parenelisttostring args)
@@ -146,3 +131,12 @@ let definitiontostring = function
     -> "Define type equality "^n^(parmstostring c)^" := "^(etostring t)^" == "^(etostring t')^"."
   | OeqDefinition (Ident n,(c,o,o',t)) 
     -> "Define equality "     ^n^(parmstostring c)^" := "^(etostring o)^" == "^(etostring o')^" : "^(etostring t)^"."
+
+let rec lfl label s = "(" ^ label ^ (String.concat "" (List.map (fun x -> " " ^ (lftostring x)) s)) ^ ")"
+and lftostring = function
+  | POS(_,e) -> lftostring e
+  | UU u -> utostring u
+  | TT_variable t -> tvartostring' t
+  | OO_variable o -> ovartostring' o
+  | Expr(h,args) -> lfl (head_to_string h) args
+

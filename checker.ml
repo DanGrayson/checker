@@ -115,6 +115,10 @@ let tPrintCommand x =
   if not (Alpha.UEqual.equiv (!environment).uc x' x) then Printf.printf "      : %s\n" (Printer.etostring x');
   flush stdout
 
+let lftPrintCommand x =
+  Printf.printf "LFPrint Type: %s\n" (Printer.lftostring x);
+  flush stdout
+
 let uCheckCommand x =
   Printf.printf "Check ulevel: %s\n" (Printer.utostring x);
   flush stdout;
@@ -136,6 +140,10 @@ let oPrintCommand x =
   flush stdout;
   let x' = protect fix x Error.nopos in
   if not (Alpha.UEqual.equiv (!environment).uc x' x) then Printf.printf "      : %s\n" (Printer.etostring x');
+  flush stdout
+  
+let lfoPrintCommand x =
+  Printf.printf "LFPrint Obj : %s\n" (Printer.lftostring x); 
   flush stdout
 
 let uPrintCommand x =
@@ -190,10 +198,10 @@ let show_command () =
    Printf.printf "   Variable ";
    let UContext(uvars,ueqns) = (!environment).uc in 
    Printf.printf "%s.\n"
-     ((String.concat " " (List.map Printer.uvartostring' (List.rev uvars))) ^ " : Univ" ^ (String.concat "" (List.map Printer.ueqntostring ueqns)));
+     ((String.concat " " (List.map uvartostring' (List.rev uvars))) ^ " : Univ" ^ (String.concat "" (List.map Printer.ueqntostring ueqns)));
   );
   (
-   Printf.printf "   Variable"; List.iter (fun x -> Printf.printf " %s" (Printer.tvartostring' x)) (List.rev (!environment).tc); Printf.printf " : Type.\n";
+   Printf.printf "   Variable"; List.iter (fun x -> Printf.printf " %s" (tvartostring' x)) (List.rev (!environment).tc); Printf.printf " : Type.\n";
   );
   (
    let p = List.rev_append (!environment).definitions [] in List.iter (fun x -> Printf.printf "   "; printdefinition (snd x)) p;
@@ -221,6 +229,8 @@ let process_command lexbuf = (
     | Toplevel.UPrint x -> uPrintCommand x
     | Toplevel.TPrint x -> tPrintCommand x
     | Toplevel.OPrint x -> oPrintCommand x
+    | Toplevel.LFTPrint x -> lftPrintCommand x
+    | Toplevel.LFOPrint x -> lfoPrintCommand x
     | Toplevel.UCheck x -> uCheckCommand x
     | Toplevel.TCheck x -> tCheckCommand x
     | Toplevel.OCheck x -> oCheckCommand x

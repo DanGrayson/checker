@@ -85,9 +85,9 @@
 
 There are also constructors for all the terms of TS:
 
-      	<lambda> : Texpr -> (Oexpr -> Oexpr) -> Oexpr			<lambda> T U   		lambda x:T, U
-	    <ev> : Oexpr -> Oexpr -> Texpr -> Oexpr			<ev> f o T		[ev;x](f,o,T)
-	    <Pi> : Texpr -> (Oexpr -> Texpr) -> Texpr			<Pi> T U		Pi x:T, U
+      	[lambda] : Texpr -> (Oexpr -> Oexpr) -> Oexpr			[lambda] T U   		lambda x:T, U
+	    [ev] : Oexpr -> Oexpr -> Texpr -> Oexpr			[ev] f o T		[ev;x](f,o,T)
+	    [Pi] : Texpr -> (Oexpr -> Texpr) -> Texpr			[Pi] T U		Pi x:T, U
 
 	  Rule ev : Pi (T : Texpr) (U : Oexpr -> Texpr) (f o : Oexpr),
 		     Pi m : [f : Pi x:T, U],

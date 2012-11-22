@@ -7,7 +7,7 @@ let rec taupos (pos:Error.position) env o =
     | OO_variable v -> (
 	try List.assoc v env.oc
 	with Not_found -> 
-	    raise (Error.TypingError(get_pos o, "unbound variable, not in context: " ^ (Printer.ovartostring' v))))
+	    raise (Error.TypingError(get_pos o, "unbound variable, not in context: " ^ (ovartostring' v))))
     | Expr(h,args) -> (
 	match h with
 	| BB _ -> raise Error.Internal
@@ -37,7 +37,6 @@ let rec taupos (pos:Error.position) env o =
 		| u :: u' :: _ -> make_TT_U (UU (Umax(get_u u, get_u u')))
 		| _ -> raise Error.Internal)
 	    | OO_def_app d -> raise Error.NotImplemented
-	    | OO_numeral i -> make_TT_nat
 	    | OO_pair -> raise Error.NotImplemented
 	    | OO_pr1 -> raise Error.NotImplemented
 	    | OO_pr2 -> raise Error.NotImplemented
@@ -76,7 +75,7 @@ let rec tau (env:environment_type) o = (
       try List.assoc v env.oc
       with
 	Not_found -> 
-	  raise (Error.TypingError(get_pos o, "unbound variable, not in context: " ^ (Printer.ovartostring' v)))
+	  raise (Error.TypingError(get_pos o, "unbound variable, not in context: " ^ (ovartostring' v)))
      )
   | O_u x -> with_pos_of o (T_U (nowhere(Uplus(x,1))))
   | O_j (m1,m2) -> with_pos_of o (T_Pi(with_pos_of m1 (T_U m1),(with_pos_of m2 OVarUnused,with_pos_of m2 (T_U m2))))
