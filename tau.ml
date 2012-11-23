@@ -6,7 +6,7 @@ let rec tau (pos:Error.position) env = function
       | UU _ | TT_variable _ -> raise Error.Internal
       | OO_variable v -> (
 	  try List.assoc v env.oc
-	  with Not_found -> raise (Error.TypingError(pos, "unbound variable, not in context: " ^ (ovartostring' v))))
+	  with Not_found -> raise (Error.TypingError(pos, "unbound variable, not in context: " ^ (vartostring' v))))
       | APPLY(h,args) -> with_pos pos (
 	  match h with
 	  | TT _ -> raise Error.Internal
@@ -20,7 +20,7 @@ let rec tau (pos:Error.position) env = function
 		| _ -> raise Error.Internal)
 	    | OO_j -> (
 		match args with 
-		| [m1;m2] -> make_TT_Pi (with_pos_of m1 (make_TT_U m1)) ((Error.Nowhere,OVarUnused), (with_pos_of m2 (make_TT_U m2)))
+		| [m1;m2] -> make_TT_Pi (with_pos_of m1 (make_TT_U m1)) ((Error.Nowhere,VarUnused), (with_pos_of m2 (make_TT_U m2)))
 		| _ -> raise Error.Internal)
 	    | OO_ev -> (
 		match args with 

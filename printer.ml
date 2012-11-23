@@ -6,7 +6,7 @@ let rec utostring = function
   | Upos (_,u) -> utostring u
   | UEmptyHole -> "_"
   | UNumberedEmptyHole n -> "_" ^ (string_of_int n)
-  | Uvariable x -> uvartostring' x
+  | Uvariable x -> vartostring' x
   | Uplus (x,n) -> "(" ^ (utostring x) ^ "+" ^ (string_of_int n) ^ ")"
   | Umax (x,y) -> "max(" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
   | U_def (d,u) -> "[udef;" ^ d ^ "](" ^ (elisttostring u) ^ ")"
@@ -18,23 +18,23 @@ let rec etostring = function
   | LAMBDA(x,bodies) -> raise Error.NotImplemented
   | POS(_,e) -> match e with 
     | UU u -> utostring u
-    | TT_variable t -> tvartostring' t
-    | OO_variable o -> ovartostring' o
+    | TT_variable t -> vartostring' t
+    | OO_variable o -> vartostring' o
     | APPLY(h,args) -> (
 	match h with
 	| TT th -> (
 	    match th with 
 	    | TT_Pi -> (
 		match args with
-		| [t1; LAMBDA( x, [t2] )] -> "[Pi;" ^ (ovartostring x) ^ "](" ^ (etostring t1) ^ "," ^ (etostring t2) ^ ")"
+		| [t1; LAMBDA( x, [t2] )] -> "[Pi;" ^ (vartostring x) ^ "](" ^ (etostring t1) ^ "," ^ (etostring t2) ^ ")"
 		| _ -> raise Error.Internal)
 	    | TT_Sigma -> (
-		match args with [t1; LAMBDA( x, [t2] )] -> "[Sigma;" ^ (ovartostring x) ^ "](" ^ (etostring t1) ^ "," ^ (etostring t2) ^ ")"
+		match args with [t1; LAMBDA( x, [t2] )] -> "[Sigma;" ^ (vartostring x) ^ "](" ^ (etostring t1) ^ "," ^ (etostring t2) ^ ")"
 		| _ -> raise Error.Internal)
 	    | TT_Coprod2 -> (
 		match args with 
 		| [t;t'; LAMBDA( x,[u]);LAMBDA( x', [u']);o] ->
-		    "[Coprod;" ^ (ovartostring x) ^ "," ^ (ovartostring x') ^ "](" 
+		    "[Coprod;" ^ (vartostring x) ^ "," ^ (vartostring x') ^ "](" 
 		    ^ (etostring t) ^ "," ^ (etostring t) ^ ","
 		    ^ (etostring u) ^ "," ^ (etostring u') ^ ","
 		    ^ (etostring o)
@@ -43,7 +43,7 @@ let rec etostring = function
 	    | TT_IC -> (
 		match args with 
 		  [tA; a; LAMBDA( x, [tB;LAMBDA( y, [tD;LAMBDA( z, [q])])])]
-		  -> "[IC;" ^ (ovartostring x) ^ "," ^ (ovartostring y) ^ "," ^ (ovartostring z) ^ "]("
+		  -> "[IC;" ^ (vartostring x) ^ "," ^ (vartostring y) ^ "," ^ (vartostring z) ^ "]("
 		    ^ (etostring tA) ^ "," ^ (etostring a) ^ "," ^ (etostring tB) ^ "," ^ (etostring tD) ^ "," ^ (etostring q) ^ ")"
 		| _ -> raise Error.Internal)
 	    | _ -> "[" ^ (thead_to_string th) ^ "]" ^ (parenelisttostring args)
@@ -53,19 +53,19 @@ let rec etostring = function
 	    | OO_ev -> (
 		match args with 
 		| [f;o;LAMBDA( x,[t])] ->
-		    "[ev;" ^ (ovartostring x) ^ "](" ^ (etostring f) ^ "," ^ (etostring o) ^ "," ^ (etostring t) ^ ")"
+		    "[ev;" ^ (vartostring x) ^ "](" ^ (etostring f) ^ "," ^ (etostring o) ^ "," ^ (etostring t) ^ ")"
 		| [f;o] ->
 		    "[ev;_](" ^ (etostring f) ^ "," ^ (etostring o)
 		| _ -> raise Error.Internal)
 	    | OO_lambda -> (
 		match args with 
 		| [t;LAMBDA( x,[o])] ->
-		    "[lambda;" ^ (ovartostring x) ^ "](" ^ (etostring t) ^ "," ^ (etostring o) ^ ")"
+		    "[lambda;" ^ (vartostring x) ^ "](" ^ (etostring t) ^ "," ^ (etostring o) ^ ")"
 		| _ -> raise Error.Internal)
 	    | OO_forall -> (
 		match args with 
 		| [u;u';o;LAMBDA( x,[o'])] ->
-		    "[forall;" ^ (ovartostring x) ^ "](" ^ (etostring u) ^ "," ^ (etostring u') ^ "," ^ (etostring o) ^ "," ^ (etostring o') ^ ")"
+		    "[forall;" ^ (vartostring x) ^ "](" ^ (etostring u) ^ "," ^ (etostring u') ^ "," ^ (etostring o) ^ "," ^ (etostring o') ^ ")"
 		| _ -> raise Error.Internal)
 	    | _ -> "[" ^ (ohead_to_string oh) ^ "]" ^ (parenelisttostring args)
 	   )
@@ -73,18 +73,18 @@ let rec etostring = function
 and elisttostring s = String.concat "," (List.map etostring s)
 and parenelisttostring s = String.concat "" [ "("; elisttostring s; ")" ]
 
-let octostring (v,t) = (ovartostring' v) ^ ":" ^ (etostring t)
+let octostring (v,t) = (vartostring' v) ^ ":" ^ (etostring t)
 
 let parmstostring = function
   | ((UContext(uvars,ueqns):uContext),(tc:tContext),(oc:oContext)) 
     -> (
       if List.length uvars > 0 
-      then "(" ^ (String.concat " " (List.map uvartostring' uvars)) ^ ":Univ" ^ (String.concat "" (List.map ueqntostring ueqns)) ^ ")"
+      then "(" ^ (String.concat " " (List.map vartostring' uvars)) ^ ":Univ" ^ (String.concat "" (List.map ueqntostring ueqns)) ^ ")"
       else "" )
       ^ 
 	(
 	 if List.length tc > 0
-	 then "(" ^ (String.concat " " (List.map tvartostring' tc)) ^ ":Type)"
+	 then "(" ^ (String.concat " " (List.map vartostring' tc)) ^ ":Type)"
 	 else ""
 	) ^
       (String.concat "" (List.map (fun x -> "(" ^ (octostring x) ^ ")") oc))
@@ -101,10 +101,10 @@ let definitiontostring = function
 
 let rec lfl label s = "(" ^ label ^ (String.concat "" (List.map (fun x -> " " ^ (lftostring x)) s)) ^ ")"
 and lftostring = function
-  | LAMBDA(x,bodies) -> "(LAMBDA " ^ (ovartostring x) ^ " : Obj" ^ (String.concat "" (List.map (fun x -> ", " ^ (lftostring x)) bodies)) ^ ")"
+  | LAMBDA(x,bodies) -> "(LAMBDA " ^ (vartostring x) ^ " : Obj" ^ (String.concat "" (List.map (fun x -> ", " ^ (lftostring x)) bodies)) ^ ")"
   | POS(_,e) -> match e with 
     | UU u -> utostring u
-    | TT_variable t -> tvartostring' t
-    | OO_variable o -> ovartostring' o
+    | TT_variable t -> vartostring' t
+    | OO_variable o -> vartostring' o
     | APPLY(h,args) -> lfl (head_to_string h) args
 

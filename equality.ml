@@ -1,6 +1,6 @@
 open Typesystem
 
-type alpha_eq = (oVar' * oVar') list
+type alpha_eq = (var' * var') list
 
 let addalpha x x' (alpha:alpha_eq) =
   let x = strip_pos_var x in
@@ -21,7 +21,7 @@ and ueq' = function
   | u, Upos (_,u') -> ueq' (u,u')
   | UEmptyHole, UEmptyHole -> true
   | UNumberedEmptyHole n, UNumberedEmptyHole n' -> n = n'
-  | Uvariable UVar x, Uvariable UVar x' -> x = x'
+  | Uvariable Var x, Uvariable Var x' -> x = x'
   | Uplus (x,n), Uplus (x',n') -> ueq' (x,x') && n = n'
   | Umax (x,y), Umax (x',y') -> ueq' (x,x') && ueq' (y,y')
   | U_def (d,u), U_def (d',u') -> raise Error.NotImplemented

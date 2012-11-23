@@ -44,7 +44,7 @@ module Equal = struct
     and ueq' = function
       | UEmptyHole, UEmptyHole -> true
       | UNumberedEmptyHole n, UNumberedEmptyHole n' -> n = n'
-      | Uvariable UVar x, Uvariable UVar x' -> x = x'
+      | Uvariable Var x, Uvariable Var x' -> x = x'
       | Uplus (x,n), Uplus (x',n') -> ueq x x' && n = n'
       | Umax (x,y), Umax (x',y') -> ueq x x' && ueq y y'
       | U_def (d,u), U_def (d',u') -> raise Error.NotImplemented

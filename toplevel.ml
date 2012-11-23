@@ -9,7 +9,7 @@ type command' =
   | TCheck of expr
   | OCheck of expr
   | UVariable of string list * (uExpr * uExpr) list
-  | TVariable of string list
+  | Variable of string list
   | UAlpha of uExpr * uExpr
   | TAlpha of expr * expr
   | OAlpha of expr * expr

@@ -5,11 +5,11 @@ let newfresh =
   let newgen x = (
     incr genctr; 
     if !genctr < 0 then raise Error.GensymCounterOverflow;
-    OVarGen (!genctr, x)) in
+    VarGen (!genctr, x)) in
   fun v -> match v with 
-      OVar x | OVarGen(_,x) -> newgen x
-    | OVarUnused as v -> v
-    | OVarEmptyHole as v -> v
+      Var x | VarGen(_,x) -> newgen x
+    | VarUnused as v -> v
+    | VarEmptyHole as v -> v
 
 (** This version substitutes only for o-variables. *)
 let rec substlist subs es = List.map (subst subs) es

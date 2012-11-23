@@ -96,14 +96,14 @@ let environment = ref {
 
 let add_tVars tvars = environment := 
   { !environment with 
-    tc = List.rev_append (List.map make_tVar tvars) (!environment).tc ;
-    lookup_order = List.rev_append (List.map (fun t -> (t,T (make_tVar t))) tvars) (!environment).lookup_order ;
+    tc = List.rev_append (List.map make_Var tvars) (!environment).tc ;
+    lookup_order = List.rev_append (List.map (fun t -> (t,(make_Var t, Type_variable))) tvars) (!environment).lookup_order ;
   }
 let add_uVars uvars eqns =
   environment := {
     !environment with
-		  uc = mergeUContext (!environment).uc (UContext(List.map make_uVar uvars,eqns));
-		  lookup_order = List.rev_append (List.map (fun u -> (u,U (make_uVar u))) uvars) (!environment).lookup_order;
+		  uc = mergeUContext (!environment).uc (UContext(List.map make_Var uvars,eqns));
+		  lookup_order = List.rev_append (List.map (fun u -> (u,(make_Var u, Ulevel_variable))) uvars) (!environment).lookup_order;
 		}
 
 let fix t = Fillin.fillin !environment t
@@ -194,10 +194,10 @@ let show_command () =
    Printf.printf "   Variable ";
    let UContext(uvars,ueqns) = (!environment).uc in 
    Printf.printf "%s.\n"
-     ((String.concat " " (List.map uvartostring' (List.rev uvars))) ^ " : Univ" ^ (String.concat "" (List.map Printer.ueqntostring ueqns)));
+     ((String.concat " " (List.map vartostring' (List.rev uvars))) ^ " : Univ" ^ (String.concat "" (List.map Printer.ueqntostring ueqns)));
   );
   (
-   Printf.printf "   Variable"; List.iter (fun x -> Printf.printf " %s" (tvartostring' x)) (List.rev (!environment).tc); Printf.printf " : Type.\n";
+   Printf.printf "   Variable"; List.iter (fun x -> Printf.printf " %s" (vartostring' x)) (List.rev (!environment).tc); Printf.printf " : Type.\n";
   );
   (
    let p = List.rev_append (!environment).definitions [] in List.iter (fun x -> Printf.printf "   "; printdefinition (snd x)) p;
@@ -221,7 +221,7 @@ let process_command lexbuf = (
   match c with (pos,c) ->
     match c with
     | Toplevel.UVariable (uvars,eqns) -> add_uVars uvars eqns
-    | Toplevel.TVariable tvars -> add_tVars tvars
+    | Toplevel.Variable tvars -> add_tVars tvars
     | Toplevel.UPrint x -> uPrintCommand x
     | Toplevel.TPrint x -> tPrintCommand x
     | Toplevel.OPrint x -> oPrintCommand x

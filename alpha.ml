@@ -9,7 +9,7 @@ module type S =
 
 module Make(Ueq: Universe.Equivalence) = struct
 
-  type alpha_eq = (oVar' * oVar') list
+  type alpha_eq = (var' * var') list
 	
   let addalpha x x' (alpha:alpha_eq) = if x=x' then alpha else (x, x') :: alpha
   let testalpha'  x x' =

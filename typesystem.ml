@@ -18,34 +18,21 @@ open Error
 let strip_pos_var : position * 'a -> 'a = snd
 let get_pos_var : position * 'a -> position = fst
 
-(** Universe variable, probably obsolete. *)
-type uVar = position * uVar'
-and uVar' = UVar of string
-let make_uVar c = UVar c
-let uvartostring' (UVar x) = x
-let uvartostring v = uvartostring' (strip_pos_var v)
-
-(** Type variable, probably obsolete. *)
-type tVar = position * tVar'
-and tVar' = TVar of string
-let make_tVar c = TVar c
-let tvartostring' (TVar x) = x
-let tvartostring v = tvartostring' (strip_pos_var v)
-
 (** Object variable, probably obsolete. *)
-type oVar = position * oVar'
-and oVar' =
-    OVar of string
-  | OVarGen of int * string
-  | OVarUnused
-  | OVarEmptyHole
-let make_oVar c = OVar c
-let ovartostring' = function
-  | OVar x -> x
-  | OVarGen(i,x) -> x ^ "_" ^ (string_of_int i)
-  | OVarEmptyHole -> "_"
-  | OVarUnused -> "_"
-let ovartostring v = ovartostring' (strip_pos_var v)
+type var = position * var'
+and var' =
+    Var of string
+  | VarGen of int * string
+  | VarUnused
+  | VarEmptyHole
+let make_Var c = Var c
+let vartostring' = function
+  | Var x -> x
+  | VarGen(i,x) -> x ^ "_" ^ (string_of_int i)
+  | VarEmptyHole -> "_"
+  | VarUnused -> "_"
+let vartostring v = vartostring' (strip_pos_var v)
+type vartype = Ulevel_variable | Type_variable | Object_variable
 
 (** A u-level expression, [M], is constructed inductively as: [n], [v], [M+n], or
     [max(M,M')], where [v] is a universe variable and [n] is a natural number.
@@ -55,7 +42,7 @@ let ovartostring v = ovartostring' (strip_pos_var v)
  *)
 type uExpr =
   | Upos of position * uExpr
-  | Uvariable of uVar'
+  | Uvariable of var'
 	(** A u-level variable. *)
   | Uplus of uExpr * int
 	(** A pair [(M,n)], denoting [M+n], the n-th successor of [M].  Here [n] should be nonnegative *)
@@ -68,7 +55,7 @@ type uExpr =
   | U_def of string * uExpr list
 	
 type expr = 
-  | LAMBDA of oVar * expr list
+  | LAMBDA of var * expr list
 	(** LAMBDA is the lambda of LF.
 	    
 	    The variable is bound in each of the expressions of the list, and
@@ -84,9 +71,9 @@ and bare_expr =
 	(** APPLY is function application in LF *)
   | UU of uExpr
 	(** A u-level expression. *)
-  | TT_variable of tVar'
+  | TT_variable of var'
 	(** A t-variable. *)
-  | OO_variable of oVar'
+  | OO_variable of var'
 	(** An o-variable. *)
 and label =
   | TT of tHead
@@ -516,23 +503,23 @@ let make_OO_def_app name u t c = make_OO (OO_def_app name) (List.flatten [chkuli
     that defines the admissible subset [A] of the functions [Fu -> nat].  It's just the subset
     that matters.
  *) 
-type uContext = UContext of uVar' list * (uExpr * uExpr) list
+type uContext = UContext of var' list * (uExpr * uExpr) list
 let emptyUContext = UContext ([],[])
 let mergeUContext : uContext -> uContext -> uContext =
   function UContext(uvars,eqns) -> function UContext(uvars',eqns') -> UContext(List.rev_append uvars' uvars,List.rev_append eqns' eqns)
 
 (** t-context; a list of t-variables declared as "Type". *)
-type tContext = tVar' list
+type tContext = var' list
 let emptyTContext : tContext = []
 
 type utContext = uContext * tContext
 let emptyUTContext = emptyUContext, emptyTContext
 
 (** o-context; a list of o-variables with T-expressions representing their declared type. *)
-type oContext = (oVar' * expr) list				  (* [Gamma] *)
+type oContext = (var' * expr) list				  (* [Gamma] *)
 let emptyOContext : oContext = []
 
-type oSubs = (oVar' * expr) list
+type oSubs = (var' * expr) list
 
 (* Abbreviations, conventions, and definitions; from the paper *)
 
@@ -544,25 +531,25 @@ type definition =
   | OeqDefinition of identifier * ((uContext * tContext * oContext) * expr * expr * expr)
 
 
-(** Variable.
+(* obsolete
 
-    We need the following definition, because u-variables, t-variables, and o-variables are in the same name space,
-    and so we need to store them in the same look-up list. *)
-type var = U of uVar' | T of tVar' | O of oVar'
+type var = U of var' | T of var' | O of var'
+
+*)
 
 type environment_type = {
     uc : uContext;
     tc : tContext;
     oc : oContext;
     definitions : (identifier * definition) list;
-    lookup_order : (string * var) list	(* put definitions in here later *)
+    lookup_order : (string * (var' * vartype)) list	(* put definitions in here later *)
   }
 
 let obind' (v,t) env = match v with
-    OVar name -> { env with oc = (v,t) :: env.oc; lookup_order = (name, O v) :: env.lookup_order }
-  | OVarGen (_,_) -> { env with oc = (v,t) :: env.oc }
-  | OVarUnused -> env
-  | OVarEmptyHole -> env
+    Var name -> { env with oc = (v,t) :: env.oc; lookup_order = (name, (v, Object_variable)) :: env.lookup_order }
+  | VarGen (_,_) -> { env with oc = (v,t) :: env.oc }
+  | VarUnused -> env
+  | VarEmptyHole -> env
 
 let obind (v,t) env = obind' (strip_pos_var v, t) env
 
