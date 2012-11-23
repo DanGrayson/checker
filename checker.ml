@@ -1,7 +1,6 @@
 (** Top level code. *)
 
 open Typesystem
-open Derivation				(*otherwise unused*)
 open Universe
 
 let leave () = exit (if !Tokens.error_count > 0 then 1 else 0)

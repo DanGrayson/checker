@@ -9,7 +9,6 @@ SRCFILES =					\
 	debugging.ml \
 	error.ml \
 	typesystem.ml				\
-	derivation.ml				\
 	universe.ml				\
 	alpha.ml				\
 	reduction.ml				\
