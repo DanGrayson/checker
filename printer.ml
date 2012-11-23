@@ -18,8 +18,7 @@ let rec etostring = function
   | LAMBDA(x,bodies) -> raise Error.NotImplemented
   | POS(_,e) -> match e with 
     | UU u -> utostring u
-    | TT_variable t -> vartostring' t
-    | OO_variable o -> vartostring' o
+    | Variable v -> vartostring' v
     | APPLY(h,args) -> (
 	match h with
 	| TT th -> (
@@ -104,7 +103,6 @@ and lftostring = function
   | LAMBDA(x,bodies) -> "(LAMBDA " ^ (vartostring x) ^ " : Obj" ^ (String.concat "" (List.map (fun x -> ", " ^ (lftostring x)) bodies)) ^ ")"
   | POS(_,e) -> match e with 
     | UU u -> utostring u
-    | TT_variable t -> vartostring' t
-    | OO_variable o -> vartostring' o
+    | Variable v -> vartostring' v
     | APPLY(h,args) -> lfl (head_to_string h) args
 

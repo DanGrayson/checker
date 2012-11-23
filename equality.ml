@@ -36,10 +36,7 @@ and eq alpha e e' = match (e,e') with
 	| UU u, UU u' 
 	  -> ueq' (u,u')
 
-	| TT_variable t, TT_variable t' 
-	  -> t = t'
-
-	| OO_variable o, OO_variable o' 
+	| Variable o, Variable o' 
 	  -> testalpha' o o' alpha
 
 	|   APPLY(OO OO_ev,[POS(_,APPLY(OO OO_lambda,_)) as f ;o ;LAMBDA( x ,[t ])]),

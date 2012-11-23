@@ -235,10 +235,8 @@ and bare_expr =
 	(** APPLY is function application in LF *)
   | UU of uExpr
 	(** A u-level expression. *)
-  | TT_variable of var'
-	(** A t-variable. *)
-  | OO_variable of var'
-	(** An o-variable. *)
+  | Variable of var'
+	(** A variable. *)
 
 let ohead_to_string = function
   | OO_emptyHole -> "_"
@@ -310,7 +308,7 @@ let chkulist us = List.iter (fun u -> let _ = chku u in ()) us; us
 
 let rec isT = 
   let isT' = function
-    | TT_variable _ -> true
+    | Variable _ -> true		(* not right, should look in the context *)
     | APPLY(TT _, _) -> true
     | _ -> false
   in function
@@ -321,7 +319,7 @@ let chktlist ts = List.iter (fun t -> let _ = chkt t in ()) ts; ts
 
 let rec isO = 
   let isO' = function
-    | OO_variable _ -> true
+    | Variable _ -> true		(* not right, should look in the context *)
     | APPLY(OO _, _) -> true
     | _ -> false
   in function
@@ -341,8 +339,7 @@ let template = function
   | LAMBDA(x,bodies) -> ()
   | POS(pos,e) -> match e with
     | UU u -> ()
-    | TT_variable t -> ()
-    | OO_variable o -> ()
+    | Variable t -> ()
     | APPLY(h,args) -> (
 	match h with
 	| TT th -> (
@@ -423,8 +420,7 @@ let template = function
 let make_UU u = UU u
 let make_TT h a = APPLY(TT h, a)
 let make_OO h a = APPLY(OO h, a)
-let make_TT_variable x = TT_variable x
-let make_OO_variable v = OO_variable v
+let make_Variable x = Variable x
 
 let make_BB1 v x = LAMBDA( v, [x])
 let make_BB2 v x y = LAMBDA( v, [x;y])

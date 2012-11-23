@@ -158,7 +158,7 @@ oExpr0:
 | Wunderscore_numeral 
     { make_OO_numberedEmptyHole $1 }
 | x=oVar0
-    { make_OO_variable x }
+    { make_Variable x }
 | Wu Wlparen u=euExpr Wrparen
     { make_OO_u u }
 | Wj Wlparen u=euExpr Wcomma v=euExpr Wrparen
@@ -207,7 +207,7 @@ tExpr0:
 | Wunderscore_numeral 
     { make_TT_NumberedEmptyHole $1 }
 | t=tVar0
-    { make_TT_variable t }
+    { make_Variable t }
 | WEl Wlparen o=oExpr Wrparen
     { make_TT_El o }
 | Wstar o=oExpr

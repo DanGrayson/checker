@@ -3,8 +3,8 @@ open Typesystem
 let rec tau (pos:Error.position) env = function
     | LAMBDA _ -> raise Error.Internal
     | POS(pos,e) -> match e with 
-      | UU _ | TT_variable _ -> raise Error.Internal
-      | OO_variable v -> (
+      | UU _ -> raise Error.Internal
+      | Variable v -> (
 	  try List.assoc v env.oc
 	  with Not_found -> raise (Error.TypingError(pos, "unbound variable, not in context: " ^ (vartostring' v))))
       | APPLY(h,args) -> with_pos pos (

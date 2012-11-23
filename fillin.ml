@@ -13,8 +13,7 @@ let rec fillinlist pos env es = List.map (fillin pos env) es
 and fillin pos env = function
     | LAMBDA(v,bodies) -> raise Error.NotImplemented
     | POS(pos,e) -> POS(pos, match e with
-      | TT_variable _ as t -> t
-      | OO_variable _ as o -> o
+      | Variable _ as v -> v
       | UU _ as u -> u
       | APPLY(label,branches) -> (
 	  match label with

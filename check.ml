@@ -31,7 +31,7 @@ let rec tcheck pos env = function
     | LAMBDA _ -> raise Error.Internal
     | POS(pos,e) -> match e with 
       | UU u -> uexprcheck pos env u
-      | TT_variable Var s -> (
+      | Variable Var s -> (
 	  match (
 	    try List.assoc s env.lookup_order
 	    with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound t-variable: "^s)))
@@ -39,8 +39,7 @@ let rec tcheck pos env = function
 	    (_,Ulevel_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a t-variable but found a u-variable: "^s))
 	  | (_,Type_variable) -> ()
 	  | (_,Object_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a t-variable but found an o-variable: "^s)))
-      | TT_variable (VarGen _|VarEmptyHole|VarUnused)
-      | OO_variable _ -> raise Error.Internal
+      | Variable _ -> raise Error.Internal
       | APPLY(h,args) -> match h with
 	| TT th -> (
 	    match th with 
@@ -77,11 +76,8 @@ and ocheck pos env = function
   | LAMBDA _ -> raise Error.Internal	(* should have been handled higher up *)
   | POS(pos,e) -> match e with
     | UU u -> uexprcheck pos env u
-    | TT_variable t -> ()
-    | OO_variable VarGen (i,s) -> raise Error.NotImplemented
-    | OO_variable VarUnused -> raise Error.Internal
-    | OO_variable VarEmptyHole -> raise Error.Internal
-    | OO_variable Var s -> (
+    | Variable (VarGen _ | VarUnused | VarEmptyHole) -> raise Error.Internal
+    | Variable Var s -> (
 	match
 	  try List.assoc s env.lookup_order
 	  with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound o-variable: "^s))
