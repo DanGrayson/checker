@@ -5,12 +5,12 @@ open Typesystem
 let rec etostring = function
   | LAMBDA(x,bodies) -> raise Error.NotImplemented
   | POS(_,e) -> match e with 
+    | EmptyHole -> "_"
     | Variable v -> vartostring' v
     | APPLY(h,args) -> (
 	match h with
 	| UU uh -> (
 	    match uh with 
-	    | UU_EmptyHole -> "_"
 	    | UU_plus n -> (
 		match args with 
 		| [u] -> "(" ^ (etostring u) ^ "+" ^ (string_of_int n) ^ ")"
@@ -105,6 +105,7 @@ let rec lfl label s = "(" ^ label ^ (String.concat "" (List.map (fun x -> " " ^ 
 and lftostring = function
   | LAMBDA(x,body) -> "(LAMBDA " ^ (vartostring x) ^ " : Obj, " ^ (lftostring body) ^ ")"
   | POS(_,e) -> match e with 
+    | EmptyHole -> "_"
     | Variable v -> vartostring' v
     | APPLY(h,args) -> lfl (head_to_string h) args
 

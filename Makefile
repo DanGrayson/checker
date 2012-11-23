@@ -45,7 +45,7 @@ checker.odocl: Makefile
 clean::; ocamlbuild -clean
 TAGS: $(SRCFILES) test.ts scripts/ts.etags Makefile
 	( scripts/etags.ocaml $(SRCFILES) && etags --regex=@scripts/ts.etags test.ts -o - ) >$@
-clean::; rm -f TAGS checker.odocl
+clean::; rm -f TAGS checker.odocl .DS_Store
 wc:; wc -l $(SRCFILES)
 run: checker.byte; OCAMLRUNPARAM=$(RUN) ./$< test.ts
 run_nofile: checker.byte; OCAMLRUNPARAM=$(RUN) ./$<

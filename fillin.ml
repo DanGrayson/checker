@@ -13,12 +13,11 @@ let rec fillinlist pos env es = List.map (fillin pos env) es
 and fillin pos env = function
     | LAMBDA(v,bodies) -> raise Error.NotImplemented
     | POS(pos,e) -> POS(pos, match e with
+      | EmptyHole -> raise (Error.TypingError(pos,"empty hole, no method for filling"))
       | Variable _ as v -> v
       | APPLY(label,branches) -> (
 	  match label with
 	  | UU _ -> e
-	  | OO OO_emptyHole -> raise (Error.TypingError(pos,"empty o-expression hole, no method for filling"))
-	  | TT TT_EmptyHole -> raise (Error.TypingError(pos,"empty t-expression hole, no method for filling"))
 	  | OO OO_lambda -> (
 	      match branches with 
 	      | [t; LAMBDA( x,o)] -> 

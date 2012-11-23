@@ -9,7 +9,6 @@ let newfresh =
   fun v -> match v with 
       Var x | VarGen(_,x) -> newgen x
     | VarUnused as v -> v
-    | VarEmptyHole as v -> v
 
 (** This version substitutes only for o-variables. *)
 let rec substlist subs es = List.map (subst subs) es
@@ -22,5 +21,5 @@ and subst subs = function
   | POS(pos,e) as d -> match e with 
     | APPLY(label,args) -> POS(pos, APPLY(label,substlist subs args))
     | Variable v -> (try List.assoc v subs with Not_found -> d)
-  
+    | EmptyHole -> d  
 

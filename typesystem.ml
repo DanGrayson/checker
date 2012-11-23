@@ -24,12 +24,10 @@ and var' =
     Var of string
   | VarGen of int * string
   | VarUnused
-  | VarEmptyHole
 let make_Var c = Var c
 let vartostring' = function
   | Var x -> x
   | VarGen(i,x) -> x ^ "_" ^ (string_of_int i)
-  | VarEmptyHole -> "_"
   | VarUnused -> "_"
 let vartostring v = vartostring' (strip_pos_var v)
 type vartype = Ulevel_variable | Type_variable | Object_variable
@@ -44,8 +42,6 @@ type uHead =
 	(** A pair [(M,n)], denoting [M+n], the n-th successor of [M].  Here [n] should be nonnegative *)
   | UU_max
 	(** A pair [(M,M')] denoting [max(M,M')]. *)
-  | UU_EmptyHole
-        (** A u-level, to be filled in later, by type checking. *)
   | UU_def_app of string
 
 (** The various labels for t-expressions of TS. *)
@@ -81,8 +77,6 @@ type tHead =
       (** Identity type; paths type. *)
       (* TS7: *)
       (* end of TS *)
-  | TT_EmptyHole
-      (** a hole to be filled in later  *)
   | TT_def_app of string
 
 (** The various labels for o-expressions of TS. *)
@@ -192,8 +186,6 @@ type oHead =
 	    By definition, the subexpression [p] is not essential.
 	 *)
       (* end of TS *)
-  | OO_emptyHole
-      (** a hole to be filled in later *)
   | OO_def_app of string
 
 	(** The type [label] corresponds to the constant atomic terms of LF. *)
@@ -228,6 +220,8 @@ type expr =
 and bare_expr =
   | Variable of var'
 	(** A variable. *)
+  | EmptyHole
+        (** An empty hole, to be filled in later. *)
   | APPLY of label * expr list
 	(** Iterated function application. *)
 
@@ -271,10 +265,8 @@ let ohead_to_kind = function
 let uhead_to_string = function
   | UU_plus n -> "uplus;" ^ (string_of_int n)
   | UU_max -> "max"
-  | UU_EmptyHole -> "_"
   | UU_def_app d -> "udef;" ^ d
 let thead_to_string = function
-  | TT_EmptyHole -> "__"
   | TT_El -> "El"
   | TT_U -> "U"
   | TT_Pi -> "Pi"
@@ -287,7 +279,6 @@ let thead_to_string = function
   | TT_Id -> "Id"
   | TT_def_app d -> "tdef;" ^ d
 let ohead_to_string = function
-  | OO_emptyHole -> "_"
   | OO_u -> "u"
   | OO_j -> "j"
   | OO_ev -> "ev"
@@ -334,49 +325,10 @@ let get_pos = function
 let with_pos_of x e = POS (get_pos x, e)
 let nowhere x = with_pos Error.Nowhere x
 
-let rec isU = 
-  let isU' = function
-    | Variable _ -> true		(* not right, should look in the context *)
-    | APPLY(UU _, _) -> true
-    | _ -> false
-  in function
-    | POS(_,x) -> isU' x
-    | LAMBDA(x,bodies) -> raise Error.Internal
-let chku u = if not (isU u) then raise Error.Internal; u
-let chkulist us = List.iter (fun u -> let _ = chku u in ()) us; us
-
-let rec isT = 
-  let isT' = function
-    | Variable _ -> true		(* not right, should look in the context *)
-    | APPLY(TT _, _) -> true
-    | _ -> false
-  in function
-    | POS(_,x) -> isT' x
-    | LAMBDA(x,bodies) -> raise Error.Internal
-let chkt t = if not (isT t) then raise Error.Internal; t
-let chktlist ts = List.iter (fun t -> let _ = chkt t in ()) ts; ts
-
-let rec isO = 
-  let isO' = function
-    | Variable _ -> true		(* not right, should look in the context *)
-    | APPLY(OO _, _) -> true
-    | _ -> false
-  in function
-    | POS(_,x) -> isO' x
-    | LAMBDA(x,bodies) -> raise Error.Internal
-
-let chko o = if not (isO o) then raise Error.Internal; o
-let chkolist os = List.iter (fun o -> let _ = chko o in ()) os; os
-
-type expr_descriptor =
-  | U_spot
-  | T_spot
-  | O_spot
-  | B_spot of expr_descriptor list
-
 let template = function
   | LAMBDA(x,bodies) -> ()
   | POS(pos,e) -> match e with
+    | EmptyHole -> ()
     | Variable t -> ()
     | APPLY(h,args) -> (
 	match h with
@@ -384,12 +336,10 @@ let template = function
 	    match uh with 
 	    | UU_plus n -> ()
 	    | UU_max -> ()
-	    | UU_EmptyHole -> ()
 	    | UU_def_app d -> ()
 	   )
 	| TT th -> (
 	    match th with 
-	    | TT_EmptyHole -> ()
 	    | TT_El -> ()
 	    | TT_U -> ()
 	    | TT_Pi -> (
@@ -419,7 +369,6 @@ let template = function
 	   )
 	| OO oh -> (
 	    match oh with
-	    | OO_emptyHole -> ()
 	    | OO_u -> ()
 	    | OO_j -> ()
 	    | OO_ev -> (
@@ -471,66 +420,54 @@ let make_LAM3 v1 v2 v3 x = make_LAM v1 (make_LAM2 v2 v3 x)
 
 (* let make_BB2 v x y = LAMBDA( v, [x;y]) *)
 
-let make_TT_EmptyHole = make_TT TT_Empty []
-let make_TT_El x = make_TT TT_El [chko x]
-let make_TT_U x = make_TT TT_U [chku x]
-let make_TT_Pi    t1 (x,t2) = make_TT TT_Pi    [chkt t1; make_LAM x (chkt t2)]
-let make_TT_Sigma t1 (x,t2) = make_TT TT_Sigma [chkt t1; make_LAM x (chkt t2)]
+let make_TT_El x = make_TT TT_El [x]
+let make_TT_U x = make_TT TT_U [x]
+let make_TT_Pi    t1 (x,t2) = make_TT TT_Pi    [t1; make_LAM x t2]
+let make_TT_Sigma t1 (x,t2) = make_TT TT_Sigma [t1; make_LAM x t2]
 let make_TT_Pt = make_TT TT_Pt []
-let make_TT_Coprod t t' = make_TT TT_Coprod [chkt t;chkt t']
-let make_TT_Coprod2 t t' (x,u) (x',u') o = make_TT TT_Coprod2 [chkt t; chkt t'; make_LAM x (chkt u); make_LAM x' (chkt u'); chko o]
+let make_TT_Coprod t t' = make_TT TT_Coprod [t;t']
+let make_TT_Coprod2 t t' (x,u) (x',u') o = make_TT TT_Coprod2 [t; t'; make_LAM x u; make_LAM x' (u'); o]
 let make_TT_Empty = make_TT TT_Empty []
-let make_TT_IC tA a (x,tB,(y,tD,(z,q))) =
-  make_TT TT_IC [chkt tA; chko a; make_LAM x (chkt tB); make_LAM2 x y (chkt tD); make_LAM3 x y z (chko q)]
-let make_TT_Id t x y = make_TT TT_Id [chkt t;chko x;chko y]
-let make_TT_def_app name u t o = make_TT (TT_def_app name) (List.flatten [chkulist u;chktlist t;chkolist o])
-
-let make_OO_emptyHole = make_OO OO_emptyHole []
-let make_OO_u m = make_OO OO_u [chku m]
-let make_OO_j m n = make_OO OO_j [chku m; chku n]
-let make_OO_ev f p (v,t) = make_OO OO_ev [chko f;chko p;make_LAM v (chkt t)]
-let make_OO_ev_hole f p = make_OO OO_ev [chko f;chko p] (* fill in third argument later *)
-let make_OO_lambda t (v,p) = make_OO OO_lambda [chkt t; make_LAM v (chko p)]
-let make_OO_forall m m' n (v,o') = make_OO OO_forall [chku m;chku m';chko n;make_LAM v (chko o')]
-let make_OO_pair a b (x,t) = make_OO OO_pair [chko a;chko b;make_LAM x (chkt t)]
-let make_OO_pr1 t (x,t') o = make_OO OO_pr1 [chkt t;make_LAM x (chkt t'); chko o]
-let make_OO_pr2 t (x,t') o = make_OO OO_pr2 [chkt t;make_LAM x (chkt t'); chko o]
-let make_OO_total m1 m2 o1 (x,o2) = make_OO OO_total [chku m1;chku m2;chko o1;make_LAM x (chko o2)]
+let make_TT_IC tA a (x,tB,(y,tD,(z,q))) = make_TT TT_IC [tA; a; make_LAM x tB; make_LAM2 x y tD; make_LAM3 x y z q]
+let make_TT_Id t x y = make_TT TT_Id [t;x;y]
+let make_TT_def_app name u t o = make_TT (TT_def_app name) (List.flatten [u;t;o])
+let make_OO_u m = make_OO OO_u [m]
+let make_OO_j m n = make_OO OO_j [m; n]
+let make_OO_ev f p (v,t) = make_OO OO_ev [f;p;make_LAM v t]
+let make_OO_ev_hole f p = make_OO OO_ev [f;p] (* fill in third argument later *)
+let make_OO_lambda t (v,p) = make_OO OO_lambda [t; make_LAM v p]
+let make_OO_forall m m' n (v,o') = make_OO OO_forall [m;m';n;make_LAM v (o')]
+let make_OO_pair a b (x,t) = make_OO OO_pair [a;b;make_LAM x t]
+let make_OO_pr1 t (x,t') o = make_OO OO_pr1 [t;make_LAM x (t'); o]
+let make_OO_pr2 t (x,t') o = make_OO OO_pr2 [t;make_LAM x (t'); o]
+let make_OO_total m1 m2 o1 (x,o2) = make_OO OO_total [m1;m2;o1;make_LAM x o2]
 let make_OO_pt = make_OO OO_pt []
-let make_OO_pt_r o (x,t) = make_OO OO_pt_r [chko o;make_LAM x (chkt t)]
+let make_OO_pt_r o (x,t) = make_OO OO_pt_r [o;make_LAM x t]
 let make_OO_tt = make_OO OO_tt []
-let make_OO_coprod m1 m2 o1 o2 = make_OO OO_coprod [chku m1; chku m2; chko o1; chko o2]
-let make_OO_ii1 t t' o = make_OO OO_ii1 [chkt t;chkt t';chko o]
-let make_OO_ii2 t t' o = make_OO OO_ii2 [chkt t;chkt t';chko o]
-let make_OO_sum tT tT' s s' o (x,tS) = make_OO OO_sum [chkt tT; chkt tT'; chko s; chko s'; chko o; make_LAM x (chkt tS)]
+let make_OO_coprod m1 m2 o1 o2 = make_OO OO_coprod [m1; m2; o1; o2]
+let make_OO_ii1 t t' o = make_OO OO_ii1 [t;t';o]
+let make_OO_ii2 t t' o = make_OO OO_ii2 [t;t';o]
+let make_OO_sum tT tT' s s' o (x,tS) = make_OO OO_sum [tT; tT'; s; s'; o; make_LAM x tS]
 let make_OO_empty = make_OO OO_empty []
-let make_OO_empty_r t o = make_OO OO_empty_r [chkt t; chko o]
+let make_OO_empty_r t o = make_OO OO_empty_r [t; o]
 let make_OO_c tA a (x,tB,(y,tD,(z,q))) b f = make_OO OO_c [
-  chko a; 
-  make_LAM x (chkt tB);
-  make_LAM2 x y (chkt tD);
-  make_LAM3 x y z (chko q) ]
+  a; make_LAM x tB;
+  make_LAM2 x y tD;
+  make_LAM3 x y z q ]
 let make_OO_ic_r tA a (x,tB,(y,tD,(z,q))) i (x',(v,tS)) t = make_OO OO_ic_r [
-  chkt tA; 
-  chko a;
-  make_LAM x (chkt tB);
-  make_LAM2 x y (chkt tD);
-  make_LAM3 x y z (chko q);
-  chko i; 
-  make_LAM2  x' v (chkt tS); 
-  chko t]
+  tA; a;
+  make_LAM x tB; make_LAM2 x y tD; make_LAM3 x y z q;
+  i; make_LAM2  x' v tS; t]
 let make_OO_ic m1 m2 m3 oA a (x,oB,(y,oD,(z,q))) = make_OO OO_ic [
-  chku m1; chku m2; chku m3;
-  chko oA; chko a;
-  make_LAM x (chkt oB);
-  make_LAM2 x y (chkt oD);
-  make_LAM3 x y z (chko q) ]
-let make_OO_paths m t x y = make_OO OO_paths [chku m; chkt t; chko x; chko y]
-let make_OO_refl t o = make_OO OO_refl [chkt t; chko o]
-let make_OO_J tT a b q i (x,(e,tS)) = make_OO OO_J [chkt tT; chko a; chko b; chko q; chko i; make_LAM x (make_LAM e (chkt tS))]
-let make_OO_rr0 m2 m1 s t e = make_OO OO_rr0 [chku m2; chku m1; chko s; chko t; chko e]
-let make_OO_rr1 m a p = make_OO OO_rr1 [chku m; chko a; chko p]
-let make_OO_def_app name u t c = make_OO (OO_def_app name) (List.flatten [chkulist u; chktlist t; chkolist c])
+  m1; m2; m3;
+  oA; a;
+  make_LAM x oB; make_LAM2 x y oD; make_LAM3 x y z q ]
+let make_OO_paths m t x y = make_OO OO_paths [m; t; x; y]
+let make_OO_refl t o = make_OO OO_refl [t; o]
+let make_OO_J tT a b q i (x,(e,tS)) = make_OO OO_J [tT; a; b; q; i; make_LAM x (make_LAM e tS)]
+let make_OO_rr0 m2 m1 s t e = make_OO OO_rr0 [m2; m1; s; t; e]
+let make_OO_rr1 m a p = make_OO OO_rr1 [m; a; p]
+let make_OO_def_app name u t c = make_OO (OO_def_app name) (List.flatten [u; t; c])
 
 (** 
     A universe context [UC = (Fu,A)] is represented by a list of universe variables [Fu] and a list of
@@ -584,7 +521,6 @@ let obind' (v,t) env = match v with
     Var name -> { env with oc = (v,t) :: env.oc; lookup_order = (name, (v, Object_variable)) :: env.lookup_order }
   | VarGen (_,_) -> { env with oc = (v,t) :: env.oc }
   | VarUnused -> env
-  | VarEmptyHole -> env
 
 let obind (v,t) env = obind' (strip_pos_var v, t) env
 

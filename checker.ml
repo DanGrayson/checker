@@ -259,8 +259,7 @@ let parse_string grammar s =
     let lexbuf = Lexing.from_string s in
     lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = strname()};
     protect (grammar (Tokens.expr_tokens)) lexbuf lexpos
-let oExpr_from_string = parse_string Grammar.oExprEof
-let tExpr_from_string = parse_string Grammar.tExprEof
+let expr_from_string = parse_string Grammar.exprEof
 
 let _ = 
   Arg.parse [

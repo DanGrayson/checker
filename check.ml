@@ -5,6 +5,7 @@ open Equality
 let rec ucheck pos env = function
     | POS(pos,e) -> (
 	match e with
+	| EmptyHole -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a u-expression"))
 	| Variable Var s -> (
 	    match (
 	      try List.assoc s env.lookup_order
@@ -22,6 +23,7 @@ let rec ucheck pos env = function
 let rec tcheck pos env = function
     | LAMBDA _ -> raise Error.Internal
     | POS(pos,e) -> match e with 
+      | EmptyHole -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a t-expression"))
       | Variable Var s -> (
 	  match (
 	    try List.assoc s env.lookup_order
@@ -34,7 +36,6 @@ let rec tcheck pos env = function
       | APPLY(h,args) -> match h with
 	| TT th -> (
 	    match th with 
-	    | TT_EmptyHole -> raise (Error.TypeCheckingFailure(pos,"empty hole for t-expression found"))
 	    | TT_El -> ocheckn 1 pos env args
 	    | TT_U -> ucheckn 1 pos env args
 	    | TT_Sigma | TT_Pi -> (
@@ -65,6 +66,7 @@ let rec tcheck pos env = function
 and ocheck pos env = function
   | LAMBDA _ -> raise Error.Internal	(* should have been handled higher up *)
   | POS(pos,e) -> match e with
+    | EmptyHole -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a o-expression"))
     | Variable Var s -> (
 	match
 	  try List.assoc s env.lookup_order
@@ -73,12 +75,11 @@ and ocheck pos env = function
 	  (_,Ulevel_variable) -> raise (Error.TypeCheckingFailure (pos, "expected an o-variable but found a u-variable: "^s))
 	| (_,Type_variable) -> raise (Error.TypeCheckingFailure (pos, "expected an o-variable but found a t-variable: "^s))
 	| (_,Object_variable) -> ())
-    | Variable (VarGen _ | VarUnused | VarEmptyHole) -> raise Error.Internal
+    | Variable (VarGen _ | VarUnused) -> raise Error.Internal
     | APPLY(h,args) -> match h with
       | UU th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a u-expression"))
       | TT th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a t-expression"))
       | OO oh -> match oh with
-	| OO_emptyHole -> raise Error.Internal
 	| OO_u -> ucheckn 1 pos env args
 	| OO_j -> ucheckn 2 pos env args
 	| OO_ev -> (
