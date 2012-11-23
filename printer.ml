@@ -10,9 +10,8 @@ let rec etostring = function
 	match h with
 	| UU uh -> (
 	    match uh with 
-	    | UEmptyHole -> "_"
-	    | UNumberedEmptyHole n -> "_" ^ (string_of_int n)
-	    | Uplus n -> (
+	    | UU_EmptyHole -> "_"
+	    | UU_plus n -> (
 		match args with 
 		| [u] -> "(" ^ (etostring u) ^ "+" ^ (string_of_int n) ^ ")"
 		| _ -> raise Error.Internal

@@ -26,8 +26,8 @@ let chk uv (lhs,rhs) =
   let rec ev = function
     | POS(_,e) -> (match e with
 	| Variable u -> index u
-	| APPLY(UU (Uplus n),[u]) -> (ev u) + n
-	| APPLY(UU Umax,[u;v]) -> max (ev u) (ev v)
+	| APPLY(UU (UU_plus n),[u]) -> (ev u) + n
+	| APPLY(UU UU_max,[u;v]) -> max (ev u) (ev v)
 	| _ -> raise Error.Internal)
     | _ -> raise Error.Internal
   in let chk lhs rhs = if (ev lhs) = (ev rhs) then raise Error.UniverseInconsistency in
@@ -44,14 +44,12 @@ module Equal = struct
 	a == b || 
 	match (a,b) with 
 	| Variable x, Variable x' -> x = x'
-	| APPLY(UU (UNumberedEmptyHole n ),[]),
-	  APPLY(UU (UNumberedEmptyHole n'),[]) -> n = n'
-	| APPLY(UU (Uplus n ), [x ]),
-	  APPLY(UU (Uplus n'), [x']) -> n = n' && ueq x x'
-	| APPLY(UU Umax, [x;y]), 
-	  APPLY(UU Umax, [x';y']) -> ueq x x' && ueq y y'
-	| APPLY(UU (U_def_app _),_),
-	  APPLY(UU (U_def_app _),_) -> raise Error.NotImplemented
+	| APPLY(UU (UU_plus n ), [x ]),
+	  APPLY(UU (UU_plus n'), [x']) -> n = n' && ueq x x'
+	| APPLY(UU UU_max, [x;y]), 
+	  APPLY(UU UU_max, [x';y']) -> ueq x x' && ueq y y'
+	| APPLY(UU (UU_def_app _),_),
+	  APPLY(UU (UU_def_app _),_) -> raise Error.NotImplemented
 	| _ -> false)
     | _ -> false
     in ueq

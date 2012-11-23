@@ -12,10 +12,9 @@ let rec tau (pos:Error.position) env = function
 	  | OO oh -> match oh with
 	    | OO_def_app _ -> raise Error.NotImplemented
 	    | OO_emptyHole -> raise (Error.TypingError(pos, "empty hole, type undetermined, internal error"))
-	    | OO_numberedEmptyHole n -> raise (Error.TypingError(pos, "empty hole, type undetermined, internal error"))
 	    | OO_u -> (
 		match args with 
-		| [u] -> make_TT_U (POS(pos, (make_UU (Uplus 1) [u])))
+		| [u] -> make_TT_U (POS(pos, (make_UU (UU_plus 1) [u])))
 		| _ -> raise Error.Internal)
 	    | OO_j -> (
 		match args with 
@@ -31,7 +30,7 @@ let rec tau (pos:Error.position) env = function
 		| _ -> raise Error.Internal)
 	    | OO_forall -> (
 		match args with 
-		| u :: u' :: _ -> make_TT_U (nowhere (make_UU Umax [u; u']))
+		| u :: u' :: _ -> make_TT_U (nowhere (make_UU UU_max [u; u']))
 		| _ -> raise Error.Internal)
 	    | OO_pair -> raise Error.NotImplemented
 	    | OO_pr1 -> raise Error.NotImplemented

@@ -26,6 +26,8 @@ Section A.
         empty_r
         For_all
         hastype_ev
+        El
+        El'
 
   The relationship between these is described in the signature, which assigns
   type families to the constant terms and kinds to the constant type families,
@@ -128,10 +130,13 @@ Axiom UU : Ulevel -> Texp.      (* use UU for [U] *)
 Axiom Rule15: forall (m : Ulevel), Istype (UU m).
 Axiom El : Oexp -> Texp.
 Axiom Rule17: forall (o: Oexp) (m: Ulevel), Hastype o (UU m) -> Istype (El o).
+
+Axiom El' : forall { m : Ulevel } { o : Oexp }, ( Hastype o ( UU m ) ) -> Texp .
+Axiom El'2 : forall { m : Ulevel } { o : Oexp } ( is: Hastype o ( UU m ) ), Istype (El' is).
+
+
 Axiom m : Ulevel.
-Lemma i1 : Istype ( UU m ). 
-  exact (Rule15 m).
-Defined.
+Definition i1 := Rule15 m : Istype ( UU m ). 
 Axiom x1 : Oexp.
 Axiom j1 : Hastype x1 ( UU m ).
 Lemma arrowtype: forall (X Y : Texp), (Istype X) -> (Istype Y) -> (Istype (Arrow X Y)).

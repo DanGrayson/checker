@@ -17,8 +17,8 @@ and fillin pos env = function
       | APPLY(label,branches) -> (
 	  match label with
 	  | UU _ -> e
-	  | OO OO_emptyHole | OO OO_numberedEmptyHole _ -> raise (Error.TypingError(pos,"empty o-expression hole, no method for filling"))
-	  | TT TT_EmptyHole | TT TT_NumberedEmptyHole _ -> raise (Error.TypingError(pos,"empty t-expression hole, no method for filling"))
+	  | OO OO_emptyHole -> raise (Error.TypingError(pos,"empty o-expression hole, no method for filling"))
+	  | TT TT_EmptyHole -> raise (Error.TypingError(pos,"empty t-expression hole, no method for filling"))
 	  | OO OO_lambda -> (
 	      match branches with 
 	      | [t; LAMBDA( x,o)] -> 

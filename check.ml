@@ -13,10 +13,9 @@ let rec ucheck pos env = function
 	      (_,Ulevel_variable) -> ()
 	    | (_,Type_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a u-variable but found a t-variable: "^s))
 	    | (_,Object_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a u-variable but found an o-variable: "^s)))
-	| APPLY(UU Uplus n, [u]) -> ucheck pos env u
-	| APPLY(UU Umax, [u;v]) -> ucheck pos env u;ucheck pos env v
-	| APPLY(UU U_def_app _, _) -> raise Error.NotImplemented
-	| APPLY(UU (UEmptyHole | UNumberedEmptyHole _), _) -> raise (Error.TypeCheckingFailure(pos, "empty hole for u-expression found"))
+	| APPLY(UU UU_plus n, [u]) -> ucheck pos env u
+	| APPLY(UU UU_max, [u;v]) -> ucheck pos env u;ucheck pos env v
+	| APPLY(UU UU_def_app _, _) -> raise Error.NotImplemented
 	| _ -> raise Error.Internal)
     | _ -> raise Error.Internal
 
@@ -35,7 +34,7 @@ let rec tcheck pos env = function
       | APPLY(h,args) -> match h with
 	| TT th -> (
 	    match th with 
-	    | TT_EmptyHole | TT_NumberedEmptyHole _ -> raise (Error.TypeCheckingFailure(pos,"empty hole for t-expression found"))
+	    | TT_EmptyHole -> raise (Error.TypeCheckingFailure(pos,"empty hole for t-expression found"))
 	    | TT_El -> ocheckn 1 pos env args
 	    | TT_U -> ucheckn 1 pos env args
 	    | TT_Sigma | TT_Pi -> (
@@ -79,7 +78,7 @@ and ocheck pos env = function
       | UU th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a u-expression"))
       | TT th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a t-expression"))
       | OO oh -> match oh with
-	| OO_emptyHole | OO_numberedEmptyHole _ -> raise Error.Internal
+	| OO_emptyHole -> raise Error.Internal
 	| OO_u -> ucheckn 1 pos env args
 	| OO_j -> ucheckn 2 pos env args
 	| OO_ev -> (

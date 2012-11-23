@@ -90,7 +90,6 @@ rule expr_tokens = parse
   | '>' { Wgreater }
   | '<' '='  { Wlessequal }
   | '_' { Wunderscore }
-  | '_' (digit | nzdigit digit as n) { Wunderscore_numeral (int_of_string n) }
   | '<' { Wless }
   | ':' '='  { Wcolonequal }
   | '|' '-'  { Wturnstile }

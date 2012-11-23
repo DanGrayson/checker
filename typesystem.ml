@@ -40,15 +40,13 @@ type vartype = Ulevel_variable | Type_variable | Object_variable
 
 (** The various labels for u-expressions of TS. *)
 type uHead =
-  | Uplus of int
+  | UU_plus of int
 	(** A pair [(M,n)], denoting [M+n], the n-th successor of [M].  Here [n] should be nonnegative *)
-  | Umax
+  | UU_max
 	(** A pair [(M,M')] denoting [max(M,M')]. *)
-  | UEmptyHole
+  | UU_EmptyHole
         (** A u-level, to be filled in later, by type checking. *)
-  | UNumberedEmptyHole of int
-        (** A u-level, to be filled in later, by type checking. *)
-  | U_def_app of string
+  | UU_def_app of string
 
 (** The various labels for t-expressions of TS. *)
 type tHead =
@@ -85,8 +83,6 @@ type tHead =
       (* end of TS *)
   | TT_EmptyHole
       (** a hole to be filled in later  *)
-  | TT_NumberedEmptyHole of int
-        (** A hole to be filled in later, by type checking. *)
   | TT_def_app of string
 
 (** The various labels for o-expressions of TS. *)
@@ -164,17 +160,11 @@ type oHead =
 
 	    The type of [O_empty_r(T,o)] is [T].  Here the type of [o] is [Empty], the empty type. *)
   | OO_c
-	(** [O_c(A,a,(x,B,(y,D,(z,q))),b,f) <--> \[c;x,y,z\](A,a,B,D,q,b,f)]
-	    
-	    Corresponds to [c] in the paper. *)
+	(** Corresponds to [c] in the paper. *)
   | OO_ic_r
-	(** [O_ic_r(A,a,(x,B,(y,D,(z,q))),i,(x',v,S),t) <--> \[ic_r;x,y,z,x',v\](A,a,B,D,q,i,S,t)]
-	    
-	    ic_r is the elimination rule for inductive types (generalized W-types) *)
+	(** [ic_r] is the elimination rule for inductive types (generalized W-types) *)
   | OO_ic
-	(** [O_ic(M1,M2,M3,oA,a,(x,oB,(y,oD,(z,q)))) <--> \[[ic;x,y,z](M1,M2,M3,oA,a,oB,oD,q)\]]
-	    
-	    Corresponds to [ic].  Its type is the max of the three u-level expressions. *)
+	(** Corresponds to [ic].  Its type is the max of the three u-level expressions. *)
 	(* TS6 *)
   | OO_paths
 	(** The object corresponding to the identity type [Id].  
@@ -185,9 +175,7 @@ type oHead =
 	    
 	    The type of [O_refl(T,o)] is [Id(T,o,o)]. *)
   | OO_J
-	(** The elimination rule for Id; Id-elim.
-
-	    The type of [O_J(T,a,b,q,i,(x,e,S))] is [S\[b/x,i/e\]]. *)
+	(** The elimination rule for Id; Id-elim. *)
       (* TS7: *)
   | OO_rr0
 	(** Resizing rule.
@@ -206,10 +194,9 @@ type oHead =
       (* end of TS *)
   | OO_emptyHole
       (** a hole to be filled in later *)
-  | OO_numberedEmptyHole of int
-        (** A hole to be filled in later, by type checking. *)
   | OO_def_app of string
 
+	(** The type [label] corresponds to the constant atomic terms of LF. *)
 type label =
   | UU of uHead
   | TT of tHead
@@ -218,40 +205,56 @@ type label =
 (** The type [expr] corresponds to the canonical terms of LF. *)
 type expr = 
   | POS of position * bare_expr
-	(** a wrapper that gives the position in the source code, for error messages *)
+	(** A wrapper that gives the position in the TS source code, for error messages *)
   | LAMBDA of var * expr
-	(** LAMBDA is the lambda of LF.
-	    
-	    The variable is bound in each of the expressions of the list, and
-	    the lambda expression is to be thought of as returning a tuple, with one
-	    member for each expression in the list.*)
+	(** The lambda of LF. *)
 
-(** The type [bare_expr] corresponds to the atomic terms of LF,
-    except that instead of writing ((((f a) b) c) d) we write APPLY(f,[a;b;c;d]),
-    where f is a variable or a constant. *)
+	(** The type [bare_expr] corresponds to the atomic terms of LF.  
+									 
+	    APPLY is the iterated function application of LF, and all of its
+	    arguments must be there (so this is the "eta-long" form).  Thus
+	    instead of writing [((((f a) b) c) d)] we write
+	    [APPLY(f,\[a;b;c;d\])], where [f] is a variable or a constant.
+	    Both aspects offer advantages for pattern matching.  One slight
+	    disadvantage is that a constant [f] appearing as a term is encoded
+	    as [APPLY(f,\[\])], which represents the redundant application of
+	    [f] to zero arguments.
+
+	    Remark: eta-expansion is type driven, so that if it is desired to
+	    derive [ f : A -> B ], and [f] is not already a lambda, we "reduce"
+	    to deriving [ (LAMBDA x, f x) : A -> B ].  That's also why don't
+	    decorate the [LAMBDA] with the type, as in [ LAMBDA x:A, f x ],
+	    because it would just get in the way.*)
 and bare_expr =
   | Variable of var'
 	(** A variable. *)
   | APPLY of label * expr list
-	(** APPLY is function application in LF *)
+	(** Iterated function application. *)
 
+	(** The following "base types" segregate TS expressions into three
+	    forms: u-expressions, t-expressions, and o-expressions, aand the
+	    introduce the four forms of judgments. *)
 type base_type =
-  | Ulevel_type
-  | Type_type
-  | Object_type
+  | TF_Ulevel
+  | TF_Type
+  | TF_Object
+  | TF_Is_type
+  | TF_Has_type
+  | TF_Type_equality
+  | TF_Object_equality
 
 type canonical_type_family =
   | ATOMIC of atomic_type_family
-  | PI_TYPE of var' * canonical_type_family * canonical_type_family
+  | TF_Pi of var' * canonical_type_family * canonical_type_family
 and atomic_type_family =
-  | APP of base_type * canonical_type_family
+  | TF_apply of base_type * canonical_type_family
   | BASE of base_type
 
-let ulevel_F = ATOMIC (BASE Ulevel_type)
-let type_F = ATOMIC (BASE Type_type)
-let obj_F = ATOMIC (BASE Object_type)
+let ulevel_TF = ATOMIC (BASE TF_Ulevel)
+let type_TF = ATOMIC (BASE TF_Type)
+let obj_TF = ATOMIC (BASE TF_Object)
 
-let arrow_T a b = PI_TYPE(VarUnused, a, b)
+let arrow_T a b = TF_Pi(VarUnused, a, b)
 
 type kind =
   | TYPE_KIND
@@ -262,18 +265,16 @@ let type_K = TYPE_KIND
 let arrow_K a k = PI_KIND(VarUnused, a, k)
 
 let ohead_to_kind = function
-  | OO_ev -> arrow_K obj_F (arrow_K obj_F (arrow_K (arrow_T obj_F type_F) type_K))
+  | OO_ev -> arrow_K obj_TF (arrow_K obj_TF (arrow_K (arrow_T obj_TF type_TF) type_K))
   | _ -> raise NotImplemented
 
 let uhead_to_string = function
-  | Uplus n -> "uplus;" ^ (string_of_int n)
-  | Umax -> "max"
-  | UEmptyHole -> "_"
-  | UNumberedEmptyHole n -> "_" ^ (string_of_int n)
-  | U_def_app d -> "udef;" ^ d
+  | UU_plus n -> "uplus;" ^ (string_of_int n)
+  | UU_max -> "max"
+  | UU_EmptyHole -> "_"
+  | UU_def_app d -> "udef;" ^ d
 let thead_to_string = function
   | TT_EmptyHole -> "__"
-  | TT_NumberedEmptyHole n -> "__" ^ (string_of_int n)
   | TT_El -> "El"
   | TT_U -> "U"
   | TT_Pi -> "Pi"
@@ -287,7 +288,6 @@ let thead_to_string = function
   | TT_def_app d -> "tdef;" ^ d
 let ohead_to_string = function
   | OO_emptyHole -> "_"
-  | OO_numberedEmptyHole n -> "_" ^ (string_of_int n)
   | OO_u -> "u"
   | OO_j -> "j"
   | OO_ev -> "ev"
@@ -382,16 +382,14 @@ let template = function
 	match h with
 	| UU uh -> (
 	    match uh with 
-	    | Uplus n -> ()
-	    | Umax -> ()
-	    | UEmptyHole -> ()
-	    | UNumberedEmptyHole n -> ()
-	    | U_def_app d -> ()
+	    | UU_plus n -> ()
+	    | UU_max -> ()
+	    | UU_EmptyHole -> ()
+	    | UU_def_app d -> ()
 	   )
 	| TT th -> (
 	    match th with 
 	    | TT_EmptyHole -> ()
-	    | TT_NumberedEmptyHole n -> ()
 	    | TT_El -> ()
 	    | TT_U -> ()
 	    | TT_Pi -> (
@@ -422,7 +420,6 @@ let template = function
 	| OO oh -> (
 	    match oh with
 	    | OO_emptyHole -> ()
-	    | OO_numberedEmptyHole n -> ()
 	    | OO_u -> ()
 	    | OO_j -> ()
 	    | OO_ev -> (
@@ -475,7 +472,6 @@ let make_LAM3 v1 v2 v3 x = make_LAM v1 (make_LAM2 v2 v3 x)
 (* let make_BB2 v x y = LAMBDA( v, [x;y]) *)
 
 let make_TT_EmptyHole = make_TT TT_Empty []
-let make_TT_NumberedEmptyHole n = make_TT (TT_NumberedEmptyHole n) []
 let make_TT_El x = make_TT TT_El [chko x]
 let make_TT_U x = make_TT TT_U [chku x]
 let make_TT_Pi    t1 (x,t2) = make_TT TT_Pi    [chkt t1; make_LAM x (chkt t2)]
@@ -490,7 +486,6 @@ let make_TT_Id t x y = make_TT TT_Id [chkt t;chko x;chko y]
 let make_TT_def_app name u t o = make_TT (TT_def_app name) (List.flatten [chkulist u;chktlist t;chkolist o])
 
 let make_OO_emptyHole = make_OO OO_emptyHole []
-let make_OO_numberedEmptyHole n = make_OO (OO_numberedEmptyHole n) []
 let make_OO_u m = make_OO OO_u [chku m]
 let make_OO_j m n = make_OO OO_j [chku m; chku n]
 let make_OO_ev f p (v,t) = make_OO OO_ev [chko f;chko p;make_LAM v (chkt t)]
