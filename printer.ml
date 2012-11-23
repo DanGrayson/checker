@@ -69,6 +69,7 @@ let rec etostring = function
 		| _ -> raise Error.Internal)
 	    | _ -> "[" ^ (ohead_to_string oh) ^ "]" ^ (parenelisttostring args)
 	   )
+	| _ -> (head_to_string h) ^ (parenelisttostring args)
        )
 and elisttostring s = String.concat "," (List.map etostring s)
 and parenelisttostring s = String.concat "" [ "("; elisttostring s; ")" ]

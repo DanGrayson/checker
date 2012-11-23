@@ -48,8 +48,6 @@ module Equal = struct
 	  APPLY(UU (UU_plus n'), [x']) -> n = n' && ueq x x'
 	| APPLY(UU UU_max, [x;y]), 
 	  APPLY(UU UU_max, [x';y']) -> ueq x x' && ueq y y'
-	| APPLY(UU (UU_def_app _),_),
-	  APPLY(UU (UU_def_app _),_) -> raise Error.NotImplemented
 	| _ -> false)
     | _ -> false
     in ueq

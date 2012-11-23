@@ -9,9 +9,9 @@ let rec tau (pos:Error.position) env = function
 	  with Not_found -> raise (Error.TypingError(pos, "unbound variable, not in context: " ^ (vartostring' v))))
       | APPLY(h,args) -> with_pos pos (
 	  match h with
+	  | Defapp _ -> raise Error.NotImplemented
 	  | UU _ | TT _ -> raise Error.Internal
 	  | OO oh -> match oh with
-	    | OO_def_app _ -> raise Error.NotImplemented
 	    | OO_u -> (
 		match args with 
 		| [u] -> make_TT_U (POS(pos, (make_UU (UU_plus 1) [u])))

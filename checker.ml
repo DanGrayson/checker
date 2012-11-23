@@ -108,64 +108,43 @@ let add_uVars uvars eqns =
 
 let fix t = Fillin.fillin !environment t
 
-let tPrintCommand x =
-  Printf.printf "Print type: %s\n" (Printer.etostring x);
-  Printf.printf " ... LFPrint Type: %s\n" (Printer.lftostring x);
+let printCommand x =
+  Printf.printf "Print: %s\n" (Printer.etostring x);
+  Printf.printf "   LF: %s\n" (Printer.lftostring x);
   flush stdout;
   let x' = protect fix x Error.nopos in
-  if not (Alpha.UEqual.equiv (!environment).uc x' x) then Printf.printf "      : %s\n" (Printer.etostring x');
-  flush stdout
-  
-let oPrintCommand x =
-  Printf.printf "Print: %s\n" (Printer.etostring x); 
-  Printf.printf " ... LFPrint Obj : %s\n" (Printer.lftostring x); 
-  flush stdout;
-  let x' = protect fix x Error.nopos in
-  if not (Alpha.UEqual.equiv (!environment).uc x' x) then Printf.printf "      : %s\n" (Printer.etostring x');
+  if not (Alpha.UEqual.equiv (!environment).uc x' x)
+  then Printf.printf "     : %s\n" (Printer.etostring x');
   flush stdout
 
-let uCheckCommand x =
-  Printf.printf "Check ulevel: %s\n" (Printer.etostring x);
-  flush stdout;
-  protect1 (fun () -> Check.ucheck !environment x)
-
-let tCheckCommand x =
-  Printf.printf "Check type: %s\n" (Printer.etostring x);
-  Printf.printf "        LF: %s\n" (Printer.lftostring x);
-  flush stdout;
-  protect1 (fun () -> Check.tcheck !environment x)
-
-let oCheckCommand x =
+let checkCommand x =
   let x = protect1 ( fun () -> Fillin.fillin !environment x ) in
   Printf.printf "Check: %s\n" (Printer.etostring x);
   Printf.printf "   LF: %s\n" (Printer.lftostring x);
   flush stdout;
-  protect1 (fun () -> Check.ocheck !environment x)
+  match x with
+  | POS(_,APPLY(OO _,_)) -> 
+      Printf.printf "     : o-expression\n";
+      protect1 (fun () -> Check.ocheck !environment x)
+  | POS(_,APPLY(TT _,_)) -> 
+      Printf.printf "     : t-expression\n"
+  | POS(_,APPLY(UU _,_)) -> 
+      Printf.printf "     : u-expression\n"
+  | POS(_,APPLY(Defapp _,_)) -> 
+      Printf.printf "     : definition\n"
+  | POS(_,Variable _) -> 
+      Printf.printf "     : variable\n"
+  | POS(_,EmptyHole) -> 
+      Printf.printf "     : empty hole\n"
+  | LAMBDA _ ->
+      Printf.printf "     : binder\n"
 
-let uPrintCommand x =
-  Printf.printf "Print ulevel: %s\n" (Printer.etostring x);
-  flush stdout
-
-let tAlphaCommand (x,y) =
+let alphaCommand (x,y) =
   let x = protect fix x Error.nopos in
   let y = protect fix y Error.nopos in
-  Printf.printf "tAlpha: %s\n" (if (Alpha.UEqual.equiv (!environment).uc x y) then "true" else "false");
-  Printf.printf "      : %s\n" (Printer.etostring x);
-  Printf.printf "      : %s\n" (Printer.etostring y);
-  flush stdout
-
-let oAlphaCommand = fun (x,y) ->
-  let x = protect fix x Error.nopos in
-  let y = protect fix y Error.nopos in
-  Printf.printf "oAlpha: %s\n" (if (Alpha.UEqual.equiv (!environment).uc x y) then "true" else "false");
-  Printf.printf "      : %s\n" (Printer.etostring x);
-  Printf.printf "      : %s\n" (Printer.etostring y);
-  flush stdout
-
-let uAlphaCommand = fun (x,y) -> 
-  Printf.printf "uAlpha: %s\n" (if (Alpha.UEqual.uequiv (!environment).uc x y) then "true" else "false");
-  Printf.printf "      : %s\n" (Printer.etostring x);
-  Printf.printf "      : %s\n" (Printer.etostring y);
+  Printf.printf "Alpha: %s\n" (if (Alpha.UEqual.equiv (!environment).uc x y) then "true" else "false");
+  Printf.printf "     : %s\n" (Printer.etostring x);
+  Printf.printf "     : %s\n" (Printer.etostring y);
   flush stdout
 
 let checkUniversesCommand pos =
@@ -222,15 +201,9 @@ let process_command lexbuf = (
     match c with
     | Toplevel.UVariable (uvars,eqns) -> add_uVars uvars eqns
     | Toplevel.Variable tvars -> add_tVars tvars
-    | Toplevel.UPrint x -> uPrintCommand x
-    | Toplevel.TPrint x -> tPrintCommand x
-    | Toplevel.OPrint x -> oPrintCommand x
-    | Toplevel.UCheck x -> uCheckCommand x
-    | Toplevel.TCheck x -> tCheckCommand x
-    | Toplevel.OCheck x -> oCheckCommand x
-    | Toplevel.TAlpha (x,y) -> tAlphaCommand (x,y)
-    | Toplevel.OAlpha (x,y) -> oAlphaCommand (x,y)
-    | Toplevel.UAlpha (x,y) -> uAlphaCommand (x,y)
+    | Toplevel.Print x -> printCommand x
+    | Toplevel.Check x -> checkCommand x
+    | Toplevel.Alpha (x,y) -> alphaCommand (x,y)
     | Toplevel.Type x -> typeCommand x
     | Toplevel.Definition x -> addDefinition x
     | Toplevel.End -> Printf.printf "%s: ending.\n" (Error.error_format_pos pos) ; flush stdout; raise StopParsingFile

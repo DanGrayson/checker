@@ -16,7 +16,6 @@ let rec ucheck pos env = function
 	    | (_,Object_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a u-variable but found an o-variable: "^s)))
 	| APPLY(UU UU_plus n, [u]) -> ucheck pos env u
 	| APPLY(UU UU_max, [u;v]) -> ucheck pos env u;ucheck pos env v
-	| APPLY(UU UU_def_app _, _) -> raise Error.NotImplemented
 	| _ -> raise Error.Internal)
     | _ -> raise Error.Internal
 
@@ -34,6 +33,7 @@ let rec tcheck pos env = function
 	  | (_,Object_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a t-variable but found an o-variable: "^s)))
       | Variable _ -> raise Error.Internal
       | APPLY(h,args) -> match h with
+	| Defapp _ -> raise Error.NotImplemented
 	| TT th -> (
 	    match th with 
 	    | TT_El -> ocheckn 1 pos env args
@@ -59,7 +59,6 @@ let rec tcheck pos env = function
 		    tcheck pos env t; ocheck pos env x; ocheck pos env y; 
 		    overify pos env x t; overify pos env y t)
 		| _ -> raise Error.Internal)
-	    | TT_def_app d -> raise Error.NotImplemented
 	   )
 	| UU _ -> raise (Error.TypeCheckingFailure(pos, "expected a t-expression but found a u-expression"))
 	| OO _ -> raise (Error.TypeCheckingFailure(pos, "expected a t-expression but found an o-expression"))
@@ -77,6 +76,7 @@ and ocheck pos env = function
 	| (_,Object_variable) -> ())
     | Variable (VarGen _ | VarUnused) -> raise Error.Internal
     | APPLY(h,args) -> match h with
+      | Defapp _ -> raise Error.NotImplemented
       | UU th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a u-expression"))
       | TT th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a t-expression"))
       | OO oh -> match oh with
@@ -109,7 +109,6 @@ and ocheck pos env = function
 		ocheck pos env o; 
 		ocheck_binder pos env v (with_pos_of o (APPLY(TT TT_El, [o]))) o'
 	    | _ -> raise Error.Internal)
-	| OO_def_app d -> ()
 	| OO_pair -> raise Error.NotImplemented
 	| OO_pr1 -> raise Error.NotImplemented
 	| OO_pr2 -> raise Error.NotImplemented

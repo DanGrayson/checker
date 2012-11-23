@@ -42,7 +42,6 @@ type uHead =
 	(** A pair [(M,n)], denoting [M+n], the n-th successor of [M].  Here [n] should be nonnegative *)
   | UU_max
 	(** A pair [(M,M')] denoting [max(M,M')]. *)
-  | UU_def_app of string
 
 (** The various labels for t-expressions of TS. *)
 type tHead =
@@ -77,7 +76,6 @@ type tHead =
       (** Identity type; paths type. *)
       (* TS7: *)
       (* end of TS *)
-  | TT_def_app of string
 
 (** The various labels for o-expressions of TS. *)
 type oHead =
@@ -186,13 +184,13 @@ type oHead =
 	    By definition, the subexpression [p] is not essential.
 	 *)
       (* end of TS *)
-  | OO_def_app of string
 
 	(** The type [label] corresponds to the constant atomic terms of LF. *)
 type label =
   | UU of uHead
   | TT of tHead
   | OO of oHead
+  | Defapp of string			(* application of a definition *)
 	
 (** The type [expr] corresponds to the canonical terms of LF. *)
 type expr = 
@@ -225,10 +223,10 @@ and bare_expr =
   | APPLY of label * expr list
 	(** Iterated function application. *)
 
-	(** The following "base types" segregate TS expressions into three
-	    forms: u-expressions, t-expressions, and o-expressions, aand the
+	(** The following constants segregate TS expressions into three
+	    forms: u-expressions, t-expressions, and o-expressions, and they
 	    introduce the four forms of judgments. *)
-type base_type =
+type tfHead =
   | TF_Ulevel
   | TF_Type
   | TF_Object
@@ -241,8 +239,8 @@ type canonical_type_family =
   | ATOMIC of atomic_type_family
   | TF_Pi of var' * canonical_type_family * canonical_type_family
 and atomic_type_family =
-  | TF_apply of base_type * canonical_type_family
-  | BASE of base_type
+  | TF_apply of tfHead * canonical_type_family
+  | BASE of tfHead
 
 let ulevel_TF = ATOMIC (BASE TF_Ulevel)
 let type_TF = ATOMIC (BASE TF_Type)
@@ -260,12 +258,11 @@ let arrow_K a k = PI_KIND(VarUnused, a, k)
 
 let ohead_to_kind = function
   | OO_ev -> arrow_K obj_TF (arrow_K obj_TF (arrow_K (arrow_T obj_TF type_TF) type_K))
-  | _ -> raise NotImplemented
+  | _ -> raise Error.NotImplemented
 
 let uhead_to_string = function
   | UU_plus n -> "uplus;" ^ (string_of_int n)
   | UU_max -> "max"
-  | UU_def_app d -> "udef;" ^ d
 let thead_to_string = function
   | TT_El -> "El"
   | TT_U -> "U"
@@ -277,14 +274,12 @@ let thead_to_string = function
   | TT_Empty -> "Empty"
   | TT_IC -> "IC"
   | TT_Id -> "Id"
-  | TT_def_app d -> "tdef;" ^ d
 let ohead_to_string = function
   | OO_u -> "u"
   | OO_j -> "j"
   | OO_ev -> "ev"
   | OO_lambda -> "lambda"
   | OO_forall -> "forall"
-  | OO_def_app d -> "odef;" ^ d
   | OO_pair -> "pair"
   | OO_pr1 -> "pr1"
   | OO_pr2 -> "pr2"
@@ -307,6 +302,7 @@ let ohead_to_string = function
   | OO_rr0 -> "rr0"
   | OO_rr1 -> "rr1"
 let head_to_string = function
+  | Defapp name -> "[def;" ^ name ^ "]"
   | UU h -> "[" ^ uhead_to_string h ^ "]"
   | TT h -> "[" ^ thead_to_string h ^ "]"
   | OO h -> "[" ^ ohead_to_string h ^ "]"
@@ -332,11 +328,11 @@ let template = function
     | Variable t -> ()
     | APPLY(h,args) -> (
 	match h with
+	| Defapp _ -> ()
 	| UU uh -> (
 	    match uh with 
 	    | UU_plus n -> ()
 	    | UU_max -> ()
-	    | UU_def_app d -> ()
 	   )
 	| TT th -> (
 	    match th with 
@@ -365,7 +361,6 @@ let template = function
 		match args with
 		| [tX; x; x'] -> ()
 		| _ -> raise Error.Internal)
-	    | TT_def_app d -> ()
 	   )
 	| OO oh -> (
 	    match oh with
@@ -384,7 +379,6 @@ let template = function
 		match args with
 		| [u;u';o;LAMBDA( x,o')] -> ()
 		| _ -> raise Error.Internal)
-	    | OO_def_app d -> ()
 	    | OO_pair -> ()
 	    | OO_pr1 -> ()
 	    | OO_pr2 -> ()
@@ -430,7 +424,6 @@ let make_TT_Coprod2 t t' (x,u) (x',u') o = make_TT TT_Coprod2 [t; t'; make_LAM x
 let make_TT_Empty = make_TT TT_Empty []
 let make_TT_IC tA a (x,tB,(y,tD,(z,q))) = make_TT TT_IC [tA; a; make_LAM x tB; make_LAM2 x y tD; make_LAM3 x y z q]
 let make_TT_Id t x y = make_TT TT_Id [t;x;y]
-let make_TT_def_app name u t o = make_TT (TT_def_app name) (List.flatten [u;t;o])
 let make_OO_u m = make_OO OO_u [m]
 let make_OO_j m n = make_OO OO_j [m; n]
 let make_OO_ev f p (v,t) = make_OO OO_ev [f;p;make_LAM v t]
@@ -467,7 +460,7 @@ let make_OO_refl t o = make_OO OO_refl [t; o]
 let make_OO_J tT a b q i (x,(e,tS)) = make_OO OO_J [tT; a; b; q; i; make_LAM x (make_LAM e tS)]
 let make_OO_rr0 m2 m1 s t e = make_OO OO_rr0 [m2; m1; s; t; e]
 let make_OO_rr1 m a p = make_OO OO_rr1 [m; a; p]
-let make_OO_def_app name u t c = make_OO (OO_def_app name) (List.flatten [u; t; c])
+let make_Defapp name u t o =  APPLY(Defapp name, List.flatten [u;t;o])
 
 (** 
     A universe context [UC = (Fu,A)] is represented by a list of universe variables [Fu] and a list of

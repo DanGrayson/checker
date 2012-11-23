@@ -38,13 +38,13 @@ let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code ha
 %token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow Wequalequal Wequal Wturnstile Wtriangle Wcolonequal
 %token Wlbrace Wrbrace Wbar Wunderscore
 %token Wgreaterequal Wgreater Wlessequal Wless Wsemi
-%token KUlevel Kumax KType KPi Klambda KSigma Kulevel
+%token KUlevel Kumax KType KPi Klambda KSigma
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall Kforall WSigma WCoprod WCoprod2 WEmpty Wempty Wempty_r WIC WId
-%token WTau WPrint WDefine Wtype Wequality WShow WEnd WVariable WoAlpha WtAlpha WuAlpha Weof
+%token WTau WPrint WDefine WShow WEnd WVariable WAlpha Weof
 %token WCheck WCheckUniverses
 %token Wflush
 %token Prec_application
-%token Wtdef Wodef
+%token Wdef
 
 /* precedences, lowest first */
 %right KPi KSigma
@@ -52,7 +52,7 @@ let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code ha
 %nonassoc Wstar				/* we want [*f x] to be [*(f x)] and [*X->Y] to be [( *X )->Y] */
 %left Prec_application
 %right Klambda Kforall
-%nonassoc Wforall Wunderscore Wplus Wu Wlparen Wlambda Wj Wev Wtdef IDENTIFIER Wodef Wempty_r Wempty 
+%nonassoc Wforall Wunderscore Wplus Wu Wlparen Wlambda Wj Wev Wdef IDENTIFIER Wempty_r Wempty 
 	  WU WSigma WPi WId WIC WEmpty WEl WCoprod2 WCoprod Kumax
 
 %%
@@ -69,37 +69,24 @@ command0:
     { Toplevel.Variable vars }
 | WVariable vars=nonempty_list(IDENTIFIER) Wcolon KUlevel eqns=preceded(Wsemi,uEquation)* Wperiod
     { Toplevel.UVariable (vars,eqns) }
-| WPrint Kulevel u=expr Wperiod
-    { Toplevel.UPrint u }
-| WPrint Wtype t=expr Wperiod
-    { Toplevel.TPrint t }
-| WPrint o=expr Wperiod
-    { Toplevel.OPrint o }
-| WCheck Kulevel u=expr Wperiod
-    { Toplevel.UCheck u }
-| WCheck Wtype t=expr Wperiod
-    { Toplevel.TCheck t }
+| WPrint e=expr Wperiod
+    { Toplevel.Print e }
 | WCheck o=expr Wperiod
-    { Toplevel.OCheck o }
+    { Toplevel.Check o }
 | WCheckUniverses Wperiod
     { Toplevel.CheckUniverses }
-| WtAlpha t1=expr Wequalequal t2=expr Wperiod
-    { Toplevel.TAlpha (t1, t2) }
-| WoAlpha o1=expr Wequalequal o2=expr Wperiod
-    { Toplevel.OAlpha (o1, o2) }
-| WuAlpha u1=expr Wequalequal u2=expr Wperiod
-    { Toplevel.UAlpha (u1, u2) }
+| WAlpha e1=expr Wequalequal e2=expr Wperiod
+    { Toplevel.Alpha (e1, e2) }
 | WTau o=expr Wperiod
     { Toplevel.Type o }
 
-| WDefine Wtype name=IDENTIFIER parms=parmList Wcolonequal t=expr Wperiod 
+| WDefine name=IDENTIFIER parms=parmList Wcolonequal t=expr Wperiod 
     { Toplevel.Definition (TDefinition (Ident name,(fixParmList parms,t))) }
 | WDefine name=IDENTIFIER parms=parmList Wcolonequal o=expr Wcolon t=expr Wperiod 
     { Toplevel.Definition (ODefinition (Ident name,(fixParmList parms,o,t))) }
-
-| WDefine Wtype Wequality name=IDENTIFIER parms=parmList Wcolonequal t1=expr Wequalequal t2=expr Wperiod 
+| WDefine name=IDENTIFIER parms=parmList Wcolonequal t1=expr Wequalequal t2=expr Wperiod 
     { Toplevel.Definition (TeqDefinition (Ident name,(fixParmList parms,t1,t2))) }
-| WDefine Wequality name=IDENTIFIER parms=parmList Wcolonequal o1=expr Wequalequal o2=expr Wcolon t=expr Wperiod 
+| WDefine name=IDENTIFIER parms=parmList Wcolonequal o1=expr Wequalequal o2=expr Wcolon t=expr Wperiod 
     { Toplevel.Definition (OeqDefinition (Ident name,(fixParmList parms,o1,o2,t))) }
 
 | WShow Wperiod 
@@ -181,18 +168,18 @@ bare_expr:
     { make_OO_empty }
 | Wempty_r Wlparen t=expr Wcomma o=expr Wrparen
     { make_OO_empty_r t o }
-| Wodef name=IDENTIFIER Wrbracket Wlparen 
+| Wdef name=IDENTIFIER Wrbracket Wlparen 
     u=separated_list(Wcomma,expr) 
-    Wrparen { make_OO_def_app name u [] [] }
-| Wodef name=IDENTIFIER Wrbracket Wlparen 
+    Wrparen { make_Defapp name u [] [] }
+| Wdef name=IDENTIFIER Wrbracket Wlparen 
     u=separated_list(Wcomma,expr) Wsemi
     t=separated_list(Wcomma,expr) 
-    Wrparen { make_OO_def_app name u t [] }
-| Wodef name=IDENTIFIER Wrbracket Wlparen 
+    Wrparen { make_Defapp name u t [] }
+| Wdef name=IDENTIFIER Wrbracket Wlparen 
     u=separated_list(Wcomma,expr) Wsemi
     t=separated_list(Wcomma,expr) Wsemi
     o=separated_list(Wcomma,expr) 
-    Wrparen { make_OO_def_app name u t o }
+    Wrparen { make_Defapp name u t o }
 | WEl Wlparen o=expr Wrparen
     { make_TT_El o }
 | Wstar o=expr
@@ -222,18 +209,6 @@ bare_expr:
     { make_TT_IC tA a (x,tB,(y,tD,(z,q))) }
 | WId Wlparen t=expr Wcomma a=expr Wcomma b=expr Wrparen 
     { make_TT_Id t a b }
-| Wtdef name=IDENTIFIER Wrbracket Wlparen 
-    u=separated_list(Wcomma,expr) 
-    Wrparen { make_TT_def_app name u [] [] }
-| Wtdef name=IDENTIFIER Wrbracket Wlparen 
-    u=separated_list(Wcomma,expr) Wsemi
-    t=separated_list(Wcomma,expr) 
-    Wrparen { make_TT_def_app name u t [] }
-| Wtdef name=IDENTIFIER Wrbracket Wlparen 
-    u=separated_list(Wcomma,expr) Wsemi
-    t=separated_list(Wcomma,expr) Wsemi
-    o=separated_list(Wcomma,expr) 
-    Wrparen { make_TT_def_app name u t o }
 | u=expr Wplus n=Nat
     { APPLY(UU (UU_plus n), [u]) }
 | Kumax Wlparen u=expr Wcomma v=expr Wrparen
