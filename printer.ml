@@ -12,7 +12,12 @@ let rec etostring = function
 	    match uh with 
 	    | UEmptyHole -> "_"
 	    | UNumberedEmptyHole n -> "_" ^ (string_of_int n)
-	    | _ -> "[" ^ (uhead_to_string uh) ^ "]" ^ (parenelisttostring args)
+	    | Uplus n -> (
+		match args with 
+		| [u] -> "(" ^ (etostring u) ^ "+" ^ (string_of_int n) ^ ")"
+		| _ -> raise Error.Internal
+	       )
+	    | _ -> (uhead_to_string uh) ^ (parenelisttostring args)
 	    )
 	| TT th -> (
 	    match th with 
