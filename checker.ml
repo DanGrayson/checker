@@ -1,9 +1,16 @@
 (** Top level code. *)
 
 open Typesystem
+open Template				(*otherwise unused*)
 open Universe
 
-let leave () = exit (if !Tokens.error_count > 0 then 1 else 0)
+let leave pos = exit (
+  let n = !Tokens.error_count in
+  if n > 0 
+  then (
+    Printf.fprintf stderr "%s: exiting, %d error%s encountered, see messages above\n" pos n (if n == 1 then "" else "s");
+    1)
+  else 0)
 
 exception Error_Handled
 
@@ -26,8 +33,8 @@ let protect1 f =
       raise Error_Handled
   | Error.TypeCheckingFailure3 (p1,s1,p2,s2,p3,s3) -> 
       Printf.fprintf stderr "%s: type checking failure: %s\n" (Error.error_format_pos p1) s1;
-      Printf.fprintf stderr "%s:      %s\n" (Error.error_format_pos p2) s2;
-      Printf.fprintf stderr "%s:      %s\n" (Error.error_format_pos p3) s3;
+      Printf.fprintf stderr "%s: ... %s\n" (Error.error_format_pos p2) s2;
+      Printf.fprintf stderr "%s: ... %s\n" (Error.error_format_pos p3) s3;
       flush stderr;
       Tokens.bump_error_count();
       raise Error_Handled
@@ -35,7 +42,7 @@ let protect1 f =
 let protect parser lexbuf posfun =
     try parser lexbuf
     with 
-      Error.Eof -> leave()
+      Error.Eof -> leave (posfun lexbuf)
     | Error.TypingUnimplemented (p,s) -> 
 	Printf.fprintf stderr "%s: type checking unimplemented: %s\n" (Error.error_format_pos p) s;
 	flush stderr;
@@ -95,14 +102,14 @@ let environment = ref {
 
 let add_tVars tvars = environment := 
   { !environment with 
-    tc = List.rev_append (List.map make_Var tvars) (!environment).tc ;
-    lookup_order = List.rev_append (List.map (fun t -> (t,(make_Var t, Type_variable))) tvars) (!environment).lookup_order ;
+    tc = List.rev_append (List.map Helpers.make_Var tvars) (!environment).tc ;
+    lookup_order = List.rev_append (List.map (fun t -> (t,(Helpers.make_Var t, Type_variable))) tvars) (!environment).lookup_order ;
   }
 let add_uVars uvars eqns =
   environment := {
     !environment with
-		  uc = mergeUContext (!environment).uc (UContext(List.map make_Var uvars,eqns));
-		  lookup_order = List.rev_append (List.map (fun u -> (u,(make_Var u, Ulevel_variable))) uvars) (!environment).lookup_order;
+		  uc = mergeUContext (!environment).uc (UContext(List.map Helpers.make_Var uvars,eqns));
+		  lookup_order = List.rev_append (List.map (fun u -> (u,(Helpers.make_Var u, Ulevel_variable))) uvars) (!environment).lookup_order;
 		}
 
 let fix t = Fillin.fillin !environment t
@@ -243,4 +250,4 @@ let _ =
    (try tPrintCommand (tExpr_from_string "Pi f:T->[U](uuu0), Pi o:T, *f o" ) with Error_Handled -> ());
    (try oPrintCommand (oExpr_from_string "lambda f:T->U, lambda o:T, f o") with Error_Handled -> ());
  *)
-  leave()
+  leave ""

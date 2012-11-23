@@ -24,7 +24,6 @@ and var' =
     Var of string
   | VarGen of int * string
   | VarUnused
-let make_Var c = Var c
 let vartostring' = function
   | Var x -> x
   | VarGen(i,x) -> x ^ "_" ^ (string_of_int i)
@@ -260,53 +259,6 @@ let ohead_to_kind = function
   | OO_ev -> arrow_K obj_TF (arrow_K obj_TF (arrow_K (arrow_T obj_TF type_TF) type_K))
   | _ -> raise Error.NotImplemented
 
-let uhead_to_string = function
-  | UU_plus n -> "uplus;" ^ (string_of_int n)
-  | UU_max -> "max"
-let thead_to_string = function
-  | TT_El -> "El"
-  | TT_U -> "U"
-  | TT_Pi -> "Pi"
-  | TT_Sigma -> "Sigma"
-  | TT_Pt -> "Pt"
-  | TT_Coprod -> "Coprod"
-  | TT_Coprod2 -> "Coprod2"
-  | TT_Empty -> "Empty"
-  | TT_IC -> "IC"
-  | TT_Id -> "Id"
-let ohead_to_string = function
-  | OO_u -> "u"
-  | OO_j -> "j"
-  | OO_ev -> "ev"
-  | OO_lambda -> "lambda"
-  | OO_forall -> "forall"
-  | OO_pair -> "pair"
-  | OO_pr1 -> "pr1"
-  | OO_pr2 -> "pr2"
-  | OO_total -> "total"
-  | OO_pt -> "pt"
-  | OO_pt_r -> "pt_r"
-  | OO_tt -> "tt"
-  | OO_coprod -> "coprod"
-  | OO_ii1 -> "ii1"
-  | OO_ii2 -> "ii2"
-  | OO_sum -> "sum"
-  | OO_empty -> "empty"
-  | OO_empty_r -> "empty_r"
-  | OO_c -> "c"
-  | OO_ic_r -> "ic_r"
-  | OO_ic -> "ic"
-  | OO_paths -> "paths"
-  | OO_refl -> "refl"
-  | OO_J -> "J"
-  | OO_rr0 -> "rr0"
-  | OO_rr1 -> "rr1"
-let head_to_string = function
-  | Defapp name -> "[def;" ^ name ^ "]"
-  | UU h -> "[" ^ uhead_to_string h ^ "]"
-  | TT h -> "[" ^ thead_to_string h ^ "]"
-  | OO h -> "[" ^ ohead_to_string h ^ "]"
-
 let rec get_u = function
   | POS (_,APPLY(UU _,u)) -> u
   | _ -> raise Error.Internal
@@ -320,147 +272,6 @@ let get_pos = function
   | _ -> Error.Nowhere
 let with_pos_of x e = POS (get_pos x, e)
 let nowhere x = with_pos Error.Nowhere x
-
-let template = function
-  | LAMBDA(x,bodies) -> ()
-  | POS(pos,e) -> match e with
-    | EmptyHole -> ()
-    | Variable t -> ()
-    | APPLY(h,args) -> (
-	match h with
-	| Defapp _ -> ()
-	| UU uh -> (
-	    match uh with 
-	    | UU_plus n -> ()
-	    | UU_max -> ()
-	   )
-	| TT th -> (
-	    match th with 
-	    | TT_El -> ()
-	    | TT_U -> ()
-	    | TT_Pi -> (
-		match args with
-		| [t1; LAMBDA( x, t2 )] -> ()
-		| _ -> raise Error.Internal)
-	    | TT_Sigma -> (
-		match args with
-		| [t1; LAMBDA( x, t2 )] -> ()
-		| _ -> raise Error.Internal)
-	    | TT_Pt -> ()
-	    | TT_Coprod -> ()
-	    | TT_Coprod2 -> (
-		match args with
-		| [t;t'; LAMBDA(x,u);LAMBDA( x', u');o] -> ()
-		| _ -> raise Error.Internal)
-	    | TT_Empty -> ()
-	    | TT_IC -> (
-		match args with
-		| [tA;a;LAMBDA(x1,tB);LAMBDA(x2,LAMBDA(y2,tD));LAMBDA(x3,LAMBDA(y3,LAMBDA(z3,q)))] -> ()
-		| _ -> raise Error.Internal)
-	    | TT_Id -> (
-		match args with
-		| [tX; x; x'] -> ()
-		| _ -> raise Error.Internal)
-	   )
-	| OO oh -> (
-	    match oh with
-	    | OO_u -> ()
-	    | OO_j -> ()
-	    | OO_ev -> (
-		match args with
-		| [f;o;LAMBDA( x,t)] -> ()
-		| [f;o] -> ()
-		| _ -> raise Error.Internal)
-	    | OO_lambda -> (
-		match args with
-		| [t;LAMBDA( x,o)] -> ()
-		| _ -> raise Error.Internal)
-	    | OO_forall -> (
-		match args with
-		| [u;u';o;LAMBDA( x,o')] -> ()
-		| _ -> raise Error.Internal)
-	    | OO_pair -> ()
-	    | OO_pr1 -> ()
-	    | OO_pr2 -> ()
-	    | OO_total -> ()
-	    | OO_pt -> ()
-	    | OO_pt_r -> ()
-	    | OO_tt -> ()
-	    | OO_coprod -> ()
-	    | OO_ii1 -> ()
-	    | OO_ii2 -> ()
-	    | OO_sum -> ()
-	    | OO_empty -> ()
-	    | OO_empty_r -> ()
-	    | OO_c -> ()
-	    | OO_ic_r -> ()
-	    | OO_ic -> ()
-	    | OO_paths -> ()
-	    | OO_refl -> ()
-	    | OO_J -> ()
-	    | OO_rr0 -> ()
-	    | OO_rr1 -> ()
-	   )
-       )
-
-let make_UU h a = APPLY(UU h, a)
-let make_TT h a = APPLY(TT h, a)
-let make_OO h a = APPLY(OO h, a)
-let make_Variable x = Variable x
-
-let make_LAM v x = LAMBDA(v,x)
-let make_LAM2 v1 v2 x = make_LAM v1 (make_LAM v2 x)
-let make_LAM3 v1 v2 v3 x = make_LAM v1 (make_LAM2 v2 v3 x)
-
-(* let make_BB2 v x y = LAMBDA( v, [x;y]) *)
-
-let make_TT_El x = make_TT TT_El [x]
-let make_TT_U x = make_TT TT_U [x]
-let make_TT_Pi    t1 (x,t2) = make_TT TT_Pi    [t1; make_LAM x t2]
-let make_TT_Sigma t1 (x,t2) = make_TT TT_Sigma [t1; make_LAM x t2]
-let make_TT_Pt = make_TT TT_Pt []
-let make_TT_Coprod t t' = make_TT TT_Coprod [t;t']
-let make_TT_Coprod2 t t' (x,u) (x',u') o = make_TT TT_Coprod2 [t; t'; make_LAM x u; make_LAM x' (u'); o]
-let make_TT_Empty = make_TT TT_Empty []
-let make_TT_IC tA a (x,tB,(y,tD,(z,q))) = make_TT TT_IC [tA; a; make_LAM x tB; make_LAM2 x y tD; make_LAM3 x y z q]
-let make_TT_Id t x y = make_TT TT_Id [t;x;y]
-let make_OO_u m = make_OO OO_u [m]
-let make_OO_j m n = make_OO OO_j [m; n]
-let make_OO_ev f p (v,t) = make_OO OO_ev [f;p;make_LAM v t]
-let make_OO_ev_hole f p = make_OO OO_ev [f;p] (* fill in third argument later *)
-let make_OO_lambda t (v,p) = make_OO OO_lambda [t; make_LAM v p]
-let make_OO_forall m m' n (v,o') = make_OO OO_forall [m;m';n;make_LAM v (o')]
-let make_OO_pair a b (x,t) = make_OO OO_pair [a;b;make_LAM x t]
-let make_OO_pr1 t (x,t') o = make_OO OO_pr1 [t;make_LAM x (t'); o]
-let make_OO_pr2 t (x,t') o = make_OO OO_pr2 [t;make_LAM x (t'); o]
-let make_OO_total m1 m2 o1 (x,o2) = make_OO OO_total [m1;m2;o1;make_LAM x o2]
-let make_OO_pt = make_OO OO_pt []
-let make_OO_pt_r o (x,t) = make_OO OO_pt_r [o;make_LAM x t]
-let make_OO_tt = make_OO OO_tt []
-let make_OO_coprod m1 m2 o1 o2 = make_OO OO_coprod [m1; m2; o1; o2]
-let make_OO_ii1 t t' o = make_OO OO_ii1 [t;t';o]
-let make_OO_ii2 t t' o = make_OO OO_ii2 [t;t';o]
-let make_OO_sum tT tT' s s' o (x,tS) = make_OO OO_sum [tT; tT'; s; s'; o; make_LAM x tS]
-let make_OO_empty = make_OO OO_empty []
-let make_OO_empty_r t o = make_OO OO_empty_r [t; o]
-let make_OO_c tA a (x,tB,(y,tD,(z,q))) b f = make_OO OO_c [
-  a; make_LAM x tB;
-  make_LAM2 x y tD;
-  make_LAM3 x y z q ]
-let make_OO_ic_r tA a (x,tB,(y,tD,(z,q))) i (x',(v,tS)) t = make_OO OO_ic_r [
-  tA; a;
-  make_LAM x tB; make_LAM2 x y tD; make_LAM3 x y z q;
-  i; make_LAM2  x' v tS; t]
-let make_OO_ic m1 m2 m3 oA a (x,oB,(y,oD,(z,q))) = make_OO OO_ic [
-  m1; m2; m3;
-  oA; a;
-  make_LAM x oB; make_LAM2 x y oD; make_LAM3 x y z q ]
-let make_OO_paths m t x y = make_OO OO_paths [m; t; x; y]
-let make_OO_refl t o = make_OO OO_refl [t; o]
-let make_OO_J tT a b q i (x,(e,tS)) = make_OO OO_J [tT; a; b; q; i; make_LAM x (make_LAM e tS)]
-let make_OO_rr0 m2 m1 s t e = make_OO OO_rr0 [m2; m1; s; t; e]
-let make_OO_rr1 m a p = make_OO OO_rr1 [m; a; p]
-let make_Defapp name u t o =  APPLY(Defapp name, List.flatten [u;t;o])
 
 (** 
     A universe context [UC = (Fu,A)] is represented by a list of universe variables [Fu] and a list of

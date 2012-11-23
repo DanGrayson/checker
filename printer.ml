@@ -2,6 +2,53 @@
 
 open Typesystem
 
+let uhead_to_string = function
+  | UU_plus n -> "uplus;" ^ (string_of_int n)
+  | UU_max -> "max"
+let thead_to_string = function
+  | TT_El -> "El"
+  | TT_U -> "U"
+  | TT_Pi -> "Pi"
+  | TT_Sigma -> "Sigma"
+  | TT_Pt -> "Pt"
+  | TT_Coprod -> "Coprod"
+  | TT_Coprod2 -> "Coprod2"
+  | TT_Empty -> "Empty"
+  | TT_IC -> "IC"
+  | TT_Id -> "Id"
+let ohead_to_string = function
+  | OO_u -> "u"
+  | OO_j -> "j"
+  | OO_ev -> "ev"
+  | OO_lambda -> "lambda"
+  | OO_forall -> "forall"
+  | OO_pair -> "pair"
+  | OO_pr1 -> "pr1"
+  | OO_pr2 -> "pr2"
+  | OO_total -> "total"
+  | OO_pt -> "pt"
+  | OO_pt_r -> "pt_r"
+  | OO_tt -> "tt"
+  | OO_coprod -> "coprod"
+  | OO_ii1 -> "ii1"
+  | OO_ii2 -> "ii2"
+  | OO_sum -> "sum"
+  | OO_empty -> "empty"
+  | OO_empty_r -> "empty_r"
+  | OO_c -> "c"
+  | OO_ic_r -> "ic_r"
+  | OO_ic -> "ic"
+  | OO_paths -> "paths"
+  | OO_refl -> "refl"
+  | OO_J -> "J"
+  | OO_rr0 -> "rr0"
+  | OO_rr1 -> "rr1"
+let head_to_string = function
+  | Defapp name -> "[def;" ^ name ^ "]"
+  | UU h -> "[" ^ uhead_to_string h ^ "]"
+  | TT h -> "[" ^ thead_to_string h ^ "]"
+  | OO h -> "[" ^ ohead_to_string h ^ "]"
+
 let rec etostring = function
   | LAMBDA(x,bodies) -> raise Error.NotImplemented
   | POS(_,e) -> match e with 
