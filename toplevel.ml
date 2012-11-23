@@ -2,15 +2,15 @@
 
 open Typesystem
 type command' = 
-  | UPrint of uExpr
+  | UPrint of expr
   | TPrint of expr
   | OPrint of expr
-  | UCheck of uExpr
+  | UCheck of expr
   | TCheck of expr
   | OCheck of expr
-  | UVariable of string list * (uExpr * uExpr) list
+  | UVariable of string list * (expr * expr) list
   | Variable of string list
-  | UAlpha of uExpr * uExpr
+  | UAlpha of expr * expr
   | TAlpha of expr * expr
   | OAlpha of expr * expr
   | Type of expr

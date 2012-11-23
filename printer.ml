@@ -2,25 +2,18 @@
 
 open Typesystem
 
-let rec utostring = function
-  | Upos (_,u) -> utostring u
-  | UEmptyHole -> "_"
-  | UNumberedEmptyHole n -> "_" ^ (string_of_int n)
-  | Uvariable x -> vartostring' x
-  | Uplus (x,n) -> "(" ^ (utostring x) ^ "+" ^ (string_of_int n) ^ ")"
-  | Umax (x,y) -> "max(" ^ (utostring x) ^ "," ^ (utostring y) ^ ")"
-  | U_def (d,u) -> "[udef;" ^ d ^ "](" ^ (elisttostring u) ^ ")"
-and elisttostring s = String.concat "," (List.map utostring s)
-
-let ueqntostring (u,v) = "; " ^ (utostring u) ^ "=" ^ (utostring v)
-
 let rec etostring = function
   | LAMBDA(x,bodies) -> raise Error.NotImplemented
   | POS(_,e) -> match e with 
-    | UU u -> utostring u
     | Variable v -> vartostring' v
     | APPLY(h,args) -> (
 	match h with
+	| UU uh -> (
+	    match uh with 
+	    | UEmptyHole -> "_"
+	    | UNumberedEmptyHole n -> "_" ^ (string_of_int n)
+	    | _ -> "[" ^ (uhead_to_string uh) ^ "]" ^ (parenelisttostring args)
+	    )
 	| TT th -> (
 	    match th with 
 	    | TT_Pi -> (
@@ -72,6 +65,8 @@ let rec etostring = function
 and elisttostring s = String.concat "," (List.map etostring s)
 and parenelisttostring s = String.concat "" [ "("; elisttostring s; ")" ]
 
+let ueqntostring (u,v) = "; " ^ (etostring u) ^ "=" ^ (etostring v)
+
 let octostring (v,t) = (vartostring' v) ^ ":" ^ (etostring t)
 
 let parmstostring = function
@@ -102,7 +97,6 @@ let rec lfl label s = "(" ^ label ^ (String.concat "" (List.map (fun x -> " " ^ 
 and lftostring = function
   | LAMBDA(x,bodies) -> "(LAMBDA " ^ (vartostring x) ^ " : Obj" ^ (String.concat "" (List.map (fun x -> ", " ^ (lftostring x)) bodies)) ^ ")"
   | POS(_,e) -> match e with 
-    | UU u -> utostring u
     | Variable v -> vartostring' v
     | APPLY(h,args) -> lfl (head_to_string h) args
 

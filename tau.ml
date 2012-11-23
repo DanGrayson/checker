@@ -3,20 +3,19 @@ open Typesystem
 let rec tau (pos:Error.position) env = function
     | LAMBDA _ -> raise Error.Internal
     | POS(pos,e) -> match e with 
-      | UU _ -> raise Error.Internal
       | Variable v -> (
 	  try List.assoc v env.oc
 	  with Not_found -> raise (Error.TypingError(pos, "unbound variable, not in context: " ^ (vartostring' v))))
       | APPLY(h,args) -> with_pos pos (
 	  match h with
-	  | TT _ -> raise Error.Internal
+	  | UU _ | TT _ -> raise Error.Internal
 	  | OO oh -> match oh with
 	    | OO_def_app _ -> raise Error.NotImplemented
 	    | OO_emptyHole -> raise (Error.TypingError(pos, "empty hole, type undetermined, internal error"))
 	    | OO_numberedEmptyHole n -> raise (Error.TypingError(pos, "empty hole, type undetermined, internal error"))
 	    | OO_u -> (
 		match args with 
-		| [POS(_,UU u)] -> make_TT_U (POS(pos, (make_UU (Uplus(u,1)))))
+		| [u] -> make_TT_U (POS(pos, (make_UU (Uplus 1) [u])))
 		| _ -> raise Error.Internal)
 	    | OO_j -> (
 		match args with 
@@ -32,7 +31,7 @@ let rec tau (pos:Error.position) env = function
 		| _ -> raise Error.Internal)
 	    | OO_forall -> (
 		match args with 
-		| u :: u' :: _ -> make_TT_U (nowhere (UU (Umax(get_u u, get_u u'))))
+		| u :: u' :: _ -> make_TT_U (nowhere (make_UU Umax [u; u']))
 		| _ -> raise Error.Internal)
 	    | OO_pair -> raise Error.NotImplemented
 	    | OO_pr1 -> raise Error.NotImplemented

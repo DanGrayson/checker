@@ -125,14 +125,14 @@ oParm: vars=nonempty_list(IDENTIFIER) Wcolon t=tExpr
 uEquation:
 | u=uExpr Wequal v=uExpr 
     { (u,v) }
-| u=uExpr Wgreaterequal v=uExpr 
-    { (Umax(u,v)), u }
+| v=uExpr Wgreaterequal u=uExpr 
+    { nowhere (APPLY(UU Umax, [ u; v])), v }
 | u=uExpr Wlessequal v=uExpr 
-    { (Umax(u,v)), v }
-| u=uExpr Wgreater v=uExpr 
-    { (Umax(u,(Uplus(v,1)))), u }
+    { nowhere (APPLY(UU Umax, [ u; v])), v }
+| v=uExpr Wgreater u=uExpr 
+    { nowhere (APPLY(UU Umax, [ nowhere (APPLY( UU (Uplus 1),[u])); v])), v }
 | u=uExpr Wless v=uExpr 
-    { (Umax((Uplus(u,1)),v)), v }
+    { nowhere (APPLY(UU Umax, [ nowhere (APPLY( UU (Uplus 1),[u])); v])), v }
 
 parenthesized(X): x=delimited(Wlparen,X,Wrparen) {x}
 list_of_parenthesized(X): list(parenthesized(X)) {$1}
@@ -179,7 +179,7 @@ oExpr0:
     { make_OO_forall u1 u2 o1 (x,o2) }
 | Kforall x=var Wcolon Wstar o1=oExpr Wcomma o2=oExpr (* not sure about this syntax *)
     %prec Kforall
-    { make_OO_forall (nowhere (make_UU UEmptyHole)) (nowhere (make_UU UEmptyHole)) o1 (x,o2) }
+    { make_OO_forall (nowhere (make_UU UEmptyHole [])) (nowhere (make_UU UEmptyHole [])) o1 (x,o2) }
 | Wempty Wlparen Wrparen
     { make_OO_empty }
 | Wempty_r Wlparen t=tExpr Wcomma o=oExpr Wrparen
@@ -250,19 +250,19 @@ tExpr0:
     o=separated_list(Wcomma,oExpr) 
     Wrparen { make_TT_def_app name u t o }
 euExpr: u=uExpr
-    { nowhere (make_UU u) }
+    { u }
 uExpr: u=uExpr0 
-    {Upos (Error.Position($startpos, $endpos), u)}
+    { POS(Error.Position($startpos, $endpos), u) }
 | u=parenthesized(uExpr)
     {u}
 uExpr0:
 | Wunderscore
-    { UEmptyHole }
+    { APPLY(UU UEmptyHole,[]) }
 | Wunderscore_numeral
-    { UNumberedEmptyHole $1 }
+    { APPLY(UU (UNumberedEmptyHole $1), []) }
 | u=uVar0
-    { Uvariable u }
+    { Variable u }
 | u=uExpr Wplus n=Nat
-    { Uplus (u,n) }
+    { APPLY(UU (Uplus n), [u]) }
 | Kumax Wlparen u=uExpr Wcomma v=uExpr Wrparen
-    { Umax (u,v)  }
+    { APPLY(UU Umax,[u;v])  }

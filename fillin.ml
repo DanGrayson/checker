@@ -14,9 +14,9 @@ and fillin pos env = function
     | LAMBDA(v,bodies) -> raise Error.NotImplemented
     | POS(pos,e) -> POS(pos, match e with
       | Variable _ as v -> v
-      | UU _ as u -> u
       | APPLY(label,branches) -> (
 	  match label with
+	  | UU _ -> e
 	  | OO OO_emptyHole | OO OO_numberedEmptyHole _ -> raise (Error.TypingError(pos,"empty o-expression hole, no method for filling"))
 	  | TT TT_EmptyHole | TT TT_NumberedEmptyHole _ -> raise (Error.TypingError(pos,"empty t-expression hole, no method for filling"))
 	  | OO OO_lambda -> (

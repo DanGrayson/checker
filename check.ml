@@ -2,35 +2,27 @@ open Typesystem
 open Tau
 open Equality
 
-let rec uexprcheck pos env = 
-  let rec ucheckexpr' env = function
-    | Upos (pos,u) -> uexprcheck pos env u
-    | Uvariable Var s -> (
-	match (
-	  try List.assoc s env.lookup_order
-	  with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound u-variable: "^s)))
-	with 
-	  (_,Ulevel_variable) -> ()
-	| (_,Type_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a u-variable but found a t-variable: "^s))
-	| (_,Object_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a u-variable but found an o-variable: "^s)))
-    | Uplus (u,n) -> ucheckexpr' env u
-    | Umax (u,v) -> ucheckexpr' env u; ucheckexpr' env v
-    | Uvariable (VarGen (_, _)|VarEmptyHole|VarUnused)
-    | U_def _ -> raise Error.NotImplemented
-    | UEmptyHole | UNumberedEmptyHole _ -> raise (Error.TypeCheckingFailure(pos, "empty hole for u-expression found"))
-  in ucheckexpr' env
-
 let rec ucheck pos env = function
     | POS(pos,e) -> (
 	match e with
-	| UU u -> uexprcheck pos env u
+	| Variable Var s -> (
+	    match (
+	      try List.assoc s env.lookup_order
+	      with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound u-variable: "^s)))
+	    with 
+	      (_,Ulevel_variable) -> ()
+	    | (_,Type_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a u-variable but found a t-variable: "^s))
+	    | (_,Object_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a u-variable but found an o-variable: "^s)))
+	| APPLY(UU Uplus n, [u]) -> ucheck pos env u
+	| APPLY(UU Umax, [u;v]) -> ucheck pos env u;ucheck pos env v
+	| APPLY(UU U_def_app _, _) -> raise Error.NotImplemented
+	| APPLY(UU (UEmptyHole | UNumberedEmptyHole _), _) -> raise (Error.TypeCheckingFailure(pos, "empty hole for u-expression found"))
 	| _ -> raise Error.Internal)
     | _ -> raise Error.Internal
 
 let rec tcheck pos env = function
     | LAMBDA _ -> raise Error.Internal
     | POS(pos,e) -> match e with 
-      | UU u -> uexprcheck pos env u
       | Variable Var s -> (
 	  match (
 	    try List.assoc s env.lookup_order
@@ -71,12 +63,11 @@ let rec tcheck pos env = function
 		| _ -> raise Error.Internal)
 	    | TT_def_app d -> raise Error.NotImplemented
 	   )
+	| UU _ -> raise (Error.TypeCheckingFailure(pos, "expected a t-expression but found a u-expression"))
 	| OO _ -> raise (Error.TypeCheckingFailure(pos, "expected a t-expression but found an o-expression"))
 and ocheck pos env = function
   | LAMBDA _ -> raise Error.Internal	(* should have been handled higher up *)
   | POS(pos,e) -> match e with
-    | UU u -> uexprcheck pos env u
-    | Variable (VarGen _ | VarUnused | VarEmptyHole) -> raise Error.Internal
     | Variable Var s -> (
 	match
 	  try List.assoc s env.lookup_order
@@ -85,7 +76,9 @@ and ocheck pos env = function
 	  (_,Ulevel_variable) -> raise (Error.TypeCheckingFailure (pos, "expected an o-variable but found a u-variable: "^s))
 	| (_,Type_variable) -> raise (Error.TypeCheckingFailure (pos, "expected an o-variable but found a t-variable: "^s))
 	| (_,Object_variable) -> ())
+    | Variable (VarGen _ | VarUnused | VarEmptyHole) -> raise Error.Internal
     | APPLY(h,args) -> match h with
+      | UU th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a u-expression"))
       | TT th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a t-expression"))
       | OO oh -> match oh with
 	| OO_emptyHole | OO_numberedEmptyHole _ -> raise Error.Internal
@@ -174,7 +167,6 @@ and tverify pos env t1 t2 =			(* verify that t1 = t2 *)
 let ucheck = ucheck Error.Nowhere
 let tcheck = tcheck Error.Nowhere
 let ocheck = ocheck Error.Nowhere
-let uexprcheck = uexprcheck Error.Nowhere
 
 let ucheck_okay env x = try ucheck env x; true with Error.TypeCheckingFailure _ -> false
 let tcheck_okay env x = try tcheck env x; true with Error.TypeCheckingFailure _ -> false

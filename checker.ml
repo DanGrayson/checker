@@ -125,9 +125,9 @@ let oPrintCommand x =
   flush stdout
 
 let uCheckCommand x =
-  Printf.printf "Check ulevel: %s\n" (Printer.utostring x);
+  Printf.printf "Check ulevel: %s\n" (Printer.etostring x);
   flush stdout;
-  protect1 (fun () -> Check.uexprcheck !environment x)
+  protect1 (fun () -> Check.ucheck !environment x)
 
 let tCheckCommand x =
   Printf.printf "Check type: %s\n" (Printer.etostring x);
@@ -143,7 +143,7 @@ let oCheckCommand x =
   protect1 (fun () -> Check.ocheck !environment x)
 
 let uPrintCommand x =
-  Printf.printf "Print ulevel: %s\n" (Printer.utostring x);
+  Printf.printf "Print ulevel: %s\n" (Printer.etostring x);
   flush stdout
 
 let tAlphaCommand (x,y) =
@@ -164,8 +164,8 @@ let oAlphaCommand = fun (x,y) ->
 
 let uAlphaCommand = fun (x,y) -> 
   Printf.printf "uAlpha: %s\n" (if (Alpha.UEqual.uequiv (!environment).uc x y) then "true" else "false");
-  Printf.printf "      : %s\n" (Printer.utostring x);
-  Printf.printf "      : %s\n" (Printer.utostring y);
+  Printf.printf "      : %s\n" (Printer.etostring x);
+  Printf.printf "      : %s\n" (Printer.etostring y);
   flush stdout
 
 let checkUniversesCommand pos =

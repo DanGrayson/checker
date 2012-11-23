@@ -24,14 +24,13 @@ let memi x = memi' 0 x
 let chk uv (lhs,rhs) =
   let index name = memi name uv in
   let rec ev = function
-    | Upos (_,u) -> ev u
-    | UEmptyHole -> raise Error.Internal
-    | UNumberedEmptyHole n -> raise Error.Internal
-    | Uvariable u -> index u
-    | Uplus (x,n) -> ev x + n
-    | Umax (x,y) -> max (ev x) (ev y)
-    | U_def (d,u) -> raise Error.Internal in
-  let chk lhs rhs = if (ev lhs) = (ev rhs) then raise Error.UniverseInconsistency in
+    | POS(_,e) -> (match e with
+	| Variable u -> index u
+	| APPLY(UU (Uplus n),[u]) -> (ev u) + n
+	| APPLY(UU Umax,[u;v]) -> max (ev u) (ev v)
+	| _ -> raise Error.Internal)
+    | _ -> raise Error.Internal
+  in let chk lhs rhs = if (ev lhs) = (ev rhs) then raise Error.UniverseInconsistency in
   chk lhs rhs
     
 let consistency uc = 
@@ -40,17 +39,23 @@ let consistency uc =
 
 module Equal = struct
   let equiv uc = 			(* structural equality *)
-    let rec ueq a b = a == b || ueq' (a,b)
-    and ueq' = function
-      | UEmptyHole, UEmptyHole -> true
-      | UNumberedEmptyHole n, UNumberedEmptyHole n' -> n = n'
-      | Uvariable Var x, Uvariable Var x' -> x = x'
-      | Uplus (x,n), Uplus (x',n') -> ueq x x' && n = n'
-      | Umax (x,y), Umax (x',y') -> ueq x x' && ueq y y'
-      | U_def (d,u), U_def (d',u') -> raise Error.NotImplemented
-      | _ -> false
+    let rec ueq a b = match (a,b) with
+    | POS(_,a), POS(_,b) -> (
+	a == b || 
+	match (a,b) with 
+	| Variable x, Variable x' -> x = x'
+	| APPLY(UU (UNumberedEmptyHole n ),[]),
+	  APPLY(UU (UNumberedEmptyHole n'),[]) -> n = n'
+	| APPLY(UU (Uplus n ), [x ]),
+	  APPLY(UU (Uplus n'), [x']) -> n = n' && ueq x x'
+	| APPLY(UU Umax, [x;y]), 
+	  APPLY(UU Umax, [x';y']) -> ueq x x' && ueq y y'
+	| APPLY(UU (U_def_app _),_),
+	  APPLY(UU (U_def_app _),_) -> raise Error.NotImplemented
+	| _ -> false)
+    | _ -> false
     in ueq
-end	  
+end
 
 module EquivA = struct
   let equiv uc lhs rhs = 		(* naive *)
@@ -63,6 +68,6 @@ module EquivA = struct
 end
 
 module type Equivalence = sig
-  val equiv : uContext -> uExpr -> uExpr -> bool
-(*  val compare: uContext -> uExpr -> uExpr -> int *)
+  val equiv : uContext -> expr -> expr -> bool
+(*  val compare: uContext -> expr -> expr -> int *)
 end

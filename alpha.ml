@@ -2,7 +2,7 @@ open Typesystem
 
 module type S =
     sig
-      val uequal : uContext -> uExpr -> uExpr -> bool
+      val uequal : uContext -> expr -> expr -> bool
       val tequal : uContext -> expr -> expr -> bool
       val oequal : uContext -> expr -> expr -> bool
     end
@@ -27,12 +27,13 @@ module Make(Ueq: Universe.Equivalence) = struct
       | LAMBDA (x,bodies), LAMBDA (x',bodies') ->
 	  let alpha = addalpha (strip_pos_var x) (strip_pos_var x') alpha 
 	  in List.for_all2 (eq alpha) bodies bodies'
-      | POS(_,x), POS(_,y) -> (
-	  x == y || match (x,y) with
+      | POS(_,d), POS(_,e) -> (
+	  d == e || 
+	  match (d,e) with
 	  | APPLY(h,args), APPLY(h',args') -> (
 	      match (h,h') with
+	      | UU _, UU _ -> uequiv uc x y
 	      | _ -> h = h' && List.length args = List.length args' && List.for_all2 (eq alpha) args args')
-	  | UU u, UU u' -> uequiv uc u u'
 	  | Variable t,Variable t' -> testalpha' t t' alpha
 	  | (a,a') -> a = a')
       | _ -> false

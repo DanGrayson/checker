@@ -28,7 +28,6 @@
 
     Failure to type is signaled with an exception. *)
 
-val uexprcheck : Typesystem.environment_type -> Typesystem.uExpr -> unit
 val ucheck : Typesystem.environment_type -> Typesystem.expr -> unit
 val tcheck : Typesystem.environment_type -> Typesystem.expr -> unit
 val ocheck : Typesystem.environment_type -> Typesystem.expr -> unit

@@ -171,7 +171,7 @@ and r_oeq_cast = {
 	 v}*)
 and r_u_append = {
     r_u_append_d : derivation; 
-    r_u_append_M : uExpr;
+    r_u_append_M : expr;
   }
       (**{v
 	 d :: G |>
@@ -180,7 +180,7 @@ and r_u_append = {
  	      G |- [U](M) type
 	 v}*)
 and r_u_type = {
-    r_u_type_M : uExpr;
+    r_u_type_M : expr;
     r_u_type_d : derivation; 
   }
       (**{v
@@ -198,7 +198,7 @@ and r_el_u = {
  	       G |- *o type
 	 v}*)
 and r_el_u_red = {
-    r_el_u_red_M : uExpr; 
+    r_el_u_red_M : expr; 
     r_el_u_red_o : derivation; 
   }
       (**{v
@@ -215,7 +215,7 @@ and r_el_u_eq = {
  	       G |- *o = *o'
 	 v}*)
 and r_el_u_rev_eq = {
-    r_el_u_red_eq_M : uExpr; 
+    r_el_u_red_eq_M : expr; 
     r_el_u_red_eq_o : derivation; 
     r_el_u_red_eq_o' : derivation; 
     r_el_u_red_eq_teq : derivation;

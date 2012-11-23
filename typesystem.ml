@@ -36,23 +36,19 @@ type vartype = Ulevel_variable | Type_variable | Object_variable
 
 (** A u-level expression, [M], is constructed inductively as: [n], [v], [M+n], or
     [max(M,M')], where [v] is a universe variable and [n] is a natural number.
-    The type [uExpr] implements all aspects of judging that we have a valid
-    uExpr, except for possibly constraining the list of variables used to members
-    of a given list.
  *)
-type uExpr =
-  | Upos of position * uExpr
-  | Uvariable of var'
-	(** A u-level variable. *)
-  | Uplus of uExpr * int
+
+(** The various labels for u-expressions of TS. *)
+type uHead =
+  | Uplus of int
 	(** A pair [(M,n)], denoting [M+n], the n-th successor of [M].  Here [n] should be nonnegative *)
-  | Umax of uExpr * uExpr
+  | Umax
 	(** A pair [(M,M')] denoting [max(M,M')]. *)
   | UEmptyHole
         (** A u-level, to be filled in later, by type checking. *)
   | UNumberedEmptyHole of int
         (** A u-level, to be filled in later, by type checking. *)
-  | U_def of string * uExpr list
+  | U_def_app of string
 
 (** The various labels for t-expressions of TS. *)
 type tHead =
@@ -215,10 +211,13 @@ type oHead =
   | OO_def_app of string
 
 type label =
+  | UU of uHead
   | TT of tHead
   | OO of oHead
 	
 type expr = 
+  | POS of position * bare_expr
+	(** a wrapper that gives the position in the source code, for error messages *)
   | LAMBDA of var * expr list
 	(** LAMBDA is the lambda of LF.
 	    
@@ -228,16 +227,32 @@ type expr =
 
 	    Notice that we can't wrap a LAMBDA expression inside a position.  We do
 	    that to make OCAML pattern matching feasible.*)
-  | POS of position * bare_expr
-	(** a wrapper that gives the position in the source code, for error messages *)
 and bare_expr =
-  | APPLY of label * expr list
-	(** APPLY is function application in LF *)
-  | UU of uExpr
-	(** A u-level expression. *)
   | Variable of var'
 	(** A variable. *)
+  | APPLY of label * expr list
+	(** APPLY is function application in LF *)
 
+let uhead_to_string = function
+  | Uplus n -> "uplus;" ^ (string_of_int n)
+  | Umax -> "max"
+  | UEmptyHole -> "_"
+  | UNumberedEmptyHole n -> "_" ^ (string_of_int n)
+  | U_def_app d -> "udef;" ^ d
+let thead_to_string = function
+  | TT_EmptyHole -> "__"
+  | TT_NumberedEmptyHole n -> "__" ^ (string_of_int n)
+  | TT_El -> "El"
+  | TT_U -> "U"
+  | TT_Pi -> "Pi"
+  | TT_Sigma -> "Sigma"
+  | TT_Pt -> "Pt"
+  | TT_Coprod -> "Coprod"
+  | TT_Coprod2 -> "Coprod2"
+  | TT_Empty -> "Empty"
+  | TT_IC -> "IC"
+  | TT_Id -> "Id"
+  | TT_def_app d -> "tdef;" ^ d
 let ohead_to_string = function
   | OO_emptyHole -> "_"
   | OO_numberedEmptyHole n -> "_" ^ (string_of_int n)
@@ -268,26 +283,13 @@ let ohead_to_string = function
   | OO_J -> "J"
   | OO_rr0 -> "rr0"
   | OO_rr1 -> "rr1"
-let thead_to_string = function
-  | TT_EmptyHole -> "__"
-  | TT_NumberedEmptyHole n -> "__" ^ (string_of_int n)
-  | TT_El -> "El"
-  | TT_U -> "U"
-  | TT_Pi -> "Pi"
-  | TT_Sigma -> "Sigma"
-  | TT_Pt -> "Pt"
-  | TT_Coprod -> "Coprod"
-  | TT_Coprod2 -> "Coprod2"
-  | TT_Empty -> "Empty"
-  | TT_IC -> "IC"
-  | TT_Id -> "Id"
-  | TT_def_app d -> "tdef;" ^ d
 let head_to_string = function
+  | UU h -> "[" ^ uhead_to_string h ^ "]"
   | TT h -> "[" ^ thead_to_string h ^ "]"
   | OO h -> "[" ^ ohead_to_string h ^ "]"
 
 let rec get_u = function
-  | POS (_,UU u) -> u
+  | POS (_,APPLY(UU _,u)) -> u
   | _ -> raise Error.Internal
 
 let with_pos pos e = POS (pos, e)
@@ -300,9 +302,14 @@ let get_pos = function
 let with_pos_of x e = POS (get_pos x, e)
 let nowhere x = with_pos Error.Nowhere x
 
-let isU = function
-  | POS(_,UU _) -> true
-  | _ -> false
+let rec isU = 
+  let isU' = function
+    | Variable _ -> true		(* not right, should look in the context *)
+    | APPLY(UU _, _) -> true
+    | _ -> false
+  in function
+    | POS(_,x) -> isU' x
+    | LAMBDA(x,bodies) -> raise Error.Internal
 let chku u = if not (isU u) then raise Error.Internal; u
 let chkulist us = List.iter (fun u -> let _ = chku u in ()) us; us
 
@@ -338,10 +345,17 @@ type expr_descriptor =
 let template = function
   | LAMBDA(x,bodies) -> ()
   | POS(pos,e) -> match e with
-    | UU u -> ()
     | Variable t -> ()
     | APPLY(h,args) -> (
 	match h with
+	| UU uh -> (
+	    match uh with 
+	    | Uplus n -> ()
+	    | Umax -> ()
+	    | UEmptyHole -> ()
+	    | UNumberedEmptyHole n -> ()
+	    | U_def_app d -> ()
+	   )
 	| TT th -> (
 	    match th with 
 	    | TT_EmptyHole -> ()
@@ -417,7 +431,7 @@ let template = function
 	   )
        )
 
-let make_UU u = UU u
+let make_UU h a = APPLY(UU h, a)
 let make_TT h a = APPLY(TT h, a)
 let make_OO h a = APPLY(OO h, a)
 let make_Variable x = Variable x
@@ -504,7 +518,7 @@ let make_OO_def_app name u t c = make_OO (OO_def_app name) (List.flatten [chkuli
     that defines the admissible subset [A] of the functions [Fu -> nat].  It's just the subset
     that matters.
  *) 
-type uContext = UContext of var' list * (uExpr * uExpr) list
+type uContext = UContext of var' list * (expr * expr) list
 let emptyUContext = UContext ([],[])
 let mergeUContext : uContext -> uContext -> uContext =
   function UContext(uvars,eqns) -> function UContext(uvars',eqns') -> UContext(List.rev_append uvars' uvars,List.rev_append eqns' eqns)
