@@ -24,9 +24,9 @@ module Make(Ueq: Universe.Equivalence) = struct
     
   let rec eq uc alpha =
     let rec eq alpha x y = x = y || match (x, y) with 
-      | LAMBDA (x,bodies), LAMBDA (x',bodies') ->
+      | LAMBDA (x,body), LAMBDA (x',body') ->
 	  let alpha = addalpha (strip_pos_var x) (strip_pos_var x') alpha 
-	  in List.for_all2 (eq alpha) bodies bodies'
+	  in eq alpha body body'
       | POS(_,d), POS(_,e) -> (
 	  d == e || 
 	  match (d,e) with

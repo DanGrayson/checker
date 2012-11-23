@@ -23,11 +23,11 @@ let rec tau (pos:Error.position) env = function
 		| _ -> raise Error.Internal)
 	    | OO_ev -> (
 		match args with 
-		| [f;o;LAMBDA( x,[t])] -> strip_pos (Substitute.subst [(strip_pos_var x,o)] t)
+		| [f;o;LAMBDA( x,t)] -> strip_pos (Substitute.subst [(strip_pos_var x,o)] t)
 		| _ -> raise Error.Internal)
 	    | OO_lambda -> (
 		match args with 
-		| [t;LAMBDA( x,[o])] -> make_TT_Pi t (x, tau pos (obind (x,t) env) o)
+		| [t;LAMBDA( x,o)] -> make_TT_Pi t (x, tau pos (obind (x,t) env) o)
 		| _ -> raise Error.Internal)
 	    | OO_forall -> (
 		match args with 

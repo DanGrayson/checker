@@ -40,7 +40,7 @@ let rec tcheck pos env = function
 	    | TT_U -> ucheckn 1 pos env args
 	    | TT_Sigma | TT_Pi -> (
 		match args with
-		| [t1; LAMBDA( x, [t2] )] -> tcheck pos env t1; tcheck_binder pos env x t1 t2
+		| [t1; LAMBDA( x, t2 )] -> tcheck pos env t1; tcheck_binder pos env x t1 t2
 		| _ -> raise Error.Internal)
 	    | TT_Pt -> ()
 	    | TT_Coprod -> (
@@ -49,12 +49,10 @@ let rec tcheck pos env = function
 		| _ -> raise Error.Internal)
 	    | TT_Coprod2 -> (
 		match args with 
-		| [t;t'; LAMBDA( x,[u]);LAMBDA( x', [u']);o] -> raise Error.NotImplemented
+		| [t;t'; LAMBDA( x,u);LAMBDA( x', u');o] -> raise Error.NotImplemented
 		| _ -> raise Error.Internal)
 	    | TT_Empty -> ()
-	    | TT_IC -> (
-		match args with [tA; a; LAMBDA( x, [tB;LAMBDA( y, [tD;LAMBDA( z, [q])])])] -> raise Error.NotImplemented
-		| _ -> raise Error.Internal)
+	    | TT_IC -> raise Error.NotImplemented
 	    | TT_Id -> (
 		match args with
 		| [t; x; y] -> (
@@ -87,11 +85,11 @@ and ocheck pos env = function
 	| OO_ev -> (
 	    match args with 
 	    | [f;o] -> raise Error.Internal (* type should have been filled in by now *)
-	    | [f;x;LAMBDA( v,[t])] -> (
+	    | [f;x;LAMBDA( v,t)] -> (
 		ocheck pos env f; 
 		ocheck pos env x; 
 		match strip_pos(tau env f) with
-		| APPLY(TT TT_Pi, [s; LAMBDA( w,[t'])]) ->
+		| APPLY(TT TT_Pi, [s; LAMBDA( w,t')]) ->
 		    if not ( w = v ) 
 		    then raise Error.NotImplemented;
 		    overify pos env x s;
@@ -101,11 +99,11 @@ and ocheck pos env = function
 	    | _ -> raise Error.Internal)
 	| OO_lambda -> (
 	    match args with 
-	    | [t;LAMBDA( x,[o])] -> tcheck pos env t; ocheck_binder pos env x t o
+	    | [t;LAMBDA( x,o)] -> tcheck pos env t; ocheck_binder pos env x t o
 	    | _ -> raise Error.Internal)
 	| OO_forall -> (
 	    match args with 
-	    | [m;m';o;LAMBDA( v,[o'])] ->
+	    | [m;m';o;LAMBDA( v,o')] ->
 		ucheck pos env m; 
 		ucheck pos env m'; 	(* probably have to check something here ... *)
 		ocheck pos env o; 

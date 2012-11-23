@@ -215,23 +215,55 @@ type label =
   | TT of tHead
   | OO of oHead
 	
+(** The type [expr] corresponds to the canonical terms of LF. *)
 type expr = 
   | POS of position * bare_expr
 	(** a wrapper that gives the position in the source code, for error messages *)
-  | LAMBDA of var * expr list
+  | LAMBDA of var * expr
 	(** LAMBDA is the lambda of LF.
 	    
 	    The variable is bound in each of the expressions of the list, and
 	    the lambda expression is to be thought of as returning a tuple, with one
-	    member for each expression in the list.
+	    member for each expression in the list.*)
 
-	    Notice that we can't wrap a LAMBDA expression inside a position.  We do
-	    that to make OCAML pattern matching feasible.*)
+(** The type [bare_expr] corresponds to the atomic terms of LF,
+    except that instead of writing ((((f a) b) c) d) we write APPLY(f,[a;b;c;d]),
+    where f is a variable or a constant. *)
 and bare_expr =
   | Variable of var'
 	(** A variable. *)
   | APPLY of label * expr list
 	(** APPLY is function application in LF *)
+
+type base_type =
+  | Ulevel_type
+  | Type_type
+  | Object_type
+
+type canonical_type_family =
+  | ATOMIC of atomic_type_family
+  | PI_TYPE of var' * canonical_type_family * canonical_type_family
+and atomic_type_family =
+  | APP of base_type * canonical_type_family
+  | BASE of base_type
+
+let ulevel_F = ATOMIC (BASE Ulevel_type)
+let type_F = ATOMIC (BASE Type_type)
+let obj_F = ATOMIC (BASE Object_type)
+
+let arrow_T a b = PI_TYPE(VarUnused, a, b)
+
+type kind =
+  | TYPE_KIND
+  | PI_KIND of var' * canonical_type_family * kind
+
+let type_K = TYPE_KIND
+
+let arrow_K a k = PI_KIND(VarUnused, a, k)
+
+let ohead_to_kind = function
+  | OO_ev -> arrow_K obj_F (arrow_K obj_F (arrow_K (arrow_T obj_F type_F) type_K))
+  | _ -> raise NotImplemented
 
 let uhead_to_string = function
   | Uplus n -> "uplus;" ^ (string_of_int n)
@@ -364,22 +396,22 @@ let template = function
 	    | TT_U -> ()
 	    | TT_Pi -> (
 		match args with
-		| [t1; LAMBDA( x, [t2] )] -> ()
+		| [t1; LAMBDA( x, t2 )] -> ()
 		| _ -> raise Error.Internal)
 	    | TT_Sigma -> (
 		match args with
-		| [t1; LAMBDA( x, [t2] )] -> ()
+		| [t1; LAMBDA( x, t2 )] -> ()
 		| _ -> raise Error.Internal)
 	    | TT_Pt -> ()
 	    | TT_Coprod -> ()
 	    | TT_Coprod2 -> (
 		match args with
-		| [t;t'; LAMBDA( x,[u]);LAMBDA( x', [u']);o] -> ()
+		| [t;t'; LAMBDA(x,u);LAMBDA( x', u');o] -> ()
 		| _ -> raise Error.Internal)
 	    | TT_Empty -> ()
 	    | TT_IC -> (
 		match args with
-		| [tA; a; LAMBDA( x, [tB;LAMBDA( y, [tD;LAMBDA( z, [q])])])] -> ()
+		| [tA;a;LAMBDA(x1,tB);LAMBDA(x2,LAMBDA(y2,tD));LAMBDA(x3,LAMBDA(y3,LAMBDA(z3,q)))] -> ()
 		| _ -> raise Error.Internal)
 	    | TT_Id -> (
 		match args with
@@ -395,16 +427,16 @@ let template = function
 	    | OO_j -> ()
 	    | OO_ev -> (
 		match args with
-		| [f;o;LAMBDA( x,[t])] -> ()
+		| [f;o;LAMBDA( x,t)] -> ()
 		| [f;o] -> ()
 		| _ -> raise Error.Internal)
 	    | OO_lambda -> (
 		match args with
-		| [t;LAMBDA( x,[o])] -> ()
+		| [t;LAMBDA( x,o)] -> ()
 		| _ -> raise Error.Internal)
 	    | OO_forall -> (
 		match args with
-		| [u;u';o;LAMBDA( x,[o'])] -> ()
+		| [u;u';o;LAMBDA( x,o')] -> ()
 		| _ -> raise Error.Internal)
 	    | OO_def_app d -> ()
 	    | OO_pair -> ()
@@ -436,21 +468,24 @@ let make_TT h a = APPLY(TT h, a)
 let make_OO h a = APPLY(OO h, a)
 let make_Variable x = Variable x
 
-let make_BB1 v x = LAMBDA( v, [x])
-let make_BB2 v x y = LAMBDA( v, [x;y])
+let make_LAM v x = LAMBDA(v,x)
+let make_LAM2 v1 v2 x = make_LAM v1 (make_LAM v2 x)
+let make_LAM3 v1 v2 v3 x = make_LAM v1 (make_LAM2 v2 v3 x)
+
+(* let make_BB2 v x y = LAMBDA( v, [x;y]) *)
 
 let make_TT_EmptyHole = make_TT TT_Empty []
 let make_TT_NumberedEmptyHole n = make_TT (TT_NumberedEmptyHole n) []
 let make_TT_El x = make_TT TT_El [chko x]
 let make_TT_U x = make_TT TT_U [chku x]
-let make_TT_Pi    t1 (x,t2) = make_TT TT_Pi    [chkt t1; make_BB1 x (chkt t2)]
-let make_TT_Sigma t1 (x,t2) = make_TT TT_Sigma [chkt t1; make_BB1 x (chkt t2)]
+let make_TT_Pi    t1 (x,t2) = make_TT TT_Pi    [chkt t1; make_LAM x (chkt t2)]
+let make_TT_Sigma t1 (x,t2) = make_TT TT_Sigma [chkt t1; make_LAM x (chkt t2)]
 let make_TT_Pt = make_TT TT_Pt []
 let make_TT_Coprod t t' = make_TT TT_Coprod [chkt t;chkt t']
-let make_TT_Coprod2 t t' (x,u) (x',u') o = make_TT TT_Coprod2 [chkt t; chkt t'; make_BB1 x (chkt u); make_BB1 x' (chkt u'); chko o]
+let make_TT_Coprod2 t t' (x,u) (x',u') o = make_TT TT_Coprod2 [chkt t; chkt t'; make_LAM x (chkt u); make_LAM x' (chkt u'); chko o]
 let make_TT_Empty = make_TT TT_Empty []
 let make_TT_IC tA a (x,tB,(y,tD,(z,q))) =
-  make_TT TT_IC [chkt tA; chko a; make_BB2 x (chkt tB) (make_BB2 y (chkt tD) (make_BB1 z (chko q)))]
+  make_TT TT_IC [chkt tA; chko a; make_LAM x (chkt tB); make_LAM2 x y (chkt tD); make_LAM3 x y z (chko q)]
 let make_TT_Id t x y = make_TT TT_Id [chkt t;chko x;chko y]
 let make_TT_def_app name u t o = make_TT (TT_def_app name) (List.flatten [chkulist u;chktlist t;chkolist o])
 
@@ -458,56 +493,46 @@ let make_OO_emptyHole = make_OO OO_emptyHole []
 let make_OO_numberedEmptyHole n = make_OO (OO_numberedEmptyHole n) []
 let make_OO_u m = make_OO OO_u [chku m]
 let make_OO_j m n = make_OO OO_j [chku m; chku n]
-let make_OO_ev f p (v,t) = make_OO OO_ev [chko f;chko p;make_BB1 v (chkt t)]
+let make_OO_ev f p (v,t) = make_OO OO_ev [chko f;chko p;make_LAM v (chkt t)]
 let make_OO_ev_hole f p = make_OO OO_ev [chko f;chko p] (* fill in third argument later *)
-let make_OO_lambda t (v,p) = make_OO OO_lambda [chkt t; make_BB1 v (chko p)]
-let make_OO_forall m m' n (v,o') = make_OO OO_forall [chku m;chku m';chko n;make_BB1 v (chko o')]
-let make_OO_pair a b (x,t) = make_OO OO_pair [chko a;chko b;make_BB1 x (chkt t)]
-let make_OO_pr1 t (x,t') o = make_OO OO_pr1 [chkt t;make_BB1 x (chkt t'); chko o]
-let make_OO_pr2 t (x,t') o = make_OO OO_pr2 [chkt t;make_BB1 x (chkt t'); chko o]
-let make_OO_total m1 m2 o1 (x,o2) = make_OO OO_total [chku m1;chku m2;chko o1;make_BB1 x (chko o2)]
+let make_OO_lambda t (v,p) = make_OO OO_lambda [chkt t; make_LAM v (chko p)]
+let make_OO_forall m m' n (v,o') = make_OO OO_forall [chku m;chku m';chko n;make_LAM v (chko o')]
+let make_OO_pair a b (x,t) = make_OO OO_pair [chko a;chko b;make_LAM x (chkt t)]
+let make_OO_pr1 t (x,t') o = make_OO OO_pr1 [chkt t;make_LAM x (chkt t'); chko o]
+let make_OO_pr2 t (x,t') o = make_OO OO_pr2 [chkt t;make_LAM x (chkt t'); chko o]
+let make_OO_total m1 m2 o1 (x,o2) = make_OO OO_total [chku m1;chku m2;chko o1;make_LAM x (chko o2)]
 let make_OO_pt = make_OO OO_pt []
-let make_OO_pt_r o (x,t) = make_OO OO_pt_r [chko o;make_BB1 x (chkt t)]
+let make_OO_pt_r o (x,t) = make_OO OO_pt_r [chko o;make_LAM x (chkt t)]
 let make_OO_tt = make_OO OO_tt []
 let make_OO_coprod m1 m2 o1 o2 = make_OO OO_coprod [chku m1; chku m2; chko o1; chko o2]
 let make_OO_ii1 t t' o = make_OO OO_ii1 [chkt t;chkt t';chko o]
 let make_OO_ii2 t t' o = make_OO OO_ii2 [chkt t;chkt t';chko o]
-let make_OO_sum tT tT' s s' o (x,tS) = make_OO OO_sum [chkt tT; chkt tT'; chko s; chko s'; chko o; make_BB1 x (chkt tS)]
+let make_OO_sum tT tT' s s' o (x,tS) = make_OO OO_sum [chkt tT; chkt tT'; chko s; chko s'; chko o; make_LAM x (chkt tS)]
 let make_OO_empty = make_OO OO_empty []
 let make_OO_empty_r t o = make_OO OO_empty_r [chkt t; chko o]
 let make_OO_c tA a (x,tB,(y,tD,(z,q))) b f = make_OO OO_c [
   chko a; 
-  make_BB2 x
-    (chkt tB)
-    (make_BB2 y
-       (chkt tD)
-       (make_BB1 z
-	  (chko q))) ]
+  make_LAM x (chkt tB);
+  make_LAM2 x y (chkt tD);
+  make_LAM3 x y z (chko q) ]
 let make_OO_ic_r tA a (x,tB,(y,tD,(z,q))) i (x',(v,tS)) t = make_OO OO_ic_r [
-  chkt tA; chko a;
-  make_BB2 x
-    (chkt tB) 
-    (make_BB2 y
-       (chkt tD)
-       (make_BB1 z
-	  (chko q)));
+  chkt tA; 
+  chko a;
+  make_LAM x (chkt tB);
+  make_LAM2 x y (chkt tD);
+  make_LAM3 x y z (chko q);
   chko i; 
-  make_BB1  x'
-    (make_BB1 v
-       (chkt tS)); 
+  make_LAM2  x' v (chkt tS); 
   chko t]
 let make_OO_ic m1 m2 m3 oA a (x,oB,(y,oD,(z,q))) = make_OO OO_ic [
   chku m1; chku m2; chku m3;
   chko oA; chko a;
-  make_BB2 x
-    (chko oB)
-    (make_BB2 y
-       (chko oD)
-       (make_BB1 z
-	  (chko q))) ]
+  make_LAM x (chkt oB);
+  make_LAM2 x y (chkt oD);
+  make_LAM3 x y z (chko q) ]
 let make_OO_paths m t x y = make_OO OO_paths [chku m; chkt t; chko x; chko y]
 let make_OO_refl t o = make_OO OO_refl [chkt t; chko o]
-let make_OO_J tT a b q i (x,(e,tS)) = make_OO OO_J [chkt tT; chko a; chko b; chko q; chko i; make_BB1 x (make_BB1 e (chkt tS))]
+let make_OO_J tT a b q i (x,(e,tS)) = make_OO OO_J [chkt tT; chko a; chko b; chko q; chko i; make_LAM x (make_LAM e (chkt tS))]
 let make_OO_rr0 m2 m1 s t e = make_OO OO_rr0 [chku m2; chku m1; chko s; chko t; chko e]
 let make_OO_rr1 m a p = make_OO OO_rr1 [chku m; chko a; chko p]
 let make_OO_def_app name u t c = make_OO (OO_def_app name) (List.flatten [chkulist u; chktlist t; chkolist c])

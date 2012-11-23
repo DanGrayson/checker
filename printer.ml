@@ -23,14 +23,14 @@ let rec etostring = function
 	    match th with 
 	    | TT_Pi -> (
 		match args with
-		| [t1; LAMBDA( x, [t2] )] -> "[Pi;" ^ (vartostring x) ^ "](" ^ (etostring t1) ^ "," ^ (etostring t2) ^ ")"
+		| [t1; LAMBDA( x, t2 )] -> "[Pi;" ^ (vartostring x) ^ "](" ^ (etostring t1) ^ "," ^ (etostring t2) ^ ")"
 		| _ -> raise Error.Internal)
 	    | TT_Sigma -> (
-		match args with [t1; LAMBDA( x, [t2] )] -> "[Sigma;" ^ (vartostring x) ^ "](" ^ (etostring t1) ^ "," ^ (etostring t2) ^ ")"
+		match args with [t1; LAMBDA( x, t2 )] -> "[Sigma;" ^ (vartostring x) ^ "](" ^ (etostring t1) ^ "," ^ (etostring t2) ^ ")"
 		| _ -> raise Error.Internal)
 	    | TT_Coprod2 -> (
 		match args with 
-		| [t;t'; LAMBDA( x,[u]);LAMBDA( x', [u']);o] ->
+		| [t;t'; LAMBDA( x,u);LAMBDA( x', u');o] ->
 		    "[Coprod;" ^ (vartostring x) ^ "," ^ (vartostring x') ^ "](" 
 		    ^ (etostring t) ^ "," ^ (etostring t) ^ ","
 		    ^ (etostring u) ^ "," ^ (etostring u') ^ ","
@@ -39,8 +39,12 @@ let rec etostring = function
 		| _ -> raise Error.Internal)
 	    | TT_IC -> (
 		match args with 
-		  [tA; a; LAMBDA( x, [tB;LAMBDA( y, [tD;LAMBDA( z, [q])])])]
-		  -> "[IC;" ^ (vartostring x) ^ "," ^ (vartostring y) ^ "," ^ (vartostring z) ^ "]("
+		  [tA;a;LAMBDA(x1,tB);LAMBDA(x2,LAMBDA(y2,tD));LAMBDA(x3,LAMBDA(y3,LAMBDA(z3,q)))]
+		  -> "[IC;" 
+		    ^ (vartostring x1) ^ ","
+		    ^ (vartostring x2) ^ "," ^ (vartostring y2) ^ "," 
+		    ^ (vartostring x3) ^ "," ^ (vartostring y3) ^ "," ^ (vartostring z3) 
+		    ^ "]("
 		    ^ (etostring tA) ^ "," ^ (etostring a) ^ "," ^ (etostring tB) ^ "," ^ (etostring tD) ^ "," ^ (etostring q) ^ ")"
 		| _ -> raise Error.Internal)
 	    | _ -> "[" ^ (thead_to_string th) ^ "]" ^ (parenelisttostring args)
@@ -49,19 +53,19 @@ let rec etostring = function
 	    match oh with
 	    | OO_ev -> (
 		match args with 
-		| [f;o;LAMBDA( x,[t])] ->
+		| [f;o;LAMBDA( x,t)] ->
 		    "[ev;" ^ (vartostring x) ^ "](" ^ (etostring f) ^ "," ^ (etostring o) ^ "," ^ (etostring t) ^ ")"
 		| [f;o] ->
 		    "[ev;_](" ^ (etostring f) ^ "," ^ (etostring o)
 		| _ -> raise Error.Internal)
 	    | OO_lambda -> (
 		match args with 
-		| [t;LAMBDA( x,[o])] ->
+		| [t;LAMBDA( x,o)] ->
 		    "[lambda;" ^ (vartostring x) ^ "](" ^ (etostring t) ^ "," ^ (etostring o) ^ ")"
 		| _ -> raise Error.Internal)
 	    | OO_forall -> (
 		match args with 
-		| [u;u';o;LAMBDA( x,[o'])] ->
+		| [u;u';o;LAMBDA( x,o')] ->
 		    "[forall;" ^ (vartostring x) ^ "](" ^ (etostring u) ^ "," ^ (etostring u') ^ "," ^ (etostring o) ^ "," ^ (etostring o') ^ ")"
 		| _ -> raise Error.Internal)
 	    | _ -> "[" ^ (ohead_to_string oh) ^ "]" ^ (parenelisttostring args)
@@ -100,7 +104,7 @@ let definitiontostring = function
 
 let rec lfl label s = "(" ^ label ^ (String.concat "" (List.map (fun x -> " " ^ (lftostring x)) s)) ^ ")"
 and lftostring = function
-  | LAMBDA(x,bodies) -> "(LAMBDA " ^ (vartostring x) ^ " : Obj" ^ (String.concat "" (List.map (fun x -> ", " ^ (lftostring x)) bodies)) ^ ")"
+  | LAMBDA(x,body) -> "(LAMBDA " ^ (vartostring x) ^ " : Obj, " ^ (lftostring body) ^ ")"
   | POS(_,e) -> match e with 
     | Variable v -> vartostring' v
     | APPLY(h,args) -> lfl (head_to_string h) args

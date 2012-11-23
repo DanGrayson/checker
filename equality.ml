@@ -17,21 +17,21 @@ let testalpha  x x' = let x = strip_pos x and x' = strip_pos x' in testalpha' x 
 
 let rec eql alpha a b = List.length a = List.length b && List.for_all2 (eq alpha) a b
 and eq alpha e e' = match (e,e') with
-    | LAMBDA (x,bodies),LAMBDA(x',bodies') -> let alpha = addalpha x x' alpha in eql alpha bodies bodies'
+    | LAMBDA (x,body),LAMBDA(x',body') -> let alpha = addalpha x x' alpha in eq alpha body body'
     | POS(pos,e), POS(pos',e') -> (
 	match (e,e') with
 
 	| Variable o, Variable o' 
 	  -> testalpha' o o' alpha
 
-	|   APPLY(OO OO_ev,[POS(_,APPLY(OO OO_lambda,_)) as f ;o ;LAMBDA( x ,[t ])]),
-	    APPLY(OO OO_ev,[POS(_,APPLY(OO OO_lambda,_)) as f';o';LAMBDA( x',[t'])]) 
+	|   APPLY(OO OO_ev,[POS(_,APPLY(OO OO_lambda,_)) as f ;o ;LAMBDA( x ,t )]),
+	    APPLY(OO OO_ev,[POS(_,APPLY(OO OO_lambda,_)) as f';o';LAMBDA( x',t')]) 
 	  -> (eq alpha f f' && eq alpha o o') || (eq alpha (Reduction.beta1 f o) (Reduction.beta1 f' o'))
 
-	| APPLY(OO OO_ev,[POS(_,APPLY(OO OO_lambda,_)) as f;o;LAMBDA( x,[t])]), e'
+	| APPLY(OO OO_ev,[POS(_,APPLY(OO OO_lambda,_)) as f;o;LAMBDA( x,t)]), e'
 	  -> eq alpha (Reduction.beta1 f o) (POS(pos',e'))
 
-	| e, APPLY(OO OO_ev,[POS(_,APPLY(OO OO_lambda,_)) as f';o';LAMBDA( x',[t'])])
+	| e, APPLY(OO OO_ev,[POS(_,APPLY(OO OO_lambda,_)) as f';o';LAMBDA( x',t')])
 	  -> eq alpha (POS(pos,e)) (Reduction.beta1 f' o')
 
 	| APPLY(h,args), APPLY(h',args')
