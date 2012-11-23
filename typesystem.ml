@@ -53,32 +53,9 @@ type uExpr =
   | UNumberedEmptyHole of int
         (** A u-level, to be filled in later, by type checking. *)
   | U_def of string * uExpr list
-	
-type expr = 
-  | LAMBDA of var * expr list
-	(** LAMBDA is the lambda of LF.
-	    
-	    The variable is bound in each of the expressions of the list, and
-	    the lambda expression is to be thought of as returning a tuple, with one
-	    member for each expression in the list.
 
-	    Notice that we can't wrap a LAMBDA expression inside a position.  We do
-	    that to make OCAML pattern matching feasible.*)
-  | POS of position * bare_expr
-	(** a wrapper that gives the position in the source code, for error messages *)
-and bare_expr =
-  | APPLY of label * expr list
-	(** APPLY is function application in LF *)
-  | UU of uExpr
-	(** A u-level expression. *)
-  | TT_variable of var'
-	(** A t-variable. *)
-  | OO_variable of var'
-	(** An o-variable. *)
-and label =
-  | TT of tHead
-  | OO of oHead
-and tHead =
+(** The various labels for t-expressions of TS. *)
+type tHead =
 	(* TS0: *)
   | TT_El
       (** [T_El]; converts an object term into the corresponding type term *)
@@ -115,7 +92,9 @@ and tHead =
   | TT_NumberedEmptyHole of int
         (** A hole to be filled in later, by type checking. *)
   | TT_def_app of string
-and oHead =
+
+(** The various labels for o-expressions of TS. *)
+type oHead =
     (* TS0: *)
   | OO_u
 	(** [u]; universe as an object. *)
@@ -234,6 +213,32 @@ and oHead =
   | OO_numberedEmptyHole of int
         (** A hole to be filled in later, by type checking. *)
   | OO_def_app of string
+
+type label =
+  | TT of tHead
+  | OO of oHead
+	
+type expr = 
+  | LAMBDA of var * expr list
+	(** LAMBDA is the lambda of LF.
+	    
+	    The variable is bound in each of the expressions of the list, and
+	    the lambda expression is to be thought of as returning a tuple, with one
+	    member for each expression in the list.
+
+	    Notice that we can't wrap a LAMBDA expression inside a position.  We do
+	    that to make OCAML pattern matching feasible.*)
+  | POS of position * bare_expr
+	(** a wrapper that gives the position in the source code, for error messages *)
+and bare_expr =
+  | APPLY of label * expr list
+	(** APPLY is function application in LF *)
+  | UU of uExpr
+	(** A u-level expression. *)
+  | TT_variable of var'
+	(** A t-variable. *)
+  | OO_variable of var'
+	(** An o-variable. *)
 
 let ohead_to_string = function
   | OO_emptyHole -> "_"
