@@ -75,18 +75,6 @@ let protect parser lexbuf posfun =
 	Tokens.bump_error_count();
 	raise Error_Handled
 
-let definition_name = function
-  | TDefinition(name,_) 
-  | ODefinition(name,_) 
-  | TeqDefinition(name,_) 
-  | OeqDefinition(name,_) -> name
-let printdefinition = function
-  | TDefinition(name,_)
-  | ODefinition(name,_)
-  | TeqDefinition(name,_)
-  | OeqDefinition(name,_) as x
-    -> Printf.printf "%s\n" (Printer.definitiontostring x)
-
 let lexpos lexbuf = 
   let p = Tokens.lexing_pos lexbuf in
   let _ = Tokens.command_flush lexbuf in
@@ -115,17 +103,17 @@ let add_uVars uvars eqns =
 let fix t = Fillin.fillin !environment t
 
 let printCommand x =
-  Printf.printf "Print: %s\n" (Printer.etostring x);
+  Printf.printf "Print: %s\n" (Printer.ts_expr_to_string x);
   Printf.printf "   LF: %s\n" (Printer.lftostring x);
   flush stdout;
   let x' = protect fix x Error.nopos in
   if not (Alpha.UEqual.equiv (!environment).uc x' x)
-  then Printf.printf "     : %s\n" (Printer.etostring x');
+  then Printf.printf "     : %s\n" (Printer.ts_expr_to_string x');
   flush stdout
 
 let checkCommand x =
   let x = protect1 ( fun () -> Fillin.fillin !environment x ) in
-  Printf.printf "Check: %s\n" (Printer.etostring x);
+  Printf.printf "Check: %s\n" (Printer.ts_expr_to_string x);
   Printf.printf "   LF: %s\n" (Printer.lftostring x);
   flush stdout;
   match x with
@@ -149,8 +137,8 @@ let alphaCommand (x,y) =
   let x = protect fix x Error.nopos in
   let y = protect fix y Error.nopos in
   Printf.printf "Alpha: %s\n" (if (Alpha.UEqual.equiv (!environment).uc x y) then "true" else "false");
-  Printf.printf "     : %s\n" (Printer.etostring x);
-  Printf.printf "     : %s\n" (Printer.etostring y);
+  Printf.printf "     : %s\n" (Printer.ts_expr_to_string x);
+  Printf.printf "     : %s\n" (Printer.ts_expr_to_string y);
   flush stdout
 
 let checkUniversesCommand pos =
@@ -164,7 +152,7 @@ let checkUniversesCommand pos =
 let typeCommand x = (
   try 
     let tx = Tau.tau !environment x in
-    Printf.printf "Tau: %s : %s\n" (Printer.etostring x) (Printer.etostring tx);
+    Printf.printf "Tau: %s : %s\n" (Printer.ts_expr_to_string x) (Printer.ts_expr_to_string tx);
     flush stdout;
   with 
   | Error.GeneralError s -> raise Error.NotImplemented
@@ -185,7 +173,14 @@ let show_command () =
    Printf.printf "   Variable"; List.iter (fun x -> Printf.printf " %s" (Printer.vartostring' x)) (List.rev (!environment).tc); Printf.printf " : Type.\n";
   );
   (
-   let p = List.rev_append (!environment).definitions [] in List.iter (fun x -> Printf.printf "   "; printdefinition (snd x)) p;
+   let p = List.rev_append (!environment).definitions [] in
+   let f name (aspect, value, type_family) = 
+     Printf.printf "   Definition %s.%d := %s : %s\n" name aspect 
+       (Printer.ts_expr_to_string value) 
+       (Printer.lf_type_family_to_string type_family) 
+   in
+   let h (Ident name,parts) = List.iter (f name) parts in
+   List.iter h p
   );
   (
    Printf.printf "   Lookup order:";
@@ -194,10 +189,12 @@ let show_command () =
   );
   flush stdout
 
-let addDefinition x =
-  Printf.printf "Definition: %s\n" (Printer.definitiontostring x);
-  flush stdout;
-  environment := { !environment with definitions = (definition_name x,x) :: (!environment).definitions }
+let addDefinition name (x:definition) =
+  environment := {
+    !environment with
+		  definitions = (Ident name,x) :: (!environment).definitions ;
+		  lookup_order = (name, (Var name, Def_variable)) :: (!environment).lookup_order
+		}
 
 exception StopParsingFile
 
@@ -211,7 +208,7 @@ let process_command lexbuf = (
     | Toplevel.Check x -> checkCommand x
     | Toplevel.Alpha (x,y) -> alphaCommand (x,y)
     | Toplevel.Type x -> typeCommand x
-    | Toplevel.Definition x -> addDefinition x
+    | Toplevel.Definition (name,x) -> addDefinition name x
     | Toplevel.End -> Printf.printf "%s: ending.\n" (Error.error_format_pos pos) ; flush stdout; raise StopParsingFile
     | Toplevel.Show -> show_command()
     | Toplevel.CheckUniverses -> checkUniversesCommand pos

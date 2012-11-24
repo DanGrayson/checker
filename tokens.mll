@@ -1,4 +1,4 @@
-(** the lexical analyzer for the type theory *)
+(** The lexical analyzer for the type theory. *)
 
 {
  open Grammar

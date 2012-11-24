@@ -24,6 +24,7 @@ SRCFILES =					\
 	tau.ml					\
 	tau.mli					\
 	printer.ml				\
+	grammar0.ml				\
 	grammar.mly				\
 	tokens.mll				\
 	toplevel.ml				\

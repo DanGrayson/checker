@@ -50,12 +50,12 @@ let ohead_to_string = function
   | OO_rr0 -> "rr0"
   | OO_rr1 -> "rr1"
 let head_to_string = function
-  | Defapp name -> "[def;" ^ name ^ "]"
+  | Defapp (name,i) -> "[defapp;" ^ name ^ "," ^ (string_of_int i) ^ "]"
   | UU h -> "[" ^ uhead_to_string h ^ "]"
   | TT h -> "[" ^ thead_to_string h ^ "]"
   | OO h -> "[" ^ ohead_to_string h ^ "]"
 
-let rec etostring = function
+let rec ts_expr_to_string = function
   | LAMBDA(x,bodies) -> raise Error.NotImplemented
   | POS(_,e) -> match e with 
     | EmptyHole -> "_"
@@ -66,7 +66,7 @@ let rec etostring = function
 	    match uh with 
 	    | UU_plus n -> (
 		match args with 
-		| [u] -> "(" ^ (etostring u) ^ "+" ^ (string_of_int n) ^ ")"
+		| [u] -> "(" ^ (ts_expr_to_string u) ^ "+" ^ (string_of_int n) ^ ")"
 		| _ -> raise Error.Internal
 	       )
 	    | _ -> (uhead_to_string uh) ^ (parenelisttostring args)
@@ -75,18 +75,18 @@ let rec etostring = function
 	    match th with 
 	    | TT_Pi -> (
 		match args with
-		| [t1; LAMBDA( x, t2 )] -> "[Pi;" ^ (vartostring x) ^ "](" ^ (etostring t1) ^ "," ^ (etostring t2) ^ ")"
+		| [t1; LAMBDA( x, t2 )] -> "[Pi;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string t1) ^ "," ^ (ts_expr_to_string t2) ^ ")"
 		| _ -> raise Error.Internal)
 	    | TT_Sigma -> (
-		match args with [t1; LAMBDA( x, t2 )] -> "[Sigma;" ^ (vartostring x) ^ "](" ^ (etostring t1) ^ "," ^ (etostring t2) ^ ")"
+		match args with [t1; LAMBDA( x, t2 )] -> "[Sigma;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string t1) ^ "," ^ (ts_expr_to_string t2) ^ ")"
 		| _ -> raise Error.Internal)
 	    | TT_Coprod2 -> (
 		match args with 
 		| [t;t'; LAMBDA( x,u);LAMBDA( x', u');o] ->
 		    "[Coprod;" ^ (vartostring x) ^ "," ^ (vartostring x') ^ "](" 
-		    ^ (etostring t) ^ "," ^ (etostring t) ^ ","
-		    ^ (etostring u) ^ "," ^ (etostring u') ^ ","
-		    ^ (etostring o)
+		    ^ (ts_expr_to_string t) ^ "," ^ (ts_expr_to_string t) ^ ","
+		    ^ (ts_expr_to_string u) ^ "," ^ (ts_expr_to_string u') ^ ","
+		    ^ (ts_expr_to_string o)
 		    ^ ")"
 		| _ -> raise Error.Internal)
 	    | TT_IC -> (
@@ -97,7 +97,7 @@ let rec etostring = function
 		    ^ (vartostring x2) ^ "," ^ (vartostring y2) ^ "," 
 		    ^ (vartostring x3) ^ "," ^ (vartostring y3) ^ "," ^ (vartostring z3) 
 		    ^ "]("
-		    ^ (etostring tA) ^ "," ^ (etostring a) ^ "," ^ (etostring tB) ^ "," ^ (etostring tD) ^ "," ^ (etostring q) ^ ")"
+		    ^ (ts_expr_to_string tA) ^ "," ^ (ts_expr_to_string a) ^ "," ^ (ts_expr_to_string tB) ^ "," ^ (ts_expr_to_string tD) ^ "," ^ (ts_expr_to_string q) ^ ")"
 		| _ -> raise Error.Internal)
 	    | _ -> "[" ^ (thead_to_string th) ^ "]" ^ (parenelisttostring args)
 	   )
@@ -106,30 +106,46 @@ let rec etostring = function
 	    | OO_ev -> (
 		match args with 
 		| [f;o;LAMBDA( x,t)] ->
-		    "[ev;" ^ (vartostring x) ^ "](" ^ (etostring f) ^ "," ^ (etostring o) ^ "," ^ (etostring t) ^ ")"
+		    "[ev;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string f) ^ "," ^ (ts_expr_to_string o) ^ "," ^ (ts_expr_to_string t) ^ ")"
 		| [f;o] ->
-		    "[ev;_](" ^ (etostring f) ^ "," ^ (etostring o)
+		    "[ev;_](" ^ (ts_expr_to_string f) ^ "," ^ (ts_expr_to_string o)
 		| _ -> raise Error.Internal)
 	    | OO_lambda -> (
 		match args with 
 		| [t;LAMBDA( x,o)] ->
-		    "[lambda;" ^ (vartostring x) ^ "](" ^ (etostring t) ^ "," ^ (etostring o) ^ ")"
+		    "[lambda;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string t) ^ "," ^ (ts_expr_to_string o) ^ ")"
 		| _ -> raise Error.Internal)
 	    | OO_forall -> (
 		match args with 
 		| [u;u';o;LAMBDA( x,o')] ->
-		    "[forall;" ^ (vartostring x) ^ "](" ^ (etostring u) ^ "," ^ (etostring u') ^ "," ^ (etostring o) ^ "," ^ (etostring o') ^ ")"
+		    "[forall;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string u) ^ "," ^ (ts_expr_to_string u') ^ "," ^ (ts_expr_to_string o) ^ "," ^ (ts_expr_to_string o') ^ ")"
 		| _ -> raise Error.Internal)
 	    | _ -> "[" ^ (ohead_to_string oh) ^ "]" ^ (parenelisttostring args)
 	   )
 	| _ -> (head_to_string h) ^ (parenelisttostring args)
        )
-and elisttostring s = String.concat "," (List.map etostring s)
+and elisttostring s = String.concat "," (List.map ts_expr_to_string s)
 and parenelisttostring s = String.concat "" [ "("; elisttostring s; ")" ]
 
-let ueqntostring (u,v) = "; " ^ (etostring u) ^ "=" ^ (etostring v)
+let tfhead_to_string = function
+  | TF_Uexpr -> "Uexpr"
+  | TF_Texpr -> "Texpr"
+  | TF_Oexpr -> "Oexpr"
+  | TF_Is_type -> "Istype"
+  | TF_Has_type -> "Hastype"
+  | TF_Type_equality -> "TEquality"
+  | TF_Object_equality -> "OEquality"
 
-let octostring (v,t) = (vartostring' v) ^ ":" ^ (etostring t)
+let parens x = "(" ^ x ^ ")"
+let compose f g x = f (g x)
+
+let rec lf_type_family_to_string = function
+  | ATOMIC(TF_APPLY(hd,args)) -> (tfhead_to_string hd) ^ (String.concat " " (List.map (compose parens ts_expr_to_string) args))
+  | TF_Pi(v,t,u) -> "Pi " ^ (vartostring' v) ^ " : " ^ (lf_type_family_to_string t) ^ " , " ^ (lf_type_family_to_string u)
+
+let ueqntostring (u,v) = "; " ^ (ts_expr_to_string u) ^ "=" ^ (ts_expr_to_string v)
+
+let octostring (v,t) = (vartostring' v) ^ ":" ^ (ts_expr_to_string t)
 
 let parmstostring = function
   | ((UContext(uvars,ueqns):uContext),(tc:tContext),(oc:oContext)) 
@@ -144,16 +160,6 @@ let parmstostring = function
 	 else ""
 	) ^
       (String.concat "" (List.map (fun x -> "(" ^ (octostring x) ^ ")") oc))
-	
-let definitiontostring = function
-  | TDefinition   (Ident n,(c,  t   ))
-    -> "Define type "         ^n^(parmstostring c)^" := "^(etostring t)^"."
-  | ODefinition   (Ident n,(c,o,t   )) ->
-      "Define "               ^n^(parmstostring c)^" := "^(etostring o)^" : "^(etostring t)^"."
-  | TeqDefinition (Ident n,(c,t,t'  ))
-    -> "Define type equality "^n^(parmstostring c)^" := "^(etostring t)^" == "^(etostring t')^"."
-  | OeqDefinition (Ident n,(c,o,o',t)) 
-    -> "Define equality "     ^n^(parmstostring c)^" := "^(etostring o)^" == "^(etostring o')^" : "^(etostring t)^"."
 
 let rec lfl label s = "(" ^ label ^ (String.concat "" (List.map (fun x -> " " ^ (lftostring x)) s)) ^ ")"
 and lftostring = function

@@ -8,7 +8,7 @@ type command' =
   | Variable of string list
   | Alpha of expr * expr
   | Type of expr
-  | Definition of definition
+  | Definition of (string * definition)
   | CheckUniverses
   | Show
   | End

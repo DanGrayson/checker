@@ -2,31 +2,7 @@
 
 open Typesystem
 open Helpers
-
-type parm =
-  | UParm of uContext
-  | TParm of tContext
-  | OParm of oContext
-
-let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code has to be moved somewhere to use the context *)
-  let rec fix us ts os p =
-    match p with 
-    | UParm u :: p -> 
-	if List.length ts > 0 or List.length os > 0 then raise (Error.GeneralError "expected universe-level variables first");
-	fix (u::us) ts os p
-    | TParm t :: p -> 
-	if List.length os > 0 then raise (Error.Unimplemented "a type parameter after an object parameter");
-	fix us (t::ts) os p
-    | OParm o :: p -> fix us ts (o::os) p
-    | [] -> ( 
-	let tc = List.flatten (List.rev_append ts [])
-	and oc = List.flatten (List.rev_append os [])
-	and uc = match (List.rev_append us []) with
-	| [] -> emptyUContext
-	| (uc :: []) -> uc
-	| _ -> raise (Error.Unimplemented "merging of universe level variable lists")
-	in (uc,tc,oc))
-  in fix [] [] [] p
+open Grammar0
 
 %}
 %start command unusedtokens exprEof
@@ -82,13 +58,13 @@ command0:
     { Toplevel.Type o }
 
 | WDefine name=IDENTIFIER parms=parmList Wcolonequal t=expr Wperiod 
-    { Toplevel.Definition (TDefinition (Ident name,(fixParmList parms,t))) }
+    { Toplevel.Definition (tDefinition name (fixParmList parms,t)) }
 | WDefine name=IDENTIFIER parms=parmList Wcolonequal o=expr Wcolon t=expr Wperiod 
-    { Toplevel.Definition (ODefinition (Ident name,(fixParmList parms,o,t))) }
+    { Toplevel.Definition (oDefinition (Ident name,(fixParmList parms,o,t))) }
 | WDefine name=IDENTIFIER parms=parmList Wcolonequal t1=expr Wequalequal t2=expr Wperiod 
-    { Toplevel.Definition (TeqDefinition (Ident name,(fixParmList parms,t1,t2))) }
+    { Toplevel.Definition (teqDefinition (Ident name,(fixParmList parms,t1,t2))) }
 | WDefine name=IDENTIFIER parms=parmList Wcolonequal o1=expr Wequalequal o2=expr Wcolon t=expr Wperiod 
-    { Toplevel.Definition (OeqDefinition (Ident name,(fixParmList parms,o1,o2,t))) }
+    { Toplevel.Definition (oeqDefinition (Ident name,(fixParmList parms,o1,o2,t))) }
 
 | WShow Wperiod 
     { Toplevel.Show }

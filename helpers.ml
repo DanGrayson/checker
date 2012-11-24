@@ -56,4 +56,4 @@ let make_OO_refl t o = make_OO OO_refl [t; o]
 let make_OO_J tT a b q i (x,(e,tS)) = make_OO OO_J [tT; a; b; q; i; make_LAM x (make_LAM e tS)]
 let make_OO_rr0 m2 m1 s t e = make_OO OO_rr0 [m2; m1; s; t; e]
 let make_OO_rr1 m a p = make_OO OO_rr1 [m; a; p]
-let make_Defapp name u t o =  APPLY(Defapp name, List.flatten [u;t;o])
+let make_Defapp name u t o =  APPLY(Defapp(name,0), List.flatten [u;t;o])

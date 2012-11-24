@@ -177,12 +177,20 @@ type oHead =
 	 *)
       (* end of TS *)
 
-	(** The type [label] corresponds to the constant atomic terms of LF. *)
+      (** The type [label] corresponds to the constant atomic terms of LF. 
+
+	  For definitions, we envision multiple aspects.  For example, aspect 1
+	  could be a t-expression T and aspect 2 could be a derivation of the
+	  judgment that T is a type.  Or aspect 1 could be an o-expression t,
+	  aspect 2 could be a type T, and aspect 3 could be a derivation of the
+	  judgment that t has type T.  Similarly for the other two types of
+	  judgment in TS.
+       *)
 type label =
-  | UU of uHead
-  | TT of tHead
-  | OO of oHead
-  | Defapp of string			(* application of a definition *)
+  | UU of uHead			(** labels for u-expressions of TS *)
+  | TT of tHead			(** labels for t-expressions of TS *)
+  | OO of oHead			(** labels for o-expressions of TS *)
+  | Defapp of string * int	(** application of an aspect of a definition *)
 	
 (** The type [expr] corresponds to the canonical terms of LF. *)
 type expr = 
@@ -219,9 +227,9 @@ and bare_expr =
 	    expressions into three forms: u-expressions, t-expressions, and
 	    o-expressions, and they introduce the four forms of judgments. *)
 type tfHead =
-  | TF_Ulevel
-  | TF_Type
-  | TF_Object
+  | TF_Uexpr
+  | TF_Texpr
+  | TF_Oexpr
   | TF_Is_type
   | TF_Has_type
   | TF_Type_equality
@@ -231,24 +239,24 @@ type canonical_type_family =
   | ATOMIC of atomic_type_family
   | TF_Pi of var' * canonical_type_family * canonical_type_family
 and atomic_type_family =
-  | TF_APPLY of tfHead * canonical_type_family list
+  | TF_APPLY of tfHead * expr list
 
-let ulevel_TF = ATOMIC (TF_APPLY(TF_Ulevel,[]))
-let type_TF   = ATOMIC (TF_APPLY(TF_Type  ,[]))
-let obj_TF    = ATOMIC (TF_APPLY(TF_Object,[]))
 
-let arrow_T a b = TF_Pi(VarUnused, a, b)
+let uexpr_TF = ATOMIC (TF_APPLY(TF_Uexpr,[]))
+let texpr_TF = ATOMIC (TF_APPLY(TF_Texpr,[]))
+let oexpr_TF = ATOMIC (TF_APPLY(TF_Oexpr,[]))
+let arrow_TF a b = TF_Pi(VarUnused, a, b)
+let istype_TF t = ATOMIC (TF_APPLY(TF_Is_type,[t]))
 
 type kind =
   | TYPE_KIND
   | PI_KIND of var' * canonical_type_family * kind
-
 let type_K = TYPE_KIND
-
-let arrow_K a k = PI_KIND(VarUnused, a, k)
+let arrow_K a b = PI_KIND(VarUnused, a, b)
+let istype_Kind = arrow_K texpr_TF type_K
 
 let ohead_to_kind = function
-  | OO_ev -> arrow_K obj_TF (arrow_K obj_TF (arrow_K (arrow_T obj_TF type_TF) type_K))
+  | OO_ev -> arrow_K oexpr_TF (arrow_K oexpr_TF (arrow_K (arrow_TF oexpr_TF texpr_TF) type_K))
   | _ -> raise Error.NotImplemented
 
 let rec get_u = function
@@ -289,23 +297,20 @@ let emptyOContext : oContext = []
 
 type oSubs = (var' * expr) list
 
-(* Abbreviations, conventions, and definitions; from the paper *)
+(** Definitions. *)
 
 type identifier = Ident of string
-type definition = 
-  | TDefinition   of identifier * ((uContext * tContext * oContext)         * expr)
-  | ODefinition   of identifier * ((uContext * tContext * oContext) * expr * expr)
-  | TeqDefinition of identifier * ((uContext * tContext * oContext)         * expr * expr)
-  | OeqDefinition of identifier * ((uContext * tContext * oContext) * expr * expr * expr)
+type definition = (int * expr * canonical_type_family) list
+type vartype = Ulevel_variable | Type_variable | Object_variable | Def_variable
 
-type vartype = Ulevel_variable | Type_variable | Object_variable
+(** Contexts. *)
 
 type environment_type = {
     uc : uContext;
     tc : tContext;
     oc : oContext;
     definitions : (identifier * definition) list;
-    lookup_order : (string * (var' * vartype)) list	(* put definitions in here later *)
+    lookup_order : (string * (var' * vartype)) list
   }
 
 let obind' (v,t) env = match v with

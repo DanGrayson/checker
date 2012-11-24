@@ -11,7 +11,8 @@ let rec ucheck pos env = function
 	      try List.assoc s env.lookup_order
 	      with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound u-variable: "^s)))
 	    with 
-	      (_,Ulevel_variable) -> ()
+	    | (_,Def_variable) -> raise Error.NotImplemented
+	    | (_,Ulevel_variable) -> ()
 	    | (_,Type_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a u-variable but found a t-variable: "^s))
 	    | (_,Object_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a u-variable but found an o-variable: "^s)))
 	| APPLY(UU UU_plus n, [u]) -> ucheck pos env u
@@ -28,7 +29,8 @@ let rec tcheck pos env = function
 	    try List.assoc s env.lookup_order
 	    with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound t-variable: "^s)))
 	  with 
-	    (_,Ulevel_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a t-variable but found a u-variable: "^s))
+	  | (_,Def_variable) -> raise Error.NotImplemented
+	  | (_,Ulevel_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a t-variable but found a u-variable: "^s))
 	  | (_,Type_variable) -> ()
 	  | (_,Object_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a t-variable but found an o-variable: "^s)))
       | Variable _ -> raise Error.Internal
@@ -71,7 +73,8 @@ and ocheck pos env = function
 	  try List.assoc s env.lookup_order
 	  with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound o-variable: "^s))
 	with 
-	  (_,Ulevel_variable) -> raise (Error.TypeCheckingFailure (pos, "expected an o-variable but found a u-variable: "^s))
+	| (_,Def_variable) -> raise Error.NotImplemented
+	| (_,Ulevel_variable) -> raise (Error.TypeCheckingFailure (pos, "expected an o-variable but found a u-variable: "^s))
 	| (_,Type_variable) -> raise (Error.TypeCheckingFailure (pos, "expected an o-variable but found a t-variable: "^s))
 	| (_,Object_variable) -> ())
     | Variable (VarGen _ | VarUnused) -> raise Error.Internal
@@ -151,14 +154,14 @@ and ocheckl pos env a = List.iter (ocheck pos env) a
 and overify pos env o t =			(* verify that o has type t *)
   let t' = (tau env o) in
   if not (equal t' t)
-  then raise (Error.TypeCheckingFailure3 (get_pos o, "expected term "^(Printer.etostring o),
-				   get_pos t', "of type "^(Printer.etostring t'),
-				   get_pos t , "to have type "^(Printer.etostring t)))
+  then raise (Error.TypeCheckingFailure3 (get_pos o, "expected term "^(Printer.ts_expr_to_string o),
+				   get_pos t', "of type "^(Printer.ts_expr_to_string t'),
+				   get_pos t , "to have type "^(Printer.ts_expr_to_string t)))
 and tverify pos env t1 t2 =			(* verify that t1 = t2 *)
   if not (equal t1 t2)
   then raise (Error.TypeCheckingFailure3 (get_pos t2, "expected equal types",
-				   get_pos t1,"first type: " ^ (Printer.etostring t1),
-				   get_pos t2,"other type: " ^ (Printer.etostring t2)))
+				   get_pos t1,"first type: " ^ (Printer.ts_expr_to_string t1),
+				   get_pos t2,"other type: " ^ (Printer.ts_expr_to_string t2)))
   else ()      
 
 let ucheck = ucheck Error.Nowhere
