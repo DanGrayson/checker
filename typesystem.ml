@@ -24,12 +24,6 @@ and var' =
     Var of string
   | VarGen of int * string
   | VarUnused
-let vartostring' = function
-  | Var x -> x
-  | VarGen(i,x) -> x ^ "_" ^ (string_of_int i)
-  | VarUnused -> "_"
-let vartostring v = vartostring' (strip_pos_var v)
-type vartype = Ulevel_variable | Type_variable | Object_variable
 
 (** A u-level expression, [M], is constructed inductively as: [n], [v], [M+n], or
     [max(M,M')], where [v] is a universe variable and [n] is a natural number.
@@ -60,17 +54,16 @@ type tHead =
       (* TS3: *)
   | TT_Coprod
   | TT_Coprod2
-      (* TS4 *)
+      (* TS4: *)
   | TT_Empty
       (** The empty type.  
 	  
 	  Voevodsky doesn't list this explicitly in the definition of TS4, but it gets used in derivation rules, so I added it.
 	  Perhaps he intended to write [\[T_El\](\[empty\]())] for it. *)
-      (* TS5 *)
+      (* TS5: *)
   | TT_IC
-	(** [T_IC(A,a,(x,B,(y,D,(z,q)))) <--> \[IC;x,y,z\](A,a,B,D,q)]
-	 *)
-      (* TS6 *)
+	(** [T_IC(A,a,(x,B),(x,(y,D)),(x,(y,(z,q)))) <--> \[IC;x,y,z\](A,a,B,D,q)] *)
+      (* TS6: *)
   | TT_Id
       (** Identity type; paths type. *)
       (* TS7: *)
@@ -99,7 +92,7 @@ type oHead =
 	    
 	    [O_forall] is the object term corresponding to [Pi].
 	    The type of the term is given by the max of the two u-levels. *)
-	(* TS1: *)
+      (* TS1: *)
   | OO_pair
 	(** [O_pair(a,b,(x,T)) <--> \[pair;x\](a,b,T)]
 	    
@@ -118,7 +111,7 @@ type oHead =
 	(** [O_total(m1,m2,o1,(x,o2)) <--> \[total;x\](m1,m2,o1,o2)]
 
 	    Corresponds to [total] or [prod] in the paper. *)
-	(* TS2 *)
+	(* TS2: *)
   | OO_pt
       (** Corresponds to [\[pt\]] in the paper. *)
   | OO_pt_r
@@ -156,7 +149,7 @@ type oHead =
 	(** [ic_r] is the elimination rule for inductive types (generalized W-types) *)
   | OO_ic
 	(** Corresponds to [ic].  Its type is the max of the three u-level expressions. *)
-	(* TS6 *)
+	(* TS6: *)
   | OO_paths
 	(** The object corresponding to the identity type [Id].  
 
@@ -222,9 +215,9 @@ and bare_expr =
   | APPLY of label * expr list
 	(** Iterated function application. *)
 
-	(** The following constants segregate TS expressions into three
-	    forms: u-expressions, t-expressions, and o-expressions, and they
-	    introduce the four forms of judgments. *)
+	(** The following constants for LF type families segregate TS
+	    expressions into three forms: u-expressions, t-expressions, and
+	    o-expressions, and they introduce the four forms of judgments. *)
 type tfHead =
   | TF_Ulevel
   | TF_Type
@@ -238,12 +231,11 @@ type canonical_type_family =
   | ATOMIC of atomic_type_family
   | TF_Pi of var' * canonical_type_family * canonical_type_family
 and atomic_type_family =
-  | TF_apply of tfHead * canonical_type_family
-  | BASE of tfHead
+  | TF_APPLY of tfHead * canonical_type_family list
 
-let ulevel_TF = ATOMIC (BASE TF_Ulevel)
-let type_TF = ATOMIC (BASE TF_Type)
-let obj_TF = ATOMIC (BASE TF_Object)
+let ulevel_TF = ATOMIC (TF_APPLY(TF_Ulevel,[]))
+let type_TF   = ATOMIC (TF_APPLY(TF_Type  ,[]))
+let obj_TF    = ATOMIC (TF_APPLY(TF_Object,[]))
 
 let arrow_T a b = TF_Pi(VarUnused, a, b)
 
@@ -260,7 +252,7 @@ let ohead_to_kind = function
   | _ -> raise Error.NotImplemented
 
 let rec get_u = function
-  | POS (_,APPLY(UU _,u)) -> u
+  | POS (_,(Variable _ | APPLY(UU _,_) as u)) -> u
   | _ -> raise Error.Internal
 
 let with_pos pos e = POS (pos, e)
@@ -306,12 +298,7 @@ type definition =
   | TeqDefinition of identifier * ((uContext * tContext * oContext)         * expr * expr)
   | OeqDefinition of identifier * ((uContext * tContext * oContext) * expr * expr * expr)
 
-
-(* obsolete
-
-type var = U of var' | T of var' | O of var'
-
-*)
+type vartype = Ulevel_variable | Type_variable | Object_variable
 
 type environment_type = {
     uc : uContext;

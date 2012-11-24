@@ -2,6 +2,12 @@
 
 open Typesystem
 
+let vartostring' = function
+  | Var x -> x
+  | VarGen(i,x) -> x ^ "_" ^ (string_of_int i)
+  | VarUnused -> "_"
+let vartostring v = vartostring' (strip_pos_var v)
+
 let uhead_to_string = function
   | UU_plus n -> "uplus;" ^ (string_of_int n)
   | UU_max -> "max"
