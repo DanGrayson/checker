@@ -37,7 +37,7 @@ and fillin pos env = function
 	      | _ -> raise Error.Internal)
 	  | OO OO_ev -> (
 	      match branches with 
-		[f;p] -> (
+		[f;p;LAMBDA(_,POS(_,EmptyHole _))] -> (
 		  match strip_pos(tau env f) with
 		  | APPLY(TT TT_Pi, [t1; LAMBDA( x,t2)])
 		    -> Helpers.make_OO_ev (fillin pos env f) (fillin pos env p) (x, (fillin pos (obind (x,t1) env) t2))

@@ -23,7 +23,6 @@ let make_TT_Id t x y = make_TT TT_Id [t;x;y]
 let make_OO_u m = make_OO OO_u [m]
 let make_OO_j m n = make_OO OO_j [m; n]
 let make_OO_ev f p (v,t) = make_OO OO_ev [f;p;make_LAM v t]
-let make_OO_ev_hole f p = make_OO OO_ev [f;p] (* fill in third argument later *)
 let make_OO_lambda t (v,p) = make_OO OO_lambda [t; make_LAM v p]
 let make_OO_forall m m' n (v,o') = make_OO OO_forall [m;m';n;make_LAM v (o')]
 let make_OO_pair a b (x,t) = make_OO OO_pair [a;b;make_LAM x t]

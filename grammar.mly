@@ -130,7 +130,7 @@ bare_expr:
     { make_OO_ev f o ((Error.Nowhere, VarUnused), t) }
 | f=expr o=expr
     %prec Prec_application
-    { make_OO_ev_hole f o }
+    { make_OO_ev f o ((Error.Nowhere, VarUnused), with_pos (Error.Position($startpos, $endpos)) (new_hole'())) }
 | Wlambda x=variable Wrbracket Wlparen t=expr Wcomma o=expr Wrparen
     { make_OO_lambda t (x,o) }
 | Klambda x=variable Wcolon t=expr Wcomma o=expr

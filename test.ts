@@ -54,6 +54,8 @@ Show.
 
 Check lambda e:U, lambda x : T, e.
 
+Check lambda f:T -> T, f f.  # ought to give a type checking error, and explain it well
+
 Check lambda g:T -> *[u](u1), lambda f:Pi t:T, *g t, lambda o:T, f o.
 
 Check lambda g:T -> *[u](u1), lambda f:Pi t:T, *g t, lambda o:T, f f.  # ought to give a type checking error, and explain it well
