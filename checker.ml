@@ -173,14 +173,16 @@ let show_command () =
    Printf.printf "   Variable"; List.iter (fun x -> Printf.printf " %s" (Printer.vartostring' x)) (List.rev (!environment).tc); Printf.printf " : Type.\n";
   );
   (
-   let p = List.rev_append (!environment).definitions [] in
-   let f name (aspect, value, type_family) = 
-     Printf.printf "   Definition %s.%d := %s : %s\n" name aspect 
-       (Printer.ts_expr_to_string value) 
-       (Printer.lf_type_family_to_string type_family) 
+   let p = List.rev_append (!environment).definitions [] 
    in
-   let h (Ident name,parts) = List.iter (f name) parts in
-   List.iter h p
+   let f name (aspect, value, type_family) = 
+     Printf.printf "   Definition %s.%d := %s\n" name aspect (Printer.ts_expr_to_string value) ;
+     Printf.printf "   Definition %s.%d :  %s\n" name aspect (Printer.lf_type_family_to_string type_family) 
+   in
+   let h (Ident name,parts) = 
+     Printf.printf "\n   Definition %s :\n" name;
+     List.iter (f name) parts 
+   in List.iter h p
   );
   (
    Printf.printf "   Lookup order:";

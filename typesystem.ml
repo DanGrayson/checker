@@ -333,6 +333,16 @@ let obind' (v,t) env = match v with
 
 let obind (v,t) env = obind' (strip_pos_var v, t) env
 
+let newfresh = 
+  let genctr = ref 0 in 
+  let newgen x = (
+    incr genctr; 
+    if !genctr < 0 then raise Error.GensymCounterOverflow;
+    VarGen (!genctr, x)) in
+  fun v -> match v with 
+      Var x | VarGen(_,x) -> newgen x
+    | VarUnused as v -> v
+
 (*
   Local Variables:
   compile-command: "ocamlbuild typesystem.cmo "

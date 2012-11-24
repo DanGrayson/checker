@@ -29,15 +29,38 @@ let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code ha
   in fix [] [] [] p
 
 let tDefinition (name:string) ((uc,tc,oc):(uContext * tContext * oContext)) (t:expr) : string * definition = 
-    (name,[
-     (0,t,texpr_TF);
-     (1,new_hole (),istype_TF t)
-   ])
+  let UContext (uvars,ueqns) = uc in
+  let rec wrap t = function
+    | [] -> t 
+    | v :: rest -> wrap (LAMBDA((Error.Nowhere,v),t)) rest
+  in let rec wrapk tf t = function
+    | [] -> t 
+    | v :: rest -> wrapk tf (TF_Pi(v,tf,t)) rest
+  in let rec wrapi t = function
+    | [] -> t
+    | (z,u) :: rest -> wrapi (TF_Pi(newfresh z,hastype_TF (nowhere (Variable z)) u,t)) rest
+  in let k = texpr_TF
+  in let wt = t
+  in let wt = wrap wt (List.rev_append (List.map fst oc) [])
+  in let wt = wrap wt (List.rev_append tc [])
+  in let wt = wrap wt (List.rev_append uvars [])
+  in let wk = k
+  in let wk = wrapi wk (List.rev_append oc [])
+  in let wk = wrapk oexpr_TF wk (List.rev_append (List.map fst oc) [])
+  in let wk = wrapk texpr_TF wk (List.rev_append tc [])
+  in let wk = wrapk uexpr_TF wk (List.rev_append uvars [])
+  in (name,[
+      (0,wt,wk);
+      (1,new_hole (),istype_TF t)
+    ])
+
 let oDefinition (name:string) ((uc,tc,oc):(uContext * tContext * oContext)) (o:expr) (t:expr) : string * definition = 
     (name,[
      (0,o,oexpr_TF);
      (1,t,texpr_TF);
      (2,new_hole (),hastype_TF o t)
    ])
+
 let teqDefinition _ = raise (Error.Unimplemented "teqDefinition")
+
 let oeqDefinition _ = raise (Error.Unimplemented "oeqDefinition")

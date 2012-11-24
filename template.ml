@@ -3,7 +3,7 @@
 open Typesystem
 
 let template = function
-  | LAMBDA(x,bodies) -> ()
+  | LAMBDA(x,body) -> ()
   | POS(pos,e) -> match e with
     | EmptyHole _ -> ()
     | Variable t -> ()
