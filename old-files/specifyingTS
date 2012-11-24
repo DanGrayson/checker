@@ -78,10 +78,10 @@
 #
 #They correspond to four constructors declared in LF:
 #
-#     			is-type T		= [ T type ]
-#			has-type o T		= [ o : T ]
-#			t-eq T T'		= [ T = T' ]
-#			o-eq o o' T		= [ o = o' : T ]
+#     			istype T		= [ T type ]
+#			hastype o T		= [ o : T ]
+#			teq T T'		= [ T = T' ]
+#			oeq o o' T		= [ o = o' : T ]
 
 There are also constructors for all the terms of TS:
 
@@ -98,7 +98,7 @@ There are also constructors for all the terms of TS:
 
 		     Here is the LF formulation, where U o denotes the LF application.
 
-		        has-type (<ev> f o U) (U o)
+		        hastype (<ev> f o U) (U o)
 
 
         Rule tcast : Pi (T T' : Texpr) (o : Oexpr),		# rule 13 in the paper UPTS
@@ -140,11 +140,84 @@ Constraint bottom0 : Pi (u : Ulevel), uuu0 <= u.	# add this "constraint" every t
 	Rule next : Pi u : Ulevel, Ulevel.		# formerly [ next u ] is [ u+1 ]
 	Rule max  : Pi u v : Ulevel, Ulevel.
 
-#  Four types of definitions:
-#
-#    tDefinition foo1 : Pi (u1 ... : Ulevel), (T1 ... : Type), (o1:O1) ... , [ T : Type ].
-#    oDefinition foo2 : Pi (u1 ... : Ulevel), (T1 ... : Type), (o1:O1) ... , [ o : T ].
-#   ttDefinition foo3 : Pi (u1 ... : Ulevel), (T1 ... : Type), (o1:O1) ... , [ T = T' ].
-#   ooDefinition foo4 : Pi (u1 ... : Ulevel), (T1 ... : Type), (o1:O1) ... , [ o = o' : T ].
+Four types of definitions in the user language:
 
-#   Somehow we might like to use foo1 inside the square brackets to denote the T, and foo2 inside to denote the o.
+    Definition foo1 : Pi (u1 ... : Ulevel) (T1 ... : Type) (o1:O1) ... := T : Type .
+    Definition foo2 : Pi (u1 ... : Ulevel) (T1 ... : Type) (o1:O1) ... := o : T .
+    Definition foo3 : Pi (u1 ... : Ulevel) (T1 ... : Type) (o1:O1) ... := T = T' .
+    Definition foo4 : Pi (u1 ... : Ulevel) (T1 ... : Type) (o1:O1) ... := o = o' : T .
+
+And the definitions may come equipped with u-level constraints, such as u1<u2.
+
+Let's use LF's LAMBDA to express such definitions, translating Type into Texpr, for example:
+
+     foo1 : Pi (u1, u2; u1<u2 : Uexpr) (T : Texpr) (t : T) := *t.
+
+will be recorded as a pair of new possible labels for nodes of TS-trees:
+
+     [defapp;foo.1]
+
+with value:
+
+     LAMBDA u1, LAMBDA u2, LAMBDA c, LAMBDA T, LAMBDA t, LAMBDA i, [El] t.
+
+and with LF type family:
+
+     Pi u1 : Uexpr,
+     Pi u2 : Uexpr,
+     Pi c  : ulevelcheck "u1<u2",
+     Pi T  : Texpr,
+     Pi t  : Oexpr,
+     Pi i  : hastype t T, 
+     Texpr.
+
+and
+
+     [defapp;foo.2]
+
+with value:
+
+     LAMBDA u1, LAMBDA u2, LAMBDA c, LAMBDA T, LAMBDA t, LAMBDA i, _ .
+
+(where _ is a hole that gets filled in by the type checker)
+
+and with LF type family:
+
+     Pi u1 : Uexpr,
+     Pi u2 : Uexpr,
+     Pi c  : ulevelcheck "u1<u2",
+     Pi T  : Texpr,
+     Pi t  : Oexpr,
+     Pi i  : hastype t T,
+     istype ([defapp;foo.1] u1 u2 c T t i).
+
+If we encounter an application of foo1 in a TS-term, such as
+
+      foo1 u v X x
+
+we store an eta-long LF-application of foo1.1 with holes for the judgments:
+
+      ([defapp;foo1.1] u v _ X x _)
+
+=============================================================================
+
+We need a parser for LF expressions.
+
+   The TS-expression parser translates, for example,
+
+   	lambda f:T->U, lambda o:T, [ev;_](f,o,U)
+
+   into 
+
+   	([lambda] 
+		 ([Pi] T 
+		       (LAMBDA _ : Obj, U))
+		 (LAMBDA f : Obj, 
+		 	 ([lambda] T 
+			 	   (LAMBDA o : Obj, 
+				   	   ([ev] f o 
+					   	 (LAMBDA _ : Obj, U))))))
+
+and the LF-parser should accept that input, producing the same result.
+
+Then we could write the inference rules in LF form.
