@@ -13,7 +13,7 @@ let rec fillinlist pos env es = List.map (fillin pos env) es
 and fillin pos env = function
     | LAMBDA(v,body) -> raise Error.NotImplemented
     | POS(pos,e) -> POS(pos, match e with
-      | EmptyHole -> raise (Error.TypingError(pos,"empty hole, no method for filling"))
+      | EmptyHole _ -> raise (Error.TypingError(pos,"empty hole, no method for filling"))
       | Variable _ as v -> v
       | APPLY(label,branches) -> (
 	  match label with

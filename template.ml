@@ -5,7 +5,7 @@ open Typesystem
 let template = function
   | LAMBDA(x,bodies) -> ()
   | POS(pos,e) -> match e with
-    | EmptyHole -> ()
+    | EmptyHole _ -> ()
     | Variable t -> ()
     | APPLY(h,args) -> (
 	match h with

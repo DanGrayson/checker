@@ -5,7 +5,7 @@ open Equality
 let rec ucheck pos env = function
     | POS(pos,e) -> (
 	match e with
-	| EmptyHole -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a u-expression"))
+	| EmptyHole _ -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a u-expression"))
 	| Variable Var s -> (
 	    match (
 	      try List.assoc s env.lookup_order
@@ -23,7 +23,7 @@ let rec ucheck pos env = function
 let rec tcheck pos env = function
     | LAMBDA _ -> raise Error.Internal
     | POS(pos,e) -> match e with 
-      | EmptyHole -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a t-expression"))
+      | EmptyHole _ -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a t-expression"))
       | Variable Var s -> (
 	  match (
 	    try List.assoc s env.lookup_order
@@ -67,7 +67,7 @@ let rec tcheck pos env = function
 and ocheck pos env = function
   | LAMBDA _ -> raise Error.Internal	(* should have been handled higher up *)
   | POS(pos,e) -> match e with
-    | EmptyHole -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a o-expression"))
+    | EmptyHole _ -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a o-expression"))
     | Variable Var s -> (
 	match
 	  try List.assoc s env.lookup_order

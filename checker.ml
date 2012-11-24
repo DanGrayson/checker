@@ -128,8 +128,8 @@ let checkCommand x =
       Printf.printf "     : definition\n"
   | POS(_,Variable _) -> 
       Printf.printf "     : variable\n"
-  | POS(_,EmptyHole) -> 
-      Printf.printf "     : empty hole\n"
+  | POS(_,EmptyHole n) -> 
+      Printf.printf "     : empty hole ?%d\n" n
   | LAMBDA _ ->
       Printf.printf "     : binder\n"
 

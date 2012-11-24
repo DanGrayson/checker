@@ -58,7 +58,7 @@ let head_to_string = function
 let rec ts_expr_to_string = function
   | LAMBDA(x,bodies) -> raise Error.NotImplemented
   | POS(_,e) -> match e with 
-    | EmptyHole -> "_"
+    | EmptyHole n -> "?" ^ (string_of_int n)
     | Variable v -> vartostring' v
     | APPLY(h,args) -> (
 	match h with
@@ -108,7 +108,7 @@ let rec ts_expr_to_string = function
 		| [f;o;LAMBDA( x,t)] ->
 		    "[ev;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string f) ^ "," ^ (ts_expr_to_string o) ^ "," ^ (ts_expr_to_string t) ^ ")"
 		| [f;o] ->
-		    "[ev;_](" ^ (ts_expr_to_string f) ^ "," ^ (ts_expr_to_string o)
+		    "[ev;_](" ^ (ts_expr_to_string f) ^ "," ^ (ts_expr_to_string o) ^ ")"
 		| _ -> raise Error.Internal)
 	    | OO_lambda -> (
 		match args with 
@@ -137,15 +137,18 @@ let tfhead_to_string = function
   | TF_Object_equality -> "OEquality"
 
 let parens x = "(" ^ x ^ ")"
-let compose f g x = f (g x)
+let space x = " " ^ x
+let (<<-) f g x = f (g x)
+let concat = String.concat ""
+let concatl x = concat (List.flatten x)
 
 let rec lf_type_family_to_string = function
-  | ATOMIC(TF_APPLY(hd,args)) -> (tfhead_to_string hd) ^ (String.concat " " (List.map (compose parens ts_expr_to_string) args))
-  | TF_Pi(v,t,u) -> "Pi " ^ (vartostring' v) ^ " : " ^ (lf_type_family_to_string t) ^ " , " ^ (lf_type_family_to_string u)
+  | ATOMIC(TF_APPLY(hd,args)) -> concat ["("; tfhead_to_string hd; concat (List.map (space <<- ts_expr_to_string) args); ")"]
+  | TF_Pi(v,t,u) -> concat ["Pi "; vartostring' v; " : "; (lf_type_family_to_string t); " , "; lf_type_family_to_string u]
 
-let ueqntostring (u,v) = "; " ^ (ts_expr_to_string u) ^ "=" ^ (ts_expr_to_string v)
+let ueqntostring (u,v) = concat ["; "; ts_expr_to_string u; "="; ts_expr_to_string v]
 
-let octostring (v,t) = (vartostring' v) ^ ":" ^ (ts_expr_to_string t)
+let octostring (v,t) = concat [vartostring' v; ":"; ts_expr_to_string t]
 
 let parmstostring = function
   | ((UContext(uvars,ueqns):uContext),(tc:tContext),(oc:oContext)) 
@@ -165,7 +168,7 @@ let rec lfl label s = "(" ^ label ^ (String.concat "" (List.map (fun x -> " " ^ 
 and lftostring = function
   | LAMBDA(x,body) -> "(LAMBDA " ^ (vartostring x) ^ " : Obj, " ^ (lftostring body) ^ ")"
   | POS(_,e) -> match e with 
-    | EmptyHole -> "_"
+    | EmptyHole n -> "_" ^ (string_of_int n)
     | Variable v -> vartostring' v
     | APPLY(h,args) -> lfl (head_to_string h) args
 

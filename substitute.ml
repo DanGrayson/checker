@@ -21,5 +21,5 @@ and subst subs = function
   | POS(pos,e) as d -> match e with 
     | APPLY(label,args) -> POS(pos, APPLY(label,substlist subs args))
     | Variable v -> (try List.assoc v subs with Not_found -> d)
-    | EmptyHole -> d  
+    | EmptyHole _ -> d  
 

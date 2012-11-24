@@ -28,12 +28,16 @@ let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code ha
 	in (uc,tc,oc))
   in fix [] [] [] p
 
-let tDefinition name : ((uContext * tContext * oContext) * expr) -> string * definition = 
-  function ((uc,tc,oc),body) -> 
+let tDefinition (name:string) ((uc,tc,oc):(uContext * tContext * oContext)) (t:expr) : string * definition = 
     (name,[
-     (0,body,texpr_TF);
-     (1,nowhere EmptyHole,istype_TF body)
+     (0,t,texpr_TF);
+     (1,new_hole (),istype_TF t)
    ])
-let oDefinition _ = raise (Error.Unimplemented "oDefinition")
+let oDefinition (name:string) ((uc,tc,oc):(uContext * tContext * oContext)) (o:expr) (t:expr) : string * definition = 
+    (name,[
+     (0,o,oexpr_TF);
+     (1,t,texpr_TF);
+     (2,new_hole (),hastype_TF o t)
+   ])
 let teqDefinition _ = raise (Error.Unimplemented "teqDefinition")
 let oeqDefinition _ = raise (Error.Unimplemented "oeqDefinition")

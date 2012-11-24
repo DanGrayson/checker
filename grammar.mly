@@ -58,9 +58,9 @@ command0:
     { Toplevel.Type o }
 
 | WDefine name=IDENTIFIER parms=parmList Wcolonequal t=expr Wperiod 
-    { Toplevel.Definition (tDefinition name (fixParmList parms,t)) }
+    { Toplevel.Definition (tDefinition name (fixParmList parms) t) }
 | WDefine name=IDENTIFIER parms=parmList Wcolonequal o=expr Wcolon t=expr Wperiod 
-    { Toplevel.Definition (oDefinition (Ident name,(fixParmList parms,o,t))) }
+    { Toplevel.Definition (oDefinition name (fixParmList parms) o t) }
 | WDefine name=IDENTIFIER parms=parmList Wcolonequal t1=expr Wequalequal t2=expr Wperiod 
     { Toplevel.Definition (teqDefinition (Ident name,(fixParmList parms,t1,t2))) }
 | WDefine name=IDENTIFIER parms=parmList Wcolonequal o1=expr Wequalequal o2=expr Wcolon t=expr Wperiod 
@@ -119,7 +119,7 @@ bare_expr:
 | bare_variable
     { Variable $1 }
 | Wunderscore
-    { EmptyHole }
+    { new_hole' () }
 | Wu Wlparen u=expr Wrparen
     { make_OO_u u }
 | Wj Wlparen u=expr Wcomma v=expr Wrparen
@@ -140,7 +140,7 @@ bare_expr:
     { make_OO_forall u1 u2 o1 (x,o2) }
 | Kforall x=variable Wcolon Wstar o1=expr Wcomma o2=expr (* not sure about this syntax *)
     %prec Kforall
-    { make_OO_forall (nowhere EmptyHole) (nowhere EmptyHole) o1 (x,o2) }
+    { make_OO_forall (new_hole ()) (new_hole ()) o1 (x,o2) }
 | Wempty Wlparen Wrparen
     { make_OO_empty }
 | Wempty_r Wlparen t=expr Wcomma o=expr Wrparen

@@ -218,8 +218,12 @@ type expr =
 and bare_expr =
   | Variable of var'
 	(** A variable. *)
-  | EmptyHole
-        (** An empty hole, to be filled in later. *)
+  | EmptyHole of int
+        (** An empty hole, to be filled in later.
+
+	    All holes are numbered with a serial number, so copies share the
+	    same identity.
+	 *)
   | APPLY of label * expr list
 	(** Iterated function application. *)
 
@@ -241,12 +245,14 @@ type canonical_type_family =
 and atomic_type_family =
   | TF_APPLY of tfHead * expr list
 
-
 let uexpr_TF = ATOMIC (TF_APPLY(TF_Uexpr,[]))
 let texpr_TF = ATOMIC (TF_APPLY(TF_Texpr,[]))
 let oexpr_TF = ATOMIC (TF_APPLY(TF_Oexpr,[]))
 let arrow_TF a b = TF_Pi(VarUnused, a, b)
 let istype_TF t = ATOMIC (TF_APPLY(TF_Is_type,[t]))
+let hastype_TF o t = ATOMIC (TF_APPLY(TF_Has_type,[o;t]))
+let type_equality_TF t t' = ATOMIC (TF_APPLY(TF_Type_equality,[t;t']))
+let object_equality_TF o o' t = ATOMIC (TF_APPLY(TF_Object_equality,[o;o';t]))
 
 type kind =
   | TYPE_KIND
@@ -272,6 +278,13 @@ let get_pos = function
   | _ -> Error.Nowhere
 let with_pos_of x e = POS (get_pos x, e)
 let nowhere x = with_pos Error.Nowhere x
+let new_hole' = 
+  let counter = ref 0 in
+  function () -> (
+    let h = EmptyHole !counter in
+    incr counter;
+    h)
+let new_hole () = nowhere (new_hole' ())
 
 (** 
     A universe context [UC = (Fu,A)] is represented by a list of universe variables [Fu] and a list of

@@ -3,7 +3,7 @@ open Typesystem
 let rec tau (pos:Error.position) env = function
     | LAMBDA _ -> raise Error.Internal
     | POS(pos,e) -> match e with 
-      | EmptyHole -> raise (Error.TypingError(pos, "empty hole, type undetermined"))
+      | EmptyHole _ -> raise (Error.TypingError(pos, "empty hole, type undetermined"))
       | Variable v -> (
 	  try List.assoc v env.oc
 	  with Not_found -> raise (Error.TypingError(pos, "unbound variable, not in context: " ^ (Printer.vartostring' v))))
