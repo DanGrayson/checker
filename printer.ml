@@ -56,7 +56,7 @@ let head_to_string = function
   | OO h -> "[" ^ ohead_to_string h ^ "]"
 
 let rec ts_expr_to_string = function
-  | LAMBDA(x,body) -> "{" ^ (vartostring x) ^ "} " ^ (ts_expr_to_string body)
+  | LAMBDA(x,body) -> "LAMBDA " ^ (vartostring x) ^ ", " ^ (ts_expr_to_string body)
   | POS(_,e) -> match e with 
     | EmptyHole n -> "?" ^ (string_of_int n)
     | Variable v -> vartostring' v
@@ -143,8 +143,11 @@ let concat = String.concat ""
 let concatl x = concat (List.flatten x)
 
 let rec lf_type_family_to_string = function
-  | ATOMIC(TF_APPLY(hd,args)) -> concat ["("; tfhead_to_string hd; concat (List.map (space <<- ts_expr_to_string) args); ")"]
-  | TF_Pi(v,t,u) -> concat ["Pi "; vartostring' v; ": "; (lf_type_family_to_string t); ", "; lf_type_family_to_string u]
+  | TF_Hole -> "_"
+  | TF_APPLY(hd,args) -> 
+      let s = concat [tfhead_to_string hd; concat (List.map (space <<- ts_expr_to_string) args)] in
+      if String.contains s ' ' then concat ["(";s;")"] else s
+  | TF_Pi(v,t,u) -> concat ["Pi "; vartostring' v; ":"; (lf_type_family_to_string t); ", "; lf_type_family_to_string u]
 
 let ueqntostring (u,v) = concat ["; "; ts_expr_to_string u; "="; ts_expr_to_string v]
 

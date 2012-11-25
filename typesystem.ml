@@ -240,30 +240,72 @@ type tfHead =
   | TF_Object_equality
 
 type canonical_type_family =
-  | ATOMIC of atomic_type_family
   | TF_Pi of var' * canonical_type_family * canonical_type_family
-and atomic_type_family =
   | TF_APPLY of tfHead * expr list
+  | TF_Hole
 
-let uexpr_TF = ATOMIC (TF_APPLY(TF_Uexpr,[]))
-let texpr_TF = ATOMIC (TF_APPLY(TF_Texpr,[]))
-let oexpr_TF = ATOMIC (TF_APPLY(TF_Oexpr,[]))
-let arrow_TF a b = TF_Pi(VarUnused, a, b)
-let istype_TF t = ATOMIC (TF_APPLY(TF_Is_type,[t]))
-let hastype_TF o t = ATOMIC (TF_APPLY(TF_Has_type,[o;t]))
-let type_equality_TF t t' = ATOMIC (TF_APPLY(TF_Type_equality,[t;t']))
-let object_equality_TF o o' t = ATOMIC (TF_APPLY(TF_Object_equality,[o;o';t]))
+let ( ** ) f x = TF_APPLY(f,x)
+let hole = TF_Hole
+let uexp = TF_Uexpr ** []
+let texp = TF_Texpr ** []
+let oexp = TF_Oexpr ** []
+let (@>) a b = TF_Pi(VarUnused, a, b)
+let istype t = TF_Is_type ** [t]
+let hastype o t = TF_Has_type ** [o;t]
+let type_equality t t' = TF_Type_equality ** [t;t']
+let object_equality o o' t = TF_Object_equality ** [o;o';t]
+
+let texp1 = oexp @> texp
+let texp2 = oexp @> oexp @> texp
+let texp3 = oexp @> oexp @> oexp @> texp
+let oexp1 = oexp @> oexp
+let oexp2 = oexp @> oexp @> oexp
+let oexp3 = oexp @> oexp @> oexp @> oexp
+let type_families = [
+       TT TT_El, oexp  @> texp;
+        TT TT_U, uexp  @> texp;
+       TT TT_Pi, texp  @> texp1 @> texp;
+    TT TT_Sigma, texp  @> texp1 @> texp;
+       TT TT_Pt, texp;
+   TT TT_Coprod, texp  @> texp  @> texp;
+  TT TT_Coprod2, texp  @> texp  @> texp1 @> texp1 @> texp;
+    TT TT_Empty, texp;
+       TT TT_IC, texp  @> oexp  @> texp1 @> texp2 @> oexp3 @> texp;
+       TT TT_Id, texp  @> oexp  @> oexp  @> texp;
+        OO OO_u, uexp  @> oexp;
+        OO OO_j, uexp  @> uexp  @> oexp;
+       OO OO_ev, oexp  @> oexp  @> texp1 @> oexp;
+   OO OO_lambda, texp  @> oexp1 @> oexp;
+   OO OO_forall, texp  @> texp1 @> texp;
+     OO OO_pair, oexp  @> oexp  @> texp1 @> oexp;
+      OO OO_pr1, texp  @> texp1 @> oexp  @> oexp;
+      OO OO_pr2, texp  @> texp1 @> oexp  @> oexp;
+    OO OO_total, uexp  @> uexp  @> oexp  @> oexp1 @> oexp;
+       OO OO_pt, oexp;
+     OO OO_pt_r, oexp  @> texp1 @> oexp;
+       OO OO_tt, oexp;
+   OO OO_coprod, uexp  @> uexp  @> oexp  @> oexp  @> oexp;
+      OO OO_ii1, texp  @> texp  @> oexp  @> oexp;
+      OO OO_ii2, texp  @> texp  @> oexp  @> oexp;
+      OO OO_sum, texp  @> texp  @> oexp  @> oexp  @> oexp  @> texp1 @> oexp;
+    OO OO_empty, oexp;
+  OO OO_empty_r, texp  @> oexp  @> oexp;
+        OO OO_c, texp  @> oexp  @> texp1 @> texp2 @> oexp3 @> oexp  @> oexp  @> oexp;
+     OO OO_ic_r, texp  @> oexp  @> texp1 @> texp2 @> oexp3 @> oexp  @> texp2 @> oexp  @> oexp;
+       OO OO_ic, oexp  @> oexp  @> oexp1 @> oexp2 @> oexp3 @> oexp;
+    OO OO_paths, texp  @> oexp  @> oexp  @> oexp;
+     OO OO_refl, texp  @> oexp  @> oexp;
+        OO OO_J, texp  @> oexp  @> oexp  @> oexp  @> oexp  @> texp2 @> oexp;
+      OO OO_rr0, uexp  @> uexp  @> oexp  @> oexp  @> oexp  @> oexp;
+      OO OO_rr1, uexp  @> oexp  @> oexp  @> oexp;
+];
 
 type kind =
   | TYPE_KIND
   | PI_KIND of var' * canonical_type_family * kind
 let type_K = TYPE_KIND
 let arrow_K a b = PI_KIND(VarUnused, a, b)
-let istype_Kind = arrow_K texpr_TF type_K
-
-let ohead_to_kind = function
-  | OO_ev -> arrow_K oexpr_TF (arrow_K oexpr_TF (arrow_K (arrow_TF oexpr_TF texpr_TF) type_K))
-  | _ -> raise Error.NotImplemented
+let istype_Kind = arrow_K texp type_K
 
 let rec get_u = function
   | POS (_,(Variable _ | APPLY(UU _,_) as u)) -> u

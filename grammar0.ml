@@ -38,27 +38,30 @@ let tDefinition (name:string) ((uc,tc,oc):(uContext * tContext * oContext)) (t:e
     | v :: rest -> wrapk tf (TF_Pi(v,tf,t)) rest
   in let rec wrapi t = function
     | [] -> t
-    | (z,u) :: rest -> wrapi (TF_Pi(newfresh z,hastype_TF (nowhere (Variable z)) u,t)) rest
-  in let k = texpr_TF
+    | (z,u) :: rest -> 
+	let t = TF_Pi(newfresh z,hastype (nowhere (Variable z)) u,t) in
+	let t = TF_Pi(newfresh z,istype u,t) in
+	wrapi t rest
+  in let k = texp
   in let wt = t
   in let wt = wrap wt (List.rev_append (List.map fst oc) [])
   in let wt = wrap wt (List.rev_append tc [])
   in let wt = wrap wt (List.rev_append uvars [])
   in let wk = k
   in let wk = wrapi wk (List.rev_append oc [])
-  in let wk = wrapk oexpr_TF wk (List.rev_append (List.map fst oc) [])
-  in let wk = wrapk texpr_TF wk (List.rev_append tc [])
-  in let wk = wrapk uexpr_TF wk (List.rev_append uvars [])
+  in let wk = wrapk oexp wk (List.rev_append (List.map fst oc) [])
+  in let wk = wrapk texp wk (List.rev_append tc [])
+  in let wk = wrapk uexp wk (List.rev_append uvars [])
   in (name,[
       (0,wt,wk);
-      (1,new_hole (),istype_TF t)
+      (1,new_hole (),istype t)
     ])
 
 let oDefinition (name:string) ((uc,tc,oc):(uContext * tContext * oContext)) (o:expr) (t:expr) : string * definition = 
     (name,[
-     (0,o,oexpr_TF);
-     (1,t,texpr_TF);
-     (2,new_hole (),hastype_TF o t)
+     (0,o,oexp);
+     (1,t,texp);
+     (2,new_hole (),hastype o t)
    ])
 
 let teqDefinition _ = raise (Error.Unimplemented "teqDefinition")

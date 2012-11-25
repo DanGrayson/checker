@@ -245,8 +245,6 @@ let _ =
 ]
     parse_file
     "usage: [options] filename ...";
-(*
-   (try tPrintCommand (tExpr_from_string "Pi f:T->[U](uuu0), Pi o:T, *f o" ) with Error_Handled -> ());
-   (try oPrintCommand (oExpr_from_string "lambda f:T->U, lambda o:T, f o") with Error_Handled -> ());
- *)
+   (try printCommand (expr_from_string "Pi f:T->[U](uuu0), Pi o:T, *f o" ) with Error_Handled -> ());
+   (try printCommand (expr_from_string "lambda f:T->U, lambda o:T, f o") with Error_Handled -> ());
   leave ""
