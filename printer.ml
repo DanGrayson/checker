@@ -9,51 +9,51 @@ let vartostring' = function
 let vartostring v = vartostring' (strip_pos_var v)
 
 let uhead_to_string = function
-  | UU_plus n -> "uplus;" ^ (string_of_int n)
-  | UU_max -> "max"
+  | U_plus n -> "uplus;" ^ (string_of_int n)
+  | U_max -> "max"
 let thead_to_string = function
-  | TT_El -> "El"
-  | TT_U -> "U"
-  | TT_Pi -> "Pi"
-  | TT_Sigma -> "Sigma"
-  | TT_Pt -> "Pt"
-  | TT_Coprod -> "Coprod"
-  | TT_Coprod2 -> "Coprod2"
-  | TT_Empty -> "Empty"
-  | TT_IC -> "IC"
-  | TT_Id -> "Id"
+  | T_El -> "El"
+  | T_U -> "U"
+  | T_Pi -> "Pi"
+  | T_Sigma -> "Sigma"
+  | T_Pt -> "Pt"
+  | T_Coprod -> "Coprod"
+  | T_Coprod2 -> "Coprod2"
+  | T_Empty -> "Empty"
+  | T_IC -> "IC"
+  | T_Id -> "Id"
 let ohead_to_string = function
-  | OO_u -> "u"
-  | OO_j -> "j"
-  | OO_ev -> "ev"
-  | OO_lambda -> "lambda"
-  | OO_forall -> "forall"
-  | OO_pair -> "pair"
-  | OO_pr1 -> "pr1"
-  | OO_pr2 -> "pr2"
-  | OO_total -> "total"
-  | OO_pt -> "pt"
-  | OO_pt_r -> "pt_r"
-  | OO_tt -> "tt"
-  | OO_coprod -> "coprod"
-  | OO_ii1 -> "ii1"
-  | OO_ii2 -> "ii2"
-  | OO_sum -> "sum"
-  | OO_empty -> "empty"
-  | OO_empty_r -> "empty_r"
-  | OO_c -> "c"
-  | OO_ic_r -> "ic_r"
-  | OO_ic -> "ic"
-  | OO_paths -> "paths"
-  | OO_refl -> "refl"
-  | OO_J -> "J"
-  | OO_rr0 -> "rr0"
-  | OO_rr1 -> "rr1"
+  | O_u -> "u"
+  | O_j -> "j"
+  | O_ev -> "ev"
+  | O_lambda -> "lambda"
+  | O_forall -> "forall"
+  | O_pair -> "pair"
+  | O_pr1 -> "pr1"
+  | O_pr2 -> "pr2"
+  | O_total -> "total"
+  | O_pt -> "pt"
+  | O_pt_r -> "pt_r"
+  | O_tt -> "tt"
+  | O_coprod -> "coprod"
+  | O_ii1 -> "ii1"
+  | O_ii2 -> "ii2"
+  | O_sum -> "sum"
+  | O_empty -> "empty"
+  | O_empty_r -> "empty_r"
+  | O_c -> "c"
+  | O_ic_r -> "ic_r"
+  | O_ic -> "ic"
+  | O_paths -> "paths"
+  | O_refl -> "refl"
+  | O_J -> "J"
+  | O_rr0 -> "rr0"
+  | O_rr1 -> "rr1"
 let head_to_string = function
   | Defapp (name,i) -> "[defapp;" ^ name ^ "," ^ (string_of_int i) ^ "]"
-  | UU h -> "[" ^ uhead_to_string h ^ "]"
-  | TT h -> "[" ^ thead_to_string h ^ "]"
-  | OO h -> "[" ^ ohead_to_string h ^ "]"
+  | U h -> "[" ^ uhead_to_string h ^ "]"
+  | T h -> "[" ^ thead_to_string h ^ "]"
+  | O h -> "[" ^ ohead_to_string h ^ "]"
 
 let rec ts_expr_to_string = function
   | LAMBDA(x,body) -> "LAMBDA " ^ (vartostring x) ^ ", " ^ (ts_expr_to_string body)
@@ -62,25 +62,25 @@ let rec ts_expr_to_string = function
     | Variable v -> vartostring' v
     | APPLY(h,args) -> (
 	match h with
-	| UU uh -> (
+	| U uh -> (
 	    match uh with 
-	    | UU_plus n -> (
+	    | U_plus n -> (
 		match args with 
 		| [u] -> "(" ^ (ts_expr_to_string u) ^ "+" ^ (string_of_int n) ^ ")"
 		| _ -> raise Error.Internal
 	       )
 	    | _ -> (uhead_to_string uh) ^ (parenelisttostring args)
 	    )
-	| TT th -> (
+	| T th -> (
 	    match th with 
-	    | TT_Pi -> (
+	    | T_Pi -> (
 		match args with
 		| [t1; LAMBDA( x, t2 )] -> "[Pi;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string t1) ^ "," ^ (ts_expr_to_string t2) ^ ")"
 		| _ -> raise Error.Internal)
-	    | TT_Sigma -> (
+	    | T_Sigma -> (
 		match args with [t1; LAMBDA( x, t2 )] -> "[Sigma;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string t1) ^ "," ^ (ts_expr_to_string t2) ^ ")"
 		| _ -> raise Error.Internal)
-	    | TT_Coprod2 -> (
+	    | T_Coprod2 -> (
 		match args with 
 		| [t;t'; LAMBDA( x,u);LAMBDA( x', u');o] ->
 		    "[Coprod;" ^ (vartostring x) ^ "," ^ (vartostring x') ^ "](" 
@@ -89,7 +89,7 @@ let rec ts_expr_to_string = function
 		    ^ (ts_expr_to_string o)
 		    ^ ")"
 		| _ -> raise Error.Internal)
-	    | TT_IC -> (
+	    | T_IC -> (
 		match args with 
 		  [tA;a;LAMBDA(x1,tB);LAMBDA(x2,LAMBDA(y2,tD));LAMBDA(x3,LAMBDA(y3,LAMBDA(z3,q)))]
 		  -> "[IC;" 
@@ -101,21 +101,21 @@ let rec ts_expr_to_string = function
 		| _ -> raise Error.Internal)
 	    | _ -> "[" ^ (thead_to_string th) ^ "]" ^ (parenelisttostring args)
 	   )
-	| OO oh -> (
+	| O oh -> (
 	    match oh with
-	    | OO_ev -> (
+	    | O_ev -> (
 		match args with 
 		| [f;o;LAMBDA( x,t)] ->
 		    "[ev;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string f) ^ "," ^ (ts_expr_to_string o) ^ "," ^ (ts_expr_to_string t) ^ ")"
 		| [f;o] ->
 		    "[ev;_](" ^ (ts_expr_to_string f) ^ "," ^ (ts_expr_to_string o) ^ ")"
 		| _ -> raise Error.Internal)
-	    | OO_lambda -> (
+	    | O_lambda -> (
 		match args with 
 		| [t;LAMBDA( x,o)] ->
 		    "[lambda;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string t) ^ "," ^ (ts_expr_to_string o) ^ ")"
 		| _ -> raise Error.Internal)
-	    | OO_forall -> (
+	    | O_forall -> (
 		match args with 
 		| [u;u';o;LAMBDA( x,o')] ->
 		    "[forall;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string u) ^ "," ^ (ts_expr_to_string u') ^ "," ^ (ts_expr_to_string o) ^ "," ^ (ts_expr_to_string o') ^ ")"
@@ -128,13 +128,13 @@ and elisttostring s = String.concat "," (List.map ts_expr_to_string s)
 and parenelisttostring s = String.concat "" [ "("; elisttostring s; ")" ]
 
 let tfhead_to_string = function
-  | TF_Uexpr -> "Uexpr"
-  | TF_Texpr -> "Texpr"
-  | TF_Oexpr -> "Oexpr"
-  | TF_Is_type -> "Istype"
-  | TF_Has_type -> "Hastype"
-  | TF_Type_equality -> "TEquality"
-  | TF_Object_equality -> "OEquality"
+  | F_uexp -> "Uexp"
+  | F_texp -> "Texp"
+  | F_oexp -> "Oexp"
+  | F_Is_type -> "Istype"
+  | F_Has_type -> "Hastype"
+  | F_Type_equality -> "TEquality"
+  | F_Object_equality -> "OEquality"
 
 let parens x = "(" ^ x ^ ")"
 let space x = " " ^ x
@@ -143,11 +143,11 @@ let concat = String.concat ""
 let concatl x = concat (List.flatten x)
 
 let rec lf_type_family_to_string = function
-  | TF_Hole -> "_"
-  | TF_APPLY(hd,args) -> 
+  | F_Hole -> "_"
+  | F_APPLY(hd,args) -> 
       let s = concat [tfhead_to_string hd; concat (List.map (space <<- ts_expr_to_string) args)] in
       if String.contains s ' ' then concat ["(";s;")"] else s
-  | TF_Pi(v,t,u) -> concat ["Pi "; vartostring' v; ":"; (lf_type_family_to_string t); ", "; lf_type_family_to_string u]
+  | F_Pi(v,t,u) -> concat ["Pi "; vartostring' v; ":"; (lf_type_family_to_string t); ", "; lf_type_family_to_string u]
 
 let ueqntostring (u,v) = concat ["; "; ts_expr_to_string u; "="; ts_expr_to_string v]
 

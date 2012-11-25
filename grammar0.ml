@@ -35,12 +35,12 @@ let tDefinition (name:string) ((uc,tc,oc):(uContext * tContext * oContext)) (t:e
     | v :: rest -> wrap (LAMBDA((Error.Nowhere,v),t)) rest
   in let rec wrapk tf t = function
     | [] -> t 
-    | v :: rest -> wrapk tf (TF_Pi(v,tf,t)) rest
+    | v :: rest -> wrapk tf (F_Pi(v,tf,t)) rest
   in let rec wrapi t = function
     | [] -> t
     | (z,u) :: rest -> 
-	let t = TF_Pi(VarUnused,hastype (nowhere (Variable z)) u,t) in
-	let t = TF_Pi(VarUnused,istype u,t) in
+	let t = F_Pi(VarUnused,hastype (nowhere (Variable z)) u,t) in
+	let t = F_Pi(VarUnused,istype u,t) in
 	wrapi t rest
   in let k = texp
   in let wt = t

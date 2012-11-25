@@ -32,7 +32,7 @@ module Make(Ueq: Universe.Equivalence) = struct
 	  match (d,e) with
 	  | APPLY(h,args), APPLY(h',args') -> (
 	      match (h,h') with
-	      | UU _, UU _ -> uequiv uc x y
+	      | U _, U _ -> uequiv uc x y
 	      | _ -> h = h' && List.length args = List.length args' && List.for_all2 (eq alpha) args args')
 	  | Variable t,Variable t' -> testalpha' t t' alpha
 	  | (a,a') -> a = a')

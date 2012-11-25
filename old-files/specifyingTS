@@ -155,49 +155,28 @@ Let's use LF's LAMBDA to express such definitions, translating Type into Texpr, 
 
 will be recorded as a pair of new possible labels for nodes of TS-trees:
 
+     [defapp;foo.0]
      [defapp;foo.1]
 
-with value:
+and with values and type families as follows:
 
-     LAMBDA u1, LAMBDA u2, LAMBDA c, LAMBDA T, LAMBDA t, LAMBDA i, [El] t.
+     Definition foo1.0 := LAMBDA u1, LAMBDA u2, LAMBDA T, LAMBDA t, [El](t)
+     Definition foo1.0 :  Pi u1:Uexpr, Pi u2:Uexpr, Pi T:Texpr, Pi t:Oexpr, Texpr
 
-and with LF type family:
-
-     Pi u1 : Uexpr,
-     Pi u2 : Uexpr,
-     Pi c  : ulevelcheck "u1<u2",
-     Pi T  : Texpr,
-     Pi t  : Oexpr,
-     Pi i  : hastype t T, 
-     Texpr.
-
-and
-
-     [defapp;foo.2]
-
-with value:
-
-     LAMBDA u1, LAMBDA u2, LAMBDA c, LAMBDA T, LAMBDA t, LAMBDA i, _ .
-
-(where _ is a hole that gets filled in by the type checker)
-
-and with LF type family:
-
-     Pi u1 : Uexpr,
-     Pi u2 : Uexpr,
-     Pi c  : ulevelcheck "u1<u2",
-     Pi T  : Texpr,
-     Pi t  : Oexpr,
-     Pi i  : hastype t T,
-     istype ([defapp;foo.1] u1 u2 c T t i).
+     Definition foo1.1 := ?42
+     Definition foo1.1 :  Pi u1:Uexpr, Pi u2:Uexpr, Pi T:Texpr, Pi t:Oexpr, Pi _:(Istype T), Pi _:(Hastype t T), Istype [El](t) .
+     	or
+     Definition foo1.1 :  Pi u1:Uexpr, Pi u2:Uexpr, Pi T:Texpr, Pi t:Oexpr, Pi _:(Istype T), Pi _:(Hastype t T), Istype (foo1.0 u1 u2 T t).
 
 If we encounter an application of foo1 in a TS-term, such as
 
-      foo1 u v X x
+      foo1.1 u v X x
 
 we store an eta-long LF-application of foo1.1 with holes for the judgments:
 
-      ([defapp;foo1.1] u v _ X x _)
+      ([defapp;foo1.1] u v X x _ _)
+
+, i.e., we make the judgment arguments optional.
 
 =============================================================================
 

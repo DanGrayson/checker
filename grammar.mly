@@ -88,13 +88,13 @@ uEquation:
 | u=expr Wequal v=expr 
     { (u,v) }
 | v=expr Wgreaterequal u=expr 
-    { nowhere (APPLY(UU UU_max, [ u; v])), v }
+    { nowhere (APPLY(U U_max, [ u; v])), v }
 | u=expr Wlessequal v=expr 
-    { nowhere (APPLY(UU UU_max, [ u; v])), v }
+    { nowhere (APPLY(U U_max, [ u; v])), v }
 | v=expr Wgreater u=expr 
-    { nowhere (APPLY(UU UU_max, [ nowhere (APPLY( UU (UU_plus 1),[u])); v])), v }
+    { nowhere (APPLY(U U_max, [ nowhere (APPLY( U (U_plus 1),[u])); v])), v }
 | u=expr Wless v=expr 
-    { nowhere (APPLY(UU UU_max, [ nowhere (APPLY( UU (UU_plus 1),[u])); v])), v }
+    { nowhere (APPLY(U U_max, [ nowhere (APPLY( U (U_plus 1),[u])); v])), v }
 
 parenthesized(X): x=delimited(Wlparen,X,Wrparen) {x}
 list_of_parenthesized(X): list(parenthesized(X)) {$1}
@@ -187,6 +187,6 @@ bare_expr:
 | WId Wlparen t=expr Wcomma a=expr Wcomma b=expr Wrparen 
     { make_TT_Id t a b }
 | u=expr Wplus n=Nat
-    { APPLY(UU (UU_plus n), [u]) }
+    { APPLY(U (U_plus n), [u]) }
 | Kumax Wlparen u=expr Wcomma v=expr Wrparen
-    { APPLY(UU UU_max,[u;v])  }
+    { APPLY(U U_max,[u;v])  }

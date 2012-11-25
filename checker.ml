@@ -117,12 +117,12 @@ let checkCommand x =
   Printf.printf "   LF: %s\n" (Printer.lftostring x);
   flush stdout;
   match x with
-  | POS(_,APPLY(OO _,_)) -> 
+  | POS(_,APPLY(O _,_)) -> 
       Printf.printf "     : o-expression\n";
       protect1 (fun () -> Check.ocheck !environment x)
-  | POS(_,APPLY(TT _,_)) -> 
+  | POS(_,APPLY(T _,_)) -> 
       Printf.printf "     : t-expression\n"
-  | POS(_,APPLY(UU _,_)) -> 
+  | POS(_,APPLY(U _,_)) -> 
       Printf.printf "     : u-expression\n"
   | POS(_,APPLY(Defapp _,_)) -> 
       Printf.printf "     : definition\n"

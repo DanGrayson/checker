@@ -15,8 +15,8 @@ let rec ucheck pos env = function
 	    | (_,Ulevel_variable) -> ()
 	    | (_,Type_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a u-variable but found a t-variable: "^s))
 	    | (_,Object_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a u-variable but found an o-variable: "^s)))
-	| APPLY(UU UU_plus n, [u]) -> ucheck pos env u
-	| APPLY(UU UU_max, [u;v]) -> ucheck pos env u;ucheck pos env v
+	| APPLY(U U_plus n, [u]) -> ucheck pos env u
+	| APPLY(U U_max, [u;v]) -> ucheck pos env u;ucheck pos env v
 	| _ -> raise Error.Internal)
     | _ -> raise Error.Internal
 
@@ -36,34 +36,34 @@ let rec tcheck pos env = function
       | Variable _ -> raise Error.Internal
       | APPLY(h,args) -> match h with
 	| Defapp _ -> raise Error.NotImplemented
-	| TT th -> (
+	| T th -> (
 	    match th with 
-	    | TT_El -> ocheckn 1 pos env args
-	    | TT_U -> ucheckn 1 pos env args
-	    | TT_Sigma | TT_Pi -> (
+	    | T_El -> ocheckn 1 pos env args
+	    | T_U -> ucheckn 1 pos env args
+	    | T_Sigma | T_Pi -> (
 		match args with
 		| [t1; LAMBDA( x, t2 )] -> tcheck pos env t1; tcheck_binder pos env x t1 t2
 		| _ -> raise Error.Internal)
-	    | TT_Pt -> ()
-	    | TT_Coprod -> (
+	    | T_Pt -> ()
+	    | T_Coprod -> (
 		match args with
 		| [t1; t2] -> tcheck pos env t1; tcheck pos env t2
 		| _ -> raise Error.Internal)
-	    | TT_Coprod2 -> (
+	    | T_Coprod2 -> (
 		match args with 
 		| [t;t'; LAMBDA( x,u);LAMBDA( x', u');o] -> raise Error.NotImplemented
 		| _ -> raise Error.Internal)
-	    | TT_Empty -> ()
-	    | TT_IC -> raise Error.NotImplemented
-	    | TT_Id -> (
+	    | T_Empty -> ()
+	    | T_IC -> raise Error.NotImplemented
+	    | T_Id -> (
 		match args with
 		| [t; x; y] -> (
 		    tcheck pos env t; ocheck pos env x; ocheck pos env y; 
 		    overify pos env x t; overify pos env y t)
 		| _ -> raise Error.Internal)
 	   )
-	| UU _ -> raise (Error.TypeCheckingFailure(pos, "expected a t-expression but found a u-expression"))
-	| OO _ -> raise (Error.TypeCheckingFailure(pos, "expected a t-expression but found an o-expression"))
+	| U _ -> raise (Error.TypeCheckingFailure(pos, "expected a t-expression but found a u-expression"))
+	| O _ -> raise (Error.TypeCheckingFailure(pos, "expected a t-expression but found an o-expression"))
 and ocheck pos env = function
   | LAMBDA _ -> raise Error.Internal	(* should have been handled higher up *)
   | POS(pos,e) -> match e with
@@ -80,19 +80,19 @@ and ocheck pos env = function
     | Variable (VarGen _ | VarUnused) -> raise Error.Internal
     | APPLY(h,args) -> match h with
       | Defapp _ -> raise Error.NotImplemented
-      | UU th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a u-expression"))
-      | TT th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a t-expression"))
-      | OO oh -> match oh with
-	| OO_u -> ucheckn 1 pos env args
-	| OO_j -> ucheckn 2 pos env args
-	| OO_ev -> (
+      | U th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a u-expression"))
+      | T th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a t-expression"))
+      | O oh -> match oh with
+	| O_u -> ucheckn 1 pos env args
+	| O_j -> ucheckn 2 pos env args
+	| O_ev -> (
 	    match args with 
 	    | [f;o] -> raise Error.Internal (* type should have been filled in by now *)
 	    | [f;x;LAMBDA( v,t)] -> (
 		ocheck pos env f; 
 		ocheck pos env x; 
 		match strip_pos(tau env f) with
-		| APPLY(TT TT_Pi, [s; LAMBDA( w,t')]) ->
+		| APPLY(T T_Pi, [s; LAMBDA( w,t')]) ->
 		    if not ( w = v ) 
 		    then raise Error.NotImplemented;
 		    overify pos env x s;
@@ -100,39 +100,39 @@ and ocheck pos env = function
 		    tverify pos env t t'
 		| _ -> raise (Error.TypeCheckingFailure(get_pos f,"expected a product type")))
 	    | _ -> raise Error.Internal)
-	| OO_lambda -> (
+	| O_lambda -> (
 	    match args with 
 	    | [t;LAMBDA( x,o)] -> tcheck pos env t; ocheck_binder pos env x t o
 	    | _ -> raise Error.Internal)
-	| OO_forall -> (
+	| O_forall -> (
 	    match args with 
 	    | [m;m';o;LAMBDA( v,o')] ->
 		ucheck pos env m; 
 		ucheck pos env m'; 	(* probably have to check something here ... *)
 		ocheck pos env o; 
-		ocheck_binder pos env v (with_pos_of o (APPLY(TT TT_El, [o]))) o'
+		ocheck_binder pos env v (with_pos_of o (APPLY(T T_El, [o]))) o'
 	    | _ -> raise Error.Internal)
-	| OO_pair -> raise Error.NotImplemented
-	| OO_pr1 -> raise Error.NotImplemented
-	| OO_pr2 -> raise Error.NotImplemented
-	| OO_total -> raise Error.NotImplemented
-	| OO_pt -> raise Error.NotImplemented
-	| OO_pt_r -> raise Error.NotImplemented
-	| OO_tt -> raise Error.NotImplemented
-	| OO_coprod -> raise Error.NotImplemented
-	| OO_ii1 -> raise Error.NotImplemented
-	| OO_ii2 -> raise Error.NotImplemented
-	| OO_sum -> raise Error.NotImplemented
-	| OO_empty -> raise Error.NotImplemented
-	| OO_empty_r -> raise Error.NotImplemented
-	| OO_c -> raise Error.NotImplemented
-	| OO_ic_r -> raise Error.NotImplemented
-	| OO_ic -> raise Error.NotImplemented
-	| OO_paths -> raise Error.NotImplemented
-	| OO_refl -> raise Error.NotImplemented
-	| OO_J -> raise Error.NotImplemented
-	| OO_rr0 -> raise Error.NotImplemented
-	| OO_rr1 -> raise Error.NotImplemented
+	| O_pair -> raise Error.NotImplemented
+	| O_pr1 -> raise Error.NotImplemented
+	| O_pr2 -> raise Error.NotImplemented
+	| O_total -> raise Error.NotImplemented
+	| O_pt -> raise Error.NotImplemented
+	| O_pt_r -> raise Error.NotImplemented
+	| O_tt -> raise Error.NotImplemented
+	| O_coprod -> raise Error.NotImplemented
+	| O_ii1 -> raise Error.NotImplemented
+	| O_ii2 -> raise Error.NotImplemented
+	| O_sum -> raise Error.NotImplemented
+	| O_empty -> raise Error.NotImplemented
+	| O_empty_r -> raise Error.NotImplemented
+	| O_c -> raise Error.NotImplemented
+	| O_ic_r -> raise Error.NotImplemented
+	| O_ic -> raise Error.NotImplemented
+	| O_paths -> raise Error.NotImplemented
+	| O_refl -> raise Error.NotImplemented
+	| O_J -> raise Error.NotImplemented
+	| O_rr0 -> raise Error.NotImplemented
+	| O_rr1 -> raise Error.NotImplemented
 and tcheck_binder pos env x t1 t2 =
   let env = obind (x,t1) env in
   tcheck pos env t2
