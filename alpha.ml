@@ -1,24 +1,18 @@
 open Typesystem
 
-module type S =
-    sig
-      val uequal : uContext -> expr -> expr -> bool
-      val tequal : uContext -> expr -> expr -> bool
-      val oequal : uContext -> expr -> expr -> bool
-    end
+type alpha_eq = (var' * var') list
+
+let addalpha x x' (alpha:alpha_eq) = if x=x' then alpha else (x, x') :: alpha
+
+let testalpha' x x' =
+  let rec test = ( 
+    function
+	[] -> x=x'
+      | (y,y') :: alpha -> if x=y then x'=y' else if x'=y' then false else test alpha)
+    in test
+let testalpha  x x' = let x = strip_pos x and x' = strip_pos x' in testalpha' x x'
 
 module Make(Ueq: Universe.Equivalence) = struct
-
-  type alpha_eq = (var' * var') list
-	
-  let addalpha x x' (alpha:alpha_eq) = if x=x' then alpha else (x, x') :: alpha
-  let testalpha'  x x' =
-    let rec test = ( 
-      function
-	  [] -> x=x'
-	| (y,y') :: alpha -> if x=y then x'=y' else if x'=y' then false else test alpha)
-      in test
-  let testalpha  x x' = let x = strip_pos x and x' = strip_pos x' in testalpha' x x'
 
   let uequiv = Ueq.equiv
     

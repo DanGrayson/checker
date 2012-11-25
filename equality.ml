@@ -1,23 +1,9 @@
+open Alpha
 open Typesystem
-
-type alpha_eq = (var' * var') list
-
-let addalpha x x' (alpha:alpha_eq) =
-  let x = strip_pos_var x in
-  let x' = strip_pos_var x' in 
-  if x = x' then alpha
-  else (x,x') :: alpha
-let testalpha'  x x' alpha =
-  let rec test = ( 
-    function
-	[] -> x=x'
-      | (y,y') :: alpha -> if x=y then x'=y' else if x'=y' then false else test alpha)
-  in test alpha
-let testalpha  x x' = let x = strip_pos x and x' = strip_pos x' in testalpha' x x'
 
 let rec eql alpha a b = List.length a = List.length b && List.for_all2 (eq alpha) a b
 and eq alpha e e' = match (e,e') with
-    | LAMBDA (x,body),LAMBDA(x',body') -> let alpha = addalpha x x' alpha in eq alpha body body'
+    | LAMBDA (x,body),LAMBDA(x',body') -> let alpha = addalpha (strip_pos_var x) (strip_pos_var x') alpha in eq alpha body body'
     | POS(pos,e), POS(pos',e') -> (
 	match (e,e') with
 

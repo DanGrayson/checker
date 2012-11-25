@@ -36,6 +36,10 @@ type uHead =
   | U_max
 	(** A pair [(M,M')] denoting [max(M,M')]. *)
 
+let uhead_to_string = function
+  | U_plus n -> "uplus;" ^ (string_of_int n)
+  | U_max -> "max"
+
 (** The various labels for t-expressions of TS. *)
 type tHead =
 	(* TS0: *)
@@ -68,6 +72,20 @@ type tHead =
       (** Identity type; paths type. *)
       (* TS7: *)
       (* end of TS *)
+
+let theads = [ T_El; T_U; T_Pi; T_Sigma; T_Pt; T_Coprod; T_Coprod2; T_Empty; T_IC; T_Id ]
+
+let thead_to_string = function
+  | T_El -> "El"
+  | T_U -> "U"
+  | T_Pi -> "Pi"
+  | T_Sigma -> "Sigma"
+  | T_Pt -> "Pt"
+  | T_Coprod -> "Coprod"
+  | T_Coprod2 -> "Coprod2"
+  | T_Empty -> "Empty"
+  | T_IC -> "IC"
+  | T_Id -> "Id"
 
 (** The various labels for o-expressions of TS. *)
 type oHead =
@@ -186,6 +204,39 @@ type oHead =
 	  judgment that t has type T.  Similarly for the other two types of
 	  judgment in TS.
        *)
+
+let ohead_to_string = function
+  | O_u -> "u"
+  | O_j -> "j"
+  | O_ev -> "ev"
+  | O_lambda -> "lambda"
+  | O_forall -> "forall"
+  | O_pair -> "pair"
+  | O_pr1 -> "pr1"
+  | O_pr2 -> "pr2"
+  | O_total -> "total"
+  | O_pt -> "pt"
+  | O_pt_r -> "pt_r"
+  | O_tt -> "tt"
+  | O_coprod -> "coprod"
+  | O_ii1 -> "ii1"
+  | O_ii2 -> "ii2"
+  | O_sum -> "sum"
+  | O_empty -> "empty"
+  | O_empty_r -> "empty_r"
+  | O_c -> "c"
+  | O_ic_r -> "ic_r"
+  | O_ic -> "ic"
+  | O_paths -> "paths"
+  | O_refl -> "refl"
+  | O_J -> "J"
+  | O_rr0 -> "rr0"
+  | O_rr1 -> "rr1"
+
+let oheads = [ O_u; O_j; O_ev; O_lambda; O_forall; O_pair; O_pr1; O_pr2;
+  O_total; O_pt; O_pt_r; O_tt; O_coprod; O_ii1; O_ii2; O_sum; O_empty;
+  O_empty_r; O_c; O_ic_r; O_ic; O_paths; O_refl; O_J; O_rr0; O_rr1 ]
+
 type label =
   | U of uHead			(** labels for u-expressions of TS *)
   | T of tHead			(** labels for t-expressions of TS *)
@@ -227,9 +278,12 @@ and bare_expr =
   | APPLY of label * expr list
 	(** Iterated function application. *)
 
-	(** The following constants for LF type families segregate TS
+	(** The following type family constants for LF type families segregate TS
 	    expressions into three forms: u-expressions, t-expressions, and
-	    o-expressions, and they introduce the four forms of judgments. *)
+	    o-expressions, and they introduce the four forms of judgments. 
+
+	    Notation: constructors starting with "F_" refer to type families of
+	    LF. *)
 type tfHead =
   | F_uexp
   | F_texp
@@ -239,17 +293,32 @@ type tfHead =
   | F_Type_equality
   | F_Object_equality
 
+let tfhead_to_string = function
+  | F_uexp -> "Uexp"
+  | F_texp -> "Texp"
+  | F_oexp -> "Oexp"
+  | F_Is_type -> "Istype"
+  | F_Has_type -> "Hastype"
+  | F_Type_equality -> "TEquality"
+  | F_Object_equality -> "OEquality"
+
+let tfheads = [ F_uexp; F_texp; F_oexp; F_Is_type; F_Has_type; F_Type_equality; F_Object_equality ]
+
+let tfhead_strings = List.map (fun x -> x , tfhead_to_string x) tfheads
+
 type canonical_type_family =
   | F_Pi of var' * canonical_type_family * canonical_type_family
   | F_APPLY of tfHead * expr list
-  | F_Hole
+  | F_hole
 
 let ( ** ) f x = F_APPLY(f,x)
-let hole = F_Hole
+
 let uexp = F_uexp ** []
 let texp = F_texp ** []
 let oexp = F_oexp ** []
+
 let ( @> ) a b = F_Pi(VarUnused, a, b)
+
 let istype t = F_Is_type ** [t]
 let hastype o t = F_Has_type ** [o;t]
 let type_equality t t' = F_Type_equality ** [t;t']
@@ -258,84 +327,78 @@ let object_equality o o' t = F_Object_equality ** [o;o';t]
 let texp1 = oexp @> texp
 let texp2 = oexp @> oexp @> texp
 let texp3 = oexp @> oexp @> oexp @> texp
+
 let oexp1 = oexp @> oexp
 let oexp2 = oexp @> oexp @> oexp
 let oexp3 = oexp @> oexp @> oexp @> oexp
-let type_families = [
-       T T_El, oexp  @> texp;
-        T T_U, uexp  @> texp;
-       T T_Pi, texp  @> texp1 @> texp;
-    T T_Sigma, texp  @> texp1 @> texp;
-       T T_Pt, texp;
-   T T_Coprod, texp  @> texp  @> texp;
-  T T_Coprod2, texp  @> texp  @> texp1 @> texp1 @> texp;
-    T T_Empty, texp;
-       T T_IC, texp  @> oexp  @> texp1 @> texp2 @> oexp3 @> texp;
-       T T_Id, texp  @> oexp  @> oexp  @> texp;
-        O O_u, uexp  @> oexp;
-        O O_j, uexp  @> uexp  @> oexp;
-       O O_ev, oexp  @> oexp  @> texp1 @> oexp;
-   O O_lambda, texp  @> oexp1 @> oexp;
-   O O_forall, texp  @> texp1 @> texp;
-     O O_pair, oexp  @> oexp  @> texp1 @> oexp;
-      O O_pr1, texp  @> texp1 @> oexp  @> oexp;
-      O O_pr2, texp  @> texp1 @> oexp  @> oexp;
-    O O_total, uexp  @> uexp  @> oexp  @> oexp1 @> oexp;
-       O O_pt, oexp;
-     O O_pt_r, oexp  @> texp1 @> oexp;
-       O O_tt, oexp;
-   O O_coprod, uexp  @> uexp  @> oexp  @> oexp  @> oexp;
-      O O_ii1, texp  @> texp  @> oexp  @> oexp;
-      O O_ii2, texp  @> texp  @> oexp  @> oexp;
-      O O_sum, texp  @> texp  @> oexp  @> oexp  @> oexp  @> texp1 @> oexp;
-    O O_empty, oexp;
-  O O_empty_r, texp  @> oexp  @> oexp;
-        O O_c, texp  @> oexp  @> texp1 @> texp2 @> oexp3 @> oexp  @> oexp  @> oexp;
-     O O_ic_r, texp  @> oexp  @> texp1 @> texp2 @> oexp3 @> oexp  @> texp2 @> oexp  @> oexp;
-       O O_ic, oexp  @> oexp  @> oexp1 @> oexp2 @> oexp3 @> oexp;
-    O O_paths, texp  @> oexp  @> oexp  @> oexp;
-     O O_refl, texp  @> oexp  @> oexp;
-        O O_J, texp  @> oexp  @> oexp  @> oexp  @> oexp  @> texp2 @> oexp;
-      O O_rr0, uexp  @> uexp  @> oexp  @> oexp  @> oexp  @> oexp;
-      O O_rr1, uexp  @> oexp  @> oexp  @> oexp;
-];
 
+let uhead_to_type_family = function
+  | U_plus _ -> uexp @> uexp
+  | U_max -> uexp @> uexp @> uexp
+
+let thead_to_type_family = function
+  | T_El -> oexp @> texp
+  | T_U -> uexp @> texp
+  | T_Pi -> texp @> texp1 @> texp
+  | T_Sigma -> texp @> texp1 @> texp
+  | T_Pt -> texp
+  | T_Coprod -> texp @> texp @> texp
+  | T_Coprod2 -> texp @> texp @> texp1 @> texp1 @> texp
+  | T_Empty -> texp
+  | T_IC -> texp @> oexp @> texp1 @> texp2 @> oexp3 @> texp
+  | T_Id -> texp @> oexp @> oexp @> texp
+
+let ohead_to_type_family = function
+  | O_u -> uexp @> oexp
+  | O_j -> uexp @> uexp @> oexp
+  | O_ev -> oexp @> oexp @> texp1 @> oexp
+  | O_lambda -> texp @> oexp1 @> oexp
+  | O_forall -> texp @> texp1 @> texp
+  | O_pair -> oexp @> oexp @> texp1 @> oexp
+  | O_pr1 -> texp @> texp1 @> oexp @> oexp
+  | O_pr2 -> texp @> texp1 @> oexp @> oexp
+  | O_total -> uexp @> uexp @> oexp @> oexp1 @> oexp
+  | O_pt -> oexp
+  | O_pt_r -> oexp @> texp1 @> oexp
+  | O_tt -> oexp
+  | O_coprod -> uexp @> uexp @> oexp @> oexp @> oexp
+  | O_ii1 -> texp @> texp @> oexp @> oexp
+  | O_ii2 -> texp @> texp @> oexp @> oexp
+  | O_sum -> texp @> texp @> oexp @> oexp @> oexp @> texp1 @> oexp
+  | O_empty -> oexp
+  | O_empty_r -> texp @> oexp @> oexp
+  | O_c -> texp @> oexp @> texp1 @> texp2 @> oexp3 @> oexp @> oexp @> oexp
+  | O_ic_r -> texp @> oexp @> texp1 @> texp2 @> oexp3 @> oexp @> texp2 @> oexp @> oexp
+  | O_ic -> oexp @> oexp @> oexp1 @> oexp2 @> oexp3 @> oexp
+  | O_paths -> texp @> oexp @> oexp @> oexp
+  | O_refl -> texp @> oexp @> oexp
+  | O_J -> texp @> oexp @> oexp @> oexp @> oexp @> texp2 @> oexp
+  | O_rr0 -> uexp @> uexp @> oexp @> oexp @> oexp @> oexp
+  | O_rr1 -> uexp @> oexp @> oexp @> oexp
+
+let label_to_type_family = function
+  | U uh -> uhead_to_type_family uh
+  | T th -> thead_to_type_family th
+  | O oh -> ohead_to_type_family oh
+  | Defapp _ -> raise NotImplemented
+
+(** Constructors for the "kinds" of LF. 
+
+    Notation: constructors starting with "K_" refer to kinds of LF. *)
 type kind =
   | K_type
   | K_Pi of var' * canonical_type_family * kind
 
 let ( @@> ) a b = K_Pi(VarUnused, a, b)
 
-let kinds = [
-             F_uexp, K_type;
-             F_texp, K_type;
-             F_oexp, K_type;
-          F_Is_type, texp @@> K_type;
-         F_Has_type, oexp @@> texp @@> K_type;
-    F_Type_equality, texp @@> texp @@> K_type;
-  F_Object_equality, oexp @@> texp @@> texp @@> K_type;
-]
-
-let rec get_u = function
-  | POS (_,(Variable _ | APPLY(U _,_) as u)) -> u
-  | _ -> raise Error.Internal
-
-let with_pos pos e = POS (pos, e)
-let strip_pos = function
-  | POS(_,x) -> x
-  | _ -> raise Error.Internal
-let get_pos = function
-  | POS(pos,_) -> pos
-  | _ -> Error.Nowhere
-let with_pos_of x e = POS (get_pos x, e)
-let nowhere x = with_pos Error.Nowhere x
-let new_hole' = 
-  let counter = ref 0 in
-  function () -> (
-    let h = EmptyHole !counter in
-    incr counter;
-    h)
-let new_hole () = nowhere (new_hole' ())
+let tfhead_to_kind = function
+  | F_uexp -> K_type
+  | F_texp -> K_type
+  | F_oexp -> K_type
+  | F_Is_type -> texp @@> K_type
+  | F_Has_type -> oexp @@> texp @@> K_type
+  | F_Type_equality -> texp @@> texp @@> K_type
+  | F_Object_equality -> oexp @@> texp @@> texp @@> K_type
 
 (** 
     A universe context [UC = (Fu,A)] is represented by a list of universe variables [Fu] and a list of
@@ -393,6 +456,23 @@ let newfresh =
   fun v -> match v with 
       Var x | VarGen(_,x) -> newgen x
     | VarUnused as v -> v
+
+let with_pos pos e = POS (pos, e)
+let strip_pos = function
+  | POS(_,x) -> x
+  | _ -> raise Error.Internal
+let get_pos = function
+  | POS(pos,_) -> pos
+  | _ -> Error.Nowhere
+let with_pos_of x e = POS (get_pos x, e)
+let nowhere x = with_pos Error.Nowhere x
+let new_hole' = 
+  let counter = ref 0 in
+  function () -> (
+    let h = EmptyHole !counter in
+    incr counter;
+    h)
+let new_hole () = nowhere (new_hole' ())
 
 (*
   Local Variables:

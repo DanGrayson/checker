@@ -7,48 +7,6 @@ let vartostring' = function
   | VarGen(i,x) -> x ^ "_" ^ (string_of_int i)
   | VarUnused -> "_"
 let vartostring v = vartostring' (strip_pos_var v)
-
-let uhead_to_string = function
-  | U_plus n -> "uplus;" ^ (string_of_int n)
-  | U_max -> "max"
-let thead_to_string = function
-  | T_El -> "El"
-  | T_U -> "U"
-  | T_Pi -> "Pi"
-  | T_Sigma -> "Sigma"
-  | T_Pt -> "Pt"
-  | T_Coprod -> "Coprod"
-  | T_Coprod2 -> "Coprod2"
-  | T_Empty -> "Empty"
-  | T_IC -> "IC"
-  | T_Id -> "Id"
-let ohead_to_string = function
-  | O_u -> "u"
-  | O_j -> "j"
-  | O_ev -> "ev"
-  | O_lambda -> "lambda"
-  | O_forall -> "forall"
-  | O_pair -> "pair"
-  | O_pr1 -> "pr1"
-  | O_pr2 -> "pr2"
-  | O_total -> "total"
-  | O_pt -> "pt"
-  | O_pt_r -> "pt_r"
-  | O_tt -> "tt"
-  | O_coprod -> "coprod"
-  | O_ii1 -> "ii1"
-  | O_ii2 -> "ii2"
-  | O_sum -> "sum"
-  | O_empty -> "empty"
-  | O_empty_r -> "empty_r"
-  | O_c -> "c"
-  | O_ic_r -> "ic_r"
-  | O_ic -> "ic"
-  | O_paths -> "paths"
-  | O_refl -> "refl"
-  | O_J -> "J"
-  | O_rr0 -> "rr0"
-  | O_rr1 -> "rr1"
 let head_to_string = function
   | Defapp (name,i) -> "[defapp;" ^ name ^ "," ^ (string_of_int i) ^ "]"
   | U h -> "[" ^ uhead_to_string h ^ "]"
@@ -127,15 +85,6 @@ let rec ts_expr_to_string = function
 and elisttostring s = String.concat "," (List.map ts_expr_to_string s)
 and parenelisttostring s = String.concat "" [ "("; elisttostring s; ")" ]
 
-let tfhead_to_string = function
-  | F_uexp -> "Uexp"
-  | F_texp -> "Texp"
-  | F_oexp -> "Oexp"
-  | F_Is_type -> "Istype"
-  | F_Has_type -> "Hastype"
-  | F_Type_equality -> "TEquality"
-  | F_Object_equality -> "OEquality"
-
 let parens x = "(" ^ x ^ ")"
 let space x = " " ^ x
 let (<<-) f g x = f (g x)
@@ -143,7 +92,7 @@ let concat = String.concat ""
 let concatl x = concat (List.flatten x)
 
 let rec lf_type_family_to_string = function
-  | F_Hole -> "_"
+  | F_hole -> "_"
   | F_APPLY(hd,args) -> 
       let s = concat [tfhead_to_string hd; concat (List.map (space <<- ts_expr_to_string) args)] in
       if String.contains s ' ' then concat ["(";s;")"] else s
