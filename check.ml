@@ -93,7 +93,7 @@ and ocheck pos env = function
 		ocheck pos env x; 
 		match strip_pos(tau env f) with
 		| APPLY(T T_Pi, [s; LAMBDA( w,t')]) ->
-		    if not ( w = v ) 
+		    if not ( (strip_pos_var w) = (strip_pos_var v) ) 
 		    then raise Error.NotImplemented;
 		    overify pos env x s;
 		    let env = obind (v,s) env in 

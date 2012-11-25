@@ -493,6 +493,9 @@ let new_hole' =
     h)
 let new_hole () = nowhere (new_hole' ())
 
+exception Internal_expr of expr
+exception Unimplemented_expr of expr
+
 (*
   Local Variables:
   compile-command: "ocamlbuild typesystem.cmo "

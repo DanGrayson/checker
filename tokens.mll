@@ -83,6 +83,7 @@ rule expr_tokens = parse
   | ':'  { Wcolon }
   | '='  { Wequal }
   | '=' '=' { Wequalequal }
+  | '@' '@' { Watat }
   | '>' '='  { Wgreaterequal }
   | '>' { Wgreater }
   | '<' '='  { Wlessequal }

@@ -234,7 +234,7 @@ let parse_string grammar s =
     protect (grammar (Tokens.expr_tokens)) lexbuf lexpos
 let expr_from_string = parse_string Grammar.ts_exprEof
 
-let _ = 
+let toplevel() = 
   Arg.parse [
   ("--debug" , Arg.Set Debugging.debug_mode, "turn on debug mode")
 ]
@@ -243,3 +243,15 @@ let _ =
    (try printCommand (expr_from_string "Pi f:T->[U](uuu0), Pi o:T, *f o" ) with Error_Handled -> ());
    (try printCommand (expr_from_string "lambda f:T->U, lambda o:T, f o") with Error_Handled -> ());
   leave ""
+
+let _ = try
+  toplevel()
+with
+| Internal_expr      ( POS(pos,_) as e ) 
+| Internal_expr      ( LAMBDA(_,POS(pos,_)) as e ) 
+| Unimplemented_expr ( POS(pos,_) as e )
+| Unimplemented_expr ( LAMBDA(_,POS(pos,_)) as e ) 
+    as ex ->
+    Printf.fprintf stderr "%s: internal error on expr %s\n" (Error.error_format_pos pos) (Printer.lf_expr_to_string e);
+    raise ex
+

@@ -18,8 +18,12 @@ Check T.
 Check [El]([u](u2)).
 
 # test lf-expr input format:
-Print (El (u u2)).
 Print (LAMBDA x, (ev f x (LAMBDA y, T))).
+Check @@ (El x).
+Check @@ (El (u u2)).
+Check @@ (Pi T (LAMBDA x, U)).
+Check @@ (lambda (Pi T (LAMBDA _, U)) (LAMBDA f, (lambda T (LAMBDA o, (ev f o (LAMBDA _, U)))))).
+Check @@ (lambda U (LAMBDA k, (lambda (Pi T (LAMBDA _, (El k))) (LAMBDA g, (lambda (Pi T (LAMBDA t, (El (ev g t (LAMBDA _, (El k)))))) (LAMBDA f, (lambda T (LAMBDA o, (ev f o (LAMBDA t, (El (ev g t (LAMBDA _, (El k)))))))))))))).
 
 Check [U](u1).
 Check [j](u1, u2).

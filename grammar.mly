@@ -18,7 +18,7 @@ open Grammar0
 %token Wgreaterequal Wgreater Wlessequal Wless Wsemi
 %token KUlevel Kumax KType KPi Klambda KSigma
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall Kforall WSigma WCoprod WCoprod2 WEmpty Wempty Wempty_r WIC WId
-%token WTau WPrint WDefine WShow WEnd WVariable WAlpha Weof
+%token WTau WPrint WDefine WShow WEnd WVariable WAlpha Weof Watat
 %token WCheck WCheckUniverses
 %token Wflush
 %token Prec_application
@@ -33,29 +33,41 @@ open Grammar0
 %left Prec_application
 %right Klambda Kforall
 %nonassoc Wforall Wunderscore Wplus Wu Wlparen Wlambda Wj Wev Wdef IDENTIFIER Wempty_r Wempty 
-	  WU WSigma WPi WId WIC WEmpty WEl WCoprod2 WCoprod Kumax
+	  WU WSigma WPi WId WIC WEmpty WEl WCoprod2 WCoprod Kumax Watat
 
 %%
 
-lf_exprEof: a=lfexpr Weof {a}
+lf_exprEof: a=lf_expr Weof {a}
 
-lfexpr:
+lf_expr:
 | e=bare_lfexpr
   { with_pos (Error.Position($startpos, $endpos)) e  }
-| Wlparen Flambda v=variable Wcomma body=lfexpr Wrparen
+| Wlparen Flambda v=variable Wcomma body=lf_expr Wrparen
     { LAMBDA(v,body) }
+| Wlparen Flambda v=variable_unused Wcomma body=lf_expr Wrparen
+    { LAMBDA(v,body) }
+
+variable_unused:
+| Wunderscore
+    { Error.Position($startpos, $endpos), VarUnused }
 
 bare_lfexpr:
 | bare_variable
     { Variable $1 }
 | Wunderscore
     { new_hole' () }
-| Wlparen f=lfhead args=list(lfexpr) Wrparen
+| Wlparen f=lfhead args=list(lf_expr) Wrparen
     { APPLY(f,args) }
 
 lfhead:
 | Klambda
     { O O_lambda }
+| Kforall
+    { O O_forall }
+| KPi
+    { T T_Pi }
+| KSigma
+    { T T_Sigma }
 | l=IDENTIFIER 
     {
      try List.assoc l label_strings
@@ -72,24 +84,24 @@ command0:
     { Toplevel.Variable vars }
 | WVariable vars=nonempty_list(IDENTIFIER) Wcolon KUlevel eqns=preceded(Wsemi,uEquation)* Wperiod
     { Toplevel.UVariable (vars,eqns) }
-| WPrint e=lfexpr Wperiod
+| WPrint e=lf_expr Wperiod
     { Toplevel.Print e }
-| WCheck o=tsexpr Wperiod
+| WCheck o=ts_expr Wperiod
     { Toplevel.Check o }
 | WCheckUniverses Wperiod
     { Toplevel.CheckUniverses }
-| WAlpha e1=tsexpr Wequalequal e2=tsexpr Wperiod
+| WAlpha e1=ts_expr Wequalequal e2=ts_expr Wperiod
     { Toplevel.Alpha (e1, e2) }
-| WTau o=tsexpr Wperiod
+| WTau o=ts_expr Wperiod
     { Toplevel.Type o }
 
-| WDefine name=IDENTIFIER parms=parmList Wcolonequal t=tsexpr Wperiod 
+| WDefine name=IDENTIFIER parms=parmList Wcolonequal t=ts_expr Wperiod 
     { Toplevel.Definition (tDefinition name (fixParmList parms) t) }
-| WDefine name=IDENTIFIER parms=parmList Wcolonequal o=tsexpr Wcolon t=tsexpr Wperiod 
+| WDefine name=IDENTIFIER parms=parmList Wcolonequal o=ts_expr Wcolon t=ts_expr Wperiod 
     { Toplevel.Definition (oDefinition name (fixParmList parms) o t) }
-| WDefine name=IDENTIFIER parms=parmList Wcolonequal t1=tsexpr Wequalequal t2=tsexpr Wperiod 
+| WDefine name=IDENTIFIER parms=parmList Wcolonequal t1=ts_expr Wequalequal t2=ts_expr Wperiod 
     { Toplevel.Definition (teqDefinition (Ident name,(fixParmList parms,t1,t2))) }
-| WDefine name=IDENTIFIER parms=parmList Wcolonequal o1=tsexpr Wequalequal o2=tsexpr Wcolon t=tsexpr Wperiod 
+| WDefine name=IDENTIFIER parms=parmList Wcolonequal o1=ts_expr Wequalequal o2=ts_expr Wcolon t=ts_expr Wperiod 
     { Toplevel.Definition (oeqDefinition (Ident name,(fixParmList parms,o1,o2,t))) }
 
 | WShow Wperiod 
@@ -107,19 +119,19 @@ uParm: vars=nonempty_list(IDENTIFIER) Wcolon KUlevel eqns=preceded(Wsemi,uEquati
     { UParm (UContext ((List.map make_Var vars),eqns)) }
 tParm: vars=nonempty_list(IDENTIFIER) Wcolon KType 
     { TParm (List.map make_Var vars) }
-oParm: vars=nonempty_list(IDENTIFIER) Wcolon t=tsexpr 
+oParm: vars=nonempty_list(IDENTIFIER) Wcolon t=ts_expr 
     { OParm (List.map (fun s -> (Var s,t)) vars) }
 
 uEquation:
-| u=tsexpr Wequal v=tsexpr 
+| u=ts_expr Wequal v=ts_expr 
     { (u,v) }
-| v=tsexpr Wgreaterequal u=tsexpr 
+| v=ts_expr Wgreaterequal u=ts_expr 
     { nowhere (APPLY(U U_max, [ u; v])), v }
-| u=tsexpr Wlessequal v=tsexpr 
+| u=ts_expr Wlessequal v=ts_expr 
     { nowhere (APPLY(U U_max, [ u; v])), v }
-| v=tsexpr Wgreater u=tsexpr 
+| v=ts_expr Wgreater u=ts_expr 
     { nowhere (APPLY(U U_max, [ nowhere (APPLY( U (U_plus 1),[u])); v])), v }
-| u=tsexpr Wless v=tsexpr 
+| u=ts_expr Wless v=ts_expr 
     { nowhere (APPLY(U U_max, [ nowhere (APPLY( U (U_plus 1),[u])); v])), v }
 
 parenthesized(X): x=delimited(Wlparen,X,Wrparen) {x}
@@ -130,16 +142,18 @@ parm:
 | tParm { $1 }
 | oParm { $1 } 
 
-ts_exprEof: a=tsexpr Weof {a}
+ts_exprEof: a=ts_expr Weof {a}
 
 variable:
 | bare_variable
     { Error.Position($startpos, $endpos), $1 }
-tsexpr:
+ts_expr:
 | bare_ts_expr
     { with_pos (Error.Position($startpos, $endpos)) $1 }
-| parenthesized(tsexpr) 
+| parenthesized(ts_expr) 
     {$1}
+| Watat e=lf_expr
+    {e}
 bare_variable:
 | IDENTIFIER
     { Var $1 }
@@ -148,73 +162,73 @@ bare_ts_expr:
     { Variable $1 }
 | Wunderscore
     { new_hole' () }
-| Wu Wlparen u=tsexpr Wrparen
+| Wu Wlparen u=ts_expr Wrparen
     { make_OO_u u }
-| Wj Wlparen u=tsexpr Wcomma v=tsexpr Wrparen
+| Wj Wlparen u=ts_expr Wcomma v=ts_expr Wrparen
     { make_OO_j u v }
-| Wev x=variable Wrbracket Wlparen f=tsexpr Wcomma o=tsexpr Wcomma t=tsexpr Wrparen
+| Wev x=variable Wrbracket Wlparen f=ts_expr Wcomma o=ts_expr Wcomma t=ts_expr Wrparen
     { make_OO_ev f o (x,t) }
-| Wev Wunderscore Wrbracket Wlparen f=tsexpr Wcomma o=tsexpr Wcomma t=tsexpr Wrparen
+| Wev Wunderscore Wrbracket Wlparen f=ts_expr Wcomma o=ts_expr Wcomma t=ts_expr Wrparen
     { make_OO_ev f o ((Error.Nowhere, VarUnused), t) }
-| f=tsexpr o=tsexpr
+| f=ts_expr o=ts_expr
     %prec Prec_application
     { make_OO_ev f o ((Error.Nowhere, VarUnused), with_pos (Error.Position($startpos, $endpos)) (new_hole'())) }
-| Wlambda x=variable Wrbracket Wlparen t=tsexpr Wcomma o=tsexpr Wrparen
+| Wlambda x=variable Wrbracket Wlparen t=ts_expr Wcomma o=ts_expr Wrparen
     { make_OO_lambda t (x,o) }
-| Klambda x=variable Wcolon t=tsexpr Wcomma o=tsexpr
+| Klambda x=variable Wcolon t=ts_expr Wcomma o=ts_expr
     %prec Klambda
     { make_OO_lambda t (x,o) }
-| Wforall x=variable Wrbracket Wlparen u1=tsexpr Wcomma u2=tsexpr Wcomma o1=tsexpr Wcomma o2=tsexpr Wrparen
+| Wforall x=variable Wrbracket Wlparen u1=ts_expr Wcomma u2=ts_expr Wcomma o1=ts_expr Wcomma o2=ts_expr Wrparen
     { make_OO_forall u1 u2 o1 (x,o2) }
-| Kforall x=variable Wcolon Wstar o1=tsexpr Wcomma o2=tsexpr (* not sure about this syntax *)
+| Kforall x=variable Wcolon Wstar o1=ts_expr Wcomma o2=ts_expr (* not sure about this syntax *)
     %prec Kforall
     { make_OO_forall (new_hole ()) (new_hole ()) o1 (x,o2) }
 | Wempty Wlparen Wrparen
     { make_OO_empty }
-| Wempty_r Wlparen t=tsexpr Wcomma o=tsexpr Wrparen
+| Wempty_r Wlparen t=ts_expr Wcomma o=ts_expr Wrparen
     { make_OO_empty_r t o }
 | Wdef name=IDENTIFIER Wrbracket Wlparen 
-    u=separated_list(Wcomma,tsexpr) 
+    u=separated_list(Wcomma,ts_expr) 
     Wrparen { make_Defapp name u [] [] }
 | Wdef name=IDENTIFIER Wrbracket Wlparen 
-    u=separated_list(Wcomma,tsexpr) Wsemi
-    t=separated_list(Wcomma,tsexpr) 
+    u=separated_list(Wcomma,ts_expr) Wsemi
+    t=separated_list(Wcomma,ts_expr) 
     Wrparen { make_Defapp name u t [] }
 | Wdef name=IDENTIFIER Wrbracket Wlparen 
-    u=separated_list(Wcomma,tsexpr) Wsemi
-    t=separated_list(Wcomma,tsexpr) Wsemi
-    o=separated_list(Wcomma,tsexpr) 
+    u=separated_list(Wcomma,ts_expr) Wsemi
+    t=separated_list(Wcomma,ts_expr) Wsemi
+    o=separated_list(Wcomma,ts_expr) 
     Wrparen { make_Defapp name u t o }
-| WEl Wlparen o=tsexpr Wrparen
+| WEl Wlparen o=ts_expr Wrparen
     { make_TT_El o }
-| Wstar o=tsexpr
+| Wstar o=ts_expr
     { make_TT_El o }
-| WU Wlparen u=tsexpr Wrparen
+| WU Wlparen u=ts_expr Wrparen
     { make_TT_U u }
-| WPi x=variable Wrbracket Wlparen t1=tsexpr Wcomma t2=tsexpr Wrparen 
+| WPi x=variable Wrbracket Wlparen t1=ts_expr Wcomma t2=ts_expr Wrparen 
     { make_TT_Pi t1 (x,t2) }
-| KPi x=variable Wcolon t1=tsexpr Wcomma t2=tsexpr
+| KPi x=variable Wcolon t1=ts_expr Wcomma t2=ts_expr
     %prec KPi
     { make_TT_Pi t1 (x,t2) }
-| t=tsexpr Warrow u=tsexpr
+| t=ts_expr Warrow u=ts_expr
     { make_TT_Pi t ((Error.Nowhere, VarUnused),u) }
-| WSigma x=variable Wrbracket Wlparen t1=tsexpr Wcomma t2=tsexpr Wrparen
+| WSigma x=variable Wrbracket Wlparen t1=ts_expr Wcomma t2=ts_expr Wrparen
     { make_TT_Sigma t1 (x,t2) }
-| KSigma x=variable Wcolon t1=tsexpr Wcomma t2=tsexpr
+| KSigma x=variable Wcolon t1=ts_expr Wcomma t2=ts_expr
     %prec KSigma
     { make_TT_Sigma t1 (x,t2) }
-| WCoprod Wlparen t1=tsexpr Wcomma t2=tsexpr Wrparen
+| WCoprod Wlparen t1=ts_expr Wcomma t2=ts_expr Wrparen
     { make_TT_Coprod t1 t2 }
-| WCoprod2 x1=variable Wcomma x2=variable Wrbracket Wlparen t1=tsexpr Wcomma t2=tsexpr Wcomma s1=tsexpr Wcomma s2=tsexpr Wcomma o=tsexpr Wrparen
+| WCoprod2 x1=variable Wcomma x2=variable Wrbracket Wlparen t1=ts_expr Wcomma t2=ts_expr Wcomma s1=ts_expr Wcomma s2=ts_expr Wcomma o=ts_expr Wrparen
     { make_TT_Coprod2 t1 t2 (x1,s1) (x2,s2) o }
 | WEmpty Wlparen Wrparen 
     { make_TT_Empty }
 | WIC x=variable Wcomma y=variable Wcomma z=variable Wrbracket
-    Wlparen tA=tsexpr Wcomma a=tsexpr Wcomma tB=tsexpr Wcomma tD=tsexpr Wcomma q=tsexpr Wrparen 
+    Wlparen tA=ts_expr Wcomma a=ts_expr Wcomma tB=ts_expr Wcomma tD=ts_expr Wcomma q=ts_expr Wrparen 
     { make_TT_IC tA a (x,tB,(y,tD,(z,q))) }
-| WId Wlparen t=tsexpr Wcomma a=tsexpr Wcomma b=tsexpr Wrparen 
+| WId Wlparen t=ts_expr Wcomma a=ts_expr Wcomma b=ts_expr Wrparen 
     { make_TT_Id t a b }
-| u=tsexpr Wplus n=Nat
+| u=ts_expr Wplus n=Nat
     { APPLY(U (U_plus n), [u]) }
-| Kumax Wlparen u=tsexpr Wcomma v=tsexpr Wrparen
+| Kumax Wlparen u=ts_expr Wcomma v=ts_expr Wrparen
     { APPLY(U U_max,[u;v])  }

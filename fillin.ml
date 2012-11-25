@@ -11,8 +11,8 @@ open Tau
 
 let rec fillinlist pos env es = List.map (fillin pos env) es
 and fillin pos env = function
-    | LAMBDA(v,body) -> raise Error.NotImplemented
-    | POS(pos,e) -> POS(pos, match e with
+    | LAMBDA(v,body) as l -> raise (Internal_expr l)
+    | POS(pos,e) as oe -> POS(pos, match e with
       | EmptyHole _ -> raise (Error.TypingError(pos,"empty hole, no method for filling"))
       | Variable _ as v -> v
       | APPLY(label,branches) -> (
@@ -27,7 +27,7 @@ and fillin pos env = function
 	      match branches with 
 	      | [t; LAMBDA( x,o)] -> 
 		  Helpers.make_TT_Pi (fillin pos env t)  (x, fillin pos (obind (x,t) env) o)
-	      | _ -> raise Error.Internal)
+	      | _ -> raise (Internal_expr oe))
 	  | O O_forall -> (
 	      match branches with 
 	      | [m; m'; n; LAMBDA( x,o)] -> 
