@@ -93,6 +93,6 @@ Check lambda f:X->T, lambda y:X, f y.
 
 # Check forall x:*y, z.	# fix the location of the holes
 
-Define foo1 (u1 u2 : Ulevel; u1<u2) (T : Type) (t : T) := *t.
+Define foo1 (u1 u2 : Ulevel) (T : Type) (t : T) := *t.
 
 Show.

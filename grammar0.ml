@@ -39,8 +39,8 @@ let tDefinition (name:string) ((uc,tc,oc):(uContext * tContext * oContext)) (t:e
   in let rec wrapi t = function
     | [] -> t
     | (z,u) :: rest -> 
-	let t = TF_Pi(newfresh z,hastype (nowhere (Variable z)) u,t) in
-	let t = TF_Pi(newfresh z,istype u,t) in
+	let t = TF_Pi(VarUnused,hastype (nowhere (Variable z)) u,t) in
+	let t = TF_Pi(VarUnused,istype u,t) in
 	wrapi t rest
   in let k = texp
   in let wt = t
