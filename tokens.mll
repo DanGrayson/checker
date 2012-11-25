@@ -35,6 +35,7 @@ rule expr_tokens = parse
   | "LAMBDA" { Flambda }
   | "Check" white "Universes" { WCheckUniverses }
   | "Print" { WPrint }
+  | "F_Print" { WF_Print }
   | "Alpha" { WAlpha }
   | "Check" { WCheck }
   | "Tau" { WTau }

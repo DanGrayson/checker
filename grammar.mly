@@ -5,16 +5,17 @@ open Helpers
 open Grammar0
 
 %}
-%start command unusedtokens ts_exprEof lf_exprEof
+%start command unusedtokens ts_exprEof lf_exprEof lf_type
 %type <Toplevel.command> command
 %type <Typesystem.expr> ts_exprEof
 %type <Typesystem.expr> lf_exprEof
+%type <Typesystem.canonical_type_family> lf_type
 %token <int> Nat
 %type <unit> unusedtokens
 %token <string> IDENTIFIER
 %token <Typesystem.var> Var_token 
 %token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow Wequalequal Wequal Wturnstile Wtriangle Wcolonequal
-%token Wlbrace Wrbrace Wbar Wunderscore
+%token Wlbrace Wrbrace Wbar Wunderscore WF_Print
 %token Wgreaterequal Wgreater Wlessequal Wless Wsemi
 %token KUlevel Kumax KType KPi Klambda KSigma
 %token WEl WPi Wev Wu Wj WU Wlambda Wforall Kforall WSigma WCoprod WCoprod2 WEmpty Wempty Wempty_r WIC WId
@@ -37,10 +38,23 @@ open Grammar0
 
 %%
 
+lf_type:
+| Wlparen t=lf_type Wrparen 
+    { t }
+| f=lf_type_head args=list(lf_expr)
+    { F_APPLY(f,args) }
+| KPi v=bare_variable Wcolon a=lf_type Wcomma b=lf_type
+    { F_Pi(v,a,b) }
+
+lf_type_head:
+| l=IDENTIFIER 
+    { try List.assoc l tfhead_strings 
+    with Not_found -> raise Error.NotImplemented }
+
 lf_exprEof: a=lf_expr Weof {a}
 
 lf_expr:
-| e=bare_lfexpr
+| e=bare_lf_expr
   { with_pos (Error.Position($startpos, $endpos)) e  }
 | Wlparen Flambda v=variable Wcomma body=lf_expr Wrparen
     { LAMBDA(v,body) }
@@ -51,15 +65,15 @@ variable_unused:
 | Wunderscore
     { Error.Position($startpos, $endpos), VarUnused }
 
-bare_lfexpr:
+bare_lf_expr:
 | bare_variable
     { Variable $1 }
 | Wunderscore
     { new_hole' () }
-| Wlparen f=lfhead args=list(lf_expr) Wrparen
+| Wlparen f=lf_term_head args=list(lf_expr) Wrparen
     { APPLY(f,args) }
 
-lfhead:
+lf_term_head:
 | Klambda
     { O O_lambda }
 | Kforall
@@ -86,6 +100,8 @@ command0:
     { Toplevel.UVariable (vars,eqns) }
 | WPrint e=lf_expr Wperiod
     { Toplevel.Print e }
+| WF_Print t=lf_type Wperiod
+    { Toplevel.F_Print t }
 | WCheck o=ts_expr Wperiod
     { Toplevel.Check o }
 | WCheckUniverses Wperiod

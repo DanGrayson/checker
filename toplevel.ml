@@ -3,6 +3,7 @@
 open Typesystem
 type command' = 
   | Print of expr
+  | F_Print of canonical_type_family
   | Check of expr
   | UVariable of string list * (expr * expr) list
   | Variable of string list

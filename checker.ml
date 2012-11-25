@@ -106,6 +106,10 @@ let printCommand x =
   Printf.printf "Print: %s\n" (Printer.lf_expr_to_string x);
   flush stdout
 
+let lf_type_printCommand x =
+  Printf.printf "F_Print: %s\n" (Printer.lf_type_family_to_string x);
+  flush stdout
+
 let checkCommand x =
   let x = protect1 ( fun () -> Fillin.fillin !environment x ) in
   Printf.printf "Check: %s\n" (Printer.ts_expr_to_string x);
@@ -201,6 +205,7 @@ let process_command lexbuf = (
     match c with
     | Toplevel.UVariable (uvars,eqns) -> add_uVars uvars eqns
     | Toplevel.Variable tvars -> add_tVars tvars
+    | Toplevel.F_Print x -> lf_type_printCommand x
     | Toplevel.Print x -> printCommand x
     | Toplevel.Check x -> checkCommand x
     | Toplevel.Alpha (x,y) -> alphaCommand (x,y)

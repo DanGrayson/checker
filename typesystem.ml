@@ -262,7 +262,7 @@ let vartostring' = function
 
 let vartostring v = vartostring' (strip_pos_var v)
 	
-(** The type [expr] accomodates both the expressions of TS and the terms of LF. *)
+(** The type [expr] accommodates both the expressions of TS and the terms of LF. *)
 type expr = 
   | POS of Error.position * bare_expr
 	(** A wrapper that gives the position in the TS source code, for error messages *)
@@ -323,7 +323,7 @@ let tfhead_to_string = function
 
 let tfheads = [ F_uexp; F_texp; F_oexp; F_Is_type; F_Has_type; F_Type_equality; F_Object_equality ]
 
-let tfhead_strings = List.map (fun x -> x , tfhead_to_string x) tfheads
+let tfhead_strings = List.map (fun x -> tfhead_to_string x, x) tfheads
 
 type canonical_type_family =
   | F_Pi of var' * canonical_type_family * canonical_type_family
