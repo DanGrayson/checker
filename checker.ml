@@ -103,18 +103,13 @@ let add_uVars uvars eqns =
 let fix t = Fillin.fillin !environment t
 
 let printCommand x =
-  Printf.printf "Print: %s\n" (Printer.ts_expr_to_string x);
-  Printf.printf "   LF: %s\n" (Printer.lftostring x);
-  flush stdout;
-  let x' = protect fix x Error.nopos in
-  if not (Alpha.UEqual.equiv (!environment).uc x' x)
-  then Printf.printf "     : %s\n" (Printer.ts_expr_to_string x');
+  Printf.printf "Print: %s\n" (Printer.lf_expr_to_string x);
   flush stdout
 
 let checkCommand x =
   let x = protect1 ( fun () -> Fillin.fillin !environment x ) in
   Printf.printf "Check: %s\n" (Printer.ts_expr_to_string x);
-  Printf.printf "   LF: %s\n" (Printer.lftostring x);
+  Printf.printf "   LF: %s\n" (Printer.lf_expr_to_string x);
   flush stdout;
   match x with
   | POS(_,APPLY(O _,_)) -> 
@@ -167,10 +162,10 @@ let show_command () =
    Printf.printf "   Variable ";
    let UContext(uvars,ueqns) = (!environment).uc in 
    Printf.printf "%s.\n"
-     ((String.concat " " (List.map Printer.vartostring' (List.rev uvars))) ^ " : Univ" ^ (String.concat "" (List.map Printer.ueqntostring ueqns)));
+     ((String.concat " " (List.map vartostring' (List.rev uvars))) ^ " : Univ" ^ (String.concat "" (List.map Printer.ueqntostring ueqns)));
   );
   (
-   Printf.printf "   Variable"; List.iter (fun x -> Printf.printf " %s" (Printer.vartostring' x)) (List.rev (!environment).tc); Printf.printf " : Type.\n";
+   Printf.printf "   Variable"; List.iter (fun x -> Printf.printf " %s" (vartostring' x)) (List.rev (!environment).tc); Printf.printf " : Type.\n";
   );
   (
    let p = List.rev_append (!environment).definitions [] 
@@ -237,7 +232,7 @@ let parse_string grammar s =
     let lexbuf = Lexing.from_string s in
     lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = strname()};
     protect (grammar (Tokens.expr_tokens)) lexbuf lexpos
-let expr_from_string = parse_string Grammar.exprEof
+let expr_from_string = parse_string Grammar.ts_exprEof
 
 let _ = 
   Arg.parse [

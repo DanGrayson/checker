@@ -6,7 +6,7 @@ let rec tau (pos:Error.position) env = function
       | EmptyHole _ -> raise (Error.TypingError(pos, "empty hole, type undetermined"))
       | Variable v -> (
 	  try List.assoc v env.oc
-	  with Not_found -> raise (Error.TypingError(pos, "unbound variable, not in context: " ^ (Printer.vartostring' v))))
+	  with Not_found -> raise (Error.TypingError(pos, "unbound variable, not in context: " ^ (vartostring' v))))
       | APPLY(h,args) -> with_pos pos (
 	  match h with
 	  | Defapp _ -> raise Error.NotImplemented

@@ -12,29 +12,18 @@ polymorphic type system}, by Vladimir Voevodsky, the version dated October,
 
   *)
 
-open Error
-
-(** Variables *)
-let strip_pos_var : position * 'a -> 'a = snd
-let get_pos_var : position * 'a -> position = fst
-
-(** Object variable, probably obsolete. *)
-type var = position * var'
-and var' =
-    Var of string
-  | VarGen of int * string
-  | VarUnused
-
 (** A u-level expression, [M], is constructed inductively as: [n], [v], [M+n], or
     [max(M,M')], where [v] is a universe variable and [n] is a natural number.
  *)
 
-(** The various labels for u-expressions of TS. *)
+(** Labels for u-expressions of TS. *)
 type uHead =
   | U_plus of int
 	(** A pair [(M,n)], denoting [M+n], the n-th successor of [M].  Here [n] should be nonnegative *)
   | U_max
 	(** A pair [(M,M')] denoting [max(M,M')]. *)
+
+let uheads = [ U_max ]
 
 let uhead_to_string = function
   | U_plus n -> "uplus;" ^ (string_of_int n)
@@ -242,10 +231,40 @@ type label =
   | T of tHead			(** labels for t-expressions of TS *)
   | O of oHead			(** labels for o-expressions of TS *)
   | Defapp of string * int	(** application of an aspect of a definition *)
+
+let head_to_string = function
+  | Defapp (name,i) -> "[defapp;" ^ name ^ "," ^ (string_of_int i) ^ "]"
+  | U h -> uhead_to_string h
+  | T h -> thead_to_string h
+  | O h -> ohead_to_string h
+
+let label_strings = List.concat [
+  List.map (fun h -> uhead_to_string h, U h) uheads; (* Uplus _ is not here *)
+  List.map (fun h -> thead_to_string h, T h) theads;
+  List.map (fun h -> ohead_to_string h, O h) oheads
+]
+
+(** Variables *)
+let strip_pos_var : Error.position * 'a -> 'a = snd
+let get_pos_var : Error.position * 'a -> Error.position = fst
+
+(** Object variable, probably obsolete. *)
+type var = Error.position * var'
+and  var' =
+    Var of string
+  | VarGen of int * string
+  | VarUnused
+
+let vartostring' = function
+  | Var x -> x
+  | VarGen(i,x) -> x ^ "_" ^ (string_of_int i)
+  | VarUnused -> "_"
+
+let vartostring v = vartostring' (strip_pos_var v)
 	
-(** The type [expr] corresponds to the canonical terms of LF. *)
+(** The type [expr] accomodates both the expressions of TS and the terms of LF. *)
 type expr = 
-  | POS of position * bare_expr
+  | POS of Error.position * bare_expr
 	(** A wrapper that gives the position in the TS source code, for error messages *)
   | LAMBDA of var * expr
 	(** The lambda of LF. *)
@@ -380,7 +399,7 @@ let label_to_type_family = function
   | U uh -> uhead_to_type_family uh
   | T th -> thead_to_type_family th
   | O oh -> ohead_to_type_family oh
-  | Defapp _ -> raise NotImplemented
+  | Defapp _ -> raise Error.NotImplemented
 
 (** Constructors for the "kinds" of LF. 
 

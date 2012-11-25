@@ -2,16 +2,11 @@
 
 open Typesystem
 
-let vartostring' = function
-  | Var x -> x
-  | VarGen(i,x) -> x ^ "_" ^ (string_of_int i)
-  | VarUnused -> "_"
-let vartostring v = vartostring' (strip_pos_var v)
-let head_to_string = function
-  | Defapp (name,i) -> "[defapp;" ^ name ^ "," ^ (string_of_int i) ^ "]"
-  | U h -> "[" ^ uhead_to_string h ^ "]"
-  | T h -> "[" ^ thead_to_string h ^ "]"
-  | O h -> "[" ^ ohead_to_string h ^ "]"
+let parens x = "(" ^ x ^ ")"
+let space x = " " ^ x
+let (<<-) f g x = f (g x)
+let concat = String.concat ""
+let concatl x = concat (List.flatten x)
 
 let rec ts_expr_to_string = function
   | LAMBDA(x,body) -> "LAMBDA " ^ (vartostring x) ^ ", " ^ (ts_expr_to_string body)
@@ -80,16 +75,10 @@ let rec ts_expr_to_string = function
 		| _ -> raise Error.Internal)
 	    | _ -> "[" ^ (ohead_to_string oh) ^ "]" ^ (parenelisttostring args)
 	   )
-	| _ -> (head_to_string h) ^ (parenelisttostring args)
+	| _ -> concat ["["; (head_to_string h); "]"; (parenelisttostring args)]
        )
 and elisttostring s = String.concat "," (List.map ts_expr_to_string s)
 and parenelisttostring s = String.concat "" [ "("; elisttostring s; ")" ]
-
-let parens x = "(" ^ x ^ ")"
-let space x = " " ^ x
-let (<<-) f g x = f (g x)
-let concat = String.concat ""
-let concatl x = concat (List.flatten x)
 
 let rec lf_type_family_to_string = function
   | F_hole -> "_"
@@ -116,9 +105,9 @@ let parmstostring = function
 	) ^
       (String.concat "" (List.map (fun x -> "(" ^ (octostring x) ^ ")") oc))
 
-let rec lfl label s = "(" ^ label ^ (String.concat "" (List.map (fun x -> " " ^ (lftostring x)) s)) ^ ")"
-and lftostring = function
-  | LAMBDA(x,body) -> "(LAMBDA " ^ (vartostring x) ^ " : Obj, " ^ (lftostring body) ^ ")"
+let rec lfl label s = "(" ^ label ^ (String.concat "" (List.map (fun x -> " " ^ (lf_expr_to_string x)) s)) ^ ")"
+and lf_expr_to_string = function
+  | LAMBDA(x,body) -> "(LAMBDA " ^ (vartostring x) ^ ", " ^ (lf_expr_to_string body) ^ ")"
   | POS(_,e) -> match e with 
     | EmptyHole n -> "_" ^ (string_of_int n)
     | Variable v -> vartostring' v

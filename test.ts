@@ -16,6 +16,11 @@ Show.
 Check lambda x:T, x.
 Check T.
 Check [El]([u](u2)).
+
+# test lf-expr input format:
+Print (El (u u2)).
+Print (LAMBDA x, (ev f x (LAMBDA y, T))).
+
 Check [U](u1).
 Check [j](u1, u2).
 Check *[u](u1).
