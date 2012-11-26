@@ -25,15 +25,15 @@
    let bol = cnum - col in
    lexbuf.Lexing.lex_curr_p <- { p with Lexing.pos_bol = bol }
 }
-let newline = [ '\n' ]
 let nzdigit = [ '1'-'9' ]
 let digit = [ '0'-'9' ]
 let first = [ 'A'-'Z' 'a'-'z' ]
 let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' '_' ]
-let white = [ ' ' '\r' '\n' '\t' '\012' ]*
+let space = [ ' ' '\r' ]*
+let newline = [ '\n' '\012' ]
 let ident = first after*
 rule expr_tokens = parse
-  | "Check" white "Universes" { WCheckUniverses }
+  | "Check" space "Universes" { WCheckUniverses }
   | "Print" { WPrint }
   | "Rule" { WRule }
   | "F_Print" { WF_Print }
@@ -52,10 +52,12 @@ rule expr_tokens = parse
   | "Sigma" { KSigma }
   | "Ulevel" { KUlevel }
   | "Type" { KType }
+  | "type" { Ktype }
   | "max" { Kumax }
   | '('  { Wlparen }
   | ')'  { Wrparen }
   | ']'  { Wrbracket }
+  | '['  { Wlbracket }
   | '-' '>'  { Warrow }
   | '*'  { Wstar }
   | ';'  { Wsemi }
@@ -74,8 +76,8 @@ rule expr_tokens = parse
   | ':' '='  { Wcolonequal }
   | digit+ as n { Nat (int_of_string n) } (* eventually check for overflow and leading 0 *)
   | ident as id { IDENTIFIER id }
-  | [ '\t' ] { tab lexbuf; expr_tokens lexbuf }
-  | [ ' ' '\r' ] { expr_tokens lexbuf }
+  | '\t' { tab lexbuf; expr_tokens lexbuf }
+  | space { expr_tokens lexbuf }
   | '#' [ ^ '\n' ]* { expr_tokens lexbuf }
   | newline { Lexing.new_line lexbuf; expr_tokens lexbuf }
   | _ as c { Printf.fprintf stderr "%s: invalid character: '%c'\n" (lexing_pos lexbuf) c; 

@@ -274,7 +274,7 @@ let labels = List.concat [
 
 let label_to_string = function
   | V v -> vartostring' v
-  | Defapp (name,i) -> "[defapp;" ^ name ^ "," ^ (string_of_int i) ^ "]"
+  | Defapp (name,i) -> "[" ^ name ^ "." ^ (string_of_int i) ^ "]"
   | U h -> "[" ^ uhead_to_string h ^ "]"
   | T h -> "[" ^ thead_to_string h ^ "]"
   | O h -> "[" ^ ohead_to_string h ^ "]"

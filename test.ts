@@ -1,20 +1,27 @@
 # experiment with notation for rules and inferences.
 
-Rule 13 cast : Pi o:oexp, Pi T:texp, Pi U:texp, (hastype o T) -> (tequal T U) -> (hastype o U).
-Rule 15 U_type : Pi M:uexp, istype (U M). 
-Rule 25 hastype_ev :
-  Pi T : texp, Pi U : oexp -> texp, Pi g : oexp, Pi x : oexp,
-    (hastype x T) -> 
-    (hastype g ([forall] T U)) ->
-    (hastype ([ev] g x U) (U x)).
-# Rule 32 type_El_forall :
-#   Pi M_1 : uexp,
-#   Pi M_2 : uexp,
-#   Pi o_1 : oexp,
-#   Pi o_2 : oexp -> oexp,
-#   (hastype o_1 ([U] M_1)) ->
-#   (Pi x: oexp, hastype x ([El] o_1) -> hastype o_2 ([U] M_2)) ->
-#   
+Rule 13 cast :
+
+     Pi o:oexp, Pi T:texp, Pi U:texp,
+     [ o : T ] -> [ T == U ] -> [ o : U  ].
+
+Rule 15 U_type :
+
+     Pi M:uexp, 
+     [ ([U] M) type ].
+
+Rule 25 hastype_ev : 
+
+     Pi T : texp, Pi U : oexp -> texp, Pi g : oexp, Pi x : oexp,
+     [x:T] -> [g:([forall] T U)] -> [([ev] g x U) : (U x)].
+
+Rule 32 type_El_forall :
+
+     Pi M_1 : uexp, Pi M_2 : uexp, Pi o_1 : oexp, Pi o_2 : oexp -> oexp,
+     [ o_1 : ([U] M_1) ] ->
+     (Pi x: oexp, [ x : ([El] o_1) ] -> [ o_2 : ([U] M_2) ])
+     ->
+     [ ([El] ([forall] M_1 M_2 o_1 o_2)) == ([Pi] ([El] o_1) (lambda x, ([El] (o_2 x)))) ].
 
 Variable u0 u1 u2 : Ulevel ; u0+10 <= u1; u1+10 <= u2.
 Variable T T' U V X Y : Type.
@@ -27,7 +34,7 @@ Define a := x : X.
 
 Show.
 
-# Check lambda x:T, lambda y:U, [foo.0](u1,u2;T,U;x,y).
+Check lambda x:T, lambda y:U, [foo.0](u1,u2,T,U,x,y).
 
 Check lambda x:T, x.
 Check T.
@@ -110,10 +117,8 @@ Check lambda k:U, lambda g:T -> *k, lambda f:Pi t:T, *g t, lambda o:T, f o.
 Check lambda r:U, lambda f:T->U, lambda o:T, lambda x : *r, f o.
 Check lambda f:X->T, lambda y:X, [ev;_](f,y,T).
 Check lambda f:X->T, lambda y:X, f y.
-# Check [foo.0](u0+1,u1).
-# Check lambda x:T, lambda y:U, lambda t:[foo.1](u0,u0;T,U;x,y), t.
-
-# Check forall x:*y, z.	# fix the location of the holes
+Check [foo.0](u0+1,u1).
+Check lambda x:T, lambda y:U, lambda t:[foo.1](u0,u0,T,U,x,y), t.
 
 Define foo1 (u1 u2 : Ulevel) (T : Type) (t : T) := *t.
 

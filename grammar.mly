@@ -1,9 +1,7 @@
 %{ 
-
 open Typesystem
 open Helpers
 open Grammar0
-
 %}
 %start command ts_exprEof lf_exprEof
 %type <Toplevel.command> command
@@ -15,11 +13,11 @@ open Grammar0
 %token <string * int> DEF_APP
 %token
 
-  Wlparen Wrparen Wrbracket Wplus Wcomma Wperiod  Wcolon Wstar
-  Warrow Wequalequal Wequal   Wcolonequal 
-   Wunderscore WF_Print WRule Wgreaterequal Wgreater Wlessequal Wless Wsemi
-  KUlevel Kumax KType KPi Klambda KSigma WTau WPrint WDefine WShow WEnd
-  WVariable WAlpha Weof Watat WCheck WCheckUniverses  Prec_application
+  Wlparen Wrparen Wrbracket Wlbracket Wplus Wcomma Wperiod Wcolon Wstar Warrow
+  Wequalequal Wequal Wcolonequal Wunderscore WF_Print WRule Wgreaterequal
+  Wgreater Wlessequal Wless Wsemi KUlevel Kumax KType Ktype KPi Klambda KSigma WTau
+  WPrint WDefine WShow WEnd WVariable WAlpha Weof Watat WCheck WCheckUniverses
+  Prec_application
 
 /* precedences, lowest first */
 %right
@@ -47,6 +45,14 @@ canonical_type_family:
     { F_Pi(v,a,b) }
 | a=canonical_type_family Warrow b=canonical_type_family
    { F_Pi(VarUnused,a,b) }
+| Wlbracket a=lf_expr Ktype Wrbracket
+    { F_APPLY(F_Is_type, [a]) }
+| Wlbracket a=lf_expr Wcolon b=lf_expr Wrbracket
+    { F_APPLY(F_Has_type, [a;b]) }
+| Wlbracket a=lf_expr Wequalequal b=lf_expr Wcolon c=lf_expr Wrbracket
+    { F_APPLY(F_Object_equality, [a;b;c]) }
+| Wlbracket a=lf_expr Wequalequal b=lf_expr Wrbracket
+    { F_APPLY(F_Type_equality, [a;b]) }
 
 canonical_type_family_head:
 | l=IDENTIFIER 
