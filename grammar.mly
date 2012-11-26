@@ -15,9 +15,9 @@ open Grammar0
 
   Wlparen Wrparen Wrbracket Wlbracket Wplus Wcomma Wperiod Wcolon Wstar Warrow
   Wequalequal Wequal Wcolonequal Wunderscore WF_Print WRule Wgreaterequal
-  Wgreater Wlessequal Wless Wsemi KUlevel Kumax KType Ktype KPi Klambda KSigma WTau
-  WPrint WDefine WShow WEnd WVariable WAlpha Weof Watat WCheck WCheckUniverses
-  Prec_application
+  Wgreater Wlessequal Wless Wsemi KUlevel Kumax KType Ktype KPi Klambda KSigma
+  WTau WPrint WDefine WShow WEnd WVariable WAlpha Weof Watat WCheck
+  WCheckUniverses Wtilde Prec_application
 
 /* precedences, lowest first */
 %right
@@ -45,13 +45,17 @@ canonical_type_family:
     { F_Pi(v,a,b) }
 | a=canonical_type_family Warrow b=canonical_type_family
    { F_Pi(VarUnused,a,b) }
-| Wlbracket a=lf_expr Ktype Wrbracket
+| Wlbracket a=lf_expr_parens_optional Ktype Wrbracket
     { F_APPLY(F_Is_type, [a]) }
-| Wlbracket a=lf_expr Wcolon b=lf_expr Wrbracket
+| Wlbracket a=lf_expr_parens_optional Wcolon b=lf_expr_parens_optional Wrbracket
     { F_APPLY(F_Has_type, [a;b]) }
-| Wlbracket a=lf_expr Wequalequal b=lf_expr Wcolon c=lf_expr Wrbracket
+| Wlbracket a=lf_expr_parens_optional Wtilde b=lf_expr_parens_optional Wcolon c=lf_expr_parens_optional Wrbracket
+    { F_APPLY(F_Object_similarity, [a;b;c]) }
+| Wlbracket a=lf_expr_parens_optional Wequal b=lf_expr_parens_optional Wcolon c=lf_expr_parens_optional Wrbracket
     { F_APPLY(F_Object_equality, [a;b;c]) }
-| Wlbracket a=lf_expr Wequalequal b=lf_expr Wrbracket
+| Wlbracket a=lf_expr_parens_optional Wtilde b=lf_expr_parens_optional Wrbracket
+    { F_APPLY(F_Type_similarity, [a;b]) }
+| Wlbracket a=lf_expr_parens_optional Wequal b=lf_expr_parens_optional Wrbracket
     { F_APPLY(F_Type_equality, [a;b]) }
 
 canonical_type_family_head:
@@ -78,6 +82,16 @@ bare_lf_expr:
 | Wunderscore
     { new_hole' () }
 | Wlparen f=lf_term_head args=list(lf_expr) Wrparen
+    { APPLY(f,args) }
+
+lf_expr_parens_optional:
+| e=bare_lf_expr_parens_optional
+  { with_pos (Error.Position($startpos, $endpos)) e  }
+
+bare_lf_expr_parens_optional:
+| e=bare_lf_expr
+    {e}
+| f=lf_term_head args=list(lf_expr)
     { APPLY(f,args) }
 
 lf_term_head:

@@ -346,7 +346,9 @@ type tfHead =
   | F_oexp
   | F_Is_type
   | F_Has_type
+  | F_Type_similarity
   | F_Type_equality
+  | F_Object_similarity
   | F_Object_equality
 
 let tfhead_to_string = function
@@ -355,10 +357,12 @@ let tfhead_to_string = function
   | F_oexp -> "oexp"
   | F_Is_type -> "istype"
   | F_Has_type -> "hastype"
+  | F_Type_similarity -> "tsim"
   | F_Type_equality -> "tequal"
+  | F_Object_similarity -> "osim"
   | F_Object_equality -> "oequal"
 
-let tfheads = [ F_uexp; F_texp; F_oexp; F_Is_type; F_Has_type; F_Type_equality; F_Object_equality ]
+let tfheads = [ F_uexp; F_texp; F_oexp; F_Is_type; F_Has_type; F_Type_similarity; F_Type_equality; F_Object_similarity; F_Object_equality ]
 
 let tfhead_strings = List.map (fun x -> tfhead_to_string x, x) tfheads
 
@@ -377,7 +381,9 @@ let ( @> ) a b = F_Pi(VarUnused, a, b)
 
 let istype t = F_Is_type *** [t]
 let hastype o t = F_Has_type *** [o;t]
+let type_similarity t t' = F_Type_similarity *** [t;t']
 let type_equality t t' = F_Type_equality *** [t;t']
+let object_similariy o o' t = F_Object_similarity *** [o;o';t]
 let object_equality o o' t = F_Object_equality *** [o;o';t]
 
 let texp1 = oexp @> texp
@@ -478,7 +484,9 @@ let tfhead_to_kind = function
   | F_oexp -> K_type
   | F_Is_type -> texp @@> K_type
   | F_Has_type -> oexp @@> texp @@> K_type
+  | F_Type_similarity -> texp @@> texp @@> K_type
   | F_Type_equality -> texp @@> texp @@> K_type
+  | F_Object_similarity -> oexp @@> texp @@> texp @@> K_type
   | F_Object_equality -> oexp @@> texp @@> texp @@> K_type
 
 (*** 

@@ -65,6 +65,7 @@ rule expr_tokens = parse
   | ','  { Wcomma }
   | '+'  { Wplus }
   | ':'  { Wcolon }
+  | '~'  { Wtilde }
   | '='  { Wequal }
   | '=' '=' { Wequalequal }
   | '@' '@' { Watat }
