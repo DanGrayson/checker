@@ -134,6 +134,8 @@ let checkCommand x =
       Printf.printf "     : t-expression\n"
   | POS(_,APPLY(U _,_)) -> 
       Printf.printf "     : u-expression\n"
+  | POS(_,APPLY(V _,_)) -> 
+      Printf.printf "     : lf-application, with variable as label\n"
   | POS(_,APPLY(Defapp _,_)) -> 
       Printf.printf "     : definition\n"
   | POS(_,Variable _) -> 

@@ -184,16 +184,6 @@ type oHead =
 	 *)
       (* end of TS *)
 
-      (** The type [label] corresponds to the constant atomic terms of LF. 
-
-	  For definitions, we envision multiple aspects.  For example, aspect 1
-	  could be a t-expression T and aspect 2 could be a derivation of the
-	  judgment that T is a type.  Or aspect 1 could be an o-expression t,
-	  aspect 2 could be a type T, and aspect 3 could be a derivation of the
-	  judgment that t has type T.  Similarly for the other two types of
-	  judgment in TS.
-       *)
-
 let ohead_to_string = function
   | O_u -> "u"
   | O_j -> "j"
@@ -233,33 +223,9 @@ type ruleHead =
 let rulehead_to_string = function
   | Rule s -> s
 
-type label =
-  | U of uHead			(** labels for u-expressions of TS *)
-  | T of tHead			(** labels for t-expressions of TS *)
-  | O of oHead			(** labels for o-expressions of TS *)
-  | R of ruleHead		(** labels for inference rules *)
-  | Defapp of string * int	(** application of an aspect of a definition *)
-
-let labels = List.concat [
-  List.map (fun h -> U h) uheads;
-  List.map (fun h -> T h) theads;
-  List.map (fun h -> O h) oheads
-]
-
-let label_to_string = function
-  | Defapp (name,i) -> "[defapp;" ^ name ^ "," ^ (string_of_int i) ^ "]"
-  | U h -> uhead_to_string h
-  | T h -> thead_to_string h
-  | O h -> ohead_to_string h
-  | R h -> rulehead_to_string h
-
-let label_strings = List.map (fun h -> label_to_string h, h) labels
-
 (** Variables *)
 let strip_pos_var : Error.position * 'a -> 'a = snd
 let get_pos_var : Error.position * 'a -> Error.position = fst
-
-(** Object variable, probably obsolete. *)
 type var = Error.position * var'
 and  var' =
     Var of string
@@ -272,6 +238,46 @@ let vartostring' = function
   | VarUnused -> "_"
 
 let vartostring v = vartostring' (strip_pos_var v)
+
+    (** The type [label] corresponds to the constant and variable atomic terms
+	of LF.
+
+	We implement "spine form", where applications are represented as [(f x
+	y z ...)], with [f] not being an application, thus being a constant or
+	a variable, i.e., being a "label".
+
+	For definitions, we envision multiple aspects.  For example, aspect 1
+	could be a t-expression T and aspect 2 could be a derivation of the
+	judgment that T is a type.  Or aspect 1 could be an o-expression t,
+	aspect 2 could be a type T, and aspect 3 could be a derivation of the
+	judgment that t has type T.  Similarly for the other two types of
+	judgment in TS.
+
+     *)
+
+type label =
+  | V of var'			(** a variable, appearing as an atomic term of LF *)
+  | U of uHead			(** labels for u-expressions of TS *)
+  | T of tHead			(** labels for t-expressions of TS *)
+  | O of oHead			(** labels for o-expressions of TS *)
+  | R of ruleHead		(** names of inference rules of TS *)
+  | Defapp of string * int	(** application of an aspect of a definition *)
+
+let labels = List.concat [
+  List.map (fun h -> U h) uheads;
+  List.map (fun h -> T h) theads;
+  List.map (fun h -> O h) oheads
+]
+
+let label_to_string = function
+  | V v -> vartostring' v
+  | Defapp (name,i) -> "[defapp;" ^ name ^ "," ^ (string_of_int i) ^ "]"
+  | U h -> "[" ^ uhead_to_string h ^ "]"
+  | T h -> "[" ^ thead_to_string h ^ "]"
+  | O h -> "[" ^ ohead_to_string h ^ "]"
+  | R h -> rulehead_to_string h
+
+let label_strings = List.map (fun h -> label_to_string h, h) labels
 	
 (** The type [expr] accommodates both the expressions of TS and the terms of LF. *)
 type expr = 
@@ -430,6 +436,7 @@ let rules = ref []
 let rulehead_to_type_family h = List.assoc h !rules
 
 let label_to_type_family = function
+  | V _ -> raise Error.Internal		(* needs a context *)
   | U h -> uhead_to_type_family h
   | T h -> thead_to_type_family h
   | O h -> ohead_to_type_family h
@@ -522,7 +529,7 @@ let new_hole () = nowhere (new_hole' ())
 exception Internal_expr of expr
 exception Unimplemented_expr of expr
 
-(*
+(* 
   Local Variables:
   compile-command: "ocamlbuild typesystem.cmo "
   End:

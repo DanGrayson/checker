@@ -1,7 +1,17 @@
 # experiment with notation for rules and inferences.
 
-Rule Utype : PI M:uexp, istype (U M).
-Rule cast : PI o:oexp, PI T:texp, PI U:texp, (hastype o T) -> (tequal T U) -> (hastype o U).
+# rule 15
+Rule Utype : Pi M:uexp, istype (U M). 
+
+# rule 13
+Rule cast : Pi o:oexp, Pi T:texp, Pi U:texp, (hastype o T) -> (tequal T U) -> (hastype o U).
+
+Rule hastypeEv :
+  Pi T : texp, Pi U : oexp -> texp, Pi g : oexp, Pi x : oexp,
+    (hastype x T) -> 
+    (hastype g ([forall] T U)) ->
+    (hastype ([ev] g x U) (U x)).
+
 
 Variable u0 u1 u2 : Ulevel ; u0+10 <= u1; u1+10 <= u2.
 Variable T T' U V X Y : Type.
@@ -21,14 +31,9 @@ Check T.
 Check [El]([u](u2)).
 
 # test lf-expr input format:
-Print (LAMBDA x, (ev f x (LAMBDA y, T))).
-Check @@ (El x).
-Check @@ (El (u u2)).
-Check @@ (Pi T (LAMBDA x, U)).
-Check @@ (lambda (Pi T (LAMBDA _, U)) (LAMBDA f, (lambda T (LAMBDA o, (ev f o (LAMBDA _, U)))))).
-Check @@ (lambda U (LAMBDA k, (lambda (Pi T (LAMBDA _, (El k))) (LAMBDA g, (lambda (Pi T (LAMBDA t, (El (ev g t (LAMBDA _, (El k)))))) (LAMBDA f, (lambda T (LAMBDA o, (ev f o (LAMBDA t, (El (ev g t (LAMBDA _, (El k)))))))))))))).
+Print (LAMBDA x, ([ ev ] f x (LAMBDA y, T))).
 
-F_Print PI u1:uexp, PI u2:uexp, PI T:texp, PI t:oexp, PI ist:istype T, PI has:hastype t T, texp.
+F_Print Pi u1:uexp, Pi u2:uexp, Pi T:texp, Pi t:oexp, Pi ist:istype T, Pi has:hastype t T, texp.
 
 Check [U](u1).
 Check [j](u1, u2).

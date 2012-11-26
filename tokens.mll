@@ -49,7 +49,6 @@ rule expr_tokens = parse
   | "[j]" { Wj }
   | "[def;" { Wdef }
   | "[Pi;" { WPi }
-  | "PI" { FPi }
   | "Pi" { KPi }
   | "LAMBDA" { Flambda }
   | "lambda" { Klambda }

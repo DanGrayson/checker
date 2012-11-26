@@ -21,11 +21,11 @@ open Grammar0
   KUlevel Kumax KType KPi Klambda KSigma WEl WPi Wev Wu Wj WU Wlambda Wforall
   Kforall WSigma WCoprod WCoprod2 WEmpty Wempty Wempty_r WIC WId WTau WPrint
   WDefine WShow WEnd WVariable WAlpha Weof Watat WCheck WCheckUniverses Wflush
-  Prec_application Wdef Flambda FPi
+  Prec_application Wdef Flambda
 
 /* precedences, lowest first */
 %right
-  KPi KSigma FPi
+  KPi KSigma
 %right
   Warrow
 %nonassoc
@@ -45,16 +45,15 @@ canonical_type_family:
     { t }
 | f=canonical_type_family_head args=list(lf_expr)
     { F_APPLY(f,args) }
-| FPi v=bare_variable Wcolon a=canonical_type_family Wcomma b=canonical_type_family
-    %prec FPi
+| KPi v=bare_variable Wcolon a=canonical_type_family Wcomma b=canonical_type_family
+    %prec KPi
     { F_Pi(v,a,b) }
 | a=canonical_type_family Warrow b=canonical_type_family
    { F_Pi(VarUnused,a,b) }
 
 canonical_type_family_head:
 | l=IDENTIFIER 
-    { try List.assoc l tfhead_strings 
-    with Not_found -> $syntaxerror }
+    { try List.assoc l tfhead_strings with Not_found -> $syntaxerror }
 
 lf_exprEof: a=lf_expr Weof {a}
 
@@ -79,19 +78,18 @@ bare_lf_expr:
     { APPLY(f,args) }
 
 lf_term_head:
-| Klambda
+| Wlbracket Klambda Wrbracket
     { O O_lambda }
-| Kforall
+| Wlbracket Kforall Wrbracket
     { O O_forall }
-| KPi
+| Wlbracket KPi Wrbracket
     { T T_Pi }
-| KSigma
+| Wlbracket KSigma Wrbracket
     { T T_Sigma }
+| Wlbracket l=IDENTIFIER Wrbracket
+    { try List.assoc ("[" ^ l ^ "]") label_strings with Not_found -> $syntaxerror }
 | l=IDENTIFIER 
-    {
-     try List.assoc l label_strings
-     with Not_found -> $syntaxerror
-   }
+    { V (Var l) }
 
 command: c=command0 
   { Error.Position($startpos, $endpos), c }

@@ -22,7 +22,7 @@ let rec ucheck pos env = function
 
 let rec tcheck pos env = function
     | LAMBDA _ -> raise Error.Internal
-    | POS(pos,e) -> match e with 
+    | POS(pos,e) as oe -> match e with 
       | EmptyHole _ -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a t-expression"))
       | Variable Var s -> (
 	  match (
@@ -35,6 +35,7 @@ let rec tcheck pos env = function
 	  | (_,Object_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a t-variable but found an o-variable: "^s)))
       | Variable _ -> raise Error.Internal
       | APPLY(h,args) -> match h with
+	| V _ -> raise (Unimplemented_expr oe)
 	| R _ -> raise Error.NotImplemented
 	| Defapp _ -> raise Error.NotImplemented
 	| T th -> (
@@ -67,7 +68,7 @@ let rec tcheck pos env = function
 	| O _ -> raise (Error.TypeCheckingFailure(pos, "expected a t-expression but found an o-expression"))
 and ocheck pos env = function
   | LAMBDA _ -> raise Error.Internal	(* should have been handled higher up *)
-  | POS(pos,e) -> match e with
+  | POS(pos,e) as oe -> match e with
     | EmptyHole _ -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a o-expression"))
     | Variable Var s -> (
 	match
@@ -80,6 +81,7 @@ and ocheck pos env = function
 	| (_,Object_variable) -> ())
     | Variable (VarGen _ | VarUnused) -> raise Error.Internal
     | APPLY(h,args) -> match h with
+      | V _ -> raise (Unimplemented_expr oe)
       | R _ -> raise Error.NotImplemented
       | Defapp _ -> raise Error.NotImplemented
       | U th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a u-expression"))
