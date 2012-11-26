@@ -218,10 +218,10 @@ let oheads = [ O_u; O_j; O_ev; O_lambda; O_forall; O_pair; O_pr1; O_pr2;
 
 (** Heads for inference rules. *)
 type ruleHead =
-  | Rule of string
+  | Rule of int * string		(* the number of the rule in the paper, together with a convenient name *)
 
 let rulehead_to_string = function
-  | Rule s -> s
+  | Rule (n,s) -> s
 
 (** Variables *)
 let strip_pos_var : Error.position * 'a -> 'a = snd

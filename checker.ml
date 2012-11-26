@@ -110,9 +110,9 @@ let printCommand x =
   Printf.printf "Print: %s\n" (Printer.lf_expr_to_string x);
   flush stdout
 
-let ruleCommand name x =
-  rules := (Rule name,x) :: !rules;
-  Printf.printf "Rule %s: %s\n" name (Printer.lf_type_family_to_string x);
+let ruleCommand num name x =
+  rules := (Rule (num,name), x) :: !rules;
+  Printf.printf "Rule %d %s: %s\n" num name (Printer.lf_type_family_to_string x);
   flush stdout
 
 let lf_type_printCommand x =
@@ -219,7 +219,7 @@ let process_command lexbuf = (
     match c with
     | Toplevel.UVariable (uvars,eqns) -> add_uVars uvars eqns
     | Toplevel.Variable tvars -> add_tVars tvars
-    | Toplevel.Rule (name,t) -> ruleCommand name t
+    | Toplevel.Rule (num,name,t) -> ruleCommand num name t
     | Toplevel.F_Print x -> lf_type_printCommand x
     | Toplevel.Print x -> printCommand x
     | Toplevel.Check x -> checkCommand x
@@ -272,11 +272,10 @@ let toplevel() =
     labels;
   List.iter 
     (
-     fun (l,_) -> 
-       let x = R l in
-       Printf.printf "Rule %s : %s\n" (label_to_string x) (Printer.lf_type_family_to_string (label_to_type_family x))
+     fun (Rule(num,name) as head,_) -> 
+       Printf.printf "Rule %d %s : %s\n" num name (Printer.lf_type_family_to_string (label_to_type_family (R head)))
     )
-    !rules;
+    (List.rev !rules);
   flush stdout;
   error_summary "checker.ml:0:0"
 

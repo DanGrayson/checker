@@ -27,13 +27,13 @@ open Grammar0
 %right
   Warrow
 %nonassoc
-  Wstar				/* we want [*f x] to be [*(f x)] and [*X->Y] to be [( *X )->Y] */
+  Wstar				/* we want  [*f x] to be [*(f x)]  and  [*x->y] to be [( *x )->y]  */
 %left
   Prec_application
 %right
   Klambda
 %nonassoc
-  Wunderscore Wplus Wlparen IDENTIFIER Kumax Watat
+  Wunderscore Wplus Wlparen IDENTIFIER Kumax Watat LABEL_SEMI LABEL DEF_APP
 
 %%
 
@@ -103,8 +103,8 @@ command0:
 | WTau o=ts_expr Wperiod
     { Toplevel.Type o }
 
-| WRule name=IDENTIFIER Wcolon t=canonical_type_family Wperiod
-    { Toplevel.Rule (name,t) }
+| WRule num=Nat name=IDENTIFIER Wcolon t=canonical_type_family Wperiod
+    { Toplevel.Rule (num,name,t) }
 
 | WDefine name=IDENTIFIER parms=parmList Wcolonequal t=ts_expr Wperiod 
     { Toplevel.Definition (tDefinition name (fixParmList parms) t) }

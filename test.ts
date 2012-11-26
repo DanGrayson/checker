@@ -1,17 +1,20 @@
 # experiment with notation for rules and inferences.
 
-# rule 15
-Rule Utype : Pi M:uexp, istype (U M). 
-
-# rule 13
-Rule cast : Pi o:oexp, Pi T:texp, Pi U:texp, (hastype o T) -> (tequal T U) -> (hastype o U).
-
-Rule hastypeEv :
+Rule 13 cast : Pi o:oexp, Pi T:texp, Pi U:texp, (hastype o T) -> (tequal T U) -> (hastype o U).
+Rule 15 U_type : Pi M:uexp, istype (U M). 
+Rule 25 hastype_ev :
   Pi T : texp, Pi U : oexp -> texp, Pi g : oexp, Pi x : oexp,
     (hastype x T) -> 
     (hastype g ([forall] T U)) ->
     (hastype ([ev] g x U) (U x)).
-
+# Rule 32 type_El_forall :
+#   Pi M_1 : uexp,
+#   Pi M_2 : uexp,
+#   Pi o_1 : oexp,
+#   Pi o_2 : oexp -> oexp,
+#   (hastype o_1 ([U] M_1)) ->
+#   (Pi x: oexp, hastype x ([El] o_1) -> hastype o_2 ([U] M_2)) ->
+#   
 
 Variable u0 u1 u2 : Ulevel ; u0+10 <= u1; u1+10 <= u2.
 Variable T T' U V X Y : Type.
