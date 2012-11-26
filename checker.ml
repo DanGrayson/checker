@@ -110,6 +110,11 @@ let printCommand x =
   Printf.printf "Print: %s\n" (Printer.lf_expr_to_string x);
   flush stdout
 
+let ruleCommand name x =
+  rules := (Rule name,x) :: !rules;
+  Printf.printf "Rule %s: %s\n" name (Printer.lf_type_family_to_string x);
+  flush stdout
+
 let lf_type_printCommand x =
   Printf.printf "F_Print: %s\n" (Printer.lf_type_family_to_string x);
   flush stdout
@@ -123,14 +128,8 @@ let checkCommand x =
   | POS(_,APPLY(O _,_)) -> 
       Printf.printf "     : o-expression\n";
       protect1 (fun () -> Check.ocheck !environment x)
-  | POS(_,APPLY(IT _,_)) -> 
-      Printf.printf "     : is-type judgment\n"
-  | POS(_,APPLY(HT _,_)) -> 
-      Printf.printf "     : has-type judgment\n"
-  | POS(_,APPLY(TE _,_)) -> 
-      Printf.printf "     : type-equality judgment\n"
-  | POS(_,APPLY(OE _,_)) -> 
-      Printf.printf "     : object-equality judgment\n"
+  | POS(_,APPLY(R _,_)) -> 
+      Printf.printf "     : inference rule\n"
   | POS(_,APPLY(T _,_)) -> 
       Printf.printf "     : t-expression\n"
   | POS(_,APPLY(U _,_)) -> 
@@ -217,6 +216,7 @@ let process_command lexbuf = (
     match c with
     | Toplevel.UVariable (uvars,eqns) -> add_uVars uvars eqns
     | Toplevel.Variable tvars -> add_tVars tvars
+    | Toplevel.Rule (name,t) -> ruleCommand name t
     | Toplevel.F_Print x -> lf_type_printCommand x
     | Toplevel.Print x -> printCommand x
     | Toplevel.Check x -> checkCommand x
@@ -267,6 +267,13 @@ let toplevel() =
      fun x -> Printf.printf "F_Print: %s : %s\n" (label_to_string x) (Printer.lf_type_family_to_string (label_to_type_family x))
     )
     labels;
+  List.iter 
+    (
+     fun (l,_) -> 
+       let x = R l in
+       Printf.printf "Rule %s : %s\n" (label_to_string x) (Printer.lf_type_family_to_string (label_to_type_family x))
+    )
+    !rules;
   flush stdout;
   error_summary "checker.ml:0:0"
 

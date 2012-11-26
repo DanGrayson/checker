@@ -5,48 +5,53 @@ open Helpers
 open Grammar0
 
 %}
-%start command unusedtokens ts_exprEof lf_exprEof lf_type
+%start command unusedtokens ts_exprEof lf_exprEof
 %type <Toplevel.command> command
 %type <Typesystem.expr> ts_exprEof
 %type <Typesystem.expr> lf_exprEof
-%type <Typesystem.canonical_type_family> lf_type
+%type <Typesystem.canonical_type_family> canonical_type_family
 %token <int> Nat
 %type <unit> unusedtokens
 %token <string> IDENTIFIER
 %token <Typesystem.var> Var_token 
-%token Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar Warrow Wequalequal Wequal Wturnstile Wtriangle Wcolonequal
-%token Wlbrace Wrbrace Wbar Wunderscore WF_Print
-%token Wgreaterequal Wgreater Wlessequal Wless Wsemi
-%token KUlevel Kumax KType KPi Klambda KSigma
-%token WEl WPi Wev Wu Wj WU Wlambda Wforall Kforall WSigma WCoprod WCoprod2 WEmpty Wempty Wempty_r WIC WId
-%token WTau WPrint WDefine WShow WEnd WVariable WAlpha Weof Watat
-%token WCheck WCheckUniverses
-%token Wflush
-%token Prec_application
-%token Wdef
-
-%token Flambda
+%token
+  Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar
+  Warrow Wequalequal Wequal Wturnstile Wtriangle Wcolonequal Wlbrace Wrbrace
+  Wbar Wunderscore WF_Print WRule Wgreaterequal Wgreater Wlessequal Wless Wsemi
+  KUlevel Kumax KType KPi Klambda KSigma WEl WPi Wev Wu Wj WU Wlambda Wforall
+  Kforall WSigma WCoprod WCoprod2 WEmpty Wempty Wempty_r WIC WId WTau WPrint
+  WDefine WShow WEnd WVariable WAlpha Weof Watat WCheck WCheckUniverses Wflush
+  Prec_application Wdef Flambda FPi
 
 /* precedences, lowest first */
-%right KPi KSigma
-%right Warrow
-%nonassoc Wstar				/* we want [*f x] to be [*(f x)] and [*X->Y] to be [( *X )->Y] */
-%left Prec_application
-%right Klambda Kforall
-%nonassoc Wforall Wunderscore Wplus Wu Wlparen Wlambda Wj Wev Wdef IDENTIFIER Wempty_r Wempty 
-	  WU WSigma WPi WId WIC WEmpty WEl WCoprod2 WCoprod Kumax Watat
+%right
+  KPi KSigma FPi
+%right
+  Warrow
+%nonassoc
+  Wstar				/* we want [*f x] to be [*(f x)] and [*X->Y] to be [( *X )->Y] */
+%left
+  Prec_application
+%right
+  Klambda Kforall
+%nonassoc
+  Wforall Wunderscore Wplus Wu Wlparen Wlambda Wj Wev Wdef IDENTIFIER Wempty_r
+  Wempty WU WSigma WPi WId WIC WEmpty WEl WCoprod2 WCoprod Kumax Watat
 
 %%
 
-lf_type:
-| Wlparen t=lf_type Wrparen 
+canonical_type_family:
+| Wlparen t=canonical_type_family Wrparen 
     { t }
-| f=lf_type_head args=list(lf_expr)
+| f=canonical_type_family_head args=list(lf_expr)
     { F_APPLY(f,args) }
-| KPi v=bare_variable Wcolon a=lf_type Wcomma b=lf_type
+| FPi v=bare_variable Wcolon a=canonical_type_family Wcomma b=canonical_type_family
+    %prec FPi
     { F_Pi(v,a,b) }
+| a=canonical_type_family Warrow b=canonical_type_family
+   { F_Pi(VarUnused,a,b) }
 
-lf_type_head:
+canonical_type_family_head:
 | l=IDENTIFIER 
     { try List.assoc l tfhead_strings 
     with Not_found -> $syntaxerror }
@@ -100,7 +105,7 @@ command0:
     { Toplevel.UVariable (vars,eqns) }
 | WPrint e=lf_expr Wperiod
     { Toplevel.Print e }
-| WF_Print t=lf_type Wperiod
+| WF_Print t=canonical_type_family Wperiod
     { Toplevel.F_Print t }
 | WCheck o=ts_expr Wperiod
     { Toplevel.Check o }
@@ -110,6 +115,9 @@ command0:
     { Toplevel.Alpha (e1, e2) }
 | WTau o=ts_expr Wperiod
     { Toplevel.Type o }
+
+| WRule name=IDENTIFIER Wcolon t=canonical_type_family Wperiod
+    { Toplevel.Rule (name,t) }
 
 | WDefine name=IDENTIFIER parms=parmList Wcolonequal t=ts_expr Wperiod 
     { Toplevel.Definition (tDefinition name (fixParmList parms) t) }

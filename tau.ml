@@ -10,7 +10,7 @@ let rec tau (pos:Error.position) env = function
       | APPLY(h,args) -> with_pos pos (
 	  match h with
 	  | Defapp _ -> raise Error.NotImplemented
-	  | U _ | T _ -> raise Error.Internal
+	  | R _ | U _ | T _ -> raise Error.Internal
 	  | O oh -> match oh with
 	    | O_u -> (
 		match args with 

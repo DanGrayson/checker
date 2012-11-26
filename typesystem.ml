@@ -226,60 +226,24 @@ let oheads = [ O_u; O_j; O_ev; O_lambda; O_forall; O_pair; O_pr1; O_pr2;
   O_total; O_pt; O_pt_r; O_tt; O_coprod; O_ii1; O_ii2; O_sum; O_empty;
   O_empty_r; O_c; O_ic_r; O_ic; O_paths; O_refl; O_J; O_rr0; O_rr1 ]
 
-(** Heads for Istype judgments *)
-type itHead =
-  | Rule15
+(** Heads for inference rules. *)
+type ruleHead =
+  | Rule of string
 
-let itheads = [ Rule15 ]
-
-let ithead_to_string = function
-  | Rule15 -> "Rule15"
-
-(** Heads for Hastype judgments *)
-type htHead =
-  | Rule13
-
-let htheads = [ Rule13 ]
-
-let hthead_to_string = function
-  | Rule13 -> "Rule13"
-
-(** Heads for Tequality judgments *)
-type teHead =
-  | Rule9
-
-let teheads = [ Rule9 ]
-
-let tehead_to_string = function
-  | Rule9 -> "Rule9"
-
-(** Heads for Oequality judgments *)
-type oeHead =
-  | Rule14
-
-let oeheads = [ Rule14 ]
-
-let oehead_to_string = function
-  | Rule14 -> "Rule14"
+let rulehead_to_string = function
+  | Rule s -> s
 
 type label =
   | U of uHead			(** labels for u-expressions of TS *)
   | T of tHead			(** labels for t-expressions of TS *)
   | O of oHead			(** labels for o-expressions of TS *)
-  | IT of itHead		(** labels for Istype judgments *)
-  | HT of htHead		(** labels for Hastype judgments *)
-  | TE of teHead		(** labels for Tequality judgments *)
-  | OE of oeHead		(** labels for Oequality judgments *)
+  | R of ruleHead		(** labels for inference rules *)
   | Defapp of string * int	(** application of an aspect of a definition *)
 
 let labels = List.concat [
   List.map (fun h -> U h) uheads;
   List.map (fun h -> T h) theads;
-  List.map (fun h -> O h) oheads;
-  List.map (fun h -> IT h) itheads;
-  List.map (fun h -> HT h) htheads;
-  List.map (fun h -> TE h) teheads;
-  List.map (fun h -> OE h) oeheads
+  List.map (fun h -> O h) oheads
 ]
 
 let label_to_string = function
@@ -287,10 +251,7 @@ let label_to_string = function
   | U h -> uhead_to_string h
   | T h -> thead_to_string h
   | O h -> ohead_to_string h
-  | IT h -> ithead_to_string h
-  | HT h -> hthead_to_string h
-  | TE h -> tehead_to_string h
-  | OE h -> oehead_to_string h
+  | R h -> rulehead_to_string h
 
 let label_strings = List.map (fun h -> label_to_string h, h) labels
 
@@ -462,37 +423,17 @@ let ohead_to_type_family = function
   | O_rr0 -> uexp @> uexp @> oexp @> oexp @> oexp @> oexp
   | O_rr1 -> uexp @> oexp @> oexp @> oexp
 
-(*** The derivation rules of TS. *)
+(** The derivation rules of TS. *)
 
-let o = Var "o"
-let o' = var_to_expr o
-let tT = Var "T"
-let tT' = var_to_expr tT
-let tU = Var "U"
-let tU' = var_to_expr tU
-let uM = Var "M"
-let uM' = var_to_expr uM
+let rules = ref []
 
-let ithead_to_type_family = function
-  | Rule15 -> F_Pi(uM, uexp, istype ((T T_U) ** [uM']))
-
-let hthead_to_type_family = function
-  | Rule13 -> F_Pi(o, oexp, F_Pi(tT, texp, F_Pi(tU, texp, (hastype o' tT') @> (type_equality tT' tU') @> (hastype o' tU'))))
-
-let tehead_to_type_family = function
-  | Rule9 -> F_hole
-
-let oehead_to_type_family = function
-  | Rule14 -> F_hole
+let rulehead_to_type_family h = List.assoc h !rules
 
 let label_to_type_family = function
   | U h -> uhead_to_type_family h
   | T h -> thead_to_type_family h
   | O h -> ohead_to_type_family h
-  | IT h -> ithead_to_type_family h
-  | HT h -> hthead_to_type_family h
-  | TE h -> tehead_to_type_family h
-  | OE h -> oehead_to_type_family h
+  | R h -> rulehead_to_type_family h
   | Defapp _ -> raise Error.NotImplemented
 
 (*** Constructors for the "kinds" of LF. 

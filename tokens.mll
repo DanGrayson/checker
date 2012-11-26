@@ -32,9 +32,9 @@ let first = [ 'A'-'Z' 'a'-'z' ]
 let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' ]
 let white = [ ' ' '\r' '\n' '\t' '\012' ]*
 rule expr_tokens = parse
-  | "LAMBDA" { Flambda }
   | "Check" white "Universes" { WCheckUniverses }
   | "Print" { WPrint }
+  | "Rule" { WRule }
   | "F_Print" { WF_Print }
   | "Alpha" { WAlpha }
   | "Check" { WCheck }
@@ -49,7 +49,9 @@ rule expr_tokens = parse
   | "[j]" { Wj }
   | "[def;" { Wdef }
   | "[Pi;" { WPi }
+  | "PI" { FPi }
   | "Pi" { KPi }
+  | "LAMBDA" { Flambda }
   | "lambda" { Klambda }
   | "[Sigma;" { WSigma }
   | "Sigma" { KSigma }

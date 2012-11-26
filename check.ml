@@ -35,6 +35,7 @@ let rec tcheck pos env = function
 	  | (_,Object_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a t-variable but found an o-variable: "^s)))
       | Variable _ -> raise Error.Internal
       | APPLY(h,args) -> match h with
+	| R _ -> raise Error.NotImplemented
 	| Defapp _ -> raise Error.NotImplemented
 	| T th -> (
 	    match th with 
@@ -79,6 +80,7 @@ and ocheck pos env = function
 	| (_,Object_variable) -> ())
     | Variable (VarGen _ | VarUnused) -> raise Error.Internal
     | APPLY(h,args) -> match h with
+      | R _ -> raise Error.NotImplemented
       | Defapp _ -> raise Error.NotImplemented
       | U th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a u-expression"))
       | T th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a t-expression"))

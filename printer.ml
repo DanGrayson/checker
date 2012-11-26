@@ -88,7 +88,7 @@ let rec lf_type_family_to_string = function
   | F_Pi(v,t,u) -> 
       if v == VarUnused
       then concat ["("; (lf_type_family_to_string t); " -> "; lf_type_family_to_string u; ")"]
-      else concat ["Pi "; vartostring' v; ":"; (lf_type_family_to_string t); ", "; lf_type_family_to_string u]
+      else concat ["PI "; vartostring' v; ":"; (lf_type_family_to_string t); ", "; lf_type_family_to_string u]
 
 let ueqntostring (u,v) = concat ["; "; ts_expr_to_string u; "="; ts_expr_to_string v]
 
