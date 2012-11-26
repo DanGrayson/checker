@@ -5,23 +5,21 @@ open Helpers
 open Grammar0
 
 %}
-%start command unusedtokens ts_exprEof lf_exprEof
+%start command ts_exprEof lf_exprEof
 %type <Toplevel.command> command
-%type <Typesystem.expr> ts_exprEof
-%type <Typesystem.expr> lf_exprEof
+%type <Typesystem.expr> ts_exprEof lf_exprEof
+%type <Typesystem.expr list> arglist
 %type <Typesystem.canonical_type_family> canonical_type_family
 %token <int> Nat
-%type <unit> unusedtokens
-%token <string> IDENTIFIER
-%token <Typesystem.var> Var_token 
+%token <string> IDENTIFIER LABEL LABEL_SEMI
+%token <string * int> DEF_APP
 %token
-  Wlparen Wrparen Wlbracket Wrbracket Wplus Wcomma Wperiod Wslash Wcolon Wstar
-  Warrow Wequalequal Wequal Wturnstile Wtriangle Wcolonequal Wlbrace Wrbrace
-  Wbar Wunderscore WF_Print WRule Wgreaterequal Wgreater Wlessequal Wless Wsemi
-  KUlevel Kumax KType KPi Klambda KSigma WEl WPi Wev Wu Wj WU Wlambda Wforall
-  Kforall WSigma WCoprod WCoprod2 WEmpty Wempty Wempty_r WIC WId WTau WPrint
-  WDefine WShow WEnd WVariable WAlpha Weof Watat WCheck WCheckUniverses Wflush
-  Prec_application Wdef Flambda
+
+  Wlparen Wrparen Wrbracket Wplus Wcomma Wperiod  Wcolon Wstar
+  Warrow Wequalequal Wequal   Wcolonequal 
+   Wunderscore WF_Print WRule Wgreaterequal Wgreater Wlessequal Wless Wsemi
+  KUlevel Kumax KType KPi Klambda KSigma WTau WPrint WDefine WShow WEnd
+  WVariable WAlpha Weof Watat WCheck WCheckUniverses  Prec_application
 
 /* precedences, lowest first */
 %right
@@ -33,10 +31,9 @@ open Grammar0
 %left
   Prec_application
 %right
-  Klambda Kforall
+  Klambda
 %nonassoc
-  Wforall Wunderscore Wplus Wu Wlparen Wlambda Wj Wev Wdef IDENTIFIER Wempty_r
-  Wempty WU WSigma WPi WId WIC WEmpty WEl WCoprod2 WCoprod Kumax Watat
+  Wunderscore Wplus Wlparen IDENTIFIER Kumax Watat
 
 %%
 
@@ -60,9 +57,9 @@ lf_exprEof: a=lf_expr Weof {a}
 lf_expr:
 | e=bare_lf_expr
   { with_pos (Error.Position($startpos, $endpos)) e  }
-| Wlparen Flambda v=variable Wcomma body=lf_expr Wrparen
+| Wlparen Klambda v=variable Wcomma body=lf_expr Wrparen
     { LAMBDA(v,body) }
-| Wlparen Flambda v=variable_unused Wcomma body=lf_expr Wrparen
+| Wlparen Klambda v=variable_unused Wcomma body=lf_expr Wrparen
     { LAMBDA(v,body) }
 
 variable_unused:
@@ -78,15 +75,7 @@ bare_lf_expr:
     { APPLY(f,args) }
 
 lf_term_head:
-| Wlbracket Klambda Wrbracket
-    { O O_lambda }
-| Wlbracket Kforall Wrbracket
-    { O O_forall }
-| Wlbracket KPi Wrbracket
-    { T T_Pi }
-| Wlbracket KSigma Wrbracket
-    { T T_Sigma }
-| Wlbracket l=IDENTIFIER Wrbracket
+| l=LABEL
     { try List.assoc ("[" ^ l ^ "]") label_strings with Not_found -> $syntaxerror }
 | l=IDENTIFIER 
     { V (Var l) }
@@ -131,12 +120,6 @@ command0:
 | WEnd Wperiod
     { Toplevel.End }
 
-unusedtokens: 
-    Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile Wempty
-    Wempty_r Wflush Wlbrace Wrbrace Wslash Wtriangle Wturnstile
-    Wlbracket Wbar Var_token Wplus
-    { () }
-
 uParm: vars=nonempty_list(IDENTIFIER) Wcolon KUlevel eqns=preceded(Wsemi,uEquation)*
     { UParm (UContext ((List.map make_Var vars),eqns)) }
 tParm: vars=nonempty_list(IDENTIFIER) Wcolon KType 
@@ -169,6 +152,9 @@ ts_exprEof: a=ts_expr Weof {a}
 variable:
 | bare_variable
     { Error.Position($startpos, $endpos), $1 }
+variable_or_unused:
+| bare_variable_or_unused
+    { Error.Position($startpos, $endpos), $1 }
 ts_expr:
 | bare_ts_expr
     { with_pos (Error.Position($startpos, $endpos)) $1 }
@@ -176,81 +162,84 @@ ts_expr:
     {$1}
 | Watat e=lf_expr
     {e}
+arglist:
+| Wlparen a=separated_list(Wcomma,ts_expr) Wrparen
+    {a}
 bare_variable:
 | IDENTIFIER
     { Var $1 }
+bare_variable_or_unused:
+| v=bare_variable
+    {v}
+| Wunderscore
+    { VarUnused }
 bare_ts_expr:
 | bare_variable
     { Variable $1 }
 | Wunderscore
     { new_hole' () }
-| Wu Wlparen u=ts_expr Wrparen
-    { make_OO_u u }
-| Wj Wlparen u=ts_expr Wcomma v=ts_expr Wrparen
-    { make_OO_j u v }
-| Wev x=variable Wrbracket Wlparen f=ts_expr Wcomma o=ts_expr Wcomma t=ts_expr Wrparen
-    { make_OO_ev f o (x,t) }
-| Wev Wunderscore Wrbracket Wlparen f=ts_expr Wcomma o=ts_expr Wcomma t=ts_expr Wrparen
-    { make_OO_ev f o ((Error.Nowhere, VarUnused), t) }
 | f=ts_expr o=ts_expr
     %prec Prec_application
     { make_OO_ev f o ((Error.Nowhere, VarUnused), with_pos (Error.Position($startpos, $endpos)) (new_hole'())) }
-| Wlambda x=variable Wrbracket Wlparen t=ts_expr Wcomma o=ts_expr Wrparen
-    { make_OO_lambda t (x,o) }
 | Klambda x=variable Wcolon t=ts_expr Wcomma o=ts_expr
     %prec Klambda
     { make_OO_lambda t (x,o) }
-| Wforall x=variable Wrbracket Wlparen u1=ts_expr Wcomma u2=ts_expr Wcomma o1=ts_expr Wcomma o2=ts_expr Wrparen
-    { make_OO_forall u1 u2 o1 (x,o2) }
-| Kforall x=variable Wcolon Wstar o1=ts_expr Wcomma o2=ts_expr (* not sure about this syntax *)
-    %prec Kforall
-    { make_OO_forall (new_hole ()) (new_hole ()) o1 (x,o2) }
-| Wempty Wlparen Wrparen
-    { make_OO_empty }
-| Wempty_r Wlparen t=ts_expr Wcomma o=ts_expr Wrparen
-    { make_OO_empty_r t o }
-| Wdef name=IDENTIFIER Wrbracket Wlparen 
-    u=separated_list(Wcomma,ts_expr) 
-    Wrparen { make_Defapp name u [] [] }
-| Wdef name=IDENTIFIER Wrbracket Wlparen 
-    u=separated_list(Wcomma,ts_expr) Wsemi
-    t=separated_list(Wcomma,ts_expr) 
-    Wrparen { make_Defapp name u t [] }
-| Wdef name=IDENTIFIER Wrbracket Wlparen 
-    u=separated_list(Wcomma,ts_expr) Wsemi
-    t=separated_list(Wcomma,ts_expr) Wsemi
-    o=separated_list(Wcomma,ts_expr) 
-    Wrparen { make_Defapp name u t o }
-| WEl Wlparen o=ts_expr Wrparen
-    { make_TT_El o }
 | Wstar o=ts_expr
     { make_TT_El o }
-| WU Wlparen u=ts_expr Wrparen
-    { make_TT_U u }
-| WPi x=variable Wrbracket Wlparen t1=ts_expr Wcomma t2=ts_expr Wrparen 
-    { make_TT_Pi t1 (x,t2) }
 | KPi x=variable Wcolon t1=ts_expr Wcomma t2=ts_expr
     %prec KPi
     { make_TT_Pi t1 (x,t2) }
 | t=ts_expr Warrow u=ts_expr
     { make_TT_Pi t ((Error.Nowhere, VarUnused),u) }
-| WSigma x=variable Wrbracket Wlparen t1=ts_expr Wcomma t2=ts_expr Wrparen
-    { make_TT_Sigma t1 (x,t2) }
 | KSigma x=variable Wcolon t1=ts_expr Wcomma t2=ts_expr
     %prec KSigma
     { make_TT_Sigma t1 (x,t2) }
-| WCoprod Wlparen t1=ts_expr Wcomma t2=ts_expr Wrparen
-    { make_TT_Coprod t1 t2 }
-| WCoprod2 x1=variable Wcomma x2=variable Wrbracket Wlparen t1=ts_expr Wcomma t2=ts_expr Wcomma s1=ts_expr Wcomma s2=ts_expr Wcomma o=ts_expr Wrparen
-    { make_TT_Coprod2 t1 t2 (x1,s1) (x2,s2) o }
-| WEmpty Wlparen Wrparen 
-    { make_TT_Empty }
-| WIC x=variable Wcomma y=variable Wcomma z=variable Wrbracket
-    Wlparen tA=ts_expr Wcomma a=ts_expr Wcomma tB=ts_expr Wcomma tD=ts_expr Wcomma q=ts_expr Wrparen 
-    { make_TT_IC tA a (x,tB,(y,tD,(z,q))) }
-| WId Wlparen t=ts_expr Wcomma a=ts_expr Wcomma b=ts_expr Wrparen 
-    { make_TT_Id t a b }
 | u=ts_expr Wplus n=Nat
     { APPLY(U (U_plus n), [u]) }
 | Kumax Wlparen u=ts_expr Wcomma v=ts_expr Wrparen
     { APPLY(U U_max,[u;v])  }
+| def=DEF_APP a=arglist
+    { let (name,aspect) = def in APPLY(Defapp(name,aspect),a) }
+| name=LABEL a=arglist
+    {
+     let label = 
+       try List.assoc ("[" ^ name ^ "]") label_strings with Not_found -> $syntaxerror
+     in
+     match head_to_vardist label with
+     | None -> APPLY(label,a)
+     | Some (n,_) ->
+	 if n = 0 then APPLY(label,a)
+	 else
+	   raise (Error.TypingError
+		    ( Error.Position($startpos, $endpos),
+		      "expected " ^ (string_of_int n) ^ " variable" ^ (if n != 1 then "s" else "")));
+	 
+   }
+| name=LABEL_SEMI vars=separated_list(Wcomma,variable_or_unused) Wrbracket args=arglist
+    {
+     let label = 
+       try List.assoc ("[" ^ name ^ "]") label_strings with Not_found -> $syntaxerror
+     in
+     match head_to_vardist label with
+     | None -> raise (Error.TypingError (Error.Position($startpos, $endpos), "expected no variables"))
+     | Some (nvars,varindices) ->
+	 if nvars != List.length vars then
+	   raise (Error.TypingError
+		    ( Error.Position($startpos, $endpos),
+		      "expected " ^ (string_of_int nvars) ^ " variable" ^ (if nvars != 1 then "s" else "")));
+	 let nargs = List.length varindices
+	 in
+	 if List.length args != nargs then
+	   raise (Error.TypingError
+		    ( Error.Position($startpos, $endpos),
+		      "expected " ^ (string_of_int nargs) ^ " argument" ^ (if nargs != 1 then "s" else "")));
+	 let args = List.map2 (
+	   fun indices arg ->
+	     (* example: indices = [0;1], change arg to (LAMBDA v_0, (LAMBDA v_1, arg)) *)
+	     List.fold_right (
+	     fun index arg -> LAMBDA( List.nth vars index, arg)
+		 ) indices arg
+	  ) varindices args
+	 in
+	 APPLY(label,args)
+   }

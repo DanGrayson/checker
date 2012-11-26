@@ -9,7 +9,7 @@ let concat = String.concat ""
 let concatl x = concat (List.flatten x)
 
 let rec ts_expr_to_string = function
-  | LAMBDA(x,body) -> "LAMBDA " ^ (vartostring x) ^ ", " ^ (ts_expr_to_string body)
+  | LAMBDA(x,body) -> "lambda " ^ (vartostring x) ^ ", " ^ (ts_expr_to_string body)
   | POS(_,e) -> match e with 
     | EmptyHole n -> "?" ^ (string_of_int n)
     | Variable v -> vartostring' v

@@ -31,6 +31,7 @@ let digit = [ '0'-'9' ]
 let first = [ 'A'-'Z' 'a'-'z' ]
 let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' ]
 let white = [ ' ' '\r' '\n' '\t' '\012' ]*
+let ident = first after*
 rule expr_tokens = parse
   | "Check" white "Universes" { WCheckUniverses }
   | "Print" { WPrint }
@@ -43,44 +44,23 @@ rule expr_tokens = parse
   | "Define" { WDefine }
   | "End" { WEnd }
   | "Show" { WShow }
-  | "[El]" { WEl }
-  | "[U]" { WU }
-  | "[u]" { Wu }
-  | "[j]" { Wj }
-  | "[def;" { Wdef }
-  | "[Pi;" { WPi }
+  | '[' (ident as id) '.' (digit+ as aspect) ']' { DEF_APP(id,int_of_string aspect) }
+  | '[' (ident as id) ']' { LABEL id }
+  | '[' (ident as id) ';' { LABEL_SEMI id }
   | "Pi" { KPi }
-  | "LAMBDA" { Flambda }
   | "lambda" { Klambda }
-  | "[Sigma;" { WSigma }
   | "Sigma" { KSigma }
-  | "[Coprod]" { WCoprod }
-  | "[Coprod;" { WCoprod2 }
-  | "[Empty]" { WEmpty }
-  | "[empty]" { Wempty }
-  | "[empty_r]" { Wempty_r }
-  | "[IC;" { WIC }
-  | "[Id]" { WId }
-  | "[ev;" { Wev }
-  | "[lambda;" { Wlambda }
-  | "[forall;" { Wforall }
-  | "forall" { Kforall }
   | "Ulevel" { KUlevel }
   | "Type" { KType }
   | "max" { Kumax }
-  | "|" { Wbar }
   | '('  { Wlparen }
   | ')'  { Wrparen }
-  | '['  { Wlbracket }
   | ']'  { Wrbracket }
-  | '{'  { Wlbrace }
-  | '}'  { Wrbrace }
   | '-' '>'  { Warrow }
   | '*'  { Wstar }
   | ';'  { Wsemi }
   | '.'  { Wperiod }
   | ','  { Wcomma }
-  | '/'  { Wslash }
   | '+'  { Wplus }
   | ':'  { Wcolon }
   | '='  { Wequal }
@@ -92,10 +72,8 @@ rule expr_tokens = parse
   | '_' { Wunderscore }
   | '<' { Wless }
   | ':' '='  { Wcolonequal }
-  | '|' '-'  { Wturnstile }
-  | '|' '>'  { Wtriangle }
   | digit+ as n { Nat (int_of_string n) } (* eventually check for overflow and leading 0 *)
-  | first after* as id { IDENTIFIER id }
+  | ident as id { IDENTIFIER id }
   | [ '\t' ] { tab lexbuf; expr_tokens lexbuf }
   | [ ' ' '\r' ] { expr_tokens lexbuf }
   | '#' [ ^ '\n' ]* { expr_tokens lexbuf }
@@ -109,5 +87,4 @@ and command_flush = parse
   | eof { Weof }
   | '#' [ ^ '\n' ]* { expr_tokens lexbuf }
   | newline { command_flush lexbuf }
-  | '.' { Wflush }
   | _ { command_flush lexbuf }

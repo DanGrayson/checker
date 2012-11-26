@@ -24,14 +24,14 @@ Define a := x : X.
 
 Show.
 
-# Check lambda x:T, lambda y:U, [odef;foo](u1,u2;T,U;x,y).
+# Check lambda x:T, lambda y:U, [foo.0](u1,u2;T,U;x,y).
 
 Check lambda x:T, x.
 Check T.
 Check [El]([u](u2)).
 
 # test lf-expr input format:
-Print (LAMBDA x, ([ ev ] f x (LAMBDA y, T))).
+Print (lambda x, ([ev] f x (lambda y, T))).
 
 F_Print Pi u1:uexp, Pi u2:uexp, Pi T:texp, Pi t:oexp, Pi ist:istype T, Pi has:hastype t T, texp.
 
@@ -107,8 +107,8 @@ Check lambda k:U, lambda g:T -> *k, lambda f:Pi t:T, *g t, lambda o:T, f o.
 Check lambda r:U, lambda f:T->U, lambda o:T, lambda x : *r, f o.
 Check lambda f:X->T, lambda y:X, [ev;_](f,y,T).
 Check lambda f:X->T, lambda y:X, f y.
-# Check [udef;foo](u0+1,u1).
-# Check lambda x:T, lambda y:U, lambda t:[tdef;foo](u0,u0;T,U;x,y), t.
+# Check [foo.0](u0+1,u1).
+# Check lambda x:T, lambda y:U, lambda t:[foo.1](u0,u0;T,U;x,y), t.
 
 # Check forall x:*y, z.	# fix the location of the holes
 

@@ -239,8 +239,13 @@ let vartostring' = function
 
 let vartostring v = vartostring' (strip_pos_var v)
 
-    (** The type [label] corresponds to the constant and variable atomic terms
-	of LF.
+    (** The type [label] accommodates the variables of LF, and the constants of
+        LF, which in turn include the labels of TS, the inference rules of TS,
+        and the definitions of TS (in various aspects).
+
+	In parsing and printing, the constants have have names enclosed in
+	brackets, e.g., [\[ev\]], reminiscent of the syntax for the labels on
+	nodes of TS expressions.
 
 	We implement "spine form", where applications are represented as [(f x
 	y z ...)], with [f] not being an application, thus being a constant or
@@ -251,9 +256,7 @@ let vartostring v = vartostring' (strip_pos_var v)
 	judgment that T is a type.  Or aspect 1 could be an o-expression t,
 	aspect 2 could be a type T, and aspect 3 could be a derivation of the
 	judgment that t has type T.  Similarly for the other two types of
-	judgment in TS.
-
-     *)
+	judgment in TS. *)
 
 type label =
   | V of var'			(** a variable, appearing as an atomic term of LF *)
@@ -406,7 +409,7 @@ let ohead_to_type_family = function
   | O_j -> uexp @> uexp @> oexp
   | O_ev -> oexp @> oexp @> texp1 @> oexp
   | O_lambda -> texp @> oexp1 @> oexp
-  | O_forall -> texp @> texp1 @> texp
+  | O_forall -> uexp @> uexp @> texp @> texp1 @> texp
   | O_pair -> oexp @> oexp @> texp1 @> oexp
   | O_pr1 -> texp @> texp1 @> oexp @> oexp
   | O_pr2 -> texp @> texp1 @> oexp @> oexp
@@ -428,6 +431,23 @@ let ohead_to_type_family = function
   | O_J -> texp @> oexp @> oexp @> oexp @> oexp @> texp2 @> oexp
   | O_rr0 -> uexp @> uexp @> oexp @> oexp @> oexp @> oexp
   | O_rr1 -> uexp @> oexp @> oexp @> oexp
+
+type vardist = int list list
+let head_to_vardist = function
+  | T T_Coprod2 -> Some (2, [] :: [] :: [0] :: [1] :: [])
+  | O O_ic_r -> Some (5, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [] :: [3;4] :: [] :: [])
+  | T T_IC -> Some (3, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [])
+  | O O_ev -> Some (1, [] :: [] :: [0] :: [])
+  | T T_Pi | T T_Sigma | O O_lambda -> Some (1, [] :: [0] :: [])
+  | O O_forall -> Some (1, [] :: [] :: [] :: [0] :: [])
+  | O O_pair -> Some (1, [] :: [] :: [0] :: [])
+  | O O_pr1 | O O_pr2 -> Some (1, [] :: [0] :: [] :: [])
+  | O O_total -> Some (1, [] :: [] :: [] :: [0] :: [])
+  | O O_pt_r -> Some (1, [] :: [0] :: [])
+  | O O_c -> Some (3, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [] :: [] :: [])
+  | O O_ic -> Some (3, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [])
+  | O O_J -> Some (2, [] :: [] :: [] :: [] :: [] :: [0;1] :: [])
+  | _ -> None
 
 (** The derivation rules of TS. *)
 

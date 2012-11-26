@@ -143,7 +143,8 @@ let checkCommand x =
   | POS(_,EmptyHole n) -> 
       Printf.printf "     : empty hole ?%d\n" n
   | LAMBDA _ ->
-      Printf.printf "     : binder\n"
+      Printf.printf "     : binder\n";
+  flush stdout
 
 let alphaCommand (x,y) =
   let x = protect fix x Error.nopos in
