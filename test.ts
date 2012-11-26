@@ -25,7 +25,7 @@ Check @@ (Pi T (LAMBDA x, U)).
 Check @@ (lambda (Pi T (LAMBDA _, U)) (LAMBDA f, (lambda T (LAMBDA o, (ev f o (LAMBDA _, U)))))).
 Check @@ (lambda U (LAMBDA k, (lambda (Pi T (LAMBDA _, (El k))) (LAMBDA g, (lambda (Pi T (LAMBDA t, (El (ev g t (LAMBDA _, (El k)))))) (LAMBDA f, (lambda T (LAMBDA o, (ev f o (LAMBDA t, (El (ev g t (LAMBDA _, (El k)))))))))))))).
 
-F_Print Pi u1:Uexp, Pi u2:Uexp, Pi T:Texp, Pi t:Oexp, Pi ist:Istype T, Pi has:Hastype t T, Texp.
+F_Print Pi u1:uexp, Pi u2:uexp, Pi T:texp, Pi t:oexp, Pi ist:istype T, Pi has:hastype t T, texp.
 
 Check [U](u1).
 Check [j](u1, u2).

@@ -75,7 +75,7 @@ let rec ts_expr_to_string = function
 		| _ -> raise Error.Internal)
 	    | _ -> "[" ^ (ohead_to_string oh) ^ "]" ^ (parenelisttostring args)
 	   )
-	| _ -> concat ["["; (head_to_string h); "]"; (parenelisttostring args)]
+	| _ -> concat ["["; (label_to_string h); "]"; (parenelisttostring args)]
        )
 and elisttostring s = String.concat "," (List.map ts_expr_to_string s)
 and parenelisttostring s = String.concat "" [ "("; elisttostring s; ")" ]
@@ -85,7 +85,10 @@ let rec lf_type_family_to_string = function
   | F_APPLY(hd,args) -> 
       let s = concat [tfhead_to_string hd; concat (List.map (space <<- ts_expr_to_string) args)] in
       if String.contains s ' ' then concat ["(";s;")"] else s
-  | F_Pi(v,t,u) -> concat ["Pi "; vartostring' v; ":"; (lf_type_family_to_string t); ", "; lf_type_family_to_string u]
+  | F_Pi(v,t,u) -> 
+      if v == VarUnused
+      then concat ["("; (lf_type_family_to_string t); " -> "; lf_type_family_to_string u; ")"]
+      else concat ["Pi "; vartostring' v; ":"; (lf_type_family_to_string t); ", "; lf_type_family_to_string u]
 
 let ueqntostring (u,v) = concat ["; "; ts_expr_to_string u; "="; ts_expr_to_string v]
 
@@ -111,5 +114,5 @@ and lf_expr_to_string = function
   | POS(_,e) -> match e with 
     | EmptyHole n -> "_" ^ (string_of_int n)
     | Variable v -> vartostring' v
-    | APPLY(h,args) -> lfl (head_to_string h) args
+    | APPLY(h,args) -> lfl (label_to_string h) args
 

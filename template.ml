@@ -82,4 +82,5 @@ let template = function
 	    | O_rr0 -> ()
 	    | O_rr1 -> ()
 	   )
+	| _ -> raise Error.NotImplemented
        )

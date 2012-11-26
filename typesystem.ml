@@ -226,23 +226,73 @@ let oheads = [ O_u; O_j; O_ev; O_lambda; O_forall; O_pair; O_pr1; O_pr2;
   O_total; O_pt; O_pt_r; O_tt; O_coprod; O_ii1; O_ii2; O_sum; O_empty;
   O_empty_r; O_c; O_ic_r; O_ic; O_paths; O_refl; O_J; O_rr0; O_rr1 ]
 
+(** Heads for Istype judgments *)
+type itHead =
+  | Rule15
+
+let itheads = [ Rule15 ]
+
+let ithead_to_string = function
+  | Rule15 -> "Rule15"
+
+(** Heads for Hastype judgments *)
+type htHead =
+  | Rule13
+
+let htheads = [ Rule13 ]
+
+let hthead_to_string = function
+  | Rule13 -> "Rule13"
+
+(** Heads for Tequality judgments *)
+type teHead =
+  | Rule9
+
+let teheads = [ Rule9 ]
+
+let tehead_to_string = function
+  | Rule9 -> "Rule9"
+
+(** Heads for Oequality judgments *)
+type oeHead =
+  | Rule14
+
+let oeheads = [ Rule14 ]
+
+let oehead_to_string = function
+  | Rule14 -> "Rule14"
+
 type label =
   | U of uHead			(** labels for u-expressions of TS *)
   | T of tHead			(** labels for t-expressions of TS *)
   | O of oHead			(** labels for o-expressions of TS *)
+  | IT of itHead		(** labels for Istype judgments *)
+  | HT of htHead		(** labels for Hastype judgments *)
+  | TE of teHead		(** labels for Tequality judgments *)
+  | OE of oeHead		(** labels for Oequality judgments *)
   | Defapp of string * int	(** application of an aspect of a definition *)
 
-let head_to_string = function
+let labels = List.concat [
+  List.map (fun h -> U h) uheads;
+  List.map (fun h -> T h) theads;
+  List.map (fun h -> O h) oheads;
+  List.map (fun h -> IT h) itheads;
+  List.map (fun h -> HT h) htheads;
+  List.map (fun h -> TE h) teheads;
+  List.map (fun h -> OE h) oeheads
+]
+
+let label_to_string = function
   | Defapp (name,i) -> "[defapp;" ^ name ^ "," ^ (string_of_int i) ^ "]"
   | U h -> uhead_to_string h
   | T h -> thead_to_string h
   | O h -> ohead_to_string h
+  | IT h -> ithead_to_string h
+  | HT h -> hthead_to_string h
+  | TE h -> tehead_to_string h
+  | OE h -> oehead_to_string h
 
-let label_strings = List.concat [
-  List.map (fun h -> uhead_to_string h, U h) uheads; (* Uplus _ is not here *)
-  List.map (fun h -> thead_to_string h, T h) theads;
-  List.map (fun h -> ohead_to_string h, O h) oheads
-]
+let label_strings = List.map (fun h -> label_to_string h, h) labels
 
 (** Variables *)
 let strip_pos_var : Error.position * 'a -> 'a = snd
@@ -297,6 +347,23 @@ and bare_expr =
   | APPLY of label * expr list
 	(** Iterated function application. *)
 
+(** Helper functions for source code positions. *)
+
+let with_pos pos e = POS (pos, e)
+let strip_pos = function
+  | POS(_,x) -> x
+  | _ -> raise Error.Internal
+let get_pos = function
+  | POS(pos,_) -> pos
+  | _ -> Error.Nowhere
+let with_pos_of x e = POS (get_pos x, e)
+let nowhere x = with_pos Error.Nowhere x
+let var_to_expr x = nowhere (Variable x)
+
+(** Notation. *)
+
+let ( ** ) f x = nowhere(APPLY(f,x))
+
 	(** The following type family constants for LF type families segregate TS
 	    expressions into three forms: u-expressions, t-expressions, and
 	    o-expressions, and they introduce the four forms of judgments. 
@@ -313,13 +380,13 @@ type tfHead =
   | F_Object_equality
 
 let tfhead_to_string = function
-  | F_uexp -> "Uexp"
-  | F_texp -> "Texp"
-  | F_oexp -> "Oexp"
-  | F_Is_type -> "Istype"
-  | F_Has_type -> "Hastype"
-  | F_Type_equality -> "TEquality"
-  | F_Object_equality -> "OEquality"
+  | F_uexp -> "uexp"
+  | F_texp -> "texp"
+  | F_oexp -> "oexp"
+  | F_Is_type -> "istype"
+  | F_Has_type -> "hastype"
+  | F_Type_equality -> "tequal"
+  | F_Object_equality -> "oequal"
 
 let tfheads = [ F_uexp; F_texp; F_oexp; F_Is_type; F_Has_type; F_Type_equality; F_Object_equality ]
 
@@ -330,18 +397,18 @@ type canonical_type_family =
   | F_APPLY of tfHead * expr list
   | F_hole
 
-let ( ** ) f x = F_APPLY(f,x)
+let ( *** ) f x = F_APPLY(f,x)
 
-let uexp = F_uexp ** []
-let texp = F_texp ** []
-let oexp = F_oexp ** []
+let uexp = F_uexp *** []
+let texp = F_texp *** []
+let oexp = F_oexp *** []
 
 let ( @> ) a b = F_Pi(VarUnused, a, b)
 
-let istype t = F_Is_type ** [t]
-let hastype o t = F_Has_type ** [o;t]
-let type_equality t t' = F_Type_equality ** [t;t']
-let object_equality o o' t = F_Object_equality ** [o;o';t]
+let istype t = F_Is_type *** [t]
+let hastype o t = F_Has_type *** [o;t]
+let type_equality t t' = F_Type_equality *** [t;t']
+let object_equality o o' t = F_Object_equality *** [o;o';t]
 
 let texp1 = oexp @> texp
 let texp2 = oexp @> oexp @> texp
@@ -395,13 +462,40 @@ let ohead_to_type_family = function
   | O_rr0 -> uexp @> uexp @> oexp @> oexp @> oexp @> oexp
   | O_rr1 -> uexp @> oexp @> oexp @> oexp
 
+(*** The derivation rules of TS. *)
+
+let o = Var "o"
+let o' = var_to_expr o
+let tT = Var "T"
+let tT' = var_to_expr tT
+let tU = Var "U"
+let tU' = var_to_expr tU
+let uM = Var "M"
+let uM' = var_to_expr uM
+
+let ithead_to_type_family = function
+  | Rule15 -> F_Pi(uM, uexp, istype ((T T_U) ** [uM']))
+
+let hthead_to_type_family = function
+  | Rule13 -> F_Pi(o, oexp, F_Pi(tT, texp, F_Pi(tU, texp, (hastype o' tT') @> (type_equality tT' tU') @> (hastype o' tU'))))
+
+let tehead_to_type_family = function
+  | Rule9 -> F_hole
+
+let oehead_to_type_family = function
+  | Rule14 -> F_hole
+
 let label_to_type_family = function
-  | U uh -> uhead_to_type_family uh
-  | T th -> thead_to_type_family th
-  | O oh -> ohead_to_type_family oh
+  | U h -> uhead_to_type_family h
+  | T h -> thead_to_type_family h
+  | O h -> ohead_to_type_family h
+  | IT h -> ithead_to_type_family h
+  | HT h -> hthead_to_type_family h
+  | TE h -> tehead_to_type_family h
+  | OE h -> oehead_to_type_family h
   | Defapp _ -> raise Error.NotImplemented
 
-(** Constructors for the "kinds" of LF. 
+(*** Constructors for the "kinds" of LF. 
 
     Notation: constructors starting with "K_" refer to kinds of LF. *)
 type kind =
@@ -419,7 +513,7 @@ let tfhead_to_kind = function
   | F_Type_equality -> texp @@> texp @@> K_type
   | F_Object_equality -> oexp @@> texp @@> texp @@> K_type
 
-(** 
+(*** 
     A universe context [UC = (Fu,A)] is represented by a list of universe variables [Fu] and a list of
     equations [M_i = N_i] between two u-level expressions formed from the variables in [Fu]
     that defines the admissible subset [A] of the functions [Fu -> nat].  It's just the subset
@@ -430,26 +524,26 @@ let emptyUContext = UContext ([],[])
 let mergeUContext : uContext -> uContext -> uContext =
   function UContext(uvars,eqns) -> function UContext(uvars',eqns') -> UContext(List.rev_append uvars' uvars,List.rev_append eqns' eqns)
 
-(** t-context; a list of t-variables declared as "Type". *)
+(*** t-context; a list of t-variables declared as "Type". *)
 type tContext = var' list
 let emptyTContext : tContext = []
 
 type utContext = uContext * tContext
 let emptyUTContext = emptyUContext, emptyTContext
 
-(** o-context; a list of o-variables with T-expressions representing their declared type. *)
+(*** o-context; a list of o-variables with T-expressions representing their declared type. *)
 type oContext = (var' * expr) list				  (* [Gamma] *)
 let emptyOContext : oContext = []
 
 type oSubs = (var' * expr) list
 
-(** Definitions. *)
+(*** Definitions. *)
 
 type identifier = Ident of string
 type definition = (int * expr * canonical_type_family) list
 type vartype = Ulevel_variable | Type_variable | Object_variable | Def_variable
 
-(** Contexts. *)
+(*** Contexts. *)
 
 type environment_type = {
     uc : uContext;
@@ -476,15 +570,6 @@ let newfresh =
       Var x | VarGen(_,x) -> newgen x
     | VarUnused as v -> v
 
-let with_pos pos e = POS (pos, e)
-let strip_pos = function
-  | POS(_,x) -> x
-  | _ -> raise Error.Internal
-let get_pos = function
-  | POS(pos,_) -> pos
-  | _ -> Error.Nowhere
-let with_pos_of x e = POS (get_pos x, e)
-let nowhere x = with_pos Error.Nowhere x
 let new_hole' = 
   let counter = ref 0 in
   function () -> (

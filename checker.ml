@@ -4,15 +4,19 @@ open Typesystem
 open Template				(*otherwise unused*)
 open Universe
 
-let leave pos = exit (
+exception Error_Handled
+exception FileFinished
+
+let error_summary pos =
   let n = !Tokens.error_count in
   if n > 0 
   then (
     Printf.fprintf stderr "%s: exiting, %d error%s encountered, see messages above\n" pos n (if n == 1 then "" else "s");
-    1)
-  else 0)
+    flush stderr)
 
-exception Error_Handled
+let leave pos = 
+  error_summary pos;
+  raise FileFinished
 
 let protect1 f =
   try f () with
@@ -119,6 +123,14 @@ let checkCommand x =
   | POS(_,APPLY(O _,_)) -> 
       Printf.printf "     : o-expression\n";
       protect1 (fun () -> Check.ocheck !environment x)
+  | POS(_,APPLY(IT _,_)) -> 
+      Printf.printf "     : is-type judgment\n"
+  | POS(_,APPLY(HT _,_)) -> 
+      Printf.printf "     : has-type judgment\n"
+  | POS(_,APPLY(TE _,_)) -> 
+      Printf.printf "     : type-equality judgment\n"
+  | POS(_,APPLY(OE _,_)) -> 
+      Printf.printf "     : object-equality judgment\n"
   | POS(_,APPLY(T _,_)) -> 
       Printf.printf "     : t-expression\n"
   | POS(_,APPLY(U _,_)) -> 
@@ -240,14 +252,23 @@ let parse_string grammar s =
 let expr_from_string = parse_string Grammar.ts_exprEof
 
 let toplevel() = 
-  Arg.parse [
-  ("--debug" , Arg.Set Debugging.debug_mode, "turn on debug mode")
-]
-    parse_file
-    "usage: [options] filename ...";
-   (try printCommand (expr_from_string "Pi f:T->[U](uuu0), Pi o:T, *f o" ) with Error_Handled -> ());
-   (try printCommand (expr_from_string "lambda f:T->U, lambda o:T, f o") with Error_Handled -> ());
-  leave ""
+  (try
+    Arg.parse 
+      [
+       ("--debug" , Arg.Set Debugging.debug_mode, "turn on debug mode")
+     ]
+      parse_file
+      "usage: [options] filename ...";
+  with FileFinished -> ());
+  (try printCommand (expr_from_string "Pi f:T->[U](uuu0), Pi o:T, *f o" ) with Error_Handled -> ());
+  (try printCommand (expr_from_string "lambda f:T->U, lambda o:T, f o") with Error_Handled -> ());
+  List.iter 
+    (
+     fun x -> Printf.printf "F_Print: %s : %s\n" (label_to_string x) (Printer.lf_type_family_to_string (label_to_type_family x))
+    )
+    labels;
+  flush stdout;
+  error_summary "checker.ml:0:0"
 
 let _ = try
   toplevel()

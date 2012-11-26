@@ -49,7 +49,7 @@ lf_type:
 lf_type_head:
 | l=IDENTIFIER 
     { try List.assoc l tfhead_strings 
-    with Not_found -> raise Error.NotImplemented }
+    with Not_found -> $syntaxerror }
 
 lf_exprEof: a=lf_expr Weof {a}
 
@@ -85,7 +85,7 @@ lf_term_head:
 | l=IDENTIFIER 
     {
      try List.assoc l label_strings
-     with Not_found -> raise Error.NotImplemented
+     with Not_found -> $syntaxerror
    }
 
 command: c=command0 
