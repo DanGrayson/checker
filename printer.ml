@@ -13,17 +13,20 @@ let rec lf_expr_to_string = function
   | POS(_,e) -> match e with 
     | EmptyHole n -> "_" ^ (string_of_int n)
     | Variable v -> vartostring' v
-    | APPLY(h,args) -> " $(" ^ (label_to_string h) ^ (String.concat "" (List.map (fun x -> " " ^ (lf_expr_to_string x)) args)) ^ ")"
+    | APPLY(h,args) -> "(" ^ (label_to_string h) ^ (String.concat "" (List.map (fun x -> " " ^ (lf_expr_to_string x)) args)) ^ ")"
 
-let rec lftype_to_string = function
+let rec lftype_to_string target = function
   | F_hole -> "_"
   | F_APPLY(hd,args) -> 
       let s = concat [tfhead_to_string hd; concat (List.map (space <<- lf_expr_to_string) args)] in
       if String.contains s ' ' then concat ["(";s;")"] else s
   | F_Pi(v,t,u) -> 
       if v == VarUnused
-      then concat ["("; lftype_to_string t; " -> "; lftype_to_string u; ")"]
-      else concat ["Pi "; vartostring' v; ":"; lftype_to_string t; ", "; lftype_to_string u]
+      then 
+	let k = concat [lftype_to_string false t; " -> "; lftype_to_string true u]
+	in if target then k else concat ["("; k; ")"]
+      else
+	concat ["Pi "; vartostring' v; ":"; lftype_to_string false t; ", "; lftype_to_string true u]
 
 (** Printing of TS terms in TS format. *)
 

@@ -38,65 +38,78 @@ open Grammar0
 lftype:
 | Wlparen t=lftype Wrparen 
     { t }
-| f=lftype_head args=list(lf_expr)
+| f=lftype_constant args=list(lfterm)
     { F_APPLY(f,args) }
 | KPi v=bare_variable Wcolon a=lftype Wcomma b=lftype
     %prec KPi
     { F_Pi(v,a,b) }
 | a=lftype Warrow b=lftype
    { F_Pi(VarUnused,a,b) }
-| Wlbracket a=lf_expr_parens_optional Ktype Wrbracket
+| Wlbracket a=lfterm Ktype Wrbracket
     { F_APPLY(F_istype, [a]) }
-| Wlbracket a=lf_expr_parens_optional Wcolon b=lf_expr_parens_optional Wrbracket
+| Wlbracket a=lfterm Wcolon b=lfterm Wrbracket
     { F_APPLY(F_hastype, [a;b]) }
-| Wlbracket a=lf_expr_parens_optional Wtilde b=lf_expr_parens_optional Wcolon c=lf_expr_parens_optional Wrbracket
+| Wlbracket a=lfterm Wtilde b=lfterm Wcolon c=lfterm Wrbracket
     { F_APPLY(F_object_similarity, [a;b;c]) }
-| Wlbracket a=lf_expr_parens_optional Wequal b=lf_expr_parens_optional Wcolon c=lf_expr_parens_optional Wrbracket
+| Wlbracket a=lfterm Wequal b=lfterm Wcolon c=lfterm Wrbracket
     { F_APPLY(F_object_equality, [a;b;c]) }
-| Wlbracket a=lf_expr_parens_optional Wtilde b=lf_expr_parens_optional Wrbracket
+| Wlbracket a=lfterm Wtilde b=lfterm Wrbracket
     { F_APPLY(F_type_similarity, [a;b]) }
-| Wlbracket a=lf_expr_parens_optional Wequal b=lf_expr_parens_optional Wrbracket
+| Wlbracket a=lfterm Wequal b=lfterm Wrbracket
     { F_APPLY(F_type_equality, [a;b]) }
 
-lftype_head:
+lftype_constant:
 | l=IDENTIFIER 
-    { try List.assoc l tfhead_strings with Not_found -> $syntaxerror }
+    { 
+      try List.assoc l tfhead_strings 
+      with 
+	Not_found ->
+	  Printf.fprintf stderr "%s: unknown type constant %s\n" 
+	    (Error.error_format_pos (Error.Position($startpos, $endpos)))
+	    l;
+	  flush stderr;
+	  $syntaxerror
+    }
 
-lf_expr:
-| e=bare_lf_expr
+lfterm:
+| e=bare_lfterm
   { with_pos (Error.Position($startpos, $endpos)) e  }
-| Wlparen Klambda v=variable Wcomma body = lf_expr_parens_optional Wrparen
+| Wlparen Klambda v=variable Wcomma body=lfterm Wrparen
     { LAMBDA(v,body) }
-| Wlparen Klambda v=variable_unused Wcomma body = lf_expr Wrparen
+| Wlparen Klambda v=variable_unused Wcomma body=lfterm Wrparen
     { LAMBDA(v,body) }
 
 variable_unused:
 | Wunderscore
     { Error.Position($startpos, $endpos), VarUnused }
 
-bare_lf_expr:
+bare_lfterm:
 | bare_variable
     { Variable $1 }
 | Wunderscore
     { new_hole' () }
-| Wlparen f=lf_term_head args=list(lf_expr) Wrparen
+| Wlparen f=lfterm_constant args=list(lfterm) Wrparen
+    { APPLY(f,args) }
+| Wlparen f=lfterm_variable args=list(lfterm) Wrparen
     { APPLY(f,args) }
 
-lf_expr_parens_optional:
-| e=bare_lf_expr_parens_optional
-    { with_pos (Error.Position($startpos, $endpos)) e  }
-| Wlparen e=lf_expr_parens_optional Wrparen
-    {e}
+lfterm_variable:
+| bare_variable
+    {V $1}
 
-bare_lf_expr_parens_optional:
-| f=lf_term_head args=list(lf_expr)
-    { APPLY(f,args) }
-
-lf_term_head:
+lfterm_constant:
 | l=LABEL
-    { try List.assoc ("[" ^ l ^ "]") label_strings with Not_found -> $syntaxerror }
-| l=IDENTIFIER 
-    { V (Var l) }
+    {
+     try List.assoc ("[" ^ l ^ "]") label_strings 
+     with Not_found -> 
+       Printf.fprintf stderr "%s: unknown term constant [%s]\n" 
+	 (Error.error_format_pos (Error.Position($startpos, $endpos)))
+	 l;
+       flush stderr;
+       $syntaxerror 
+   }
+| def=DEF_APP
+    { let (name,aspect) = def in Defapp(name,aspect) }
 
 command: c=command0 
   { Error.Position($startpos, $endpos), c }
@@ -108,7 +121,7 @@ command0:
     { Toplevel.Variable vars }
 | WVariable vars=nonempty_list(IDENTIFIER) Wcolon KUlevel eqns=preceded(Wsemi,uEquation)* Wperiod
     { Toplevel.UVariable (vars,eqns) }
-| WPrint e=lf_expr Wperiod
+| WPrint e=lfterm Wperiod
     { Toplevel.Print e }
 | WF_Print t=lftype Wperiod
     { Toplevel.F_Print t }
@@ -178,7 +191,7 @@ ts_expr:
     { with_pos (Error.Position($startpos, $endpos)) $1 }
 | parenthesized(ts_expr) 
     {$1}
-| Watat e=lf_expr
+| Watat e=lfterm
     {e}
 arglist:
 | Wlparen a=separated_list(Wcomma,ts_expr) Wrparen
@@ -221,7 +234,13 @@ bare_ts_expr:
 | name=LABEL a=arglist
     {
      let label = 
-       try List.assoc ("[" ^ name ^ "]") label_strings with Not_found -> $syntaxerror
+       try List.assoc ("[" ^ name ^ "]") label_strings 
+       with Not_found -> 
+	 Printf.fprintf stderr "%s: unknown term constant [%s]\n" 
+	   (Error.error_format_pos (Error.Position($startpos, $endpos)))
+	   name;
+	 flush stderr;
+	 $syntaxerror
      in
      match head_to_vardist label with
      | None -> APPLY(label,a)
@@ -236,7 +255,13 @@ bare_ts_expr:
 | name=LABEL_SEMI vars=separated_list(Wcomma,variable_or_unused) Wrbracket args=arglist
     {
      let label = 
-       try List.assoc ("[" ^ name ^ "]") label_strings with Not_found -> $syntaxerror
+       try List.assoc ("[" ^ name ^ "]") label_strings 
+       with Not_found -> 
+	 Printf.fprintf stderr "%s: unknown term constant [%s]\n" 
+	   (Error.error_format_pos (Error.Position($startpos, $endpos)))
+	   name;
+	 flush stderr;
+	 $syntaxerror
      in
      match head_to_vardist label with
      | None -> raise (Error.TypingError (Error.Position($startpos, $endpos), "expected no variables"))
@@ -261,3 +286,4 @@ bare_ts_expr:
 	 in
 	 APPLY(label,args)
    }
+ 

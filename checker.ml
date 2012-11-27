@@ -111,11 +111,11 @@ let printCommand x =
 
 let ruleCommand num name x =
   rules := (Rule (num,name), x) :: !rules;
-  Printf.printf "Rule %d %s: %s\n" num name (Printer.lftype_to_string x);
+  Printf.printf "Rule %d %s: %s\n" num name (Printer.lftype_to_string true x);
   flush stdout
 
 let lf_type_printCommand x =
-  Printf.printf "F_Print: %s\n" (Printer.lftype_to_string x);
+  Printf.printf "F_Print: %s\n" (Printer.lftype_to_string true x);
   flush stdout
 
 let checkCommand x =
@@ -180,7 +180,7 @@ let show_command () =
    List.iter 
      (fun (v,t) -> Printf.printf "     %s : %s\n" 
 	 (vartostring' v)
-	 (Printer.lftype_to_string t)) 
+	 (Printer.lftype_to_string true t)) 
      (List.rev (!environment).lf_context);
   );
   flush stdout

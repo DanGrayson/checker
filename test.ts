@@ -15,7 +15,7 @@ Check lambda x:T, x.
 Check T.
 Check [El]([u](u2)).
 
-# test lf-expr input format:
+# test LF term input format:
 Print (lambda x, ([ev] f x (lambda y, T))).
 
 F_Print Pi u1:uexp, Pi u2:uexp, Pi T:texp, Pi t:oexp, Pi ist:istype T, Pi has:hastype t T, texp.
