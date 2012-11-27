@@ -86,7 +86,7 @@ let ueqntostring (u,v) = concat ["; "; ts_expr_to_string u; "="; ts_expr_to_stri
 let octostring (v,t) = concat [vartostring' v; ":"; ts_expr_to_string t]
 
 let parmstostring = function
-  | ((UContext(uvars,ueqns):uContext),(tc:tContext),(oc:oContext)) 
+  | ((UContext(uvars,ueqns):uContext),(tc:var' list),(oc:ts_context)) 
     -> (
       if List.length uvars > 0 
       then "(" ^ (String.concat " " (List.map vartostring' uvars)) ^ ":Univ" ^ (String.concat "" (List.map ueqntostring ueqns)) ^ ")"
@@ -107,13 +107,13 @@ and lf_expr_to_string = function
     | Variable v -> vartostring' v
     | APPLY(h,args) -> lfl (label_to_string h) args
 
-let rec lf_type_family_to_string = function
+let rec lftype_to_string = function
   | F_hole -> "_"
   | F_APPLY(hd,args) -> 
       let s = concat [tfhead_to_string hd; concat (List.map (space <<- lf_expr_to_string) args)] in
       if String.contains s ' ' then concat ["(";s;")"] else s
   | F_Pi(v,t,u) -> 
       if v == VarUnused
-      then concat ["("; (lf_type_family_to_string t); " -> "; lf_type_family_to_string u; ")"]
-      else concat ["Pi "; vartostring' v; ":"; (lf_type_family_to_string t); ", "; lf_type_family_to_string u]
+      then concat ["("; (lftype_to_string t); " -> "; lftype_to_string u; ")"]
+      else concat ["Pi "; vartostring' v; ":"; (lftype_to_string t); ", "; lftype_to_string u]
 

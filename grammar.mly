@@ -7,7 +7,7 @@ open Grammar0
 %type <Toplevel.command> command
 %type <Typesystem.expr> ts_exprEof
 %type <Typesystem.expr list> arglist
-%type <Typesystem.canonical_type_family> canonical_type_family
+%type <Typesystem.lftype> lftype
 %token <int> Nat
 %token <string> IDENTIFIER LABEL LABEL_SEMI
 %token <string * int> DEF_APP
@@ -35,30 +35,30 @@ open Grammar0
 
 %%
 
-canonical_type_family:
-| Wlparen t=canonical_type_family Wrparen 
+lftype:
+| Wlparen t=lftype Wrparen 
     { t }
-| f=canonical_type_family_head args=list(lf_expr)
+| f=lftype_head args=list(lf_expr)
     { F_APPLY(f,args) }
-| KPi v=bare_variable Wcolon a=canonical_type_family Wcomma b=canonical_type_family
+| KPi v=bare_variable Wcolon a=lftype Wcomma b=lftype
     %prec KPi
     { F_Pi(v,a,b) }
-| a=canonical_type_family Warrow b=canonical_type_family
+| a=lftype Warrow b=lftype
    { F_Pi(VarUnused,a,b) }
 | Wlbracket a=lf_expr_parens_optional Ktype Wrbracket
-    { F_APPLY(F_Is_type, [a]) }
+    { F_APPLY(F_istype, [a]) }
 | Wlbracket a=lf_expr_parens_optional Wcolon b=lf_expr_parens_optional Wrbracket
-    { F_APPLY(F_Has_type, [a;b]) }
+    { F_APPLY(F_hastype, [a;b]) }
 | Wlbracket a=lf_expr_parens_optional Wtilde b=lf_expr_parens_optional Wcolon c=lf_expr_parens_optional Wrbracket
-    { F_APPLY(F_Object_similarity, [a;b;c]) }
+    { F_APPLY(F_object_similarity, [a;b;c]) }
 | Wlbracket a=lf_expr_parens_optional Wequal b=lf_expr_parens_optional Wcolon c=lf_expr_parens_optional Wrbracket
-    { F_APPLY(F_Object_equality, [a;b;c]) }
+    { F_APPLY(F_object_equality, [a;b;c]) }
 | Wlbracket a=lf_expr_parens_optional Wtilde b=lf_expr_parens_optional Wrbracket
-    { F_APPLY(F_Type_similarity, [a;b]) }
+    { F_APPLY(F_type_similarity, [a;b]) }
 | Wlbracket a=lf_expr_parens_optional Wequal b=lf_expr_parens_optional Wrbracket
-    { F_APPLY(F_Type_equality, [a;b]) }
+    { F_APPLY(F_type_equality, [a;b]) }
 
-canonical_type_family_head:
+lftype_head:
 | l=IDENTIFIER 
     { try List.assoc l tfhead_strings with Not_found -> $syntaxerror }
 
@@ -110,7 +110,7 @@ command0:
     { Toplevel.UVariable (vars,eqns) }
 | WPrint e=lf_expr Wperiod
     { Toplevel.Print e }
-| WF_Print t=canonical_type_family Wperiod
+| WF_Print t=lftype Wperiod
     { Toplevel.F_Print t }
 | WCheck o=ts_expr Wperiod
     { Toplevel.Check o }
@@ -121,7 +121,7 @@ command0:
 | WTau o=ts_expr Wperiod
     { Toplevel.Type o }
 
-| WRule num=Nat name=IDENTIFIER Wcolon t=canonical_type_family Wperiod
+| WRule num=Nat name=IDENTIFIER Wcolon t=lftype Wperiod
     { Toplevel.Rule (num,name,t) }
 
 | WDefine name=IDENTIFIER parms=parmList Wcolonequal t=ts_expr Wperiod 

@@ -115,12 +115,12 @@ Rule 28 eta_reduction :
 Rule 29 j_type :
 
      Pi M_1:uexp, Pi M_2:uexp, 
-     uleq M_1 M_2 -> [ [j] M_1 M_2 : [Pi] ([U] M_1) (lambda _, ([U] M_2)) ].
+     uequal ([max] M_1 M_2) M_2 -> [ [j] M_1 M_2 : [Pi] ([U] M_1) (lambda _, ([U] M_2)) ].
 
 Rule 30 El_j_reduction :
 
      Pi M_1:uexp, Pi M_2:uexp, Pi o:oexp,
-     [ o : [U] M_1 ] -> uleq M_1 M_2 -> [ [El]( [ev] ([j] M_1 M_2) o (lambda _, ([U] M_2)) ) = [El] o ].
+     [ o : [U] M_1 ] -> uequal ([max] M_1 M_2) M_2 -> [ [El]( [ev] ([j] M_1 M_2) o (lambda _, ([U] M_2)) ) = [El] o ].
 
 Rule 31 El_forall_reduction :
 

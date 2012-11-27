@@ -3,8 +3,8 @@
 open Typesystem
 type command' = 
   | Print of expr
-  | F_Print of canonical_type_family
-  | Rule of int * string * canonical_type_family
+  | F_Print of lftype
+  | Rule of int * string * lftype
   | Check of expr
   | UVariable of string list * (expr * expr) list
   | Variable of string list

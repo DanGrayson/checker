@@ -87,22 +87,20 @@ let lexpos lexbuf =
 
 let environment = ref {
   uc = emptyUContext;
-  tc = emptyTContext;
-  oc = emptyOContext;
+  oc = [];
   definitions = [];
-  lookup_order = [];
+  lf_context = [];
 }
 
 let add_tVars tvars = environment := 
   { !environment with 
-    tc = List.rev_append (List.map Helpers.make_Var tvars) (!environment).tc ;
-    lookup_order = List.rev_append (List.map (fun t -> (t,(Helpers.make_Var t, Type_variable))) tvars) (!environment).lookup_order ;
+    lf_context = List.rev_append (List.map (fun t -> (Helpers.make_Var t, texp)) tvars) (!environment).lf_context ;
   }
 let add_uVars uvars eqns =
   environment := {
     !environment with
 		  uc = mergeUContext (!environment).uc (UContext(List.map Helpers.make_Var uvars,eqns));
-		  lookup_order = List.rev_append (List.map (fun u -> (u,(Helpers.make_Var u, Ulevel_variable))) uvars) (!environment).lookup_order;
+		  lf_context = List.rev_append (List.map (fun u -> (Helpers.make_Var u, uexp)) uvars) (!environment).lf_context;
 		}
 
 let fix t = Fillin.fillin !environment t
@@ -113,11 +111,11 @@ let printCommand x =
 
 let ruleCommand num name x =
   rules := (Rule (num,name), x) :: !rules;
-  Printf.printf "Rule %d %s: %s\n" num name (Printer.lf_type_family_to_string x);
+  Printf.printf "Rule %d %s: %s\n" num name (Printer.lftype_to_string x);
   flush stdout
 
 let lf_type_printCommand x =
-  Printf.printf "F_Print: %s\n" (Printer.lf_type_family_to_string x);
+  Printf.printf "F_Print: %s\n" (Printer.lftype_to_string x);
   flush stdout
 
 let checkCommand x =
@@ -178,30 +176,12 @@ let typeCommand x = (
 let show_command () = 
   Printf.printf "Show:\n";
   (
-   Printf.printf "   Variable ";
-   let UContext(uvars,ueqns) = (!environment).uc in 
-   Printf.printf "%s.\n"
-     ((String.concat " " (List.map vartostring' (List.rev uvars))) ^ " : Univ" ^ (String.concat "" (List.map Printer.ueqntostring ueqns)));
-  );
-  (
-   Printf.printf "   Variable"; List.iter (fun x -> Printf.printf " %s" (vartostring' x)) (List.rev (!environment).tc); Printf.printf " : Type.\n";
-  );
-  (
-   let p = List.rev_append (!environment).definitions [] 
-   in
-   let f name (aspect, value, type_family) = 
-     Printf.printf "   Definition %s.%d := %s\n" name aspect (Printer.ts_expr_to_string value) ;
-     Printf.printf "   Definition %s.%d :  %s\n" name aspect (Printer.lf_type_family_to_string type_family) 
-   in
-   let h (Ident name,parts) = 
-     Printf.printf "\n   Definition %s :\n" name;
-     List.iter (f name) parts 
-   in List.iter h p
-  );
-  (
-   Printf.printf "   Lookup order:";
-   List.iter (fun (s,_) -> Printf.printf " %s" s) (!environment).lookup_order;
-   Printf.printf "\n";
+   Printf.printf "  LF context:\n";
+   List.iter 
+     (fun (v,t) -> Printf.printf "     %s : %s\n" 
+	 (vartostring' v)
+	 (Printer.lftype_to_string t)) 
+     (List.rev (!environment).lf_context);
   );
   flush stdout
 
@@ -209,7 +189,7 @@ let addDefinition name (x:definition) =
   environment := {
     !environment with
 		  definitions = (Ident name,x) :: (!environment).definitions ;
-		  lookup_order = (name, (Var name, Def_variable)) :: (!environment).lookup_order
+		  lf_context = (Var name, raise Error.NotImplemented) :: (!environment).lf_context
 		}
 
 let process_command lexbuf = (
@@ -269,13 +249,13 @@ let toplevel() =
   (try printCommand (expr_from_string "lambda f:T->U, lambda o:T, f o") with Error_Handled -> ());
   List.iter 
     (
-     fun x -> Printf.printf "F_Print: %s : %s\n" (label_to_string x) (Printer.lf_type_family_to_string (label_to_type_family x))
+     fun x -> Printf.printf "F_Print: %s : %s\n" (label_to_string x) (Printer.lftype_to_string (label_to_lftype x))
     )
     labels;
   List.iter 
     (
      fun (Rule(num,name) as head,_) -> 
-       Printf.printf "Rule %d %s : %s\n" num name (Printer.lf_type_family_to_string (label_to_type_family (R head)))
+       Printf.printf "Rule %d %s : %s\n" num name (Printer.lftype_to_string (label_to_lftype (R head)))
     )
     (List.rev !rules);
     *)

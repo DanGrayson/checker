@@ -5,10 +5,10 @@ open Helpers
 
 type parm =
   | UParm of uContext
-  | TParm of tContext
-  | OParm of oContext
+  | TParm of var' list
+  | OParm of ts_context
 
-let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code has to be moved somewhere to use the context *)
+let fixParmList (p:parm list) : uContext * (var' list) * ts_context = (* this code has to be moved somewhere to use the context *)
   let rec fix us ts os p =
     match p with 
     | UParm u :: p -> 
@@ -28,7 +28,7 @@ let fixParmList (p:parm list) : uContext * tContext * oContext = (* this code ha
 	in (uc,tc,oc))
   in fix [] [] [] p
 
-let tDefinition (name:string) ((uc,tc,oc):(uContext * tContext * oContext)) (t:expr) : string * definition = 
+let tDefinition (name:string) ((uc,tc,oc):(uContext * (var' list) * ts_context)) (t:expr) : string * definition = 
   let UContext (uvars,ueqns) = uc in
   let rec wrap t = function
     | [] -> t 
@@ -57,7 +57,7 @@ let tDefinition (name:string) ((uc,tc,oc):(uContext * tContext * oContext)) (t:e
       (1,new_hole (),istype t)
     ])
 
-let oDefinition (name:string) ((uc,tc,oc):(uContext * tContext * oContext)) (o:expr) (t:expr) : string * definition = 
+let oDefinition (name:string) ((uc,tc,oc):(uContext * (var' list) * ts_context)) (o:expr) (t:expr) : string * definition = 
     (name,[
      (0,o,oexp);
      (1,t,texp);

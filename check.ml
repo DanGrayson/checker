@@ -6,15 +6,12 @@ let rec ucheck pos env = function
     | POS(pos,e) -> (
 	match e with
 	| EmptyHole _ -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a u-expression"))
-	| Variable Var s -> (
-	    match (
-	      try List.assoc s env.lookup_order
-	      with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound u-variable: "^s)))
-	    with 
-	    | (_,Def_variable) -> raise Error.NotImplemented
-	    | (_,Ulevel_variable) -> ()
-	    | (_,Type_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a u-variable but found a t-variable: "^s))
-	    | (_,Object_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a u-variable but found an o-variable: "^s)))
+	| Variable v -> (
+	    let t = 
+	      try List.assoc v env.lf_context
+	      with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound u-variable: "^(vartostring' v)))
+	    in
+	    if t != uexp then raise (Error.TypeCheckingFailure (pos, "expected a u-variable: "^(vartostring' v))))
 	| APPLY(U U_plus n, [u]) -> ucheck pos env u
 	| APPLY(U U_max, [u;v]) -> ucheck pos env u;ucheck pos env v
 	| _ -> raise Error.Internal)
@@ -24,16 +21,11 @@ let rec tcheck pos env = function
     | LAMBDA _ -> raise Error.Internal
     | POS(pos,e) as oe -> match e with 
       | EmptyHole _ -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a t-expression"))
-      | Variable Var s -> (
-	  match (
-	    try List.assoc s env.lookup_order
-	    with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound t-variable: "^s)))
-	  with 
-	  | (_,Def_variable) -> raise Error.NotImplemented
-	  | (_,Ulevel_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a t-variable but found a u-variable: "^s))
-	  | (_,Type_variable) -> ()
-	  | (_,Object_variable) -> raise (Error.TypeCheckingFailure (pos, "expected a t-variable but found an o-variable: "^s)))
-      | Variable _ -> raise Error.Internal
+      | Variable v ->(
+	  let t =
+	    try List.assoc v env.lf_context
+	    with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound t-variable: "^(vartostring' v)))
+	  in if t != texp then raise (Error.TypeCheckingFailure (pos, "expected a t-variable: "^(vartostring' v))))
       | APPLY(h,args) -> match h with
 	| V _ -> raise (Unimplemented_expr oe)
 	| R _ -> raise Error.NotImplemented
@@ -70,16 +62,11 @@ and ocheck pos env = function
   | LAMBDA _ -> raise Error.Internal	(* should have been handled higher up *)
   | POS(pos,e) as oe -> match e with
     | EmptyHole _ -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a o-expression"))
-    | Variable Var s -> (
-	match
-	  try List.assoc s env.lookup_order
-	  with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound o-variable: "^s))
-	with 
-	| (_,Def_variable) -> raise Error.NotImplemented
-	| (_,Ulevel_variable) -> raise (Error.TypeCheckingFailure (pos, "expected an o-variable but found a u-variable: "^s))
-	| (_,Type_variable) -> raise (Error.TypeCheckingFailure (pos, "expected an o-variable but found a t-variable: "^s))
-	| (_,Object_variable) -> ())
-    | Variable (VarGen _ | VarUnused) -> raise Error.Internal
+    | Variable v -> (
+	let t = (
+	  try List.assoc v env.lf_context
+	  with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound o-variable: "^(vartostring' v))))
+	in if t != oexp then raise (Error.TypeCheckingFailure (pos, "expected an o-variable: "^(vartostring' v))))
     | APPLY(h,args) -> match h with
       | V _ -> raise (Unimplemented_expr oe)
       | R _ -> raise Error.NotImplemented

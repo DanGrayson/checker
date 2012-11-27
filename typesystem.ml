@@ -344,34 +344,35 @@ type tfHead =
   | F_uexp
   | F_texp
   | F_oexp
-  | F_Is_type
-  | F_Has_type
-  | F_Ulevel_leq
-  | F_Type_similarity
-  | F_Type_equality
-  | F_Object_similarity
-  | F_Object_equality
+  | F_istype
+  | F_hastype
+  | F_ulevel_equality
+  | F_type_similarity
+  | F_type_equality
+  | F_object_similarity
+  | F_object_equality
 
 let tfhead_to_string = function
   | F_uexp -> "uexp"
   | F_texp -> "texp"
   | F_oexp -> "oexp"
-  | F_Is_type -> "istype"
-  | F_Has_type -> "hastype"
-  | F_Ulevel_leq -> "uleq"
-  | F_Type_similarity -> "tsim"
-  | F_Type_equality -> "tequal"
-  | F_Object_similarity -> "osim"
-  | F_Object_equality -> "oequal"
+  | F_istype -> "istype"
+  | F_hastype -> "hastype"
+  | F_ulevel_equality -> "uequal"
+  | F_type_similarity -> "tsim"
+  | F_type_equality -> "tequal"
+  | F_object_similarity -> "osim"
+  | F_object_equality -> "oequal"
 
 let tfheads = [ 
-  F_uexp; F_texp; F_oexp; F_Is_type; F_Has_type; F_Ulevel_leq ;
-  F_Type_similarity; F_Type_equality; F_Object_similarity; F_Object_equality ]
+  F_uexp; F_texp; F_oexp; F_istype; F_hastype; F_ulevel_equality ;
+  F_type_similarity; F_type_equality; F_object_similarity; F_object_equality ]
 
 let tfhead_strings = List.map (fun x -> tfhead_to_string x, x) tfheads
 
-type canonical_type_family =
-  | F_Pi of var' * canonical_type_family * canonical_type_family
+(** Canonical type families of LF. *)
+type lftype =
+  | F_Pi of var' * lftype * lftype
   | F_APPLY of tfHead * expr list
   | F_hole
 
@@ -383,13 +384,13 @@ let oexp = F_oexp *** []
 
 let ( @> ) a b = F_Pi(VarUnused, a, b)
 
-let istype t = F_Is_type *** [t]
-let hastype o t = F_Has_type *** [o;t]
-let ulevel_leq u u' = F_Ulevel_leq *** [u;u']
-let type_similarity t t' = F_Type_similarity *** [t;t']
-let type_equality t t' = F_Type_equality *** [t;t']
-let object_similariy o o' t = F_Object_similarity *** [o;o';t]
-let object_equality o o' t = F_Object_equality *** [o;o';t]
+let istype t = F_istype *** [t]
+let hastype o t = F_hastype *** [o;t]
+let ulevel_equality u u' = F_ulevel_equality *** [u;u']
+let type_similarity t t' = F_type_similarity *** [t;t']
+let type_equality t t' = F_type_equality *** [t;t']
+let object_similariy o o' t = F_object_similarity *** [o;o';t]
+let object_equality o o' t = F_object_equality *** [o;o';t]
 
 let texp1 = oexp @> texp
 let texp2 = oexp @> oexp @> texp
@@ -460,13 +461,14 @@ let head_to_vardist = function
   | O O_J -> Some (2, [] :: [] :: [] :: [] :: [] :: [0;1] :: [])
   | _ -> None
 
-(** The derivation rules of TS. *)
+(** The derivation rules of TS. 
 
+    The list of rules is part of the LF signature, giving LF types for LF term constants. *)
 let rules = ref []
 
 let rulehead_to_type_family h = List.assoc h !rules
 
-let label_to_type_family = function
+let label_to_lftype = function
   | V _ -> raise Error.Internal		(* needs a context *)
   | U h -> uhead_to_type_family h
   | T h -> thead_to_type_family h
@@ -474,12 +476,12 @@ let label_to_type_family = function
   | R h -> rulehead_to_type_family h
   | Defapp _ -> raise Error.NotImplemented
 
-(*** Constructors for the "kinds" of LF. 
+(*** The "kinds" of LF. 
 
     Notation: constructors starting with "K_" refer to kinds of LF. *)
-type kind =
+type lfkind =
   | K_type
-  | K_Pi of var' * canonical_type_family * kind
+  | K_Pi of var' * lftype * lfkind
 
 let ( @@> ) a b = K_Pi(VarUnused, a, b)
 
@@ -487,13 +489,13 @@ let tfhead_to_kind = function
   | F_uexp -> K_type
   | F_texp -> K_type
   | F_oexp -> K_type
-  | F_Is_type -> texp @@> K_type
-  | F_Has_type -> oexp @@> texp @@> K_type
-  | F_Ulevel_leq -> uexp @@> uexp @@> K_type
-  | F_Type_similarity -> texp @@> texp @@> K_type
-  | F_Type_equality -> texp @@> texp @@> K_type
-  | F_Object_similarity -> oexp @@> texp @@> texp @@> K_type
-  | F_Object_equality -> oexp @@> texp @@> texp @@> K_type
+  | F_istype -> texp @@> K_type
+  | F_hastype -> oexp @@> texp @@> K_type
+  | F_ulevel_equality -> uexp @@> uexp @@> K_type
+  | F_type_similarity -> texp @@> texp @@> K_type
+  | F_type_equality -> texp @@> texp @@> K_type
+  | F_object_similarity -> oexp @@> texp @@> texp @@> K_type
+  | F_object_equality -> oexp @@> texp @@> texp @@> K_type
 
 (*** 
     A universe context [UC = (Fu,A)] is represented by a list of universe variables [Fu] and a list of
@@ -506,39 +508,31 @@ let emptyUContext = UContext ([],[])
 let mergeUContext : uContext -> uContext -> uContext =
   function UContext(uvars,eqns) -> function UContext(uvars',eqns') -> UContext(List.rev_append uvars' uvars,List.rev_append eqns' eqns)
 
-(*** t-context; a list of t-variables declared as "Type". *)
-type tContext = var' list
-let emptyTContext : tContext = []
-
-type utContext = uContext * tContext
-let emptyUTContext = emptyUContext, emptyTContext
-
-(*** o-context; a list of o-variables with T-expressions representing their declared type. *)
-type oContext = (var' * expr) list				  (* [Gamma] *)
-let emptyOContext : oContext = []
+(*** TS context; a list of o-variables with T-expressions representing their declared type. *)
+type ts_context = (var' * expr) list				  (* [Gamma] *)
 
 type oSubs = (var' * expr) list
 
 (*** Definitions. *)
 
 type identifier = Ident of string
-type definition = (int * expr * canonical_type_family) list
-type vartype = Ulevel_variable | Type_variable | Object_variable | Def_variable
+type definition = (int * expr * lftype) list
 
 (*** Contexts. *)
 
 type environment_type = {
     uc : uContext;
-    tc : tContext;
-    oc : oContext;
+    oc : ts_context;
     definitions : (identifier * definition) list;
-    lookup_order : (string * (var' * vartype)) list
+    lf_context : (var' * lftype) list
   }
 
 let obind' (v,t) env = match v with
-    Var name -> { env with oc = (v,t) :: env.oc; lookup_order = (name, (v, Object_variable)) :: env.lookup_order }
-  | VarGen (_,_) -> { env with oc = (v,t) :: env.oc }
   | VarUnused -> env
+  | v -> { env with
+	   oc = (v,t) :: env.oc;
+	   lf_context = (v, oexp) :: env.lf_context
+	 }
 
 let obind (v,t) env = obind' (strip_pos_var v, t) env
 
