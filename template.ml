@@ -12,7 +12,7 @@ let template = function
 	| Defapp _ -> ()
 	| U uh -> (
 	    match uh with 
-	    | U_plus n -> ()
+	    | U_next -> ()
 	    | U_max -> ()
 	   )
 	| T th -> (

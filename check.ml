@@ -12,7 +12,7 @@ let rec ucheck pos env = function
 	      with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound u-variable: "^(vartostring' v)))
 	    in
 	    if t != uexp then raise (Error.TypeCheckingFailure (pos, "expected a u-variable: "^(vartostring' v))))
-	| APPLY(U U_plus n, [u]) -> ucheck pos env u
+	| APPLY(U U_next, [u]) -> ucheck pos env u
 	| APPLY(U U_max, [u;v]) -> ucheck pos env u;ucheck pos env v
 	| _ -> raise Error.Internal)
     | _ -> raise Error.Internal

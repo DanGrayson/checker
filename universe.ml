@@ -26,7 +26,7 @@ let chk uv (lhs,rhs) =
   let rec ev = function
     | POS(_,e) -> (match e with
 	| Variable u -> index u
-	| APPLY(U (U_plus n),[u]) -> (ev u) + n
+	| APPLY(U U_next,[u]) -> (ev u) + 1
 	| APPLY(U U_max,[u;v]) -> max (ev u) (ev v)
 	| _ -> raise Error.Internal)
     | _ -> raise Error.Internal
@@ -44,8 +44,8 @@ module Equal = struct
 	a == b || 
 	match (a,b) with 
 	| Variable x, Variable x' -> x = x'
-	| APPLY(U (U_plus n ), [x ]),
-	  APPLY(U (U_plus n'), [x']) -> n = n' && ueq x x'
+	| APPLY(U U_next, [x ]),
+	  APPLY(U U_next, [x']) -> ueq x x'
 	| APPLY(U U_max, [x;y]), 
 	  APPLY(U U_max, [x';y']) -> ueq x x' && ueq y y'
 	| _ -> false)

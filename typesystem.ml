@@ -18,15 +18,15 @@ polymorphic type system}, by Vladimir Voevodsky, the version dated October,
 
 (** Labels for u-expressions of TS. *)
 type uHead =
-  | U_plus of int
-	(** A pair [(M,n)], denoting [M+n], the n-th successor of [M].  Here [n] should be nonnegative *)
+  | U_next
+	(** With a [M], denoting [M+1], the successor of [M]. *)
   | U_max
 	(** A pair [(M,M')] denoting [max(M,M')]. *)
 
-let uheads = [ U_max ]
+let uheads = [ U_max; U_next ]
 
 let uhead_to_string = function
-  | U_plus n -> "uplus;" ^ (string_of_int n)
+  | U_next -> "next"
   | U_max -> "max"
 
 (** The various labels for t-expressions of TS. *)
@@ -403,7 +403,7 @@ let oexp2 = oexp @> oexp @> oexp
 let oexp3 = oexp @> oexp @> oexp @> oexp
 
 let uhead_to_type_family = function
-  | U_plus _ -> uexp @> uexp
+  | U_next -> uexp @> uexp
   | U_max -> uexp @> uexp @> uexp
 
 let thead_to_type_family = function

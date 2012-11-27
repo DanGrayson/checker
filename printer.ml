@@ -41,15 +41,7 @@ and ts_expr_to_string = function
     | Variable v -> vartostring' v
     | APPLY(h,args) -> (
 	match h with
-	| U uh -> (
-	    match uh with 
-	    | U_plus n -> (
-		match args with 
-		| [u] -> "(" ^ (ts_expr_to_string u) ^ "+" ^ (string_of_int n) ^ ")"
-		| _ -> lfp oe
-	       )
-	    | _ -> (uhead_to_string uh) ^ (parenelisttostring args)
-	    )
+	| U uh -> (uhead_to_string uh) ^ (parenelisttostring args)
 	| T th -> (
 	    match th with 
 	    | T_Pi -> (

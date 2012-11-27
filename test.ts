@@ -1,4 +1,4 @@
-Variable u0 u1 u2 : Ulevel ; u0+10 <= u1; u1+10 <= u2.
+Variable u0 u1 u2 : Ulevel ; [next](u0) <= u1; [next](u1) <= u2.
 Variable T T' U V X Y : Type.
 Check Universes.
 
@@ -23,7 +23,7 @@ F_Print Pi u1:uexp, Pi u2:uexp, Pi T:texp, Pi t:oexp, Pi ist:istype T, Pi has:ha
 Check [U](u1).
 Check [j](u1, u2).
 Check *[u](u1).
-Check max (u1+1, u0).
+Check max ([next](u1), u0).
 Check [Sigma;x](T,T').
 Check Sigma x:T, Sigma y:U, V -> X .
 Check [Coprod](T,T').
@@ -48,7 +48,7 @@ Alpha lambda g:T->U, lambda x:T, g h
 Alpha lambda g:T->U, lambda x:T, g x
    ==  lambda h:T->U, lambda y:T, h h  .
 
-Check Pi x : T, [U](u0+1).
+Check Pi x : T, [U]([next](u0)).
 Check Pi x : T, [U](u0).
 
 Check u1.
@@ -83,7 +83,7 @@ Check lambda k:U, lambda g:T -> *k, lambda f:Pi t:T, *g t, lambda o:T, f o.
 Check lambda r:U, lambda f:T->U, lambda o:T, lambda x : *r, f o.
 Check lambda f:X->T, lambda y:X, [ev;_](f,y,T).
 Check lambda f:X->T, lambda y:X, f y.
-Check [foo.0](u0+1,u1).
+Check [foo.0]([next](u0),u1).
 Check lambda x:T, lambda y:U, lambda t:[foo.1](u0,u0,T,U,x,y), t.
 
 
@@ -91,10 +91,10 @@ Show.
 
 # Define E1 (u:Ulevel)(K:Type)(x:K) := x : K.
 # Define E2 (u1 u2 u3:Ulevel)(K:Type) := K->K .
-# Define E3 (u1 u2 u3 : Ulevel)(K:Type)(x1: K -> [U](u1))(x2: [U](u0+1)) := [U](u2) .
-# Define E5 (u1 u2 u3 : Ulevel; max (u1, u2) = max (u2, u3); u1 >= u2+1 )(K:Type)(x1: K -> [U](u1))(x2: [U](u0+1)) := [j](x1, x2) : [U](u2) .
+# Define E3 (u1 u2 u3 : Ulevel)(K:Type)(x1: K -> [U](u1))(x2: [U]([next](u0))) := [U](u2) .
+# Define E5 (u1 u2 u3 : Ulevel; max (u1, u2) = max (u2, u3); u1 >= [next](u2) )(K:Type)(x1: K -> [U](u1))(x2: [U]([next](u0))) := [j](x1, x2) : [U](u2) .
 # Define E7 (T U:Type)(t:T)(u:U)(f:T->U) := f t : _.
 # Define E7 (K L:Type)(t:K)(g:K -> [U](u0))(u:L)(f:Pi x:K, *g x) := f t : _.
-# Define E6 (u1 u2 u3 : Ulevel)(X1 X2:Type)(x1: X1 -> [U](u1))(x2: [U](u0+1)) := [j](x1, x2) : _ .
+# Define E6 (u1 u2 u3 : Ulevel)(X1 X2:Type)(x1: X1 -> [U](u1))(x2: [U]([next](u0))) := [j](x1, x2) : _ .
 # Define E7 := ft : _ .
 # Define foo1 (u1 u2 : Ulevel) (T : Type) (t : T) := *t.

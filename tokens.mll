@@ -63,7 +63,6 @@ rule expr_tokens = parse
   | ';'  { Wsemi }
   | '.'  { Wperiod }
   | ','  { Wcomma }
-  | '+'  { Wplus }
   | ':'  { Wcolon }
   | '~'  { Wtilde }
   | '='  { Wequal }

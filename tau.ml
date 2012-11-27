@@ -14,7 +14,7 @@ let rec tau (pos:Error.position) env = function
 	  | O oh -> match oh with
 	    | O_u -> (
 		match args with 
-		| [u] -> Helpers.make_TT_U (POS(pos, (Helpers.make_UU (U_plus 1) [u])))
+		| [u] -> Helpers.make_TT_U (POS(pos, (Helpers.make_UU U_next [u])))
 		| _ -> raise Error.Internal)
 	    | O_j -> (
 		match args with 

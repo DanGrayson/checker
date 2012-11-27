@@ -13,7 +13,7 @@ open Grammar0
 %token <string * int> DEF_APP
 %token
 
-  Wlparen Wrparen Wrbracket Wlbracket Wplus Wcomma Wperiod Wcolon Wstar Warrow
+  Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod Wcolon Wstar Warrow
   Wequalequal Wequal Wcolonequal Wunderscore WF_Print WRule Wgreaterequal
   Wgreater Wlessequal Wless Wsemi KUlevel Kumax KType Ktype KPi Klambda KSigma
   WTau WPrint WDefine WShow WEnd WVariable WAlpha Weof Watat WCheck
@@ -31,7 +31,7 @@ open Grammar0
 %right
   Klambda
 %nonassoc
-  Wunderscore Wplus Wlparen IDENTIFIER Kumax Watat LABEL_SEMI LABEL DEF_APP
+  Wunderscore Wlparen IDENTIFIER Kumax Watat LABEL_SEMI LABEL DEF_APP
 
 %%
 
@@ -166,9 +166,9 @@ uEquation:
 | u=ts_expr Wlessequal v=ts_expr 
     { nowhere (APPLY(U U_max, [ u; v])), v }
 | v=ts_expr Wgreater u=ts_expr 
-    { nowhere (APPLY(U U_max, [ nowhere (APPLY( U (U_plus 1),[u])); v])), v }
+    { nowhere (APPLY(U U_max, [ nowhere (APPLY( U U_next,[u])); v])), v }
 | u=ts_expr Wless v=ts_expr 
-    { nowhere (APPLY(U U_max, [ nowhere (APPLY( U (U_plus 1),[u])); v])), v }
+    { nowhere (APPLY(U U_max, [ nowhere (APPLY( U U_next,[u])); v])), v }
 
 parenthesized(X): x=delimited(Wlparen,X,Wrparen) {x}
 list_of_parenthesized(X): list(parenthesized(X)) {$1}
@@ -225,8 +225,6 @@ bare_ts_expr:
 | KSigma x=variable Wcolon t1=ts_expr Wcomma t2=ts_expr
     %prec KSigma
     { make_TT_Sigma t1 (x,t2) }
-| u=ts_expr Wplus n=Nat
-    { APPLY(U (U_plus n), [u]) }
 | Kumax Wlparen u=ts_expr Wcomma v=ts_expr Wrparen
     { APPLY(U U_max,[u;v])  }
 | def=DEF_APP a=arglist
