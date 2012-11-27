@@ -101,7 +101,7 @@ let parmstostring = function
 
 let rec lfl label s = "(" ^ label ^ (String.concat "" (List.map (fun x -> " " ^ (lf_expr_to_string x)) s)) ^ ")"
 and lf_expr_to_string = function
-  | LAMBDA(x,body) -> "(LAMBDA " ^ (vartostring x) ^ ", " ^ (lf_expr_to_string body) ^ ")"
+  | LAMBDA(x,body) -> "(lambda " ^ (vartostring x) ^ ", " ^ (lf_expr_to_string body) ^ ")"
   | POS(_,e) -> match e with 
     | EmptyHole n -> "_" ^ (string_of_int n)
     | Variable v -> vartostring' v

@@ -6,6 +6,7 @@ open Universe
 
 exception Error_Handled
 exception FileFinished
+exception StopParsingFile
 
 let error_summary pos =
   let n = !Tokens.error_count in
@@ -16,7 +17,7 @@ let error_summary pos =
 
 let leave pos = 
   error_summary pos;
-  raise FileFinished
+  raise StopParsingFile
 
 let protect1 f =
   try f () with
@@ -211,8 +212,6 @@ let addDefinition name (x:definition) =
 		  lookup_order = (name, (Var name, Def_variable)) :: (!environment).lookup_order
 		}
 
-exception StopParsingFile
-
 let process_command lexbuf = (
   let c = protect (Grammar.command (Tokens.expr_tokens)) lexbuf lexpos in
   match c with (pos,c) ->
@@ -232,6 +231,8 @@ let process_command lexbuf = (
  )
 
 let parse_file filename =
+    Printf.printf "-- parsing file %s\n" filename; flush stdout;
+    Tokens.error_count := 0;
     let lexbuf = Lexing.from_channel (open_in filename) in
     lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = filename};
     (
@@ -263,6 +264,7 @@ let toplevel() =
       parse_file
       "usage: [options] filename ...";
   with FileFinished -> ());
+  (*
   (try printCommand (expr_from_string "Pi f:T->[U](uuu0), Pi o:T, *f o" ) with Error_Handled -> ());
   (try printCommand (expr_from_string "lambda f:T->U, lambda o:T, f o") with Error_Handled -> ());
   List.iter 
@@ -276,6 +278,7 @@ let toplevel() =
        Printf.printf "Rule %d %s : %s\n" num name (Printer.lf_type_family_to_string (label_to_type_family (R head)))
     )
     (List.rev !rules);
+    *)
   flush stdout;
   error_summary "checker.ml:0:0"
 

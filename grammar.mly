@@ -3,9 +3,9 @@ open Typesystem
 open Helpers
 open Grammar0
 %}
-%start command ts_exprEof lf_exprEof
+%start command ts_exprEof
 %type <Toplevel.command> command
-%type <Typesystem.expr> ts_exprEof lf_exprEof
+%type <Typesystem.expr> ts_exprEof
 %type <Typesystem.expr list> arglist
 %type <Typesystem.canonical_type_family> canonical_type_family
 %token <int> Nat
@@ -62,14 +62,12 @@ canonical_type_family_head:
 | l=IDENTIFIER 
     { try List.assoc l tfhead_strings with Not_found -> $syntaxerror }
 
-lf_exprEof: a=lf_expr Weof {a}
-
 lf_expr:
 | e=bare_lf_expr
   { with_pos (Error.Position($startpos, $endpos)) e  }
-| Wlparen Klambda v=variable Wcomma body=lf_expr Wrparen
+| Wlparen Klambda v=variable Wcomma body = lf_expr_parens_optional Wrparen
     { LAMBDA(v,body) }
-| Wlparen Klambda v=variable_unused Wcomma body=lf_expr Wrparen
+| Wlparen Klambda v=variable_unused Wcomma body = lf_expr Wrparen
     { LAMBDA(v,body) }
 
 variable_unused:
@@ -86,11 +84,11 @@ bare_lf_expr:
 
 lf_expr_parens_optional:
 | e=bare_lf_expr_parens_optional
-  { with_pos (Error.Position($startpos, $endpos)) e  }
+    { with_pos (Error.Position($startpos, $endpos)) e  }
+| Wlparen e=lf_expr_parens_optional Wrparen
+    {e}
 
 bare_lf_expr_parens_optional:
-| e=bare_lf_expr
-    {e}
 | f=lf_term_head args=list(lf_expr)
     { APPLY(f,args) }
 
