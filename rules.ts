@@ -132,6 +132,6 @@ Rule 32 type_El_forall :
 
      Pi M_1 : uexp, Pi M_2 : uexp, Pi o_1 : oexp, Pi o_2 : oexp -> oexp,
      [ o_1 : [U] M_1 ] ->
-     (Pi x: oexp, [ x : [El] o_1 ] -> [ o_2 : [U] M_2 ])
+     (Pi x: oexp, [ x : [El] o_1 ] -> [ o_2 x : [U] M_2 ])
      ->
      [ [El] ([forall] M_1 M_2 o_1 o_2) = [Pi] ([El] o_1) (lambda x, ([El] (o_2 x))) ].
