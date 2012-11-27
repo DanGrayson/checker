@@ -2,15 +2,38 @@
 
 open Typesystem
 
-let parens x = "(" ^ x ^ ")"
 let space x = " " ^ x
-let (<<-) f g x = f (g x)
+let ( <<- ) f g x = f (g x)
 let concat = String.concat ""
-let concatl x = concat (List.flatten x)
 
-let rec ts_expr_to_string = function
-  | LAMBDA(x,body) -> "lambda " ^ (vartostring x) ^ ", " ^ (ts_expr_to_string body)
+(** Printing of LF expressions. *)
+
+let rec lf_expr_to_string = function
+  | LAMBDA(x,body) -> "(lambda " ^ (vartostring x) ^ ", " ^ (lf_expr_to_string body) ^ ")"
   | POS(_,e) -> match e with 
+    | EmptyHole n -> "_" ^ (string_of_int n)
+    | Variable v -> vartostring' v
+    | APPLY(h,args) -> " $(" ^ (label_to_string h) ^ (String.concat "" (List.map (fun x -> " " ^ (lf_expr_to_string x)) args)) ^ ")"
+
+let rec lftype_to_string = function
+  | F_hole -> "_"
+  | F_APPLY(hd,args) -> 
+      let s = concat [tfhead_to_string hd; concat (List.map (space <<- lf_expr_to_string) args)] in
+      if String.contains s ' ' then concat ["(";s;")"] else s
+  | F_Pi(v,t,u) -> 
+      if v == VarUnused
+      then concat ["("; lftype_to_string t; " -> "; lftype_to_string u; ")"]
+      else concat ["Pi "; vartostring' v; ":"; lftype_to_string t; ", "; lftype_to_string u]
+
+(** Printing of TS terms in TS format. *)
+
+(** For LF expressions that are not TS terms, print [$$] and then the expression in LF format. *)
+let lfp e = "$$" ^ (lf_expr_to_string e)
+
+let rec elisttostring s = String.concat "," (List.map ts_expr_to_string s)
+and parenelisttostring s = String.concat "" [ "("; elisttostring s; ")" ]
+and ts_expr_to_string = function
+  | POS(_,e) as oe -> (match e with 
     | EmptyHole n -> "?" ^ (string_of_int n)
     | Variable v -> vartostring' v
     | APPLY(h,args) -> (
@@ -20,7 +43,7 @@ let rec ts_expr_to_string = function
 	    | U_plus n -> (
 		match args with 
 		| [u] -> "(" ^ (ts_expr_to_string u) ^ "+" ^ (string_of_int n) ^ ")"
-		| _ -> raise Error.Internal
+		| _ -> lfp oe
 	       )
 	    | _ -> (uhead_to_string uh) ^ (parenelisttostring args)
 	    )
@@ -29,10 +52,10 @@ let rec ts_expr_to_string = function
 	    | T_Pi -> (
 		match args with
 		| [t1; LAMBDA( x, t2 )] -> "[Pi;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string t1) ^ "," ^ (ts_expr_to_string t2) ^ ")"
-		| _ -> raise Error.Internal)
+		| _ -> lfp oe)
 	    | T_Sigma -> (
 		match args with [t1; LAMBDA( x, t2 )] -> "[Sigma;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string t1) ^ "," ^ (ts_expr_to_string t2) ^ ")"
-		| _ -> raise Error.Internal)
+		| _ -> lfp oe)
 	    | T_Coprod2 -> (
 		match args with 
 		| [t;t'; LAMBDA( x,u);LAMBDA( x', u');o] ->
@@ -41,7 +64,7 @@ let rec ts_expr_to_string = function
 		    ^ (ts_expr_to_string u) ^ "," ^ (ts_expr_to_string u') ^ ","
 		    ^ (ts_expr_to_string o)
 		    ^ ")"
-		| _ -> raise Error.Internal)
+		| _ -> lfp oe)
 	    | T_IC -> (
 		match args with 
 		  [tA;a;LAMBDA(x1,tB);LAMBDA(x2,LAMBDA(y2,tD));LAMBDA(x3,LAMBDA(y3,LAMBDA(z3,q)))]
@@ -51,7 +74,7 @@ let rec ts_expr_to_string = function
 		    ^ (vartostring x3) ^ "," ^ (vartostring y3) ^ "," ^ (vartostring z3) 
 		    ^ "]("
 		    ^ (ts_expr_to_string tA) ^ "," ^ (ts_expr_to_string a) ^ "," ^ (ts_expr_to_string tB) ^ "," ^ (ts_expr_to_string tD) ^ "," ^ (ts_expr_to_string q) ^ ")"
-		| _ -> raise Error.Internal)
+		| _ -> lfp oe)
 	    | _ -> "[" ^ (thead_to_string th) ^ "]" ^ (parenelisttostring args)
 	   )
 	| O oh -> (
@@ -62,24 +85,24 @@ let rec ts_expr_to_string = function
 		    "[ev;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string f) ^ "," ^ (ts_expr_to_string o) ^ "," ^ (ts_expr_to_string t) ^ ")"
 		| [f;o] ->
 		    "[ev;_](" ^ (ts_expr_to_string f) ^ "," ^ (ts_expr_to_string o) ^ ")"
-		| _ -> raise Error.Internal)
+		| _ -> lfp oe)
 	    | O_lambda -> (
 		match args with 
 		| [t;LAMBDA( x,o)] ->
 		    "[lambda;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string t) ^ "," ^ (ts_expr_to_string o) ^ ")"
-		| _ -> raise Error.Internal)
+		| _ -> lfp oe)
 	    | O_forall -> (
 		match args with 
 		| [u;u';o;LAMBDA( x,o')] ->
 		    "[forall;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string u) ^ "," ^ (ts_expr_to_string u') ^ "," ^ (ts_expr_to_string o) ^ "," ^ (ts_expr_to_string o') ^ ")"
-		| _ -> raise Error.Internal)
+		| _ -> lfp oe)
 	    | _ -> "[" ^ (ohead_to_string oh) ^ "]" ^ (parenelisttostring args)
 	   )
 	| _ -> concat ["["; (label_to_string h); "]"; (parenelisttostring args)]
-       )
-and elisttostring s = String.concat "," (List.map ts_expr_to_string s)
-and parenelisttostring s = String.concat "" [ "("; elisttostring s; ")" ]
+       ))
+  | oe -> lfp oe
 
+(** Printing functions for definitions, provisional. *)
 
 let ueqntostring (u,v) = concat ["; "; ts_expr_to_string u; "="; ts_expr_to_string v]
 
@@ -98,22 +121,3 @@ let parmstostring = function
 	 else ""
 	) ^
       (String.concat "" (List.map (fun x -> "(" ^ (octostring x) ^ ")") oc))
-
-let rec lfl label s = "(" ^ label ^ (String.concat "" (List.map (fun x -> " " ^ (lf_expr_to_string x)) s)) ^ ")"
-and lf_expr_to_string = function
-  | LAMBDA(x,body) -> "(lambda " ^ (vartostring x) ^ ", " ^ (lf_expr_to_string body) ^ ")"
-  | POS(_,e) -> match e with 
-    | EmptyHole n -> "_" ^ (string_of_int n)
-    | Variable v -> vartostring' v
-    | APPLY(h,args) -> lfl (label_to_string h) args
-
-let rec lftype_to_string = function
-  | F_hole -> "_"
-  | F_APPLY(hd,args) -> 
-      let s = concat [tfhead_to_string hd; concat (List.map (space <<- lf_expr_to_string) args)] in
-      if String.contains s ' ' then concat ["(";s;")"] else s
-  | F_Pi(v,t,u) -> 
-      if v == VarUnused
-      then concat ["("; (lftype_to_string t); " -> "; lftype_to_string u; ")"]
-      else concat ["Pi "; vartostring' v; ":"; (lftype_to_string t); ", "; lftype_to_string u]
-

@@ -334,12 +334,14 @@ let var_to_expr x = nowhere (Variable x)
 
 let ( ** ) f x = nowhere(APPLY(f,x))
 
-	(** The following type family constants for LF type families segregate TS
-	    expressions into three forms: u-expressions, t-expressions, and
-	    o-expressions, and they introduce the four forms of judgments. 
+(** Canonical type families of LF.
 
-	    Notation: constructors starting with "F_" refer to type families of
-	    LF. *)
+    The following type family constants for LF type families segregate TS
+    expressions into three forms: u-expressions, t-expressions, and
+    o-expressions, and they introduce the four forms of judgments.
+
+    Notation: constructors starting with "F_" refer to type families of
+    LF. *)
 type tfHead =
   | F_uexp
   | F_texp
@@ -351,6 +353,11 @@ type tfHead =
   | F_type_equality
   | F_object_similarity
   | F_object_equality
+
+type lftype =
+  | F_Pi of var' * lftype * lftype
+  | F_APPLY of tfHead * expr list
+  | F_hole
 
 let tfhead_to_string = function
   | F_uexp -> "uexp"
@@ -370,11 +377,6 @@ let tfheads = [
 
 let tfhead_strings = List.map (fun x -> tfhead_to_string x, x) tfheads
 
-(** Canonical type families of LF. *)
-type lftype =
-  | F_Pi of var' * lftype * lftype
-  | F_APPLY of tfHead * expr list
-  | F_hole
 
 let ( *** ) f x = F_APPLY(f,x)
 

@@ -135,3 +135,15 @@ Rule 32 type_El_forall :
      (Pi x: oexp, [ x : [El] o_1 ] -> [ o_2 x : [U] M_2 ])
      ->
      [ [El] ([forall] M_1 M_2 o_1 o_2) = [Pi] ([El] o_1) (lambda x, ([El] (o_2 x))) ].
+
+Rule 100 teq_empty_eta :
+
+     Pi T:texp, Pi T':texp, Pi a:oexp,
+     [ a : [Empty] ] -> [ T type ] -> [ T' type ] -> [ T = T'].
+
+Rule 101 oeq_empty_eta :
+
+     Pi T:texp, Pi x:oexp, Pi y:oexp, Pi a:oexp,
+     [ a : [Empty] ] -> [ T type ] -> [ x : T ] -> [ y : T ] -> [ x = y : T ].
+
+

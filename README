@@ -1,22 +1,5 @@
 an attempt at making a toy proof checker for experimental purposes
 
-
-    BTW already the eta for Empty which has the form:
-
-    a. (Gamma |- a:Empty , Gamma |- T : Type, Gamma |- T' : Type) => (Gamma |- T=T')
-
-    b. (Gamma |- a:Empty , Gamma |- o : T , Gamma |- o' : T) => (Gamma |- o = o' : T)
-
-    implies that definitional equality is undecidable. So we can add this to TS0 and start figuring out how to work with def. equality in this case. 
-
-    We have also have in this system the following:
-
-    1. The list of universe variables automatically contains uuu0 which is automatically <= to all other universe variables.
-
-    2. (Gamma ok)=>(Gamma |- empty : [U](uuu0))
-
-    3. (Gamma ok)=>(Gamma |- Empty : Type)
-
 Inline long-form notation for definitions, proofs, and derivations, relative to the context
 in effect in the term:
 
@@ -27,3 +10,47 @@ in effect in the term:
        [odef;name](u1,...;T1,...; o,T,R)		here o is an object of type T and we add [ name :: |- o : T ] to the context
 
 				
+Definition H (T:Type) := T -> T.
+
+so [H.0] = lambda T, ([Pi] T (lambda _, T))
+         : texp -> texp
+
+   [H.1] = lambda T, lambda it, ?42
+         : Pi T:texp, Pi it: (isatype T), (isatype ([H.0] T))
+
+introduce a new constant
+
+    [hold]
+
+so that
+
+    [hold] (lambda T, ([Pi] T (lambda _, T))) T
+
+will represent the delayed application of [H.0] and be a texp.  Its type
+has to be
+
+           (texp -> texp) -> texp -> texp
+
+So [hold] is the polymorphic identity function of type X -> X.  We could
+even add the LF type to the constant, so we have an infinite family
+of such constants.
+
+    [hold;texp -> texp] (lambda T, ([Pi] T (lambda _, T))) T
+
+I.e., we introduce expressions like
+
+    [hold;t1 -> ... -> tn -> t] f x1 ... xn
+
+and learn how to type it.  The type of [hold;X] is X->X.  Then we have
+an infinite family of delta-reduction rules that reduce
+
+    [hold;t1 -> ... -> tn -> t] f x1 ... xn
+
+to
+
+    f x1 ... xn
+
+For printing purposes, we should add the name "H" somewhere:
+
+    [hold;H,texp -> texp] (lambda T, ([Pi] T (lambda _, T))) T
+
