@@ -119,13 +119,14 @@ let lf_type_printCommand x =
   flush stdout
 
 let checkCommand x =
-  let x = protect1 ( fun () -> Fillin.fillin !environment x ) in
   Printf.printf "Check: %s\n" (Printer.ts_expr_to_string x);
   Printf.printf "   LF: %s\n" (Printer.lfexpr_to_string x);
+  Printf.printf "   filling in ...\n";
   flush stdout;
+  let x = protect1 ( fun () -> Fillin.fillin !environment x ) in
   match x with
   | POS(_,APPLY(O _,_)) -> 
-      Printf.printf "     : o-expression\n";
+      Printf.printf "     : o-expression, will check its type\n";
       flush stdout;
       protect1 (fun () -> Check.ocheck !environment x)
   | POS(_,APPLY(R _,_)) -> 

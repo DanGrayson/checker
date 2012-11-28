@@ -96,6 +96,8 @@ bare_lfterm:
     { APPLY(f,args) }
 
 lfterm_variable:
+| def=DefVarWithAspect
+    { let (name,aspect) = def in V (VarDefined(name,aspect)) }
 | bare_variable
     {V $1}
 
@@ -199,8 +201,6 @@ arglist:
 bare_variable:
 | IDENTIFIER
     { Var $1 }
-| def=DefVarWithAspect
-    { let (name,aspect) = def in VarDefined(name,aspect) }
 
 bare_variable_or_unused:
 | v=bare_variable
@@ -230,7 +230,12 @@ bare_ts_expr:
     { make_TT_Sigma t1 (x,t2) }
 | Kumax Wlparen u=ts_expr Wcomma v=ts_expr Wrparen
     { APPLY(U U_max,[u;v])  }
-| name=CONSTANT a=arglist
+| def=DefVarWithAspect args=arglist
+    {
+     let (name,aspect) = def 
+     in APPLY( V (VarDefined(name,aspect)), args)	       
+   }
+| name=CONSTANT args=arglist
     {
      let label = 
        try List.assoc ("[" ^ name ^ "]") label_strings 
@@ -242,9 +247,9 @@ bare_ts_expr:
 	 $syntaxerror
      in
      match head_to_vardist label with
-     | None -> APPLY(label,a)
+     | None -> APPLY(label,args)
      | Some (n,_) ->
-	 if n = 0 then APPLY(label,a)
+	 if n = 0 then APPLY(label,args)
 	 else
 	   raise (Error.TypingError
 		    ( Error.Position($startpos, $endpos),
