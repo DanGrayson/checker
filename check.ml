@@ -87,7 +87,7 @@ and ocheck pos env = function
 		    overify pos env x s;
 		    let env = obind (v,s) env in 
 		    tverify pos env t t'
-		| _ -> raise (Error.TypeCheckingFailure(get_pos f,"expected a product type")))
+		| _ -> raise (Error.TypeCheckingFailure(get_pos f,"expected a function type")))
 	    | _ -> raise Error.Internal)
 	| O_lambda -> (
 	    match args with 

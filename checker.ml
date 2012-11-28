@@ -13,7 +13,7 @@ let error_summary pos =
   let n = !Tokens.error_count in
   if n > 0 
   then (
-    Printf.fprintf stderr "%s: exiting, %d error%s encountered, see messages above\n" pos n (if n == 1 then "" else "s");
+    Printf.fprintf stderr "%s: %d error%s encountered, see messages above\n" pos n (if n == 1 then "" else "s");
     flush stderr)
 
 let leave pos = 
@@ -130,7 +130,7 @@ let checkCommand x =
       flush stdout;
       protect1 (fun () -> Check.ocheck !environment x)
   | POS(_,APPLY(R _,_)) -> 
-      Printf.printf "     : inference rule\n"
+      Printf.printf "     : judgment\n"
   | POS(_,APPLY(T _,_)) -> 
       Printf.printf "     : t-expression\n"
   | POS(_,APPLY(U _,_)) -> 
@@ -142,7 +142,7 @@ let checkCommand x =
   | POS(_,EmptyHole n) -> 
       Printf.printf "     : empty hole ?%d\n" n
   | LAMBDA _ ->
-      Printf.printf "     : binder\n";
+      Printf.printf "     : LF lambda, not a TS expression\n";
   flush stdout
 
 let alphaCommand (x,y) =
@@ -254,8 +254,7 @@ let toplevel() =
     )
     (List.rev !rules);
     *)
-  flush stdout;
-  error_summary "checker.ml:0:0"
+  flush stdout
 
 let _ = try
   toplevel()

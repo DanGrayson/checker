@@ -42,7 +42,7 @@ and fillin pos env = function
 		  match strip_pos(tau env f) with
 		  | APPLY(T T_Pi, [t1; LAMBDA( x,t2)])
 		    -> Helpers.make_OO_ev (fillin pos env f) (fillin pos env p) (x, (fillin pos (obind (x,t1) env) t2))
-		  | _ -> raise (Error.TypingError(get_pos f,"expected a product type")))
+		  | _ -> raise (Error.TypingError(get_pos f,"expected a function type")))
 	      | [f; p; LAMBDA( x,t2)] ->
 		  let p = fillin pos env p in
 		  let t1 = tau env p in

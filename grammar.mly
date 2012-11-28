@@ -23,15 +23,15 @@ open Grammar0
 %right
   KPi KSigma
 %right
+  Klambda
+%right
   Warrow
 %nonassoc
   Wstar				/* we want  [*f x] to be [*(f x)]  and  [*x->y] to be [( *x )->y]  */
+%nonassoc
+  Wunderscore Wlparen Watat Kumax IDENTIFIER DefVarWithAspect CONSTANT_SEMI CONSTANT
 %left
   Prec_application
-%right
-  Klambda
-%nonassoc
-  Wunderscore Wlparen IDENTIFIER Kumax Watat CONSTANT_SEMI CONSTANT DefVarWithAspect
 
 %%
 

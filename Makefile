@@ -51,8 +51,7 @@ TAGS: $(SRCFILES) test.ts scripts/ts.etags Makefile
 clean::; rm -f TAGS checker.odocl .DS_Store
 wc:; wc -l $(SRCFILES)
 run: checker.byte
-	-OCAMLRUNPARAM=$(RUN) ./$< rules.ts
-	OCAMLRUNPARAM=$(RUN) ./$< test.ts 
+	-OCAMLRUNPARAM=$(RUN) ./$< rules.ts test.ts 
 run_nofile: checker.byte; OCAMLRUNPARAM=$(RUN) ./$<
 run.native: checker.native; OCAMLRUNPARAM=$(RUN) ./$< <test.ts
 debug:

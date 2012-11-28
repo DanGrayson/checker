@@ -48,7 +48,10 @@ and ts_expr_to_string = function
 	    match th with 
 	    | T_Pi -> (
 		match args with
-		| [t1; LAMBDA( x, t2 )] -> "[Pi;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string t1) ^ "," ^ (ts_expr_to_string t2) ^ ")"
+		| [t1; LAMBDA( x, t2 )] -> 
+		    if strip_pos_var x = VarUnused
+		    then concat ["(";(ts_expr_to_string t1);"->";(ts_expr_to_string t2);")"]
+		    else concat ["[Pi;";(vartostring x);"](";(ts_expr_to_string t1);",";(ts_expr_to_string t2);")"]
 		| _ -> lfp oe)
 	    | T_Sigma -> (
 		match args with [t1; LAMBDA( x, t2 )] -> "[Sigma;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string t1) ^ "," ^ (ts_expr_to_string t2) ^ ")"
