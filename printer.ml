@@ -125,3 +125,16 @@ let parmstostring = function
 		      oexp_parms)
     ]
 
+(** Printing of ulevel contexts. *)
+
+let ulevel_context_to_string (UContext(uexp_parms,ueqns)) = 
+    concatl [
+      if List.length uexp_parms > 0 
+      then [
+	    (String.concat " " (List.map vartostring' uexp_parms));
+	    ":Univ";
+	    (String.concat "" (List.map 
+				 (fun (u,v) -> concat ["; "; ts_expr_to_string u; "="; ts_expr_to_string v]) 
+				 ueqns));
+	    ]
+      else [] ]

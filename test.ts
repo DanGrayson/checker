@@ -1,13 +1,13 @@
 Variable u0 u1 u2 : Ulevel ; [next](u0) <= u1; [next](u1) <= u2.
 Variable T T' U V X Y : Type.
+Axiom f : T -> T.
+
 Check Universes.
 
 # Define A := T.
 # Define a := x : X.
 # Define e := x == y : X.
 # Define e := X == Y.
-
-Show.
 
 Check lambda x:T, x.
 Check T.
@@ -52,7 +52,6 @@ Check Pi x : T, [U](u0).
 Check u1.
 Check T.
 Check lambda x:T, x.
-Show.
 
 Check lambda e:U, lambda x : T, e.
 
@@ -84,9 +83,6 @@ Check lambda r:U, lambda f:T->U, lambda o:T, lambda x : *r, f o.
 Check lambda f:X->T, lambda y:X, [ev;_](f,y,T).
 Check lambda f:X->T, lambda y:X, f y.
 
-
-Show.
-
 # Define E1 (u:Ulevel)(K:Type)(x:K) := x : K.
 # Define E2 (u1 u2 u3:Ulevel)(K:Type) := K->K .
 # Define E3 (u1 u2 u3 : Ulevel)(K:Type)(x1: K -> [U](u1))(x2: [U]([next](u0))) := [U](u2) .
@@ -96,15 +92,13 @@ Show.
 # Define E6 (u1 u2 u3 : Ulevel)(X1 X2:Type)(x1: X1 -> [U](u1))(x2: [U]([next](u0))) := [j](x1, x2) : _ .
 # Define E7 := ft : _ .
 
-Define foo (u1 u2 : Ulevel) (T : Type) (t : T) := *t.
-
-F_Print Singleton(T : texp).
+Define foo (u : Ulevel) (t : [U](u)) := *t.
 
 Show.
 
 # each of the following lines yields an error:
 
-Check @@ ([foo.0] ([next] u0) u1).
+Check @@ ([foo.0] u0 T).
 Check lambda x:T, lambda y:U, [foo.0](u1, u2, T, U, x, y).
 Check lambda x:T, lambda y:U, lambda t:[foo.1](u0, u0, T, U, x, y), t.
 Check lambda f:T->T->T->T, f f f f f.

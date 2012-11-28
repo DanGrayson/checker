@@ -13,11 +13,11 @@ open Grammar0
 %token <string * int> DEFINED_VARIABLE
 %token
 
-  Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod Wcolon Wstar Warrow
-  Wequalequal Wequal Wcolonequal Wunderscore WF_Print WRule Wgreaterequal
+  Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod COLON Wstar Warrow
+  Wequalequal Wequal COLONequal Wunderscore WF_Print WRule Wgreaterequal
   Wgreater Wlessequal Wless Wsemi KUlevel Kumax KType Ktype KPi Klambda KSigma
   WTau WPrint WDefine WShow WEnd WVariable WAlpha Weof Watat WCheck
-  WCheckUniverses Wtilde KSingleton
+  WCheckUniverses Wtilde KSingleton Axiom
 
 /* precedences, lowest first */
 %right
@@ -56,20 +56,20 @@ lftype:
     { t }
 | f=lftype_constant args=list(lfterm)
     { F_APPLY(f,args) }
-| KPi v=bare_variable Wcolon a=lftype Wcomma b=lftype
+| KPi v=bare_variable COLON a=lftype Wcomma b=lftype
     %prec Reduce_binder
     { F_Pi(v,a,b) }
 | a=lftype Warrow b=lftype
    { F_Pi(VarUnused,a,b) }
-| KSingleton Wlparen x=lfterm Wcolon t=lftype Wrparen
+| KSingleton Wlparen x=lfterm COLON t=lftype Wrparen
     { F_Singleton(x,t) }
 | Wlbracket a=lfterm Ktype Wrbracket
     { F_APPLY(F_istype, [a]) }
-| Wlbracket a=lfterm Wcolon b=lfterm Wrbracket
+| Wlbracket a=lfterm COLON b=lfterm Wrbracket
     { F_APPLY(F_hastype, [a;b]) }
-| Wlbracket a=lfterm Wtilde b=lfterm Wcolon c=lfterm Wrbracket
+| Wlbracket a=lfterm Wtilde b=lfterm COLON c=lfterm Wrbracket
     { F_APPLY(F_object_similarity, [a;b;c]) }
-| Wlbracket a=lfterm Wequal b=lfterm Wcolon c=lfterm Wrbracket
+| Wlbracket a=lfterm Wequal b=lfterm COLON c=lfterm Wrbracket
     { F_APPLY(F_object_equality, [a;b;c]) }
 | Wlbracket a=lfterm Wtilde b=lfterm Wrbracket
     { F_APPLY(F_type_similarity, [a;b]) }
@@ -121,10 +121,12 @@ command: c=command0
 command0:
 | Weof
     { raise Error.Eof }
-| WVariable vars=nonempty_list(IDENTIFIER) Wcolon KType Wperiod
+| WVariable vars=nonempty_list(IDENTIFIER) COLON KType Wperiod
     { Toplevel.Variable vars }
-| WVariable vars=nonempty_list(IDENTIFIER) Wcolon KUlevel eqns=preceded(Wsemi,uEquation)* Wperiod
+| WVariable vars=nonempty_list(IDENTIFIER) COLON KUlevel eqns=preceded(Wsemi,uEquation)* Wperiod
     { Toplevel.UVariable (vars,eqns) }
+| Axiom v=IDENTIFIER COLON t=ts_expr Wperiod
+    { Toplevel.Axiom(v,t) }
 | WPrint e=lfterm Wperiod
     { Toplevel.Print e }
 | WF_Print t=lftype Wperiod
@@ -138,16 +140,16 @@ command0:
 | WTau o=ts_expr Wperiod
     { Toplevel.Type o }
 
-| WRule num=Nat name=IDENTIFIER Wcolon t=lftype Wperiod
+| WRule num=Nat name=IDENTIFIER COLON t=lftype Wperiod
     { Toplevel.Rule (num,name,t) }
 
-| WDefine name=IDENTIFIER parms=parmList Wcolonequal t=ts_expr Wperiod 
+| WDefine name=IDENTIFIER parms=parmList COLONequal t=ts_expr Wperiod 
     { Toplevel.Definition (tDefinition name (fixParmList parms) t) }
-| WDefine name=IDENTIFIER parms=parmList Wcolonequal o=ts_expr Wcolon t=ts_expr Wperiod 
+| WDefine name=IDENTIFIER parms=parmList COLONequal o=ts_expr COLON t=ts_expr Wperiod 
     { Toplevel.Definition (oDefinition name (fixParmList parms) o t) }
-| WDefine name=IDENTIFIER parms=parmList Wcolonequal t1=ts_expr Wequalequal t2=ts_expr Wperiod 
+| WDefine name=IDENTIFIER parms=parmList COLONequal t1=ts_expr Wequalequal t2=ts_expr Wperiod 
     { Toplevel.Definition (teqDefinition name (fixParmList parms) t1 t2) }
-| WDefine name=IDENTIFIER parms=parmList Wcolonequal o1=ts_expr Wequalequal o2=ts_expr Wcolon t=ts_expr Wperiod 
+| WDefine name=IDENTIFIER parms=parmList COLONequal o1=ts_expr Wequalequal o2=ts_expr COLON t=ts_expr Wperiod 
     { Toplevel.Definition (oeqDefinition name (fixParmList parms) o1 o2 t) }
 
 | WShow Wperiod 
@@ -155,11 +157,11 @@ command0:
 | WEnd Wperiod
     { Toplevel.End }
 
-uParm: vars=nonempty_list(IDENTIFIER) Wcolon KUlevel eqns=preceded(Wsemi,uEquation)*
+uParm: vars=nonempty_list(IDENTIFIER) COLON KUlevel eqns=preceded(Wsemi,uEquation)*
     { UParm (UContext ((List.map make_Var vars),eqns)) }
-tParm: vars=nonempty_list(IDENTIFIER) Wcolon KType 
+tParm: vars=nonempty_list(IDENTIFIER) COLON KType 
     { TParm (List.map make_Var vars) }
-oParm: vars=nonempty_list(IDENTIFIER) Wcolon t=ts_expr 
+oParm: vars=nonempty_list(IDENTIFIER) COLON t=ts_expr 
     { OParm (List.map (fun s -> (Var s,t)) vars) }
 
 uEquation:
@@ -236,18 +238,18 @@ bare_ts_expr:
 | f=ts_expr o=ts_expr
     %prec Reduce_application
     { make_OO_ev f o ((Error.Nowhere, VarUnused), with_pos (Error.Position($startpos, $endpos)) (new_hole'())) }
-| Klambda x=variable Wcolon t=ts_expr Wcomma o=ts_expr
+| Klambda x=variable COLON t=ts_expr Wcomma o=ts_expr
     %prec Reduce_binder
     { make_OO_lambda t (x,o) }
 | Wstar o=ts_expr
     %prec Reduce_star
     { make_TT_El o }
-| KPi x=variable Wcolon t1=ts_expr Wcomma t2=ts_expr
+| KPi x=variable COLON t1=ts_expr Wcomma t2=ts_expr
     %prec Reduce_binder
     { make_TT_Pi t1 (x,t2) }
 | t=ts_expr Warrow u=ts_expr
     { make_TT_Pi t ((Error.Nowhere, VarUnused),u) }
-| KSigma x=variable Wcolon t1=ts_expr Wcomma t2=ts_expr
+| KSigma x=variable COLON t1=ts_expr Wcomma t2=ts_expr
     %prec Reduce_binder
     { make_TT_Sigma t1 (x,t2) }
 | Kumax Wlparen u=ts_expr Wcomma v=ts_expr Wrparen

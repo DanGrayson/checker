@@ -8,7 +8,10 @@
 
 This file encodes the type system TS developed in the paper {i A universe
 polymorphic type system}, by Vladimir Voevodsky, the version dated October,
-2012.
+2012.  We call that [UPTS].
+
+There is also a preprint {i Description of LF in TS style}, by Vladimir
+Voevodsky, dated November 27, 2012.  We call that [LFinTS].
 
   *)
 
@@ -273,7 +276,7 @@ let labels = List.concat [
 ]
 
 let label_to_string = function
-  | VarDefined (name,aspect) -> name ^ "." ^ (string_of_int aspect)
+  | VarDefined (name,aspect) -> "[" ^ name ^ "." ^ (string_of_int aspect) ^ "]"
   | V v -> vartostring' v
   | U h -> "[" ^ uhead_to_string h ^ "]"
   | T h -> "[" ^ thead_to_string h ^ "]"
@@ -516,10 +519,10 @@ type oSubs = (var' * expr) list
 (*** Contexts. *)
 
 type environment_type = {
-    ulevel_context : uContext;
-    ts_context : (var' * expr) list;
     lf_context : (var' * lftype) list;
     def_context : ((string * int) * lftype) list;
+    ulevel_context : uContext;
+    ts_context : (var' * expr) list;
   }
 
 let def_bind name aspect o t env =

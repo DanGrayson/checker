@@ -9,6 +9,7 @@ type command' =
   | UVariable of string list * (expr * expr) list
   | Variable of string list
   | Alpha of expr * expr
+  | Axiom of string * expr
   | Type of expr
   | Definition of (string * int * expr * lftype) list
   | CheckUniverses

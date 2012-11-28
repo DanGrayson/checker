@@ -42,6 +42,7 @@ rule expr_tokens = parse
   | "Tau" { WTau }
   | "Variable" { WVariable }
   | "Define" { WDefine }
+  | "Axiom" { Axiom }
   | "End" { WEnd }
   | "Show" { WShow }
   | '[' (ident as name) '.' (digit+ as aspect) ']' { DEFINED_VARIABLE(name,int_of_string aspect) }
@@ -64,7 +65,7 @@ rule expr_tokens = parse
   | ';'  { Wsemi }
   | '.'  { Wperiod }
   | ','  { Wcomma }
-  | ':'  { Wcolon }
+  | ':'  { COLON }
   | '~'  { Wtilde }
   | '='  { Wequal }
   | '=' '=' { Wequalequal }
@@ -74,7 +75,7 @@ rule expr_tokens = parse
   | '<' '='  { Wlessequal }
   | '_' { Wunderscore }
   | '<' { Wless }
-  | ':' '='  { Wcolonequal }
+  | ':' '='  { COLONequal }
   | digit+ as n { Nat (int_of_string n) } (* eventually check for overflow and leading 0 *)
   | ident as id { IDENTIFIER id }
   | '\t' { tab lexbuf; expr_tokens lexbuf }

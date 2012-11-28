@@ -110,18 +110,20 @@ let printCommand x =
   Printf.printf "Print: %s\n" (Printer.lfexpr_to_string x);
   flush stdout
 
+let axiomCommand name t = environment := obind' (Var name, t) !environment
+
 let ruleCommand num name x =
   rules := (Rule (num,name), x) :: !rules;
   Printf.printf "Rule %d %s: %s\n" num name (Printer.lftype_to_string true x);
   flush stdout
 
 let lf_type_printCommand x =
-  Printf.printf "F_Print: %s\n" (Printer.lftype_to_string true x);
+  Printf.printf "F_Print : %s\n" (Printer.lftype_to_string true x);
   flush stdout
 
 let checkCommand x =
-  Printf.printf "Check: %s\n" (Printer.ts_expr_to_string x);
-  Printf.printf "   LF: %s\n" (Printer.lfexpr_to_string x);
+  Printf.printf "Check : %s\n" (Printer.ts_expr_to_string x);
+  Printf.printf "   LF : %s\n" (Printer.lfexpr_to_string x);
   Printf.printf "   filling in ...\n";
   flush stdout;
   let x = protect1 ( fun () -> Fillin.fillin !environment x ) in
@@ -177,7 +179,7 @@ let typeCommand x = (
       Tokens.bump_error_count())
     
 let show_command () = 
-  Printf.printf "Show:\n";
+  Printf.printf "Environment :\n";
   (
    Printf.printf "  LF context:\n";
    List.iter 
@@ -189,10 +191,21 @@ let show_command () =
   (
    Printf.printf "  Definition context:\n";
    List.iter 
-     (fun ((name,aspect),t) -> Printf.printf "     %s.%d : %s\n" 
+     (fun ((name,aspect),t) -> Printf.printf "     [%s.%d] : %s\n" 
 	 name aspect
 	 (Printer.lftype_to_string true t)) 
      (List.rev (!environment).def_context);
+  );
+
+  Printf.printf "  U-level context:\n     %s\n" (Printer.ulevel_context_to_string !environment.ulevel_context);
+
+  (
+   Printf.printf "  TS context:\n";
+   List.iter 
+     (fun (v,t) -> Printf.printf "     %s : %s\n" 
+	 (vartostring' v)
+	 (Printer.lfexpr_to_string t)) 
+     (List.rev (!environment).ts_context);
   );
   flush stdout
 
@@ -205,6 +218,7 @@ let process_command lexbuf = (
     | Toplevel.UVariable (uvars,eqns) -> add_uVars uvars eqns
     | Toplevel.Variable tvars -> add_tVars tvars
     | Toplevel.Rule (num,name,t) -> ruleCommand num name t
+    | Toplevel.Axiom (name,t) -> axiomCommand name t
     | Toplevel.F_Print x -> lf_type_printCommand x
     | Toplevel.Print x -> printCommand x
     | Toplevel.Check x -> checkCommand x
