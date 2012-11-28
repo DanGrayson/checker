@@ -230,8 +230,8 @@ let rulehead_to_string = function
 let strip_pos_var : Error.position * 'a -> 'a = snd
 let get_pos_var : Error.position * 'a -> Error.position = fst
 type var = Error.position * var'
-and  var' =
-    Var of string
+and  var' =				(* a variable in both TS and LF *)
+  | Var of string
   | VarGen of int * string
   | VarUnused
 
@@ -239,8 +239,15 @@ let vartostring' = function
   | Var x -> x
   | VarGen(i,x) -> x ^ "_" ^ (string_of_int i)
   | VarUnused -> "_"
-
 let vartostring v = vartostring' (strip_pos_var v)
+
+type lf_var =				(* a variable in LF *)
+  | LF_Var of var'
+  | LF_VarDefined of string * int         (** A definition, appearing as a variable of LF. *)
+
+let lf_var_tostring = function
+  | LF_Var v -> vartostring' v
+  | LF_VarDefined (name,aspect) -> "[" ^ name ^ "." ^ (string_of_int aspect) ^ "]"
 
     (** The type [label] accommodates the variables of LF, and the constants of
         LF, which in turn include the labels of TS, the inference rules of TS,
@@ -262,8 +269,7 @@ let vartostring v = vartostring' (strip_pos_var v)
 	judgment in TS. *)
 
 type label =
-  | VarDefined of string * int  (** A definition, appearing as a variable of LF. *)
-  | V of var'			(** a variable of TS and LF, appearing as an atomic term of LF *)
+  | L of lf_var
   | U of uHead			(** labels for u-expressions of TS *)
   | T of tHead			(** labels for t-expressions of TS *)
   | O of oHead			(** labels for o-expressions of TS *)
@@ -276,8 +282,7 @@ let labels = List.concat [
 ]
 
 let label_to_string = function
-  | VarDefined (name,aspect) -> "[" ^ name ^ "." ^ (string_of_int aspect) ^ "]"
-  | V v -> vartostring' v
+  | L v -> lf_var_tostring v
   | U h -> "[" ^ uhead_to_string h ^ "]"
   | T h -> "[" ^ thead_to_string h ^ "]"
   | O h -> "[" ^ ohead_to_string h ^ "]"
@@ -475,8 +480,7 @@ let rules = ref []
 let rulehead_to_lftype h = List.assoc h !rules
 
 let label_to_lftype = function
-  | VarDefined _
-  | V _ -> raise Error.Internal		(* needs a context *)
+  | L _ -> raise Error.Internal		(* needs a context *)
   | U h -> uhead_to_lftype h
   | T h -> thead_to_lftype h
   | O h -> ohead_to_lftype h
@@ -519,22 +523,21 @@ type oSubs = (var' * expr) list
 (*** Contexts. *)
 
 type environment_type = {
-    lf_context : (var' * lftype) list;
-    def_context : ((string * int) * lftype) list;
+    lf_context : (lf_var * lftype) list;
     ulevel_context : uContext;
     ts_context : (var' * expr) list;
   }
 
 let def_bind name aspect o t env =
   { env with
-    def_context = ((name,aspect),F_Singleton(o,t)) :: env.def_context 
+    lf_context = (LF_VarDefined(name,aspect), F_Singleton(o,t)) :: env.lf_context 
   }
 
 let obind' (v,t) env = match v with
   | VarUnused -> env
   | v -> { env with
 	   ts_context = (v,t) :: env.ts_context;
-	   lf_context = (v,oexp) :: env.lf_context
+	   lf_context = (LF_Var v,oexp) :: env.lf_context
 	 }
 
 let obind (v,t) env = obind' (strip_pos_var v, t) env

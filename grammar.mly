@@ -113,7 +113,7 @@ lfterm_head:
 | tsterm_head
     { $1 }
 | bare_variable
-    { V $1}
+    { L (LF_Var $1) }
 
 command: c=command0 
   { Error.Position($startpos, $endpos), c }
@@ -204,7 +204,7 @@ ts_expr:
 
 tsterm_head:
 | def=DEFINED_VARIABLE
-    { let (name,aspect) = def in VarDefined(name,aspect) }
+    { let (name,aspect) = def in L (LF_VarDefined(name,aspect)) }
 | l=CONSTANT
     {
      try List.assoc ("[" ^ l ^ "]") string_to_label 
@@ -257,7 +257,7 @@ bare_ts_expr:
 | label=tsterm_head args=arglist
     {
      match label with
-     | V _ -> APPLY(label,args)
+     | L _ -> APPLY(label,args)
      | _ -> (
 	 match head_to_vardist label with
 	 | None -> APPLY(label,args)

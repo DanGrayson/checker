@@ -9,8 +9,7 @@ let rec tau (pos:Error.position) env = function
 	  with Not_found -> raise (Error.TypingError(pos, "unbound variable, not in context: " ^ (vartostring' v))))
       | APPLY(h,args) -> with_pos pos (
 	  match h with
-	  | VarDefined _ -> raise Error.Internal
-	  | V _ -> raise Error.NotImplemented
+	  | L _ -> raise Error.NotImplemented
 	  | R _ | U _ | T _ -> raise Error.Internal
 	  | O oh -> match oh with
 	    | O_u -> (

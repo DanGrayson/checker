@@ -8,7 +8,7 @@ let rec ucheck pos env = function
 	| EmptyHole _ -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a u-expression"))
 	| Variable v -> (
 	    let t = 
-	      try List.assoc v env.lf_context
+	      try List.assoc (LF_Var v) env.lf_context
 	      with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound u-variable: "^(vartostring' v)))
 	    in
 	    if t != uexp then raise (Error.TypeCheckingFailure (pos, "expected a u-variable: "^(vartostring' v))))
@@ -23,12 +23,11 @@ let rec tcheck pos env = function
       | EmptyHole _ -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a t-expression"))
       | Variable v ->(
 	  let t =
-	    try List.assoc v env.lf_context
+	    try List.assoc (LF_Var v) env.lf_context
 	    with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound t-variable: "^(vartostring' v)))
 	  in if t != texp then raise (Error.TypeCheckingFailure (pos, "expected a t-variable: "^(vartostring' v))))
       | APPLY(h,args) -> match h with
-	| VarDefined _
-	| V _ -> raise (Unimplemented_expr oe)
+	| L _ -> raise (Unimplemented_expr oe)
 	| R _ -> raise Error.NotImplemented
 	| T th -> (
 	    match th with 
@@ -64,12 +63,11 @@ and ocheck pos env = function
     | EmptyHole _ -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a o-expression"))
     | Variable v -> (
 	let t = (
-	  try List.assoc v env.lf_context
+	  try List.assoc (LF_Var v) env.lf_context
 	  with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound o-variable: "^(vartostring' v))))
 	in if t != oexp then raise (Error.TypeCheckingFailure (pos, "expected an o-variable: "^(vartostring' v))))
     | APPLY(h,args) -> match h with
-      | VarDefined _
-      | V _ -> raise (Unimplemented_expr oe)
+      | L _ -> raise (Unimplemented_expr oe)
       | R _ -> raise Error.NotImplemented
       | U th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a u-expression"))
       | T th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a t-expression"))

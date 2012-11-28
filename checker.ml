@@ -90,18 +90,17 @@ let environment = ref {
   ulevel_context = emptyUContext;
   ts_context = [];
   lf_context = [];
-  def_context = [];
 }
 
 let add_tVars tvars = environment := 
   { !environment with 
-    lf_context = List.rev_append (List.map (fun t -> (Helpers.make_Var t, texp)) tvars) (!environment).lf_context ;
+    lf_context = List.rev_append (List.map (fun t -> (LF_Var (Var t), texp)) tvars) (!environment).lf_context ;
   }
 let add_uVars uvars eqns =
   environment := {
     !environment with
 		  ulevel_context = mergeUContext (!environment).ulevel_context (UContext(List.map Helpers.make_Var uvars,eqns));
-		  lf_context = List.rev_append (List.map (fun u -> (Helpers.make_Var u, uexp)) uvars) (!environment).lf_context;
+		  lf_context = List.rev_append (List.map (fun u -> (LF_Var (Var u), uexp)) uvars) (!environment).lf_context;
 		}
 
 let fix t = Fillin.fillin !environment t
@@ -138,10 +137,8 @@ let checkCommand x =
       Printf.printf "     : t-expression\n"
   | POS(_,APPLY(U _,_)) -> 
       Printf.printf "     : u-expression\n"
-  | POS(_,APPLY(V _,_)) -> 
+  | POS(_,APPLY(L _,_)) -> 
       Printf.printf "     : lf-application, with variable as label\n"
- | POS(_,APPLY(VarDefined _,_)) -> 
-      Printf.printf "     : lf-application, with defined variable as label\n"
   | POS(_,Variable _) -> 
       Printf.printf "     : variable\n"
   | POS(_,EmptyHole n) -> 
@@ -184,17 +181,9 @@ let show_command () =
    Printf.printf "  LF context:\n";
    List.iter 
      (fun (v,t) -> Printf.printf "     %s : %s\n" 
-	 (vartostring' v)
+	 (lf_var_tostring v)
 	 (Printer.lftype_to_string true t)) 
      (List.rev (!environment).lf_context);
-  );
-  (
-   Printf.printf "  Definition context:\n";
-   List.iter 
-     (fun ((name,aspect),t) -> Printf.printf "     [%s.%d] : %s\n" 
-	 name aspect
-	 (Printer.lftype_to_string true t)) 
-     (List.rev (!environment).def_context);
   );
 
   Printf.printf "  U-level context:\n     %s\n" (Printer.ulevel_context_to_string !environment.ulevel_context);

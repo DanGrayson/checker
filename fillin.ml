@@ -17,7 +17,7 @@ and fillin pos env = function
       | Variable _ as v -> v
       | APPLY(label,branches) -> (
 	  match label with
-	  | VarDefined _ -> raise (Error.TypingUnimplemented(pos, "application of a definition"))
+	  | L (LF_VarDefined _) -> raise (Error.TypingUnimplemented(pos, "application of a definition"))
 	  | U _ -> e
 	  | O O_lambda -> (
 	      match branches with 
