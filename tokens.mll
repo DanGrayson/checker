@@ -44,7 +44,7 @@ rule expr_tokens = parse
   | "Define" { WDefine }
   | "End" { WEnd }
   | "Show" { WShow }
-  | '[' (ident as name) '.' (digit+ as aspect) ']' { DefVarWithAspect(name,int_of_string aspect) }
+  | '[' (ident as name) '.' (digit+ as aspect) ']' { DEFINED_VARIABLE(name,int_of_string aspect) }
   | '[' (ident as id) ']' { CONSTANT id }
   | '[' (ident as id) ';' { CONSTANT_SEMI id }
   | "Pi" { KPi }

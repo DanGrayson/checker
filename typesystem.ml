@@ -231,13 +231,11 @@ and  var' =
     Var of string
   | VarGen of int * string
   | VarUnused
-  | VarDefined of string * int
 
 let vartostring' = function
   | Var x -> x
   | VarGen(i,x) -> x ^ "_" ^ (string_of_int i)
   | VarUnused -> "_"
-  | VarDefined (name,aspect) -> name ^ "." ^ (string_of_int aspect)
 
 let vartostring v = vartostring' (strip_pos_var v)
 
@@ -261,7 +259,8 @@ let vartostring v = vartostring' (strip_pos_var v)
 	judgment in TS. *)
 
 type label =
-  | V of var'			(** a variable, appearing as an atomic term of LF *)
+  | VarDefined of string * int  (** A definition, appearing as a variable of LF. *)
+  | V of var'			(** a variable of TS and LF, appearing as an atomic term of LF *)
   | U of uHead			(** labels for u-expressions of TS *)
   | T of tHead			(** labels for t-expressions of TS *)
   | O of oHead			(** labels for o-expressions of TS *)
@@ -274,6 +273,7 @@ let labels = List.concat [
 ]
 
 let label_to_string = function
+  | VarDefined (name,aspect) -> name ^ "." ^ (string_of_int aspect)
   | V v -> vartostring' v
   | U h -> "[" ^ uhead_to_string h ^ "]"
   | T h -> "[" ^ thead_to_string h ^ "]"
@@ -472,6 +472,7 @@ let rules = ref []
 let rulehead_to_lftype h = List.assoc h !rules
 
 let label_to_lftype = function
+  | VarDefined _
   | V _ -> raise Error.Internal		(* needs a context *)
   | U h -> uhead_to_lftype h
   | T h -> thead_to_lftype h
@@ -517,12 +518,13 @@ type oSubs = (var' * expr) list
 type environment_type = {
     ulevel_context : uContext;
     ts_context : (var' * expr) list;
-    lf_context : (var' * lftype) list
+    lf_context : (var' * lftype) list;
+    def_context : ((string * int) * lftype) list;
   }
 
-let def_bind v o t env =
+let def_bind name aspect o t env =
   { env with
-    lf_context = (v,F_Singleton(o,t)) :: env.lf_context 
+    def_context = ((name,aspect),F_Singleton(o,t)) :: env.def_context 
   }
 
 let obind' (v,t) env = match v with
@@ -541,7 +543,7 @@ let newfresh =
     if !genctr < 0 then raise Error.GensymCounterOverflow;
     VarGen (!genctr, x)) in
   fun v -> match v with 
-  | VarDefined(x,_) | Var x | VarGen(_,x) -> newgen x
+  | Var x | VarGen(_,x) -> newgen x
   | VarUnused as v -> v
 
 let new_hole' = 

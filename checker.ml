@@ -90,6 +90,7 @@ let environment = ref {
   ulevel_context = emptyUContext;
   ts_context = [];
   lf_context = [];
+  def_context = [];
 }
 
 let add_tVars tvars = environment := 
@@ -137,6 +138,8 @@ let checkCommand x =
       Printf.printf "     : u-expression\n"
   | POS(_,APPLY(V _,_)) -> 
       Printf.printf "     : lf-application, with variable as label\n"
+ | POS(_,APPLY(VarDefined _,_)) -> 
+      Printf.printf "     : lf-application, with defined variable as label\n"
   | POS(_,Variable _) -> 
       Printf.printf "     : variable\n"
   | POS(_,EmptyHole n) -> 
@@ -185,7 +188,7 @@ let show_command () =
   );
   flush stdout
 
-let addDefinition name aspect o t = environment := def_bind (VarDefined(name,aspect)) o t !environment
+let addDefinition name aspect o t = environment := def_bind name aspect o t !environment
 
 let process_command lexbuf = (
   let c = protect (Grammar.command (Tokens.expr_tokens)) lexbuf lexpos in

@@ -10,7 +10,7 @@ open Grammar0
 %type <Typesystem.lftype> lftype
 %token <int> Nat
 %token <string> IDENTIFIER CONSTANT CONSTANT_SEMI
-%token <string * int> DefVarWithAspect
+%token <string * int> DEFINED_VARIABLE
 %token
 
   Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod Wcolon Wstar Warrow
@@ -42,7 +42,7 @@ open Grammar0
 
   /* These are the other tokens that can begin a TS-expression : ditto. */
 
-  Wunderscore Wlparen Watat Kumax DefVarWithAspect CONSTANT_SEMI
+  Wunderscore Wlparen Watat Kumax DEFINED_VARIABLE CONSTANT_SEMI
   CONSTANT Wstar Klambda KSigma KPi
 
 %left
@@ -106,18 +106,14 @@ bare_lfterm:
     { Variable $1 }
 | Wunderscore
     { new_hole' () }
-| Wlparen f=lfterm_constant args=list(lfterm) Wrparen
-    { APPLY(f,args) }
-| Wlparen f=lfterm_variable args=list(lfterm) Wrparen
+| Wlparen f=lfterm_head args=list(lfterm) Wrparen
     { APPLY(f,args) }
 
-lfterm_variable:
-| def=DefVarWithAspect
-    { let (name,aspect) = def in V (VarDefined(name,aspect)) }
+lfterm_head:
 | bare_variable
-    {V $1}
-
-lfterm_constant:
+    { V $1}
+| def=DEFINED_VARIABLE
+    { let (name,aspect) = def in VarDefined(name,aspect) }
 | l=CONSTANT
     {
      try List.assoc ("[" ^ l ^ "]") label_strings 
@@ -247,31 +243,19 @@ bare_ts_expr:
     { make_TT_Sigma t1 (x,t2) }
 | Kumax Wlparen u=ts_expr Wcomma v=ts_expr Wrparen
     { APPLY(U U_max,[u;v])  }
-| def=DefVarWithAspect args=arglist
+| label=lfterm_head args=arglist
     {
-     let (name,aspect) = def 
-     in APPLY( V (VarDefined(name,aspect)), args)	       
-   }
-| name=CONSTANT args=arglist
-    {
-     let label = 
-       try List.assoc ("[" ^ name ^ "]") label_strings 
-       with Not_found -> 
-	 Printf.fprintf stderr "%s: unknown term constant [%s]\n" 
-	   (Error.error_format_pos (Error.Position($startpos, $endpos)))
-	   name;
-	 flush stderr;
-	 $syntaxerror
-     in
-     match head_to_vardist label with
-     | None -> APPLY(label,args)
-     | Some (n,_) ->
-	 if n = 0 then APPLY(label,args)
-	 else
-	   raise (Error.TypingError
-		    ( Error.Position($startpos, $endpos),
-		      "expected " ^ (string_of_int n) ^ " variable" ^ (if n != 1 then "s" else "")));
-	 
+     match label with
+     | V _ -> APPLY(label,args)
+     | _ -> (
+	 match head_to_vardist label with
+	 | None -> APPLY(label,args)
+	 | Some (n,_) ->
+	     if n = 0 then APPLY(label,args)
+	     else
+	       raise (Error.TypingError
+			( Error.Position($startpos, $endpos),
+			  "expected " ^ (string_of_int n) ^ " variable" ^ (if n != 1 then "s" else ""))))
    }
 | name=CONSTANT_SEMI vars=separated_list(Wcomma,variable_or_unused) Wrbracket args=arglist
     {

@@ -27,6 +27,7 @@ let rec tcheck pos env = function
 	    with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound t-variable: "^(vartostring' v)))
 	  in if t != texp then raise (Error.TypeCheckingFailure (pos, "expected a t-variable: "^(vartostring' v))))
       | APPLY(h,args) -> match h with
+	| VarDefined _
 	| V _ -> raise (Unimplemented_expr oe)
 	| R _ -> raise Error.NotImplemented
 	| T th -> (
@@ -67,6 +68,7 @@ and ocheck pos env = function
 	  with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound o-variable: "^(vartostring' v))))
 	in if t != oexp then raise (Error.TypeCheckingFailure (pos, "expected an o-variable: "^(vartostring' v))))
     | APPLY(h,args) -> match h with
+      | VarDefined _
       | V _ -> raise (Unimplemented_expr oe)
       | R _ -> raise Error.NotImplemented
       | U th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a u-expression"))

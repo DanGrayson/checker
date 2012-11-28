@@ -102,6 +102,8 @@ F_Print Singleton(T : texp).
 
 Show.
 
+# each of the following lines yields an error:
+
 Check @@ ([foo.0] ([next] u0) u1).
 Check lambda x:T, lambda y:U, [foo.0](u1, u2, T, U, x, y).
 Check lambda x:T, lambda y:U, lambda t:[foo.1](u0, u0, T, U, x, y), t.
