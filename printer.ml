@@ -12,7 +12,7 @@ let concatl = concat <<- List.flatten
 let rec lfexpr_to_string = function
   | LAMBDA(x,body) -> "(lambda " ^ (vartostring x) ^ ", " ^ (lfexpr_to_string body) ^ ")"
   | POS(_,e) -> match e with 
-    | EmptyHole n -> "_" ^ (string_of_int n)
+    | EmptyHole n -> "?" ^ (string_of_int n)
     | Variable v -> vartostring' v
     | APPLY(h,args) -> "(" ^ (label_to_string h) ^ (String.concat "" (List.map (fun x -> " " ^ (lfexpr_to_string x)) args)) ^ ")"
 

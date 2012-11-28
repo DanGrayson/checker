@@ -15,6 +15,8 @@
 
 open Typesystem
 
+exception Inconsistency of expr * expr
+
 let rec memi' i x = function
     [] -> raise Error.Internal
   | a::l -> if a = x then i else memi' (i+1) x l
@@ -30,11 +32,33 @@ let chk uv (lhs,rhs) =
 	| APPLY(U U_max,[u;v]) -> max (ev u) (ev v)
 	| _ -> raise Error.Internal)
     | _ -> raise Error.Internal
-  in let chk lhs rhs = if (ev lhs) = (ev rhs) then raise Error.UniverseInconsistency in
+  in let chk lhs rhs = if (ev lhs) = (ev rhs) then raise (Inconsistency (lhs, rhs)) in
   chk lhs rhs
-    
-let consistency ulevel_context = ()
-  (* raise Error.NotImplemented *)
+
+let get_uvars =
+  let rec get_uvars accu = function
+  | [] -> List.rev accu
+  | (LF_Var u,t) :: rest -> if t = uexp then get_uvars (u :: accu) rest else get_uvars accu rest
+  | _ :: rest -> get_uvars accu rest 
+  in get_uvars []
+
+let get_ueqns =
+  let rec get_ueqns accu = function
+  | [] -> List.rev accu
+  | (_, F_APPLY(F_ulevel_equality,[u; u'])) :: rest -> get_ueqns ((u,u') :: accu) rest
+  | _ :: rest -> get_ueqns accu rest 
+  in get_ueqns []
+
+let chk_var_ueqns uv eqns = List.iter (chk uv) eqns
+
+let consistency env  = List.iter (chk (get_uvars env)) (get_ueqns env)
+
+let chk_ueqns eqns = chk_var_ueqns (get_uvars !environment) eqns
+
+let ubind uvars ueqns =
+  environment := List.rev_append (List.map (fun u -> (LF_Var (Var u), uexp)) uvars) !environment;
+  environment := List.rev_append (List.map (fun (u,v) -> (LF_Var (newfresh (Var "ueq")), ulevel_equality u v)) ueqns) !environment;
+  chk_ueqns ueqns
 
 module Equal = struct
   let equiv ulevel_context = 			(* structural equality *)
@@ -58,7 +82,7 @@ module EquivA = struct
       (* not implemented *)
       true
     with
-      Error.UniverseInconsistency -> false
+      Inconsistency _ -> false
 end
 
 module type Equivalence = sig

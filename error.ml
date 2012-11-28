@@ -1,6 +1,5 @@
 (** Exceptions, error message handling, and source code positions. *)
 
-exception UniverseInconsistency
 exception GeneralError of string
 exception GensymCounterOverflow
 exception NotImplemented
@@ -13,6 +12,14 @@ exception Eof
 type position =
   | Position of Lexing.position * Lexing.position (** start, end *)
   | Nowhere
+
+let merge_position p q =
+  match p with 
+  | Nowhere -> q
+  | Position(a,b) ->
+      match q with
+      | Nowhere -> p
+      | Position(c,d) -> Position(a,d)
 
 exception TypingError of position * string
 exception TypingUnimplemented of position * string

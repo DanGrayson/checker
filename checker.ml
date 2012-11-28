@@ -20,12 +20,22 @@ let leave pos =
   error_summary pos;
   raise StopParsingFile
 
+let print_inconsistency lhs rhs =
+  Printf.fprintf stderr "%s: universe inconsistency:\n" (Error.error_format_pos (get_pos lhs)); 
+  Printf.fprintf stderr "%s:         %s\n" (Error.error_format_pos (get_pos lhs)) (Printer.ts_expr_to_string lhs);
+  Printf.fprintf stderr "%s:      != %s\n" (Error.error_format_pos (get_pos rhs)) (Printer.ts_expr_to_string rhs);
+  flush stderr;
+  Tokens.bump_error_count()
+
 let protect1 f =
   try f () with
   | Error.TypingError (p,s) ->
       Printf.fprintf stderr "%s: %s\n" (Error.error_format_pos p) s;
       flush stderr;
       Tokens.bump_error_count();
+      raise Error_Handled
+  | Universe.Inconsistency (lhs,rhs) ->
+      print_inconsistency lhs rhs;
       raise Error_Handled
   | Error.TypingUnimplemented (p,s) -> 
       Printf.fprintf stderr "%s: type checking unimplemented: %s\n" (Error.error_format_pos p) s;
@@ -48,7 +58,10 @@ let protect1 f =
 let protect parser lexbuf posfun =
     try parser lexbuf
     with 
-      Error.Eof -> leave (posfun lexbuf)
+    | Error.Eof -> leave (posfun lexbuf)
+    | Universe.Inconsistency (lhs,rhs) ->
+	print_inconsistency lhs rhs;
+	raise Error_Handled
     | Error.TypingUnimplemented (p,s) -> 
 	Printf.fprintf stderr "%s: type checking unimplemented: %s\n" (Error.error_format_pos p) s;
 	flush stderr;
@@ -106,10 +119,6 @@ let add_tVars tvars =
       )
       !environment
 
-let add_uVars uvars eqns =
-  environment := List.rev_append (List.map (fun u -> (LF_Var (Var u), uexp)) uvars) !environment;
-  environment := List.rev_append (List.map (fun (u,v) -> (LF_Var VarUnused, ulevel_equality u v)) eqns) !environment
-
 let fix t = Fillin.fillin !environment t
 
 let printCommand x =
@@ -164,11 +173,8 @@ let alphaCommand (x,y) =
 
 let checkUniversesCommand pos =
   try
-    Universe.consistency ()
-  with Error.UniverseInconsistency 
-    ->Printf.fprintf stderr "%s: universe inconsistency\n" (Error.error_format_pos pos); 
-      flush stderr;
-      Tokens.bump_error_count()
+    Universe.consistency !environment
+  with Universe.Inconsistency (p,q) -> print_inconsistency p q
 
 let typeCommand x = (
   try 
@@ -185,7 +191,6 @@ let typeCommand x = (
 let show_command () = 
   Printf.printf "Environment :\n";
   (
-   Printf.printf "  LF context:\n";
    List.iter 
      (fun (v,t) -> Printf.printf "     %s : %s\n" 
 	 (lf_var_tostring v)
@@ -204,7 +209,7 @@ let process_command lexbuf = (
   let c = protect (Grammar.command (Tokens.expr_tokens)) lexbuf lexpos in
   match c with (pos,c) ->
     match c with
-    | Toplevel.UVariable (uvars,eqns) -> add_uVars uvars eqns
+    | Toplevel.UVariable (uvars,eqns) -> protect1 ( fun () -> ubind uvars eqns )
     | Toplevel.Variable tvars -> add_tVars tvars
     | Toplevel.Rule (num,name,t) -> ruleCommand num name t
     | Toplevel.Axiom (name,t) -> axiomCommand name t

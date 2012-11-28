@@ -1,4 +1,4 @@
-Variable u0 u1 u2 : Ulevel ; [next](u0) <= u1; [next](u1) <= u2.
+Variable u0 u1 u2 : Ulevel ; [next](u0) <= u1; [next](u1) < u2.
 Variable T T' U V X Y : Type.
 Axiom f : T -> T.
 
