@@ -86,11 +86,9 @@ let lexpos lexbuf =
   let _ = Tokens.command_flush lexbuf in
   p
 
-let environment = ref {
-  ulevel_context = emptyUContext;
-  ts_context = [];
-  lf_context = [];
-}
+let initialize_environment () =
+  environment := empty_environment;
+  rules := []
 
 let add_tVars tvars = environment := 
   { !environment with 
@@ -99,9 +97,9 @@ let add_tVars tvars = environment :=
 let add_uVars uvars eqns =
   environment := {
     !environment with
-		  ulevel_context = mergeUContext (!environment).ulevel_context (UContext(List.map Helpers.make_Var uvars,eqns));
 		  lf_context = List.rev_append (List.map (fun u -> (LF_Var (Var u), uexp)) uvars) (!environment).lf_context;
 		}
+  (* raise Error.NotImplemented *)
 
 let fix t = Fillin.fillin !environment t
 
@@ -150,14 +148,14 @@ let checkCommand x =
 let alphaCommand (x,y) =
   let x = protect fix x Error.nopos in
   let y = protect fix y Error.nopos in
-  Printf.printf "Alpha: %s\n" (if (Alpha.UEqual.equiv (!environment).ulevel_context x y) then "true" else "false");
+  Printf.printf "Alpha: %s\n" (if (Alpha.UEqual.equiv Grammar0.emptyUContext x y) then "true" else "false");
   Printf.printf "     : %s\n" (Printer.ts_expr_to_string x);
   Printf.printf "     : %s\n" (Printer.ts_expr_to_string y);
   flush stdout
 
 let checkUniversesCommand pos =
   try
-    Universe.consistency (!environment.ulevel_context)
+    Universe.consistency ()
   with Error.UniverseInconsistency 
     ->Printf.fprintf stderr "%s: universe inconsistency\n" (Error.error_format_pos pos); 
       flush stderr;
@@ -186,8 +184,6 @@ let show_command () =
      (List.rev (!environment).lf_context);
   );
 
-  Printf.printf "  U-level context:\n     %s\n" (Printer.ulevel_context_to_string !environment.ulevel_context);
-
   (
    Printf.printf "  TS context:\n";
    List.iter 
@@ -196,6 +192,10 @@ let show_command () =
 	 (Printer.lfexpr_to_string t)) 
      (List.rev (!environment).ts_context);
   );
+  List.iter
+    (fun (Rule (num,name), x) ->
+      Printf.printf "Rule %d %s: %s\n" num name (Printer.lftype_to_string true x))
+    !rules;
   flush stdout
 
 let addDefinition name aspect o t = environment := def_bind name aspect o t !environment
@@ -220,16 +220,17 @@ let process_command lexbuf = (
  )
 
 let parse_file filename =
-    Printf.printf "-- parsing file %s\n" filename; flush stdout;
-    Tokens.error_count := 0;
-    let lexbuf = Lexing.from_channel (open_in filename) in
-    lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = filename};
-    (
-     try
-       while true do (try process_command lexbuf with Error_Handled -> ());
-       done
-     with StopParsingFile -> ()
-    )
+  initialize_environment ();
+  Printf.printf "-- parsing file %s\n" filename; flush stdout;
+  Tokens.error_count := 0;
+  let lexbuf = Lexing.from_channel (open_in filename) in
+  lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = filename};
+  (
+   try
+     while true do (try process_command lexbuf with Error_Handled -> ());
+     done
+   with StopParsingFile -> ()
+  )
   
 let strname =
   let n = ref 0 in

@@ -33,9 +33,8 @@ let chk uv (lhs,rhs) =
   in let chk lhs rhs = if (ev lhs) = (ev rhs) then raise Error.UniverseInconsistency in
   chk lhs rhs
     
-let consistency ulevel_context = 
-  let UContext (uv, eqns) = ulevel_context in 
-  List.iter (chk uv) eqns
+let consistency ulevel_context = ()
+  (* raise Error.NotImplemented *)
 
 module Equal = struct
   let equiv ulevel_context = 			(* structural equality *)
@@ -55,15 +54,13 @@ end
 
 module EquivA = struct
   let equiv ulevel_context lhs rhs = 		(* naive *)
-    let UContext (uv, eqns) = ulevel_context in 
     try
-      chk uv (lhs,rhs);
+      (* not implemented *)
       true
     with
       Error.UniverseInconsistency -> false
 end
 
 module type Equivalence = sig
-  val equiv : uContext -> expr -> expr -> bool
-(*  val compare: uContext -> expr -> expr -> int *)
+  val equiv : Printer.uContext -> expr -> expr -> bool
 end

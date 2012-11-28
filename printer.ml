@@ -103,6 +103,9 @@ and ts_expr_to_string = function
   | oe -> lfp oe
 
 (** Printing functions for definitions, provisional. *)
+
+type uContext = UContext of var' list * (expr * expr) list
+
 let parmstostring = function
   | ((UContext(uexp_parms,ueqns):uContext),(texp_parms:var' list),(oexp_parms:(var' * expr) list)) 
     -> concatl [

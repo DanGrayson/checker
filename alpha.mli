@@ -14,14 +14,14 @@ val testalpha :
 module UEqual :
   sig
     val uequiv :
-      Typesystem.uContext -> Typesystem.expr -> Typesystem.expr -> bool
+      Printer.uContext -> Typesystem.expr -> Typesystem.expr -> bool
     val equiv :
-      Typesystem.uContext -> Typesystem.expr -> Typesystem.expr -> bool
+      Printer.uContext -> Typesystem.expr -> Typesystem.expr -> bool
   end
 module UEquivA :
   sig
     val uequiv :
-      Typesystem.uContext -> Typesystem.expr -> Typesystem.expr -> bool
+      Printer.uContext -> Typesystem.expr -> Typesystem.expr -> bool
     val equiv :
-      Typesystem.uContext -> Typesystem.expr -> Typesystem.expr -> bool
+      Printer.uContext -> Typesystem.expr -> Typesystem.expr -> bool
   end

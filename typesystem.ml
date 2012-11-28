@@ -507,26 +507,21 @@ let tfhead_to_kind = function
   | F_object_similarity -> oexp @@> texp @@> texp @@> K_type
   | F_object_equality -> oexp @@> texp @@> texp @@> K_type
 
-(*** 
-    A universe context [UC = (Fu,A)] is represented by a list of universe variables [Fu] and a list of
-    equations [M_i = N_i] between two u-level expressions formed from the variables in [Fu]
-    that defines the admissible subset [A] of the functions [Fu -> nat].  It's just the subset
-    that matters.
- *) 
-type uContext = UContext of var' list * (expr * expr) list
-let emptyUContext = UContext ([],[])
-let mergeUContext : uContext -> uContext -> uContext =
-  function UContext(uvars,eqns) -> function UContext(uvars',eqns') -> UContext(List.rev_append uvars' uvars,List.rev_append eqns' eqns)
-
 type oSubs = (var' * expr) list
 
 (*** Contexts. *)
 
 type environment_type = {
     lf_context : (lf_var * lftype) list;
-    ulevel_context : uContext;
     ts_context : (var' * expr) list;
   }
+
+let empty_environment = {
+    lf_context = [];
+    ts_context = [];
+  }
+
+let environment = ref empty_environment
 
 let def_bind name aspect o t env =
   { env with
@@ -535,7 +530,7 @@ let def_bind name aspect o t env =
 
 let obind' (v,t) env = match v with
   | VarUnused -> env
-  | v -> { env with
+  | v -> {
 	   ts_context = (v,t) :: env.ts_context;
 	   lf_context = (LF_Var v,oexp) :: env.lf_context
 	 }

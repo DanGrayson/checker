@@ -3,12 +3,16 @@
 open Typesystem
 open Helpers
 
+let emptyUContext = Printer.UContext ([],[])
+let mergeUContext : Printer.uContext -> Printer.uContext -> Printer.uContext =
+  function Printer.UContext(uvars,eqns) -> function Printer.UContext(uvars',eqns') -> Printer.UContext(List.rev_append uvars' uvars,List.rev_append eqns' eqns)
+
 type parm =
-  | UParm of uContext
+  | UParm of Printer.uContext
   | TParm of var' list
   | OParm of (var' * expr) list
 
-let fixParmList (p:parm list) : uContext * (var' list) * ((var' * expr) list) = (* this code has to be moved somewhere to use the context *)
+let fixParmList (p:parm list) : Printer.uContext * (var' list) * ((var' * expr) list) = (* this code has to be moved somewhere to use the context *)
   let rec fix us ts os p =
     match p with 
     | UParm u :: p -> 
@@ -28,8 +32,8 @@ let fixParmList (p:parm list) : uContext * (var' list) * ((var' * expr) list) = 
 	in (ulevel_context,tc,ts_context))
   in fix [] [] [] p
 
-let tDefinition (name:string) ((ulevel_context,tc,ts_context):(uContext * (var' list) * ((var' * expr) list))) (t:expr) : (string * int * expr * lftype) list = 
-  let UContext (uvars,ueqns) = ulevel_context in
+let tDefinition (name:string) ((ulevel_context,tc,ts_context):(Printer.uContext * (var' list) * ((var' * expr) list))) (t:expr) : (string * int * expr * lftype) list = 
+  let Printer.UContext (uvars,ueqns) = ulevel_context in
   let rec wrap t = function
     | [] -> t 
     | v :: rest -> wrap (LAMBDA((Error.Nowhere,v),t)) rest
@@ -58,7 +62,7 @@ let tDefinition (name:string) ((ulevel_context,tc,ts_context):(uContext * (var' 
     ( name, 1, new_hole(), istype t)
   ]
 
-let oDefinition (name:string) ((ulevel_context,tc,ts_context):(uContext * (var' list) * ((var' * expr) list))) (o:expr) (t:expr) : (string * int * expr * lftype) list = 
+let oDefinition (name:string) ((ulevel_context,tc,ts_context):(Printer.uContext * (var' list) * ((var' * expr) list))) (o:expr) (t:expr) : (string * int * expr * lftype) list = 
   (* still have to wrap the lambdas around it : *)
   [
    ( name, 0, o, oexp);

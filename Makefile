@@ -1,3 +1,5 @@
+TSFILES = rules.ts test.ts 
+
 BFLAGS = -cflags -g,-annot -lflags -g -yaccflag -v
 BFLAGS += -use-menhir
 
@@ -46,14 +48,12 @@ doc: checker.odocl
 checker.odocl: Makefile
 	for i in $(BASENAMES) ; do echo $$i ; done >$@
 clean::; ocamlbuild -clean
-TAGS: $(SRCFILES) test.ts scripts/ts.etags Makefile
-	( scripts/etags.ocaml $(SRCFILES) && etags --regex=@scripts/ts.etags test.ts -o - ) >$@
+TAGS: $(SRCFILES) $(TSFILES) scripts/ts.etags Makefile
+	( scripts/etags.ocaml $(SRCFILES) && etags --regex=@scripts/ts.etags $(TSFILES) -o - ) >$@
 clean::; rm -f TAGS checker.odocl .DS_Store
 wc:; wc -l $(SRCFILES)
 run: checker.byte
-	-OCAMLRUNPARAM=$(RUN) ./$< rules.ts test.ts 
-run_nofile: checker.byte; OCAMLRUNPARAM=$(RUN) ./$<
-run.native: checker.native; OCAMLRUNPARAM=$(RUN) ./$< <test.ts
+	-OCAMLRUNPARAM=$(RUN) ./$< $(TSFILES)
 debug:
 	@ echo "enter:"
 	@ echo "  set arg test.ts"
