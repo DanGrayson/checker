@@ -17,21 +17,37 @@ open Grammar0
   Wequalequal Wequal Wcolonequal Wunderscore WF_Print WRule Wgreaterequal
   Wgreater Wlessequal Wless Wsemi KUlevel Kumax KType Ktype KPi Klambda KSigma
   WTau WPrint WDefine WShow WEnd WVariable WAlpha Weof Watat WCheck
-  WCheckUniverses Wtilde Prec_application KSingleton
+  WCheckUniverses Wtilde KSingleton
 
 /* precedences, lowest first */
 %right
-  KPi KSigma
+
+  Reduce_binder
+
 %right
-  Klambda
-%right
+
   Warrow
+
 %nonassoc
-  Wstar				/* we want  [*f x] to be [*(f x)]  and  [*x->y] to be [( *x )->y]  */
+
+  /* we want  [*f x] to be [*(f x)]  and  [*x->y] to be [( *x )->y]  */
+  Reduce_star
+
 %nonassoc
-  Wunderscore Wlparen Watat Kumax IDENTIFIER DefVarWithAspect CONSTANT_SEMI CONSTANT
+
+  /* We want [f x IDENTIFIER] to reduce to [(f x) IDENTIFIER], so
+     the precedence of IDENTIFIER is lower than Reduce_application. */
+
+  IDENTIFIER
+
+  /* These are the other tokens that can begin a TS-expression : ditto. */
+
+  Wunderscore Wlparen Watat Kumax DefVarWithAspect CONSTANT_SEMI
+  CONSTANT Wstar Klambda KSigma KPi
+
 %left
-  Prec_application
+
+  Reduce_application
 
 %%
 
@@ -41,7 +57,7 @@ lftype:
 | f=lftype_constant args=list(lfterm)
     { F_APPLY(f,args) }
 | KPi v=bare_variable Wcolon a=lftype Wcomma b=lftype
-    %prec KPi
+    %prec Reduce_binder
     { F_Pi(v,a,b) }
 | a=lftype Warrow b=lftype
    { F_Pi(VarUnused,a,b) }
@@ -213,20 +229,21 @@ bare_ts_expr:
 | Wunderscore
     { new_hole' () }
 | f=ts_expr o=ts_expr
-    %prec Prec_application
+    %prec Reduce_application
     { make_OO_ev f o ((Error.Nowhere, VarUnused), with_pos (Error.Position($startpos, $endpos)) (new_hole'())) }
 | Klambda x=variable Wcolon t=ts_expr Wcomma o=ts_expr
-    %prec Klambda
+    %prec Reduce_binder
     { make_OO_lambda t (x,o) }
 | Wstar o=ts_expr
+    %prec Reduce_star
     { make_TT_El o }
 | KPi x=variable Wcolon t1=ts_expr Wcomma t2=ts_expr
-    %prec KPi
+    %prec Reduce_binder
     { make_TT_Pi t1 (x,t2) }
 | t=ts_expr Warrow u=ts_expr
     { make_TT_Pi t ((Error.Nowhere, VarUnused),u) }
 | KSigma x=variable Wcolon t1=ts_expr Wcomma t2=ts_expr
-    %prec KSigma
+    %prec Reduce_binder
     { make_TT_Sigma t1 (x,t2) }
 | Kumax Wlparen u=ts_expr Wcomma v=ts_expr Wrparen
     { APPLY(U U_max,[u;v])  }
