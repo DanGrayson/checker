@@ -511,31 +511,11 @@ type oSubs = (var' * expr) list
 
 (*** Contexts. *)
 
-type environment_type = {
-    lf_context : (lf_var * lftype) list;
-    ts_context : (var' * expr) list;
-  }
+type environment_type = (lf_var * lftype) list
 
-let empty_environment = {
-    lf_context = [];
-    ts_context = [];
-  }
+let environment : environment_type ref = ref []
 
-let environment = ref empty_environment
-
-let def_bind name aspect o t env =
-  { env with
-    lf_context = (LF_VarDefined(name,aspect), F_Singleton(o,t)) :: env.lf_context 
-  }
-
-let obind' (v,t) env = match v with
-  | VarUnused -> env
-  | v -> {
-	   ts_context = (v,t) :: env.ts_context;
-	   lf_context = (LF_Var v,oexp) :: env.lf_context
-	 }
-
-let obind (v,t) env = obind' (strip_pos_var v, t) env
+let def_bind name aspect o t env = (LF_VarDefined(name,aspect), F_Singleton(o,t)) :: env
 
 let newfresh = 
   let genctr = ref 0 in 
@@ -546,6 +526,15 @@ let newfresh =
   fun v -> match v with 
   | Var x | VarGen(_,x) -> newgen x
   | VarUnused as v -> v
+
+let obind' (v,t) env = match v with
+  | VarUnused -> env
+  | v -> 
+      (LF_Var (newfresh (Var "hast")), hastype (nowhere (Variable v)) t) :: 
+      (LF_Var v,oexp) :: 
+      env
+
+let obind (v,t) env = obind' (strip_pos_var v, t) env
 
 let new_hole' = 
   let counter = ref 0 in

@@ -87,19 +87,28 @@ let lexpos lexbuf =
   p
 
 let initialize_environment () =
-  environment := empty_environment;
+  environment := [];
   rules := []
 
-let add_tVars tvars = environment := 
-  { !environment with 
-    lf_context = List.rev_append (List.map (fun t -> (LF_Var (Var t), texp)) tvars) (!environment).lf_context ;
-  }
+let add_tVars tvars = 
+  environment := 
+    List.rev_append 
+      (List.flatten
+	 (List.map
+	    (fun t -> 
+	      [
+	       (LF_Var (Var t), texp);
+	       (LF_Var (newfresh (Var "ist")), istype (nowhere (Variable (Var t))));
+	     ]
+	    )
+	    tvars
+	 )
+      )
+      !environment
+
 let add_uVars uvars eqns =
-  environment := {
-    !environment with
-		  lf_context = List.rev_append (List.map (fun u -> (LF_Var (Var u), uexp)) uvars) (!environment).lf_context;
-		}
-  (* raise Error.NotImplemented *)
+  environment := List.rev_append (List.map (fun u -> (LF_Var (Var u), uexp)) uvars) !environment;
+  environment := List.rev_append (List.map (fun (u,v) -> (LF_Var VarUnused, ulevel_equality u v)) eqns) !environment
 
 let fix t = Fillin.fillin !environment t
 
@@ -181,16 +190,7 @@ let show_command () =
      (fun (v,t) -> Printf.printf "     %s : %s\n" 
 	 (lf_var_tostring v)
 	 (Printer.lftype_to_string true t)) 
-     (List.rev (!environment).lf_context);
-  );
-
-  (
-   Printf.printf "  TS context:\n";
-   List.iter 
-     (fun (v,t) -> Printf.printf "     %s : %s\n" 
-	 (vartostring' v)
-	 (Printer.lfexpr_to_string t)) 
-     (List.rev (!environment).ts_context);
+     (List.rev !environment);
   );
   List.iter
     (fun (Rule (num,name), x) ->

@@ -1,11 +1,16 @@
 open Typesystem
 
+let rec get_ts_type v = function 
+    [] -> raise Not_found
+  | (_, F_APPLY(F_hastype,[POS(_,Variable v'); t])) :: env -> if v = v' then t else get_ts_type v env
+  | _ :: env -> get_ts_type v env
+
 let rec tau (pos:Error.position) env = function
     | LAMBDA _ -> raise Error.Internal
     | POS(pos,e) -> match e with 
       | EmptyHole _ -> raise (Error.TypingError(pos, "empty hole, type undetermined"))
       | Variable v -> (
-	  try List.assoc v env.ts_context
+	  try get_ts_type v env
 	  with Not_found -> raise (Error.TypingError(pos, "unbound variable, not in context: " ^ (vartostring' v))))
       | APPLY(h,args) -> with_pos pos (
 	  match h with
