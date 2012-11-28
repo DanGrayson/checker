@@ -6,11 +6,11 @@ BFLAGS += -use-menhir
 
 # BFLAGS += -verbose 0
 SRCFILES =					\
-	debugging.ml \
-	error.ml \
+	debugging.ml				\
+	error.ml				\
 	typesystem.ml				\
-	helpers.ml \
-	template.ml \
+	helpers.ml				\
+	template.ml				\
 	universe.ml				\
 	alpha.ml				\
 	reduction.ml				\
@@ -18,6 +18,7 @@ SRCFILES =					\
 	substitute.mli				\
 	equality.ml				\
 	equality.mli				\
+	lfcheck.ml				\
 	check.mli				\
 	check.ml				\
 	fillin.ml				\

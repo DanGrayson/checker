@@ -29,7 +29,6 @@ let rec tcheck pos env = function
       | APPLY(h,args) -> match h with
 	| V _ -> raise (Unimplemented_expr oe)
 	| R _ -> raise Error.NotImplemented
-	| Defapp _ -> raise (Error.TypingUnimplemented (pos, "application of definitions"))
 	| T th -> (
 	    match th with 
 	    | T_El -> ocheckn 1 pos env args
@@ -70,7 +69,6 @@ and ocheck pos env = function
     | APPLY(h,args) -> match h with
       | V _ -> raise (Unimplemented_expr oe)
       | R _ -> raise Error.NotImplemented
-      | Defapp _ -> raise (Error.TypingUnimplemented (pos, "application of definitions"))
       | U th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a u-expression"))
       | T th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a t-expression"))
       | O oh -> match oh with

@@ -9,8 +9,6 @@ Check Universes.
 
 Show.
 
-Check lambda x:T, lambda y:U, [foo.0](u1,u2,T,U,x,y).
-
 Check lambda x:T, x.
 Check T.
 Check [El]([u](u2)).
@@ -58,11 +56,13 @@ Show.
 
 Check lambda e:U, lambda x : T, e.
 
-Check lambda f:T -> T, f f.  # ought to give a type checking error, and explain it well
+# ought to give a type checking error, and explain it well:
+# Check lambda f:T -> T, f f.
 
 Check lambda g:T -> *[u](u1), lambda f:Pi t:T, *g t, lambda o:T, f o.
 
-Check lambda g:T -> *[u](u1), lambda f:Pi t:T, *g t, lambda o:T, f f.  # ought to give a type checking error, and explain it well
+# ought to give a type checking error, and explain it well
+# Check lambda g:T -> *[u](u1), lambda f:Pi t:T, *g t, lambda o:T, f f.
 
 Check T -> U -> X -> Y.
 
@@ -83,8 +83,6 @@ Check lambda k:U, lambda g:T -> *k, lambda f:Pi t:T, *g t, lambda o:T, f o.
 Check lambda r:U, lambda f:T->U, lambda o:T, lambda x : *r, f o.
 Check lambda f:X->T, lambda y:X, [ev;_](f,y,T).
 Check lambda f:X->T, lambda y:X, f y.
-Check [foo.0]([next](u0),u1).
-Check lambda x:T, lambda y:U, lambda t:[foo.1](u0,u0,T,U,x,y), t.
 
 
 Show.
@@ -97,4 +95,13 @@ Show.
 # Define E7 (K L:Type)(t:K)(g:K -> [U](u0))(u:L)(f:Pi x:K, *g x) := f t : _.
 # Define E6 (u1 u2 u3 : Ulevel)(X1 X2:Type)(x1: X1 -> [U](u1))(x2: [U]([next](u0))) := [j](x1, x2) : _ .
 # Define E7 := ft : _ .
-# Define foo1 (u1 u2 : Ulevel) (T : Type) (t : T) := *t.
+
+Define foo (u1 u2 : Ulevel) (T : Type) (t : T) := *t.
+
+F_Print Singleton(T : texp).
+
+Show.
+
+Check @@ (foo.0 ([next] u0) u1).
+Check lambda x:T, lambda y:U, foo.0 u1 u2 T U x y.
+Check lambda x:T, lambda y:U, lambda t:foo.1 u0 u0 T U x y, t.

@@ -231,11 +231,13 @@ and  var' =
     Var of string
   | VarGen of int * string
   | VarUnused
+  | VarDefined of string * int
 
 let vartostring' = function
   | Var x -> x
   | VarGen(i,x) -> x ^ "_" ^ (string_of_int i)
   | VarUnused -> "_"
+  | VarDefined (name,aspect) -> name ^ "." ^ (string_of_int aspect)
 
 let vartostring v = vartostring' (strip_pos_var v)
 
@@ -264,7 +266,6 @@ type label =
   | T of tHead			(** labels for t-expressions of TS *)
   | O of oHead			(** labels for o-expressions of TS *)
   | R of ruleHead		(** names of inference rules of TS *)
-  | Defapp of string * int	(** application of an aspect of a definition *)
 
 let labels = List.concat [
   List.map (fun h -> U h) uheads;
@@ -274,7 +275,6 @@ let labels = List.concat [
 
 let label_to_string = function
   | V v -> vartostring' v
-  | Defapp (name,i) -> "[" ^ name ^ "." ^ (string_of_int i) ^ "]"
   | U h -> "[" ^ uhead_to_string h ^ "]"
   | T h -> "[" ^ thead_to_string h ^ "]"
   | O h -> "[" ^ ohead_to_string h ^ "]"
@@ -357,6 +357,7 @@ type tfHead =
 type lftype =
   | F_Pi of var' * lftype * lftype
   | F_APPLY of tfHead * expr list
+  | F_Singleton of expr * lftype
   | F_hole
 
 let tfhead_to_string = function
@@ -402,11 +403,11 @@ let oexp1 = oexp @> oexp
 let oexp2 = oexp @> oexp @> oexp
 let oexp3 = oexp @> oexp @> oexp @> oexp
 
-let uhead_to_type_family = function
+let uhead_to_lftype = function
   | U_next -> uexp @> uexp
   | U_max -> uexp @> uexp @> uexp
 
-let thead_to_type_family = function
+let thead_to_lftype = function
   | T_El -> oexp @> texp
   | T_U -> uexp @> texp
   | T_Pi -> texp @> texp1 @> texp
@@ -418,7 +419,7 @@ let thead_to_type_family = function
   | T_IC -> texp @> oexp @> texp1 @> texp2 @> oexp3 @> texp
   | T_Id -> texp @> oexp @> oexp @> texp
 
-let ohead_to_type_family = function
+let ohead_to_lftype = function
   | O_u -> uexp @> oexp
   | O_j -> uexp @> uexp @> oexp
   | O_ev -> oexp @> oexp @> texp1 @> oexp
@@ -468,15 +469,14 @@ let head_to_vardist = function
     The list of rules is part of the LF signature, giving LF types for LF term constants. *)
 let rules = ref []
 
-let rulehead_to_type_family h = List.assoc h !rules
+let rulehead_to_lftype h = List.assoc h !rules
 
 let label_to_lftype = function
   | V _ -> raise Error.Internal		(* needs a context *)
-  | U h -> uhead_to_type_family h
-  | T h -> thead_to_type_family h
-  | O h -> ohead_to_type_family h
-  | R h -> rulehead_to_type_family h
-  | Defapp _ -> raise Error.NotImplemented
+  | U h -> uhead_to_lftype h
+  | T h -> thead_to_lftype h
+  | O h -> ohead_to_lftype h
+  | R h -> rulehead_to_lftype h
 
 (*** The "kinds" of LF. 
 
@@ -510,30 +510,26 @@ let emptyUContext = UContext ([],[])
 let mergeUContext : uContext -> uContext -> uContext =
   function UContext(uvars,eqns) -> function UContext(uvars',eqns') -> UContext(List.rev_append uvars' uvars,List.rev_append eqns' eqns)
 
-(*** TS context; a list of o-variables with T-expressions representing their declared type. *)
-type ts_context = (var' * expr) list				  (* [Gamma] *)
-
 type oSubs = (var' * expr) list
-
-(*** Definitions. *)
-
-type identifier = Ident of string
-type definition = (int * expr * lftype) list
 
 (*** Contexts. *)
 
 type environment_type = {
-    uc : uContext;
-    oc : ts_context;
-    definitions : (identifier * definition) list;
+    ulevel_context : uContext;
+    ts_context : (var' * expr) list;
     lf_context : (var' * lftype) list
+  }
+
+let def_bind v o t env =
+  { env with
+    lf_context = (v,F_Singleton(o,t)) :: env.lf_context 
   }
 
 let obind' (v,t) env = match v with
   | VarUnused -> env
   | v -> { env with
-	   oc = (v,t) :: env.oc;
-	   lf_context = (v, oexp) :: env.lf_context
+	   ts_context = (v,t) :: env.ts_context;
+	   lf_context = (v,oexp) :: env.lf_context
 	 }
 
 let obind (v,t) env = obind' (strip_pos_var v, t) env
@@ -545,8 +541,8 @@ let newfresh =
     if !genctr < 0 then raise Error.GensymCounterOverflow;
     VarGen (!genctr, x)) in
   fun v -> match v with 
-      Var x | VarGen(_,x) -> newgen x
-    | VarUnused as v -> v
+  | VarDefined(x,_) | Var x | VarGen(_,x) -> newgen x
+  | VarUnused as v -> v
 
 let new_hole' = 
   let counter = ref 0 in

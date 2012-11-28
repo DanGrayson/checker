@@ -9,15 +9,15 @@ open Grammar0
 %type <Typesystem.expr list> arglist
 %type <Typesystem.lftype> lftype
 %token <int> Nat
-%token <string> IDENTIFIER LABEL LABEL_SEMI
-%token <string * int> DEF_APP
+%token <string> IDENTIFIER CONSTANT CONSTANT_SEMI
+%token <string * int> DefVarWithAspect
 %token
 
   Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod Wcolon Wstar Warrow
   Wequalequal Wequal Wcolonequal Wunderscore WF_Print WRule Wgreaterequal
   Wgreater Wlessequal Wless Wsemi KUlevel Kumax KType Ktype KPi Klambda KSigma
   WTau WPrint WDefine WShow WEnd WVariable WAlpha Weof Watat WCheck
-  WCheckUniverses Wtilde Prec_application
+  WCheckUniverses Wtilde Prec_application KSingleton
 
 /* precedences, lowest first */
 %right
@@ -31,7 +31,7 @@ open Grammar0
 %right
   Klambda
 %nonassoc
-  Wunderscore Wlparen IDENTIFIER Kumax Watat LABEL_SEMI LABEL DEF_APP
+  Wunderscore Wlparen IDENTIFIER Kumax Watat CONSTANT_SEMI CONSTANT DefVarWithAspect
 
 %%
 
@@ -45,6 +45,8 @@ lftype:
     { F_Pi(v,a,b) }
 | a=lftype Warrow b=lftype
    { F_Pi(VarUnused,a,b) }
+| KSingleton Wlparen x=lfterm Wcolon t=lftype Wrparen
+    { F_Singleton(x,t) }
 | Wlbracket a=lfterm Ktype Wrbracket
     { F_APPLY(F_istype, [a]) }
 | Wlbracket a=lfterm Wcolon b=lfterm Wrbracket
@@ -98,7 +100,7 @@ lfterm_variable:
     {V $1}
 
 lfterm_constant:
-| l=LABEL
+| l=CONSTANT
     {
      try List.assoc ("[" ^ l ^ "]") label_strings 
      with Not_found -> 
@@ -108,8 +110,6 @@ lfterm_constant:
        flush stderr;
        $syntaxerror 
    }
-| def=DEF_APP
-    { let (name,aspect) = def in Defapp(name,aspect) }
 
 command: c=command0 
   { Error.Position($startpos, $endpos), c }
@@ -142,9 +142,9 @@ command0:
 | WDefine name=IDENTIFIER parms=parmList Wcolonequal o=ts_expr Wcolon t=ts_expr Wperiod 
     { Toplevel.Definition (oDefinition name (fixParmList parms) o t) }
 | WDefine name=IDENTIFIER parms=parmList Wcolonequal t1=ts_expr Wequalequal t2=ts_expr Wperiod 
-    { Toplevel.Definition (teqDefinition (Ident name,(fixParmList parms,t1,t2))) }
+    { Toplevel.Definition (teqDefinition name (fixParmList parms) t1 t2) }
 | WDefine name=IDENTIFIER parms=parmList Wcolonequal o1=ts_expr Wequalequal o2=ts_expr Wcolon t=ts_expr Wperiod 
-    { Toplevel.Definition (oeqDefinition (Ident name,(fixParmList parms,o1,o2,t))) }
+    { Toplevel.Definition (oeqDefinition name (fixParmList parms) o1 o2 t) }
 
 | WShow Wperiod 
     { Toplevel.Show }
@@ -199,6 +199,9 @@ arglist:
 bare_variable:
 | IDENTIFIER
     { Var $1 }
+| def=DefVarWithAspect
+    { let (name,aspect) = def in VarDefined(name,aspect) }
+
 bare_variable_or_unused:
 | v=bare_variable
     {v}
@@ -227,9 +230,7 @@ bare_ts_expr:
     { make_TT_Sigma t1 (x,t2) }
 | Kumax Wlparen u=ts_expr Wcomma v=ts_expr Wrparen
     { APPLY(U U_max,[u;v])  }
-| def=DEF_APP a=arglist
-    { let (name,aspect) = def in APPLY(Defapp(name,aspect),a) }
-| name=LABEL a=arglist
+| name=CONSTANT a=arglist
     {
      let label = 
        try List.assoc ("[" ^ name ^ "]") label_strings 
@@ -250,7 +251,7 @@ bare_ts_expr:
 		      "expected " ^ (string_of_int n) ^ " variable" ^ (if n != 1 then "s" else "")));
 	 
    }
-| name=LABEL_SEMI vars=separated_list(Wcomma,variable_or_unused) Wrbracket args=arglist
+| name=CONSTANT_SEMI vars=separated_list(Wcomma,variable_or_unused) Wrbracket args=arglist
     {
      let label = 
        try List.assoc ("[" ^ name ^ "]") label_strings 

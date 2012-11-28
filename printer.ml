@@ -5,20 +5,22 @@ open Typesystem
 let space x = " " ^ x
 let ( <<- ) f g x = f (g x)
 let concat = String.concat ""
+let concatl = concat <<- List.flatten
 
 (** Printing of LF expressions. *)
 
-let rec lf_expr_to_string = function
-  | LAMBDA(x,body) -> "(lambda " ^ (vartostring x) ^ ", " ^ (lf_expr_to_string body) ^ ")"
+let rec lfexpr_to_string = function
+  | LAMBDA(x,body) -> "(lambda " ^ (vartostring x) ^ ", " ^ (lfexpr_to_string body) ^ ")"
   | POS(_,e) -> match e with 
     | EmptyHole n -> "_" ^ (string_of_int n)
     | Variable v -> vartostring' v
-    | APPLY(h,args) -> "(" ^ (label_to_string h) ^ (String.concat "" (List.map (fun x -> " " ^ (lf_expr_to_string x)) args)) ^ ")"
+    | APPLY(h,args) -> "(" ^ (label_to_string h) ^ (String.concat "" (List.map (fun x -> " " ^ (lfexpr_to_string x)) args)) ^ ")"
 
 let rec lftype_to_string target = function
   | F_hole -> "_"
+  | F_Singleton(x,t) -> concat ["= ";lfexpr_to_string x;" : ";lftype_to_string true t;""]
   | F_APPLY(hd,args) -> 
-      let s = concat [tfhead_to_string hd; concat (List.map (space <<- lf_expr_to_string) args)] in
+      let s = concat [tfhead_to_string hd; concat (List.map (space <<- lfexpr_to_string) args)] in
       if String.contains s ' ' then concat ["(";s;")"] else s
   | F_Pi(v,t,u) -> 
       if v == VarUnused
@@ -31,7 +33,7 @@ let rec lftype_to_string target = function
 (** Printing of TS terms in TS format. *)
 
 (** For LF expressions that are not TS terms, print [$$] and then the expression in LF format. *)
-let lfp e = "$$" ^ (lf_expr_to_string e)
+let lfp e = "$$" ^ (lfexpr_to_string e)
 
 let rec elisttostring s = String.concat "," (List.map ts_expr_to_string s)
 and parenelisttostring s = String.concat "" [ "("; elisttostring s; ")" ]
@@ -93,26 +95,30 @@ and ts_expr_to_string = function
 		| _ -> lfp oe)
 	    | _ -> "[" ^ (ohead_to_string oh) ^ "]" ^ (parenelisttostring args)
 	   )
-	| _ -> concat ["["; (label_to_string h); "]"; (parenelisttostring args)]
+	| _ -> (label_to_string h) ^ (parenelisttostring args)
        ))
   | oe -> lfp oe
 
 (** Printing functions for definitions, provisional. *)
-
-let ueqntostring (u,v) = concat ["; "; ts_expr_to_string u; "="; ts_expr_to_string v]
-
-let octostring (v,t) = concat [vartostring' v; ":"; ts_expr_to_string t]
-
 let parmstostring = function
-  | ((UContext(uvars,ueqns):uContext),(tc:var' list),(oc:ts_context)) 
-    -> (
-      if List.length uvars > 0 
-      then "(" ^ (String.concat " " (List.map vartostring' uvars)) ^ ":Univ" ^ (String.concat "" (List.map ueqntostring ueqns)) ^ ")"
-      else "" )
-      ^ 
-	(
-	 if List.length tc > 0
-	 then "(" ^ (String.concat " " (List.map vartostring' tc)) ^ ":Type)"
-	 else ""
-	) ^
-      (String.concat "" (List.map (fun x -> "(" ^ (octostring x) ^ ")") oc))
+  | ((UContext(uexp_parms,ueqns):uContext),(texp_parms:var' list),(oexp_parms:(var' * expr) list)) 
+    -> concatl [
+      if List.length uexp_parms > 0 
+      then ["(";
+	    (String.concat " " (List.map vartostring' uexp_parms));
+	    ":Univ";
+	    (String.concat "" (List.map 
+				 (fun (u,v) -> concat ["; "; ts_expr_to_string u; "="; ts_expr_to_string v]) 
+				 ueqns));
+	    ")"]
+      else [];
+      if List.length texp_parms > 0
+      then ["("; 
+	    String.concat " " (List.map vartostring' texp_parms);
+	    ":Type)"]
+      else [];
+      List.flatten (List.map 
+		      (fun (v,t) -> ["(";vartostring' v; ":"; ts_expr_to_string t;")"])
+		      oexp_parms)
+    ]
+

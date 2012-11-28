@@ -44,10 +44,11 @@ rule expr_tokens = parse
   | "Define" { WDefine }
   | "End" { WEnd }
   | "Show" { WShow }
-  | '[' (ident as id) '.' (digit+ as aspect) ']' { DEF_APP(id,int_of_string aspect) }
-  | '[' (ident as id) ']' { LABEL id }
-  | '[' (ident as id) ';' { LABEL_SEMI id }
+  | (ident as name) '.' (digit+ as aspect) { DefVarWithAspect(name,int_of_string aspect) }
+  | '[' (ident as id) ']' { CONSTANT id }
+  | '[' (ident as id) ';' { CONSTANT_SEMI id }
   | "Pi" { KPi }
+  | "Singleton" { KSingleton }
   | "lambda" { Klambda }
   | "Sigma" { KSigma }
   | "Ulevel" { KUlevel }

@@ -10,7 +10,7 @@ type command' =
   | Variable of string list
   | Alpha of expr * expr
   | Type of expr
-  | Definition of (string * definition)
+  | Definition of (string * int * expr * lftype) list
   | CheckUniverses
   | Show
   | End

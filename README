@@ -54,3 +54,87 @@ For printing purposes, we should add the name "H" somewhere:
 
     [hold;H,texp -> texp] (lambda T, ([Pi] T (lambda _, T))) T
 
+=============================================================================
+
+	Pi T:texp, istype T
+
+Here "istype" is an atomic type family of kind texp -> type,
+so that istype T is a type, and we can form the type 
+Pi T:texp, istype T.  Now suppose we don't have type families,
+but we do have singleton types and as many basetypes as we like.
+
+We could write
+
+   	Pi T:texp, .... S(T) ....
+
+e.g.,
+
+   	Pi T:texp, S(T)
+
+   	Pi T:texp, Pi a:S(T), S(T).
+
+   	Pi T:texp, Sigma a:S(T), S(T).
+
+
+-----------------------------------------------------------------------------
+
+Suppose we add singleton types to LF.  Then we make a definition, say
+
+	Define foo ( T:Type ) := T -> T.
+
+This leads to
+
+       foo.0 = lambda T, ([Pi] T (lambda _, T))
+       	     : Pi T:texp, texp
+
+       foo.1 = lambda T, ??
+       	     : Pi T:texp, isatype T
+
+Having made that definition, we add new variables to the context:
+
+       foo.0 : Singleton ( lambda T, ([Pi] T (lambda _, T)) ; Pi T:texp, texp )
+       	     < Pi T:texp, texp
+
+
+       foo.1 : Singleton ( lambda T, ?? ; Pi T:texp, isatype T )
+       	     < Pi T:texp, isatype T
+
+Now how does type checking go without unfolding?
+
+Let's derive
+
+	(hastype   ( [lambda] T (lambda x, x) )   ( foo.0 T )  )
+
+First observe that
+
+      	foo.0 : Pi T:texp, texp
+
+so
+
+	foo.0 T : texp
+
+and just 
+
+
+    	(hastype   ( [lambda] T (lambda x, x) )   ( foo.0 T )  ) : texp
+
+(Is the idea that there is no unfolding during LF-type-checking?
+
+We have both 
+
+
+   	     		   foo.0 : Singleton ( lambda T, ([Pi] T (lambda _, T)) ; Pi T:texp, texp )
+
+lambda T, ([Pi] T (lambda _, T)) : Singleton ( lambda T, ([Pi] T (lambda _, T)) ; Pi T:texp, texp )
+
+so by (42) we have
+
+   foo.0 = lambda T, ([Pi] T (lambda _, T))  :  Singleton ( lambda T, ([Pi] T (lambda _, T)) ; Pi T:texp, texp )
+
+and thus
+
+   foo.0 = lambda T, ([Pi] T (lambda _, T))  :  Pi T:texp, texp
+
+So LF type checking can unfold if necessary.  When is it necessary?
+
+

@@ -5,11 +5,11 @@ let rec tau (pos:Error.position) env = function
     | POS(pos,e) -> match e with 
       | EmptyHole _ -> raise (Error.TypingError(pos, "empty hole, type undetermined"))
       | Variable v -> (
-	  try List.assoc v env.oc
+	  try List.assoc v env.ts_context
 	  with Not_found -> raise (Error.TypingError(pos, "unbound variable, not in context: " ^ (vartostring' v))))
       | APPLY(h,args) -> with_pos pos (
 	  match h with
-	  | V _ | Defapp _ -> raise Error.NotImplemented
+	  | V _ -> raise Error.NotImplemented
 	  | R _ | U _ | T _ -> raise Error.Internal
 	  | O oh -> match oh with
 	    | O_u -> (

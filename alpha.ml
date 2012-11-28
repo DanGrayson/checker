@@ -16,7 +16,7 @@ module Make(Ueq: Universe.Equivalence) = struct
 
   let uequiv = Ueq.equiv
     
-  let rec eq uc alpha =
+  let rec eq ulevel_context alpha =
     let rec eq alpha x y = x = y || match (x, y) with 
       | LAMBDA (x,body), LAMBDA (x',body') ->
 	  let alpha = addalpha (strip_pos_var x) (strip_pos_var x') alpha 
@@ -26,14 +26,14 @@ module Make(Ueq: Universe.Equivalence) = struct
 	  match (d,e) with
 	  | APPLY(h,args), APPLY(h',args') -> (
 	      match (h,h') with
-	      | U _, U _ -> uequiv uc x y
+	      | U _, U _ -> uequiv ulevel_context x y
 	      | _ -> h = h' && List.length args = List.length args' && List.for_all2 (eq alpha) args args')
 	  | Variable t,Variable t' -> testalpha' t t' alpha
 	  | (a,a') -> a = a')
       | _ -> false
     in eq alpha
 
-  let equiv uc = eq uc []
+  let equiv ulevel_context = eq ulevel_context []
 
 end
 

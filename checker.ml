@@ -2,6 +2,7 @@
 
 open Typesystem
 open Template				(*otherwise unused*)
+open Lfcheck				(*otherwise unused*)
 open Universe
 
 exception Error_Handled
@@ -86,9 +87,8 @@ let lexpos lexbuf =
   p
 
 let environment = ref {
-  uc = emptyUContext;
-  oc = [];
-  definitions = [];
+  ulevel_context = emptyUContext;
+  ts_context = [];
   lf_context = [];
 }
 
@@ -99,14 +99,14 @@ let add_tVars tvars = environment :=
 let add_uVars uvars eqns =
   environment := {
     !environment with
-		  uc = mergeUContext (!environment).uc (UContext(List.map Helpers.make_Var uvars,eqns));
+		  ulevel_context = mergeUContext (!environment).ulevel_context (UContext(List.map Helpers.make_Var uvars,eqns));
 		  lf_context = List.rev_append (List.map (fun u -> (Helpers.make_Var u, uexp)) uvars) (!environment).lf_context;
 		}
 
 let fix t = Fillin.fillin !environment t
 
 let printCommand x =
-  Printf.printf "Print: %s\n" (Printer.lf_expr_to_string x);
+  Printf.printf "Print: %s\n" (Printer.lfexpr_to_string x);
   flush stdout
 
 let ruleCommand num name x =
@@ -121,11 +121,12 @@ let lf_type_printCommand x =
 let checkCommand x =
   let x = protect1 ( fun () -> Fillin.fillin !environment x ) in
   Printf.printf "Check: %s\n" (Printer.ts_expr_to_string x);
-  Printf.printf "   LF: %s\n" (Printer.lf_expr_to_string x);
+  Printf.printf "   LF: %s\n" (Printer.lfexpr_to_string x);
   flush stdout;
   match x with
   | POS(_,APPLY(O _,_)) -> 
       Printf.printf "     : o-expression\n";
+      flush stdout;
       protect1 (fun () -> Check.ocheck !environment x)
   | POS(_,APPLY(R _,_)) -> 
       Printf.printf "     : inference rule\n"
@@ -135,8 +136,6 @@ let checkCommand x =
       Printf.printf "     : u-expression\n"
   | POS(_,APPLY(V _,_)) -> 
       Printf.printf "     : lf-application, with variable as label\n"
-  | POS(_,APPLY(Defapp _,_)) -> 
-      Printf.printf "     : definition\n"
   | POS(_,Variable _) -> 
       Printf.printf "     : variable\n"
   | POS(_,EmptyHole n) -> 
@@ -148,14 +147,14 @@ let checkCommand x =
 let alphaCommand (x,y) =
   let x = protect fix x Error.nopos in
   let y = protect fix y Error.nopos in
-  Printf.printf "Alpha: %s\n" (if (Alpha.UEqual.equiv (!environment).uc x y) then "true" else "false");
+  Printf.printf "Alpha: %s\n" (if (Alpha.UEqual.equiv (!environment).ulevel_context x y) then "true" else "false");
   Printf.printf "     : %s\n" (Printer.ts_expr_to_string x);
   Printf.printf "     : %s\n" (Printer.ts_expr_to_string y);
   flush stdout
 
 let checkUniversesCommand pos =
   try
-    Universe.consistency (!environment.uc)
+    Universe.consistency (!environment.ulevel_context)
   with Error.UniverseInconsistency 
     ->Printf.fprintf stderr "%s: universe inconsistency\n" (Error.error_format_pos pos); 
       flush stderr;
@@ -185,12 +184,7 @@ let show_command () =
   );
   flush stdout
 
-let addDefinition name (x:definition) =
-  environment := {
-    !environment with
-		  definitions = (Ident name,x) :: (!environment).definitions ;
-		  lf_context = (Var name, raise Error.NotImplemented) :: (!environment).lf_context
-		}
+let addDefinition name aspect o t = environment := def_bind (VarDefined(name,aspect)) o t !environment
 
 let process_command lexbuf = (
   let c = protect (Grammar.command (Tokens.expr_tokens)) lexbuf lexpos in
@@ -204,7 +198,7 @@ let process_command lexbuf = (
     | Toplevel.Check x -> checkCommand x
     | Toplevel.Alpha (x,y) -> alphaCommand (x,y)
     | Toplevel.Type x -> typeCommand x
-    | Toplevel.Definition (name,x) -> addDefinition name x
+    | Toplevel.Definition defs -> List.iter (fun (name, aspect, tm, tp) -> addDefinition name aspect tm tp) defs
     | Toplevel.End -> Printf.printf "%s: ending.\n" (Error.error_format_pos pos) ; flush stdout; raise StopParsingFile
     | Toplevel.Show -> show_command()
     | Toplevel.CheckUniverses -> checkUniversesCommand pos
@@ -270,6 +264,6 @@ with
 | Unimplemented_expr ( POS(pos,_) as e )
 | Unimplemented_expr ( LAMBDA(_,POS(pos,_)) as e ) 
     as ex ->
-    Printf.fprintf stderr "%s: internal error on expr %s\n" (Error.error_format_pos pos) (Printer.lf_expr_to_string e);
+    Printf.fprintf stderr "%s: internal error on expr %s\n" (Error.error_format_pos pos) (Printer.lfexpr_to_string e);
     raise ex
 

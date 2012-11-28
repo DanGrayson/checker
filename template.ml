@@ -9,7 +9,6 @@ let template = function
     | Variable t -> ()
     | APPLY(h,args) -> (
 	match h with
-	| Defapp _ -> ()
 	| U uh -> (
 	    match uh with 
 	    | U_next -> ()
