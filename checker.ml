@@ -186,6 +186,14 @@ let show_command () =
 	 (Printer.lftype_to_string true t)) 
      (List.rev (!environment).lf_context);
   );
+  (
+   Printf.printf "  Definition context:\n";
+   List.iter 
+     (fun ((name,aspect),t) -> Printf.printf "     %s.%d : %s\n" 
+	 name aspect
+	 (Printer.lftype_to_string true t)) 
+     (List.rev (!environment).def_context);
+  );
   flush stdout
 
 let addDefinition name aspect o t = environment := def_bind name aspect o t !environment

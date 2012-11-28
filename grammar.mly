@@ -110,20 +110,10 @@ bare_lfterm:
     { APPLY(f,args) }
 
 lfterm_head:
+| tsterm_head
+    { $1 }
 | bare_variable
     { V $1}
-| def=DEFINED_VARIABLE
-    { let (name,aspect) = def in VarDefined(name,aspect) }
-| l=CONSTANT
-    {
-     try List.assoc ("[" ^ l ^ "]") label_strings 
-     with Not_found -> 
-       Printf.fprintf stderr "%s: unknown term constant [%s]\n" 
-	 (Error.error_format_pos (Error.Position($startpos, $endpos)))
-	 l;
-       flush stderr;
-       $syntaxerror 
-   }
 
 command: c=command0 
   { Error.Position($startpos, $endpos), c }
@@ -197,9 +187,11 @@ ts_exprEof: a=ts_expr Weof {a}
 variable:
 | bare_variable
     { Error.Position($startpos, $endpos), $1 }
+
 variable_or_unused:
 | bare_variable_or_unused
     { Error.Position($startpos, $endpos), $1 }
+
 ts_expr:
 | bare_ts_expr
     { with_pos (Error.Position($startpos, $endpos)) $1 }
@@ -207,9 +199,25 @@ ts_expr:
     {$1}
 | Watat e=lfterm
     {e}
+
+tsterm_head:
+| def=DEFINED_VARIABLE
+    { let (name,aspect) = def in VarDefined(name,aspect) }
+| l=CONSTANT
+    {
+     try List.assoc ("[" ^ l ^ "]") string_to_label 
+     with Not_found -> 
+       Printf.fprintf stderr "%s: unknown term constant [%s]\n" 
+	 (Error.error_format_pos (Error.Position($startpos, $endpos)))
+	 l;
+       flush stderr;
+       $syntaxerror 
+   }
+
 arglist:
 | Wlparen a=separated_list(Wcomma,ts_expr) Wrparen
     {a}
+
 bare_variable:
 | IDENTIFIER
     { Var $1 }
@@ -219,6 +227,7 @@ bare_variable_or_unused:
     {v}
 | Wunderscore
     { VarUnused }
+
 bare_ts_expr:
 | bare_variable
     { Variable $1 }
@@ -243,7 +252,7 @@ bare_ts_expr:
     { make_TT_Sigma t1 (x,t2) }
 | Kumax Wlparen u=ts_expr Wcomma v=ts_expr Wrparen
     { APPLY(U U_max,[u;v])  }
-| label=lfterm_head args=arglist
+| label=tsterm_head args=arglist
     {
      match label with
      | V _ -> APPLY(label,args)
@@ -260,7 +269,7 @@ bare_ts_expr:
 | name=CONSTANT_SEMI vars=separated_list(Wcomma,variable_or_unused) Wrbracket args=arglist
     {
      let label = 
-       try List.assoc ("[" ^ name ^ "]") label_strings 
+       try List.assoc ("[" ^ name ^ "]") string_to_label 
        with Not_found -> 
 	 Printf.fprintf stderr "%s: unknown term constant [%s]\n" 
 	   (Error.error_format_pos (Error.Position($startpos, $endpos)))

@@ -147,3 +147,4 @@ Rule 101 oeq_empty_eta :
      [ a : ([Empty]) ] -> [ T type ] -> [ x : T ] -> [ y : T ] -> [ x = y : T ].
 
 
+Show.

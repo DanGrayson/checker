@@ -280,7 +280,7 @@ let label_to_string = function
   | O h -> "[" ^ ohead_to_string h ^ "]"
   | R h -> rulehead_to_string h
 
-let label_strings = List.map (fun h -> label_to_string h, h) labels
+let string_to_label = List.map (fun h -> label_to_string h, h) labels
 	
 (** The type [expr] accommodates both the expressions of TS and the terms of LF. *)
 type expr = 
