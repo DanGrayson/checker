@@ -3,7 +3,7 @@ open Tau
 open Equality
 
 let rec ucheck pos env = function
-    | POS(pos,e) -> (
+    | ATOMIC(pos,e) -> (
 	match e with
 	| EmptyHole _ -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a u-expression"))
 	| Variable v -> (
@@ -19,7 +19,7 @@ let rec ucheck pos env = function
 
 let rec tcheck pos env = function
     | LAMBDA _ -> raise Error.Internal
-    | POS(pos,e) as oe -> match e with 
+    | ATOMIC(pos,e) as oe -> match e with 
       | EmptyHole _ -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a t-expression"))
       | Variable v ->(
 	  let t =
@@ -59,7 +59,7 @@ let rec tcheck pos env = function
 	| O _ -> raise (Error.TypeCheckingFailure(pos, "expected a t-expression but found an o-expression"))
 and ocheck pos env = function
   | LAMBDA _ -> raise Error.Internal	(* should have been handled higher up *)
-  | POS(pos,e) as oe -> match e with
+  | ATOMIC(pos,e) as oe -> match e with
     | EmptyHole _ -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a o-expression"))
     | Variable v -> (
 	let t = (
@@ -82,7 +82,7 @@ and ocheck pos env = function
 		ocheck pos env x; 
 		match strip_pos(tau env f) with
 		| APPLY(T T_Pi, [s; LAMBDA( w,t')]) ->
-		    if not ( (strip_pos_var w) = (strip_pos_var v) ) 
+		    if not ( (strip_pos w) = (strip_pos v) ) 
 		    then raise Error.NotImplemented;
 		    overify pos env x s;
 		    let env = ts_bind (v,s) env in 

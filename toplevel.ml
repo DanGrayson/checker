@@ -2,16 +2,16 @@
 
 open Typesystem
 type command' = 
-  | Print of expr
-  | F_Print of lftype
-  | Rule of int * string * lftype
-  | Check of expr
-  | UVariable of string list * (expr * expr) list
+  | Print of lf_expr
+  | F_Print of lf_type
+  | Rule of int * string * lf_type
+  | Check of ts_expr
+  | UVariable of string list * (ts_expr * ts_expr) list
   | Variable of string list
-  | Alpha of expr * expr
-  | Axiom of string * expr
-  | Type of expr
-  | Definition of (string * int * expr * lftype) list
+  | Alpha of ts_expr * ts_expr
+  | Axiom of string * ts_expr
+  | Type of ts_expr
+  | Definition of (string * int * lf_expr * lf_type) list
   | CheckUniverses
   | Show
   | End

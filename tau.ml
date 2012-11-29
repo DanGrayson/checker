@@ -2,12 +2,12 @@ open Typesystem
 
 let rec get_ts_type v = function 
     [] -> raise Not_found
-  | (_, F_APPLY(F_hastype,[POS(_,Variable v'); t])) :: env -> if v = v' then t else get_ts_type v env
+  | (_, F_APPLY(F_hastype,[ATOMIC(_,Variable v'); t])) :: env -> if v = v' then t else get_ts_type v env
   | _ :: env -> get_ts_type v env
 
-let rec tau (pos:Error.position) env = function
+let rec tau (pos:Error.position) env e : atomic_term marked = match e with
     | LAMBDA _ -> raise Error.Internal
-    | POS(pos,e) -> match e with 
+    | ATOMIC(pos,e) -> match e with 
       | EmptyHole _ -> raise (Error.TypingError(pos, "empty hole, type undetermined"))
       | Variable v -> (
 	  try get_ts_type v env
@@ -19,7 +19,7 @@ let rec tau (pos:Error.position) env = function
 	  | O oh -> match oh with
 	    | O_u -> (
 		match args with 
-		| [u] -> Helpers.make_TT_U (POS(pos, (Helpers.make_UU U_next [u])))
+		| [u] -> Helpers.make_TT_U (ATOMIC(pos, (Helpers.make_UU U_next [u])))
 		| _ -> raise Error.Internal)
 	    | O_j -> (
 		match args with 
@@ -27,7 +27,7 @@ let rec tau (pos:Error.position) env = function
 		| _ -> raise Error.Internal)
 	    | O_ev -> (
 		match args with 
-		| [f;o;LAMBDA( x,t)] -> strip_pos (Substitute.subst [(strip_pos_var x,o)] t)
+		| [f;o;LAMBDA( x,t)] -> strip_pos (Substitute.subst [(strip_pos x,o)] t)
 		| _ -> raise Error.Internal)
 	    | O_lambda -> (
 		match args with 

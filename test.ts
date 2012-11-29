@@ -1,5 +1,6 @@
 Variable u0 u1 u2 : Ulevel ; [next](u0) <= u1; [next](u1) < u2.
 Variable T T' U V X Y : Type.
+Axiom x0 : X.
 Axiom f : T -> T.
 
 Check Universes.
@@ -58,7 +59,7 @@ Check lambda e:U, lambda x : T, e.
 # ought to give a type checking error, and explain it well:
 # Check lambda f:T -> T, f f.
 
-Check lambda g:T -> [u](u1), lambda f:Pi t:T, *g t, lambda o:T, f o.
+Check lambda g:T -> [U](u1), lambda f:Pi t:T, *g t, lambda o:T, f o.
 
 # ought to give a type checking error, and explain it well
 # Check lambda g:T -> *[u](u1), lambda f:Pi t:T, *g t, lambda o:T, f f.
@@ -67,14 +68,11 @@ Check T -> U -> X -> Y.
 
 Check lambda f:(X->X)->U, f lambda x:X, x.
 
-Tau [u](u4).
-Tau [j](u,u').
-Tau [j](_,u').
-Tau [j](u,_).
-Tau [ev;x](f,o,T).
-Tau [ev;x](f,o, x).
+Tau [u](u1).
+Tau [j](u1,u2).
+Tau [ev;x](f,x0,T).
 Tau [lambda;x](T,x).
-Tau [forall;x](u1,u2,o,o').
+Tau [forall;x](u1,u2,x0,x0).
 
 Check lambda f:T->U, lambda o:T, [ev;_](f,o,U).
 Check lambda f:T->U, lambda o:T, f o.
@@ -98,7 +96,7 @@ Show.
 
 # each of the following lines yields an error:
 
-Check @@ ([foo.0] u0 T).
 Check lambda x:T, lambda y:U, [foo.0](u1, u2, T, U, x, y).
 Check lambda x:T, lambda y:U, lambda t:[foo.1](u0, u0, T, U, x, y), t.
 Check lambda f:T->T->T->T, f f f f f.
+Check lambda f:T->T->T->T->T, f f f f f.  # is the error message right?

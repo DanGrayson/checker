@@ -9,105 +9,110 @@ let concatl = concat <<- List.flatten
 
 (** Printing of LF expressions. *)
 
-let rec lfexpr_to_string = function
-  | LAMBDA(x,body) -> "(lambda " ^ (vartostring x) ^ ", " ^ (lfexpr_to_string body) ^ ")"
-  | POS(_,e) -> match e with 
-    | EmptyHole n -> "?" ^ (string_of_int n)
-    | Variable v -> vartostring' v
-    | APPLY(h,args) -> "(" ^ (label_to_string h) ^ (String.concat "" (List.map (fun x -> " " ^ (lfexpr_to_string x)) args)) ^ ")"
+let rec lf_atomic_to_string (_,e) = match e with
+  | EmptyHole n -> "?" ^ (string_of_int n)
+  | Variable v -> vartostring' v
+  | APPLY(h,args) -> concat ["(";(label_to_string h);(concat (List.map (space <<- lf_canonical_to_string) args));")"]
+and lf_canonical_to_string = function
+  | LAMBDA(x,body) -> concat ["(lambda ";vartostring x;", ";lf_canonical_to_string body;")"]
+  | ATOMIC e -> lf_atomic_to_string e
 
-let rec lftype_to_string target = function
-  | F_hole -> "_"
-  | F_Singleton(x,t) -> concat ["= ";lfexpr_to_string x;" : ";lftype_to_string true t;""]
-  | F_APPLY(hd,args) -> 
-      let s = concat [tfhead_to_string hd; concat (List.map (space <<- lfexpr_to_string) args)] in
-      if String.contains s ' ' then concat ["(";s;")"] else s
+let rec lf_type_to_string target (_,t) = match t with
   | F_Pi(v,t,u) -> 
       if v == VarUnused
       then 
-	let k = concat [lftype_to_string false t; " -> "; lftype_to_string true u]
+	let k = concat [lf_type_to_string false t; " -> "; lf_type_to_string true u]
 	in if target then k else concat ["("; k; ")"]
       else
-	concat ["Pi "; vartostring' v; ":"; lftype_to_string false t; ", "; lftype_to_string true u]
+	concat ["Pi "; vartostring' v; ":"; lf_type_to_string false t; ", "; lf_type_to_string true u]
+  | F_hole -> "_"
+  | F_Singleton(x,t) -> concat ["= ";lf_canonical_to_string x;" : ";lf_type_to_string true t;""]
+  | F_APPLY(hd,args) -> 
+      let s = concat [tfhead_to_string hd; concat (List.map (space <<- lf_canonical_to_string) args)] in
+      if String.contains s ' ' then concat ["(";s;")"] else s
 
 (** Printing of TS terms in TS format. *)
 
 (** For LF expressions that are not TS terms, print [$$] and then the expression in LF format. *)
-let lfp e = "$$" ^ (lfexpr_to_string e)
+let lf_canonical_p e = "$$" ^ (lf_canonical_to_string e)
+let lf_atomic_p e = "$$" ^ (lf_atomic_to_string e)
 
-let rec elisttostring s = String.concat "," (List.map ts_expr_to_string s)
-and parenelisttostring s = String.concat "" [ "("; elisttostring s; ")" ]
-and ts_expr_to_string = function
-  | POS(_,e) as oe -> (match e with 
-    | EmptyHole n -> "?" ^ (string_of_int n)
-    | Variable v -> vartostring' v
-    | APPLY(h,args) -> (
-	match h with
-	| U uh -> (uhead_to_string uh) ^ (parenelisttostring args)
-	| T th -> (
-	    match th with 
-	    | T_Pi -> (
-		match args with
-		| [t1; LAMBDA( x, t2 )] -> 
-		    if strip_pos_var x = VarUnused
-		    then concat ["(";(ts_expr_to_string t1);"->";(ts_expr_to_string t2);")"]
-		    else concat ["[Pi;";(vartostring x);"](";(ts_expr_to_string t1);",";(ts_expr_to_string t2);")"]
-		| _ -> lfp oe)
-	    | T_Sigma -> (
-		match args with [t1; LAMBDA( x, t2 )] -> "[Sigma;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string t1) ^ "," ^ (ts_expr_to_string t2) ^ ")"
-		| _ -> lfp oe)
-	    | T_Coprod2 -> (
-		match args with 
-		| [t;t'; LAMBDA( x,u);LAMBDA( x', u');o] ->
-		    "[Coprod;" ^ (vartostring x) ^ "," ^ (vartostring x') ^ "](" 
-		    ^ (ts_expr_to_string t) ^ "," ^ (ts_expr_to_string t) ^ ","
-		    ^ (ts_expr_to_string u) ^ "," ^ (ts_expr_to_string u') ^ ","
-		    ^ (ts_expr_to_string o)
-		    ^ ")"
-		| _ -> lfp oe)
-	    | T_IC -> (
-		match args with 
-		  [tA;a;LAMBDA(x1,tB);LAMBDA(x2,LAMBDA(y2,tD));LAMBDA(x3,LAMBDA(y3,LAMBDA(z3,q)))]
-		  -> "[IC;" 
-		    ^ (vartostring x1) ^ ","
-		    ^ (vartostring x2) ^ "," ^ (vartostring y2) ^ "," 
-		    ^ (vartostring x3) ^ "," ^ (vartostring y3) ^ "," ^ (vartostring z3) 
-		    ^ "]("
-		    ^ (ts_expr_to_string tA) ^ "," ^ (ts_expr_to_string a) ^ "," ^ (ts_expr_to_string tB) ^ "," ^ (ts_expr_to_string tD) ^ "," ^ (ts_expr_to_string q) ^ ")"
-		| _ -> lfp oe)
-	    | _ -> "[" ^ (thead_to_string th) ^ "]" ^ (parenelisttostring args)
-	   )
-	| O oh -> (
-	    match oh with
-	    | O_ev -> (
-		match args with 
-		| [f;o;LAMBDA( x,t)] ->
-		    "[ev;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string f) ^ "," ^ (ts_expr_to_string o) ^ "," ^ (ts_expr_to_string t) ^ ")"
-		| [f;o] ->
-		    "[ev;_](" ^ (ts_expr_to_string f) ^ "," ^ (ts_expr_to_string o) ^ ")"
-		| _ -> lfp oe)
-	    | O_lambda -> (
-		match args with 
-		| [t;LAMBDA( x,o)] ->
-		    "[lambda;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string t) ^ "," ^ (ts_expr_to_string o) ^ ")"
-		| _ -> lfp oe)
-	    | O_forall -> (
-		match args with 
-		| [u;u';o;LAMBDA( x,o')] ->
-		    "[forall;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string u) ^ "," ^ (ts_expr_to_string u') ^ "," ^ (ts_expr_to_string o) ^ "," ^ (ts_expr_to_string o') ^ ")"
-		| _ -> lfp oe)
-	    | _ -> "[" ^ (ohead_to_string oh) ^ "]" ^ (parenelisttostring args)
-	   )
-	| _ -> (label_to_string h) ^ (parenelisttostring args)
-       ))
-  | oe -> lfp oe
+let rec args_to_string s = String.concat "," (List.map ts_can_to_string s)
+and paren_args_to_string s = String.concat "" [ "("; args_to_string s; ")" ]
+and ts_can_to_string = function 
+  | ATOMIC e -> ts_expr_to_string e
+  | LAMBDA _ as e -> lf_canonical_p e		(* normally this branch will not be used *)
+and ts_expr_to_string ((_,e) as oe) = match e with 
+  | EmptyHole n -> "?" ^ (string_of_int n)
+  | Variable v -> vartostring' v
+  | APPLY(h,args) -> 
+    match h with
+    | U uh -> (uhead_to_string uh) ^ (paren_args_to_string args)
+    | T th -> (
+	match th with 
+	| T_Pi -> (
+	    match args with
+	    | [ATOMIC t1; LAMBDA( x, ATOMIC t2 )] -> 
+		if strip_pos x = VarUnused
+		then concat ["(";ts_expr_to_string t1;"->";ts_expr_to_string t2;")"]
+		else concat ["[Pi;";vartostring x;"](";ts_expr_to_string t1;",";ts_expr_to_string t2;")"]
+	    | _ -> lf_atomic_p oe)
+	| T_Sigma -> (
+	    match args with [ATOMIC t1; LAMBDA( x, ATOMIC t2 )] -> "[Sigma;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string t1) ^ "," ^ (ts_expr_to_string t2) ^ ")"
+	    | _ -> lf_atomic_p oe)
+	| T_Coprod2 -> (
+	    match args with 
+	    | [ATOMIC t; ATOMIC t'; LAMBDA( x,ATOMIC u); LAMBDA( x', ATOMIC u'); ATOMIC o] ->
+		"[Coprod;" ^ (vartostring x) ^ "," ^ (vartostring x') ^ "](" 
+		^ (ts_expr_to_string t) ^ "," ^ (ts_expr_to_string t) ^ ","
+		^ (ts_expr_to_string u) ^ "," ^ (ts_expr_to_string u') ^ ","
+		^ (ts_expr_to_string o)
+		^ ")"
+	    | _ -> lf_atomic_p oe)
+	| T_IC -> (
+	    match args with 
+	      [ATOMIC tA; ATOMIC a;
+	       LAMBDA(x1,ATOMIC tB);
+	       LAMBDA(x2,LAMBDA(y2,ATOMIC tD));
+	       LAMBDA(x3,LAMBDA(y3,LAMBDA(z3,ATOMIC q)))]
+	      -> "[IC;" 
+		^ (vartostring x1) ^ ","
+		^ (vartostring x2) ^ "," ^ (vartostring y2) ^ "," 
+		^ (vartostring x3) ^ "," ^ (vartostring y3) ^ "," ^ (vartostring z3) 
+		^ "]("
+		^ (ts_expr_to_string tA) ^ "," ^ (ts_expr_to_string a) ^ "," ^ (ts_expr_to_string tB) ^ "," ^ (ts_expr_to_string tD) ^ "," ^ (ts_expr_to_string q) ^ ")"
+	    | _ -> lf_atomic_p oe)
+	| _ -> "[" ^ (thead_to_string th) ^ "]" ^ (paren_args_to_string args)
+       )
+    | O oh -> (
+	match oh with
+	| O_ev -> (
+	    match args with 
+	    | [ATOMIC f;ATOMIC o;LAMBDA(x, ATOMIC t)] ->
+		"[ev;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string f) ^ "," ^ (ts_expr_to_string o) ^ "," ^ (ts_expr_to_string t) ^ ")"
+	    | [ATOMIC f;ATOMIC o] ->
+		"[ev;_](" ^ (ts_expr_to_string f) ^ "," ^ (ts_expr_to_string o) ^ ")"
+	    | _ -> lf_atomic_p oe)
+	| O_lambda -> (
+	    match args with 
+	    | [ATOMIC t;LAMBDA( x,ATOMIC o)] ->
+		"[lambda;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string t) ^ "," ^ (ts_expr_to_string o) ^ ")"
+	    | _ -> lf_atomic_p oe)
+	| O_forall -> (
+	    match args with 
+	    | [ATOMIC u;ATOMIC u';ATOMIC o;LAMBDA( x,ATOMIC o')] ->
+		"[forall;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string u) ^ "," ^ (ts_expr_to_string u') ^ "," ^ (ts_expr_to_string o) ^ "," ^ (ts_expr_to_string o') ^ ")"
+	    | _ -> lf_atomic_p oe)
+	| _ -> "[" ^ (ohead_to_string oh) ^ "]" ^ (paren_args_to_string args)
+       )
+    | _ -> (label_to_string h) ^ (paren_args_to_string args)
 
 (** Printing functions for definitions, provisional. *)
 
-type uContext = UContext of var' list * (expr * expr) list
+type uContext = UContext of var' list * (ts_expr * ts_expr) list
 
 let parmstostring = function
-  | ((UContext(uexp_parms,ueqns):uContext),(texp_parms:var' list),(oexp_parms:(var' * expr) list)) 
+  | ((UContext(uexp_parms,ueqns):uContext),(texp_parms:var' list),(oexp_parms:(var' * ts_expr) list)) 
     -> concatl [
       if List.length uexp_parms > 0 
       then ["(";
@@ -146,6 +151,6 @@ let ulevel_context_to_string (UContext(uexp_parms,ueqns)) =
 let print_env env = 
   Printf.printf "Environment :\n";
   List.iter 
-    (fun (v,t) -> Printf.printf "   %s : %s\n" (lf_var_tostring v) (lftype_to_string true t)) 
+    (fun (v,t) -> Printf.printf "   %s : %s\n" (lf_var_tostring v) (lf_type_to_string true t)) 
     (List.rev env);
 

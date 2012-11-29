@@ -15,6 +15,8 @@ Voevodsky, dated November 27, 2012.  We call that [LFinTS].
 
   *)
 
+open Error
+
 (** A u-level expression, [M], is constructed inductively as: [n], [v], [M+n], or
     [max(M,M')], where [v] is a universe variable and [n] is a natural number.
  *)
@@ -226,10 +228,18 @@ type ruleHead =
 let rulehead_to_string = function
   | Rule (n,s) -> s
 
+(** Source code positions. *)
+
+type 'a marked = position * 'a
+let strip_pos ((_:position), x) = x
+let get_pos ((pos:position), _) = pos
+let with_pos (pos:position) e = (pos, e)
+let with_pos_of ((pos:position),_) e = (pos,e)
+let nowhere x = (Nowhere,x)
+
 (** Variables *)
-let strip_pos_var : Error.position * 'a -> 'a = snd
-let get_pos_var : Error.position * 'a -> Error.position = fst
-type var = Error.position * var'
+
+type var = var' marked
 and  var' =				(* a variable in both TS and LF *)
   | Var of string
   | VarGen of int * string
@@ -239,7 +249,7 @@ let vartostring' = function
   | Var x -> x
   | VarGen(i,x) -> x ^ "_" ^ (string_of_int i)
   | VarUnused -> "_"
-let vartostring v = vartostring' (strip_pos_var v)
+let vartostring v = vartostring' (strip_pos v)
 
 type lf_var =				(* a variable in LF *)
   | LF_Var of var'
@@ -290,53 +300,23 @@ let label_to_string = function
 
 let string_to_label = List.map (fun h -> label_to_string h, h) labels
 	
-(** The type [expr] accommodates both the expressions of TS and the terms of LF. *)
-type expr = 
-  | POS of Error.position * bare_expr
-	(** A wrapper that gives the position in the TS source code, for error messages *)
-  | LAMBDA of var * expr
-	(** The lambda of LF. *)
-
-	(** The type [bare_expr] corresponds to the atomic terms of LF.  
-									 
-	    APPLY is the iterated function application of LF, and all of its
-	    arguments must be there (so this is the "eta-long" form).  Thus
-	    instead of writing [((((f a) b) c) d)] we write
-	    [APPLY(f,\[a;b;c;d\])], where [f] is a variable or a constant.
-	    Both aspects offer advantages for pattern matching.  One slight
-	    disadvantage is that a constant [f] appearing as a term is encoded
-	    as [APPLY(f,\[\])], which represents the redundant application of
-	    [f] to zero arguments.
-
-	    Remark: eta-expansion is type driven, so that if it is desired to
-	    derive [ f : A -> B ], and [f] is not already a lambda, we "reduce"
-	    to deriving [ (LAMBDA x, f x) : A -> B ].  That's also why don't
-	    decorate the [LAMBDA] with the type, as in [ LAMBDA x:A, f x ],
-	    because it would just get in the way.*)
-and bare_expr =
+type atomic_term = atomic_term' marked
+and atomic_term' =
   | Variable of var'
 	(** A variable. *)
   | EmptyHole of int
-        (** An empty hole, to be filled in later.
-
-	    All holes are numbered with a serial number, so copies share the
-	    same identity.
-	 *)
-  | APPLY of label * expr list
+        (** An empty hole, to be filled in later. *)
+  | APPLY of label * canonical_term list
 	(** Iterated function application. *)
+and canonical_term = 
+  | ATOMIC of atomic_term
+	(** A wrapper that gives the position in the TS source code, for error messages *)
+  | LAMBDA of var * canonical_term
+	(** The lambda of LF. *)
 
-(** Helper functions for source code positions. *)
+type ts_expr = atomic_term
 
-let with_pos pos e = POS (pos, e)
-let strip_pos = function
-  | POS(_,x) -> x
-  | _ -> raise Error.Internal
-let get_pos = function
-  | POS(pos,_) -> pos
-  | _ -> Error.Nowhere
-let with_pos_of x e = POS (get_pos x, e)
-let nowhere x = with_pos Error.Nowhere x
-let var_to_expr x = nowhere (Variable x)
+type lf_expr = canonical_term
 
 (** Notation. *)
 
@@ -357,15 +337,16 @@ type tfHead =
   | F_istype
   | F_hastype
   | F_ulevel_equality
-  | F_type_similarity
+  | F_type_uequality
   | F_type_equality
-  | F_object_similarity
+  | F_object_uequality
   | F_object_equality
 
-type lftype =
-  | F_Pi of var' * lftype * lftype
-  | F_APPLY of tfHead * expr list
-  | F_Singleton of expr * lftype
+type lf_type = bare_lf_type marked
+and bare_lf_type =
+  | F_Pi of var' * lf_type * lf_type
+  | F_APPLY of tfHead * lf_expr list
+  | F_Singleton of lf_expr * lf_type
   | F_hole
 
 let tfhead_to_string = function
@@ -375,32 +356,32 @@ let tfhead_to_string = function
   | F_istype -> "istype"
   | F_hastype -> "hastype"
   | F_ulevel_equality -> "uequal"
-  | F_type_similarity -> "tsim"
+  | F_type_uequality -> "tsim"
   | F_type_equality -> "tequal"
-  | F_object_similarity -> "osim"
+  | F_object_uequality -> "osim"
   | F_object_equality -> "oequal"
 
 let tfheads = [ 
   F_uexp; F_texp; F_oexp; F_istype; F_hastype; F_ulevel_equality ;
-  F_type_similarity; F_type_equality; F_object_similarity; F_object_equality ]
+  F_type_uequality; F_type_equality; F_object_uequality; F_object_equality ]
 
 let tfhead_strings = List.map (fun x -> tfhead_to_string x, x) tfheads
 
 
-let ( *** ) f x = F_APPLY(f,x)
+let ( *** ) f x = nowhere (F_APPLY(f,x))
 
 let uexp = F_uexp *** []
 let texp = F_texp *** []
 let oexp = F_oexp *** []
 
-let ( @> ) a b = F_Pi(VarUnused, a, b)
+let ( @> ) a b = nowhere (F_Pi(VarUnused, a, b))
 
 let istype t = F_istype *** [t]
 let hastype o t = F_hastype *** [o;t]
 let ulevel_equality u u' = F_ulevel_equality *** [u;u']
-let type_similarity t t' = F_type_similarity *** [t;t']
+let type_uequality t t' = F_type_uequality *** [t;t']
 let type_equality t t' = F_type_equality *** [t;t']
-let object_similariy o o' t = F_object_similarity *** [o;o';t]
+let object_similariy o o' t = F_object_uequality *** [o;o';t]
 let object_equality o o' t = F_object_equality *** [o;o';t]
 
 let texp1 = oexp @> texp
@@ -411,11 +392,11 @@ let oexp1 = oexp @> oexp
 let oexp2 = oexp @> oexp @> oexp
 let oexp3 = oexp @> oexp @> oexp @> oexp
 
-let uhead_to_lftype = function
+let uhead_to_lf_type = function
   | U_next -> uexp @> uexp
   | U_max -> uexp @> uexp @> uexp
 
-let thead_to_lftype = function
+let thead_to_lf_type = function
   | T_El -> oexp @> texp
   | T_U -> uexp @> texp
   | T_Pi -> texp @> texp1 @> texp
@@ -427,7 +408,7 @@ let thead_to_lftype = function
   | T_IC -> texp @> oexp @> texp1 @> texp2 @> oexp3 @> texp
   | T_Id -> texp @> oexp @> oexp @> texp
 
-let ohead_to_lftype = function
+let ohead_to_lf_type = function
   | O_u -> uexp @> oexp
   | O_j -> uexp @> uexp @> oexp
   | O_ev -> oexp @> oexp @> texp1 @> oexp
@@ -477,21 +458,19 @@ let head_to_vardist = function
     The list of rules is part of the LF signature, giving LF types for LF term constants. *)
 let rules = ref []
 
-let rulehead_to_lftype h = List.assoc h !rules
-
-let label_to_lftype = function
-  | L _ -> raise Error.Internal		(* needs a context *)
-  | U h -> uhead_to_lftype h
-  | T h -> thead_to_lftype h
-  | O h -> ohead_to_lftype h
-  | R h -> rulehead_to_lftype h
+let label_to_lf_type env = function
+  | U h -> uhead_to_lf_type h
+  | T h -> thead_to_lf_type h
+  | O h -> ohead_to_lf_type h
+  | R h -> List.assoc h !rules
+  | L v -> List.assoc v env
 
 (*** The "kinds" of LF. 
 
     Notation: constructors starting with "K_" refer to kinds of LF. *)
 type lfkind =
   | K_type
-  | K_Pi of var' * lftype * lfkind
+  | K_Pi of var' * lf_type * lfkind
 
 let ( @@> ) a b = K_Pi(VarUnused, a, b)
 
@@ -502,16 +481,16 @@ let tfhead_to_kind = function
   | F_istype -> texp @@> K_type
   | F_hastype -> oexp @@> texp @@> K_type
   | F_ulevel_equality -> uexp @@> uexp @@> K_type
-  | F_type_similarity -> texp @@> texp @@> K_type
+  | F_type_uequality -> texp @@> texp @@> K_type
   | F_type_equality -> texp @@> texp @@> K_type
-  | F_object_similarity -> oexp @@> oexp @@> texp @@> K_type
+  | F_object_uequality -> oexp @@> oexp @@> texp @@> K_type
   | F_object_equality -> oexp @@> oexp @@> texp @@> K_type
 
-type oSubs = (var' * expr) list
+type oSubs = (var' * ts_expr) list
 
 (*** Contexts. *)
 
-type environment_type = (lf_var * lftype) list
+type environment_type = (lf_var * lf_type) list
 
 let environment : environment_type ref = ref []
 
@@ -521,7 +500,7 @@ let newfresh =
   let genctr = ref 0 in 
   let newgen x = (
     incr genctr; 
-    if !genctr < 0 then raise Error.GensymCounterOverflow;
+    if !genctr < 0 then raise GensymCounterOverflow;
     VarGen (!genctr, x)) in
   fun v -> match v with 
   | Var x | VarGen(_,x) -> newgen x
@@ -530,11 +509,11 @@ let newfresh =
 let ts_bind' (v,t) env = match v with
   | VarUnused -> env
   | v -> 
-      (LF_Var (newfresh (Var "hast")), hastype (nowhere (Variable v)) t) :: 
+      (LF_Var (newfresh (Var "hast")), hastype (ATOMIC (nowhere (Variable v))) t) :: 
       (LF_Var v,oexp) :: 
       env
 
-let ts_bind (v,t) env = ts_bind' (strip_pos_var v, t) env
+let ts_bind (v,t) env = ts_bind' (strip_pos v, t) env
 
 let new_hole' = 
   let counter = ref 0 in
@@ -544,8 +523,8 @@ let new_hole' =
     h)
 let new_hole () = nowhere (new_hole' ())
 
-exception Internal_expr of expr
-exception Unimplemented_expr of expr
+exception Internal_expr of lf_expr
+exception Unimplemented_expr of lf_expr
 
 (* 
   Local Variables:

@@ -2,12 +2,14 @@
 open Typesystem
 open Helpers
 open Grammar0
+open Error
 %}
 %start command ts_exprEof
 %type <Toplevel.command> command
-%type <Typesystem.expr> ts_exprEof
-%type <Typesystem.expr list> arglist
-%type <Typesystem.lftype> lftype
+%type <Typesystem.ts_expr> ts_exprEof ts_expr
+%type <Typesystem.ts_expr list> arglist
+%type <Typesystem.lf_type> lf_type
+%type <Typesystem.lf_expr> lf_expr
 %token <int> Nat
 %token <string> IDENTIFIER CONSTANT CONSTANT_SEMI
 %token <string * int> DEFINED_VARIABLE
@@ -16,7 +18,7 @@ open Grammar0
   Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod COLON Wstar Warrow
   Wequalequal Wequal COLONequal Wunderscore WF_Print WRule Wgreaterequal
   Wgreater Wlessequal Wless Wsemi KUlevel Kumax KType Ktype KPi Klambda KSigma
-  WTau WPrint WDefine WShow WEnd WVariable WAlpha Weof Watat WCheck
+  WTau WPrint WDefine WShow WEnd WVariable WAlpha Weof WCheck
   WCheckUniverses Wtilde KSingleton Axiom
 
 /* precedences, lowest first */
@@ -42,8 +44,8 @@ open Grammar0
 
   /* These are the other tokens that can begin a TS-expression : ditto. */
 
-  Wunderscore Wlparen Watat Kumax DEFINED_VARIABLE CONSTANT_SEMI
-  CONSTANT Wstar Klambda KSigma KPi
+  Wunderscore Wlparen Kumax DEFINED_VARIABLE CONSTANT_SEMI CONSTANT Wstar
+  Klambda KSigma KPi
 
 %left
 
@@ -51,85 +53,89 @@ open Grammar0
 
 %%
 
-lftype:
-| Wlparen t=lftype Wrparen 
+lf_type:
+| t=bare_lf_type
+    { Position($startpos, $endpos), t}
+| Wlparen t=lf_type Wrparen 
     { t }
-| f=lftype_constant args=list(lfterm)
+
+bare_lf_type:
+| f=lf_type_constant args=list(lf_expr)
     { F_APPLY(f,args) }
-| KPi v=bare_variable COLON a=lftype Wcomma b=lftype
+| KPi v=bare_variable COLON a=lf_type Wcomma b=lf_type
     %prec Reduce_binder
     { F_Pi(v,a,b) }
-| a=lftype Warrow b=lftype
+| a=lf_type Warrow b=lf_type
    { F_Pi(VarUnused,a,b) }
-| KSingleton Wlparen x=lfterm COLON t=lftype Wrparen
+| KSingleton Wlparen x=lf_expr COLON t=lf_type Wrparen
     { F_Singleton(x,t) }
-| Wlbracket a=lfterm Ktype Wrbracket
+| Wlbracket a=lf_expr Ktype Wrbracket
     { F_APPLY(F_istype, [a]) }
-| Wlbracket a=lfterm COLON b=lfterm Wrbracket
+| Wlbracket a=lf_expr COLON b=lf_expr Wrbracket
     { F_APPLY(F_hastype, [a;b]) }
-| Wlbracket a=lfterm Wtilde b=lfterm COLON c=lfterm Wrbracket
-    { F_APPLY(F_object_similarity, [a;b;c]) }
-| Wlbracket a=lfterm Wequal b=lfterm COLON c=lfterm Wrbracket
+| Wlbracket a=lf_expr Wtilde b=lf_expr COLON c=lf_expr Wrbracket
+    { F_APPLY(F_object_uequality, [a;b;c]) }
+| Wlbracket a=lf_expr Wequal b=lf_expr COLON c=lf_expr Wrbracket
     { F_APPLY(F_object_equality, [a;b;c]) }
-| Wlbracket a=lfterm Wtilde b=lfterm Wrbracket
-    { F_APPLY(F_type_similarity, [a;b]) }
-| Wlbracket a=lfterm Wequal b=lfterm Wrbracket
+| Wlbracket a=lf_expr Wtilde b=lf_expr Wrbracket
+    { F_APPLY(F_type_uequality, [a;b]) }
+| Wlbracket a=lf_expr Wequal b=lf_expr Wrbracket
     { F_APPLY(F_type_equality, [a;b]) }
 
-lftype_constant:
+lf_type_constant:
 | l=IDENTIFIER 
     { 
       try List.assoc l tfhead_strings 
       with 
 	Not_found ->
 	  Printf.fprintf stderr "%s: unknown type constant %s\n" 
-	    (Error.error_format_pos (Error.Position($startpos, $endpos)))
+	    (error_format_pos (Position($startpos, $endpos)))
 	    l;
 	  flush stderr;
 	  $syntaxerror
     }
 
-lfterm:
-| e=bare_lfterm
-  { with_pos (Error.Position($startpos, $endpos)) e  }
-| Wlparen Klambda v=variable Wcomma body=lfterm Wrparen
+lf_expr:
+| e=atomic_term
+    { ATOMIC(Position($startpos, $endpos), e)  }
+| Wlparen Klambda v=variable Wcomma body=lf_expr Wrparen
     { LAMBDA(v,body) }
-| Wlparen Klambda v=variable_unused Wcomma body=lfterm Wrparen
+| Wlparen Klambda v=variable_unused Wcomma body=lf_expr Wrparen
     { LAMBDA(v,body) }
 
 variable_unused:
 | Wunderscore
-    { Error.Position($startpos, $endpos), VarUnused }
+    { Position($startpos, $endpos), VarUnused }
 
-bare_lfterm:
+atomic_term:
 | bare_variable
     { Variable $1 }
 | Wunderscore
     { new_hole' () }
-| Wlparen f=lfterm_head args=list(lfterm) Wrparen
+| Wlparen f=lf_expr_head args=list(lf_expr) Wrparen
     { APPLY(f,args) }
 
-lfterm_head:
+lf_expr_head:
 | tsterm_head
     { $1 }
 | bare_variable
     { L (LF_Var $1) }
 
 command: c=command0 
-  { Error.Position($startpos, $endpos), c }
+  { Position($startpos, $endpos), c }
 
 command0:
 | Weof
-    { raise Error.Eof }
+    { raise Eof }
 | WVariable vars=nonempty_list(IDENTIFIER) COLON KType Wperiod
     { Toplevel.Variable vars }
 | WVariable vars=nonempty_list(IDENTIFIER) COLON KUlevel eqns=preceded(Wsemi,uEquation)* Wperiod
     { Toplevel.UVariable (vars,eqns) }
 | Axiom v=IDENTIFIER COLON t=ts_expr Wperiod
     { Toplevel.Axiom(v,t) }
-| WPrint e=lfterm Wperiod
+| WPrint e=lf_expr Wperiod
     { Toplevel.Print e }
-| WF_Print t=lftype Wperiod
+| WF_Print t=lf_type Wperiod
     { Toplevel.F_Print t }
 | WCheck o=ts_expr Wperiod
     { Toplevel.Check o }
@@ -140,7 +146,7 @@ command0:
 | WTau o=ts_expr Wperiod
     { Toplevel.Type o }
 
-| WRule num=Nat name=IDENTIFIER COLON t=lftype Wperiod
+| WRule num=Nat name=IDENTIFIER COLON t=lf_type Wperiod
     { Toplevel.Rule (num,name,t) }
 
 | WDefine name=IDENTIFIER parms=parmList COLONequal t=ts_expr Wperiod 
@@ -168,13 +174,13 @@ uEquation:
 | u=ts_expr Wequal v=ts_expr 
     { (u,v) }
 | v=ts_expr Wgreaterequal u=ts_expr 
-    { nowhere (APPLY(U U_max, [ u; v])), v }
+    { (Position($startpos, $endpos), APPLY(U U_max, [ ATOMIC u; ATOMIC v])), v }
 | u=ts_expr Wlessequal v=ts_expr 
-    { nowhere (APPLY(U U_max, [ u; v])), v }
+    { (Position($startpos, $endpos), APPLY(U U_max, [ ATOMIC u; ATOMIC v])), v }
 | v=ts_expr Wgreater u=ts_expr 
-    { nowhere (APPLY(U U_max, [ nowhere (APPLY( U U_next,[u])); v])), v }
+    { (Position($startpos, $endpos), APPLY(U U_max, [ ATOMIC (Position($startpos, $endpos), APPLY( U U_next,[ATOMIC u])); ATOMIC v])), v }
 | u=ts_expr Wless v=ts_expr 
-    { nowhere (APPLY(U U_max, [ nowhere (APPLY( U U_next,[u])); v])), v }
+    { (Position($startpos, $endpos), APPLY(U U_max, [ ATOMIC (Position($startpos, $endpos), APPLY( U U_next,[ATOMIC u])); ATOMIC v])), v }
 
 parenthesized(X): x=delimited(Wlparen,X,Wrparen) {x}
 list_of_parenthesized(X): list(parenthesized(X)) {$1}
@@ -188,19 +194,17 @@ ts_exprEof: a=ts_expr Weof {a}
 
 variable:
 | bare_variable
-    { Error.Position($startpos, $endpos), $1 }
+    { Position($startpos, $endpos), $1 }
 
 variable_or_unused:
 | bare_variable_or_unused
-    { Error.Position($startpos, $endpos), $1 }
+    { Position($startpos, $endpos), $1 }
 
 ts_expr:
 | bare_ts_expr
-    { with_pos (Error.Position($startpos, $endpos)) $1 }
+    { (Position($startpos, $endpos), $1) }
 | parenthesized(ts_expr) 
     {$1}
-| Watat e=lfterm
-    {e}
 
 tsterm_head:
 | def=DEFINED_VARIABLE
@@ -210,7 +214,7 @@ tsterm_head:
      try List.assoc ("[" ^ l ^ "]") string_to_label 
      with Not_found -> 
        Printf.fprintf stderr "%s: unknown term constant [%s]\n" 
-	 (Error.error_format_pos (Error.Position($startpos, $endpos)))
+	 (error_format_pos (Position($startpos, $endpos)))
 	 l;
        flush stderr;
        $syntaxerror 
@@ -237,7 +241,7 @@ bare_ts_expr:
     { new_hole' () }
 | f=ts_expr o=ts_expr
     %prec Reduce_application
-    { make_OO_ev f o ((Error.Nowhere, VarUnused), with_pos (Error.Position($startpos, $endpos)) (new_hole'())) }
+    { make_OO_ev f o ((Nowhere, VarUnused), (Position($startpos, $endpos), new_hole'())) }
 | Klambda x=variable COLON t=ts_expr Wcomma o=ts_expr
     %prec Reduce_binder
     { make_OO_lambda t (x,o) }
@@ -248,24 +252,24 @@ bare_ts_expr:
     %prec Reduce_binder
     { make_TT_Pi t1 (x,t2) }
 | t=ts_expr Warrow u=ts_expr
-    { make_TT_Pi t ((Error.Nowhere, VarUnused),u) }
+    { make_TT_Pi t ((Nowhere, VarUnused),u) }
 | KSigma x=variable COLON t1=ts_expr Wcomma t2=ts_expr
     %prec Reduce_binder
     { make_TT_Sigma t1 (x,t2) }
 | Kumax Wlparen u=ts_expr Wcomma v=ts_expr Wrparen
-    { APPLY(U U_max,[u;v])  }
+    { APPLY(U U_max,[ATOMIC u;ATOMIC v])  }
 | label=tsterm_head args=arglist
     {
      match label with
-     | L _ -> APPLY(label,args)
+     | L _ -> APPLY(label,to_atomic args)
      | _ -> (
 	 match head_to_vardist label with
-	 | None -> APPLY(label,args)
+	 | None -> APPLY(label,to_atomic args)
 	 | Some (n,_) ->
-	     if n = 0 then APPLY(label,args)
+	     if n = 0 then APPLY(label,to_atomic args)
 	     else
-	       raise (Error.TypingError
-			( Error.Position($startpos, $endpos),
+	       raise (TypingError
+			( Position($startpos, $endpos),
 			  "expected " ^ (string_of_int n) ^ " variable" ^ (if n != 1 then "s" else ""))))
    }
 | name=CONSTANT_SEMI vars=separated_list(Wcomma,variable_or_unused) Wrbracket args=arglist
@@ -274,30 +278,30 @@ bare_ts_expr:
        try List.assoc ("[" ^ name ^ "]") string_to_label 
        with Not_found -> 
 	 Printf.fprintf stderr "%s: unknown term constant [%s]\n" 
-	   (Error.error_format_pos (Error.Position($startpos, $endpos)))
+	   (error_format_pos (Position($startpos, $endpos)))
 	   name;
 	 flush stderr;
 	 $syntaxerror
      in
      match head_to_vardist label with
-     | None -> raise (Error.TypingError (Error.Position($startpos, $endpos), "expected no variables"))
+     | None -> raise (TypingError (Position($startpos, $endpos), "expected no variables"))
      | Some (nvars,varindices) ->
 	 if nvars != List.length vars then
-	   raise (Error.TypingError
-		    ( Error.Position($startpos, $endpos),
+	   raise (TypingError
+		    ( Position($startpos, $endpos),
 		      "expected " ^ (string_of_int nvars) ^ " variable" ^ (if nvars != 1 then "s" else "")));
 	 let nargs = List.length varindices
 	 in
 	 if List.length args != nargs then
-	   raise (Error.TypingError
-		    ( Error.Position($startpos, $endpos),
+	   raise (TypingError
+		    ( Position($startpos, $endpos),
 		      "expected " ^ (string_of_int nargs) ^ " argument" ^ (if nargs != 1 then "s" else "")));
 	 let args = List.map2 (
 	   fun indices arg ->
-	     (* example: indices = [0;1], change arg to (LAMBDA v_0, (LAMBDA v_1, arg)) *)
+	     (* example: indices = [0;1], change arg to (LAMBDA v_0, (LAMBDA v_1, ATOMIC arg)) *)
 	     List.fold_right (
 	     fun index arg -> LAMBDA( List.nth vars index, arg)
-		 ) indices arg
+		 ) indices (ATOMIC arg)
 	  ) varindices args
 	 in
 	 APPLY(label,args)

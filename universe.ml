@@ -15,7 +15,7 @@
 
 open Typesystem
 
-exception Inconsistency of expr * expr
+exception Inconsistency of ts_expr * ts_expr
 
 let rec memi' i x = function
     [] -> raise Error.Internal
@@ -26,7 +26,7 @@ let memi x = memi' 0 x
 let chk uv (lhs,rhs) =
   let index name = memi name uv in
   let rec ev = function
-    | POS(_,e) -> (match e with
+    | ATOMIC(_,e) -> (match e with
 	| Variable u -> index u
 	| APPLY(U U_next,[u]) -> (ev u) + 1
 	| APPLY(U U_max,[u;v]) -> max (ev u) (ev v)
@@ -63,7 +63,7 @@ let ubind uvars ueqns =
 module Equal = struct
   let equiv ulevel_context = 			(* structural equality *)
     let rec ueq a b = match (a,b) with
-    | POS(_,a), POS(_,b) -> (
+    | ATOMIC(_,a), ATOMIC(_,b) -> (
 	a == b || 
 	match (a,b) with 
 	| Variable x, Variable x' -> x = x'
@@ -86,5 +86,5 @@ module EquivA = struct
 end
 
 module type Equivalence = sig
-  val equiv : Printer.uContext -> expr -> expr -> bool
+  val equiv : Printer.uContext -> ts_expr -> ts_expr -> bool
 end

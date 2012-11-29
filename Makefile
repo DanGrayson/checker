@@ -14,7 +14,7 @@ SRCFILES =					\
 	helpers.ml				\
 	template.ml				\
 	universe.ml				\
-	alpha.ml				\
+	alpha.ml alpha.mli				\
 	reduction.ml				\
 	substitute.ml				\
 	equality.ml equality.mli				\

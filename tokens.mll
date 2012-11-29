@@ -69,7 +69,6 @@ rule expr_tokens = parse
   | '~'  { Wtilde }
   | '='  { Wequal }
   | '=' '=' { Wequalequal }
-  | '@' '@' { Watat }
   | '>' '='  { Wgreaterequal }
   | '>' { Wgreater }
   | '<' '='  { Wlessequal }

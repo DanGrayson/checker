@@ -10,9 +10,9 @@ let mergeUContext : Printer.uContext -> Printer.uContext -> Printer.uContext =
 type parm =
   | UParm of Printer.uContext
   | TParm of var' list
-  | OParm of (var' * expr) list
+  | OParm of (var' * ts_expr) list
 
-let fixParmList (p:parm list) : Printer.uContext * (var' list) * ((var' * expr) list) = (* this code has to be moved somewhere to use the context *)
+let fixParmList (p:parm list) : Printer.uContext * (var' list) * ((var' * ts_expr) list) = (* this code has to be moved somewhere to use the context *)
   let rec fix us ts os p =
     match p with 
     | UParm u :: p -> 
@@ -32,42 +32,46 @@ let fixParmList (p:parm list) : Printer.uContext * (var' list) * ((var' * expr) 
 	in (ulevel_context,tc,ts_context))
   in fix [] [] [] p
 
-let tDefinition (name:string) ((ulevel_context,tc,ts_context):(Printer.uContext * (var' list) * ((var' * expr) list))) (t:expr) : (string * int * expr * lftype) list = 
+let tDefinition (name:string) ((ulevel_context,tc,ts_context):(Printer.uContext * (var' list) * ((var' * ts_expr) list))) (t:ts_expr)
+    : (string * int * lf_expr * lf_type) list 
+    = 
   let Printer.UContext (uvars,ueqns) = ulevel_context in
-  let rec wrap t = function
+  let rec wrap (t:lf_expr) = function
     | [] -> t 
-    | v :: rest -> wrap (LAMBDA((Error.Nowhere,v),t)) rest
+    | v :: rest -> wrap (LAMBDA((nowhere v),t)) rest
   in let rec wrapk tf t = function
     | [] -> t 
-    | v :: rest -> wrapk tf (F_Pi(v,tf,t)) rest
+    | v :: rest -> wrapk tf (nowhere (F_Pi(v,tf,t))) rest
   in let rec wrapi t = function
     | [] -> t
     | (z,u) :: rest -> 
-	let t = F_Pi(VarUnused,hastype (nowhere (Variable z)) u,t) in
-	let t = F_Pi(VarUnused,istype u,t) in
+	let t = nowhere (F_Pi(VarUnused,hastype (ATOMIC (nowhere (Variable z))) u,t)) in
+	let t = nowhere (F_Pi(VarUnused,istype u,t)) in
 	wrapi t rest
   in let k = texp
-  in let wt = t
+  in let wt = ATOMIC t
   in let wt = wrap wt (List.rev_append (List.map fst ts_context) [])
   in let wt = wrap wt (List.rev_append tc [])
   in let wt = wrap wt (List.rev_append uvars [])
   in let wk = k
-  in let wk = wrapi wk (List.rev_append ts_context [])
+  in let wk = wrapi wk (List.rev_append (List.map (fun (v,t) -> (v,ATOMIC t)) ts_context) [])
   in let wk = wrapk oexp wk (List.rev_append (List.map fst ts_context) [])
   in let wk = wrapk texp wk (List.rev_append tc [])
   in let wk = wrapk uexp wk (List.rev_append uvars [])
   in
   [ 
     ( name, 0, wt, wk );
-    ( name, 1, new_hole(), istype t)
+    ( name, 1, ATOMIC(new_hole()), istype (ATOMIC t))
   ]
 
-let oDefinition (name:string) ((ulevel_context,tc,ts_context):(Printer.uContext * (var' list) * ((var' * expr) list))) (o:expr) (t:expr) : (string * int * expr * lftype) list = 
+let oDefinition (name:string) ((ulevel_context,tc,ts_context):(Printer.uContext * (var' list) * ((var' * ts_expr) list))) (o:ts_expr) (t:ts_expr)
+    : (string * int * lf_expr * lf_type) list 
+    = 
   (* still have to wrap the lambdas around it : *)
   [
-   ( name, 0, o, oexp);
-   ( name, 1, t, texp);
-   ( name, 2, new_hole(), hastype o t)
+   ( name, 0, ATOMIC o, oexp);
+   ( name, 1, ATOMIC t, texp);
+   ( name, 2, ATOMIC (new_hole()), hastype (ATOMIC o) (ATOMIC t))
  ]
 
 let teqDefinition _ _ _ _ = raise (Error.Unimplemented "teqDefinition")

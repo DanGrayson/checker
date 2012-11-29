@@ -7,21 +7,21 @@ val addalpha : Typesystem.var' -> Typesystem.var' -> alpha_eq -> alpha_eq
 val testalpha' : 'a -> 'a -> ('a * 'a) list -> bool
 
 val testalpha :
-  Typesystem.expr ->
-  Typesystem.expr ->
-  (Typesystem.bare_expr * Typesystem.bare_expr) list -> bool
+  Typesystem.lf_expr ->
+  Typesystem.lf_expr ->
+  (Typesystem.var' * Typesystem.var') list -> bool
 
 module UEqual :
   sig
     val uequiv :
-      Printer.uContext -> Typesystem.expr -> Typesystem.expr -> bool
+      Printer.uContext -> Typesystem.lf_expr -> Typesystem.lf_expr -> bool
     val equiv :
-      Printer.uContext -> Typesystem.expr -> Typesystem.expr -> bool
+      Printer.uContext -> Typesystem.lf_expr -> Typesystem.lf_expr -> bool
   end
 module UEquivA :
   sig
     val uequiv :
-      Printer.uContext -> Typesystem.expr -> Typesystem.expr -> bool
+      Printer.uContext -> Typesystem.lf_expr -> Typesystem.lf_expr -> bool
     val equiv :
-      Printer.uContext -> Typesystem.expr -> Typesystem.expr -> bool
+      Printer.uContext -> Typesystem.lf_expr -> Typesystem.lf_expr -> bool
   end

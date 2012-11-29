@@ -127,45 +127,47 @@ let add_tVars tvars =
 let fix t = Fillin.fillin !environment t
 
 let printCommand x =
-  Printf.printf "Print: %s\n" (Printer.lfexpr_to_string x);
+  Printf.printf "Print: %s\n" (Printer.lf_atomic_to_string x);
   flush stdout
 
 let axiomCommand name t = environment := ts_bind' (Var name, t) !environment
 
 let ruleCommand num name x =
   rules := (Rule (num,name), x) :: !rules;
-  Printf.printf "Rule %d %s: %s\n" num name (Printer.lftype_to_string true x);
+  Printf.printf "Rule %d %s: %s\n" num name (Printer.lf_type_to_string true x);
   flush stdout;
   protect1 ( fun () -> Lfcheck.type_validity !environment Error.Nowhere x )
 
 let lf_type_printCommand x =
-  Printf.printf "F_Print : %s\n" (Printer.lftype_to_string true x);
+  Printf.printf "F_Print : %s\n" (Printer.lf_type_to_string true x);
   flush stdout
 
 let checkCommand x =
   Printf.printf "Check : %s\n" (Printer.ts_expr_to_string x);
-  Printf.printf "   LF : %s\n" (Printer.lfexpr_to_string x);
+  Printf.printf "   LF : %s\n" (Printer.lf_atomic_to_string x);
   Printf.printf "   filling in ...\n";
   flush stdout;
   let x = protect1 ( fun () -> Fillin.fillin !environment x ) in
+  Printf.printf "   LF : %s\n" (Printer.lf_atomic_to_string x);
+  flush stdout;
   let t = protect1 ( fun () -> Lfcheck.type_synthesis !environment (get_pos x) x ) in
-  Printf.printf " --- LF type synthesis yielded %s\n" (Printer.lftype_to_string true t);
+  Printf.printf " --- LF type synthesis yielded %s\n" (Printer.lf_type_to_string true t);
   match x with
-  | POS(_,APPLY(O _,_)) -> 
+  | ATOMIC(_,APPLY(O _,_)) -> 
       Printf.printf "     : o-expression, will check its type\n";
       flush stdout;
       protect1 (fun () -> Check.ocheck !environment x)
-  | POS(_,APPLY(R _,_)) -> 
+  | ATOMIC(_,APPLY(R _,_)) -> 
       Printf.printf "     : judgment\n"
-  | POS(_,APPLY(T _,_)) -> 
+  | ATOMIC(_,APPLY(T _,_)) -> 
       Printf.printf "     : t-expression\n"
-  | POS(_,APPLY(U _,_)) -> 
+  | ATOMIC(_,APPLY(U _,_)) -> 
       Printf.printf "     : u-expression\n"
-  | POS(_,APPLY(L _,_)) -> 
+  | ATOMIC(_,APPLY(L _,_)) -> 
       Printf.printf "     : lf-application, with variable as label\n"
-  | POS(_,Variable _) -> 
+  | ATOMIC(_,Variable _) -> 
       Printf.printf "     : variable\n"
-  | POS(_,EmptyHole n) -> 
+  | ATOMIC(_,EmptyHole n) -> 
       Printf.printf "     : empty hole ?%d\n" n
   | LAMBDA _ ->
       Printf.printf "     : LF lambda, not a TS expression\n";
@@ -185,6 +187,9 @@ let checkUniversesCommand pos =
   with Universe.Inconsistency (p,q) -> print_inconsistency p q
 
 let typeCommand x = (
+  Printf.printf "Tau: %s ... \n" (Printer.ts_expr_to_string x);
+  let t = protect1 ( fun () -> Lfcheck.type_synthesis !environment (get_pos x) x ) in
+  Printf.printf " --- LF type synthesis yielded %s\n" (Printer.lf_type_to_string true t);
   try 
     let tx = Tau.tau !environment x in
     Printf.printf "Tau: %s : %s\n" (Printer.ts_expr_to_string x) (Printer.ts_expr_to_string tx);
@@ -200,7 +205,7 @@ let show_command () =
   Printer.print_env !environment;
   List.iter
     (fun (Rule (num,name), x) ->
-      Printf.printf "Rule %d %s: %s\n" num name (Printer.lftype_to_string true x))
+      Printf.printf "Rule %d %s: %s\n" num name (Printer.lf_type_to_string true x))
     !rules;
   flush stdout
 
@@ -265,13 +270,13 @@ let toplevel() =
   (try printCommand (expr_from_string "lambda f:T->U, lambda o:T, f o") with Error_Handled -> ());
   List.iter 
     (
-     fun x -> Printf.printf "F_Print: %s : %s\n" (label_to_string x) (Printer.lftype_to_string (label_to_lftype x))
+     fun x -> Printf.printf "F_Print: %s : %s\n" (label_to_string x) (Printer.lf_type_to_string (label_to_lf_type x))
     )
     labels;
   List.iter 
     (
      fun (Rule(num,name) as head,_) -> 
-       Printf.printf "Rule %d %s : %s\n" num name (Printer.lftype_to_string (label_to_lftype (R head)))
+       Printf.printf "Rule %d %s : %s\n" num name (Printer.lf_type_to_string (label_to_lf_type (R head)))
     )
     (List.rev !rules);
     *)
@@ -280,11 +285,11 @@ let toplevel() =
 let _ = try
   toplevel()
 with
-| Internal_expr      ( POS(pos,_) as e ) 
-| Internal_expr      ( LAMBDA(_,POS(pos,_)) as e ) 
-| Unimplemented_expr ( POS(pos,_) as e )
-| Unimplemented_expr ( LAMBDA(_,POS(pos,_)) as e ) 
+| Internal_expr      ( ATOMIC(pos,_) as e ) 
+| Internal_expr      ( LAMBDA(_,ATOMIC(pos,_)) as e ) 
+| Unimplemented_expr ( ATOMIC(pos,_) as e )
+| Unimplemented_expr ( LAMBDA(_,ATOMIC(pos,_)) as e ) 
     as ex ->
-    Printf.fprintf stderr "%s: internal error on expr %s\n" (Error.error_format_pos pos) (Printer.lfexpr_to_string e);
+    Printf.fprintf stderr "%s: internal error on ts_expr %s\n" (Error.error_format_pos pos) (Printer.lf_atomic_to_string e);
     raise ex
 
