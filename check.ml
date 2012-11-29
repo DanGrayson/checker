@@ -85,7 +85,7 @@ and ocheck pos env = function
 		    if not ( (strip_pos_var w) = (strip_pos_var v) ) 
 		    then raise Error.NotImplemented;
 		    overify pos env x s;
-		    let env = obind (v,s) env in 
+		    let env = ts_bind (v,s) env in 
 		    tverify pos env t t'
 		| _ -> raise (Error.TypeCheckingFailure(get_pos f,"expected a function type")))
 	    | _ -> raise Error.Internal)
@@ -123,10 +123,10 @@ and ocheck pos env = function
 	| O_rr0 -> raise Error.NotImplemented
 	| O_rr1 -> raise Error.NotImplemented
 and tcheck_binder pos env x t1 t2 =
-  let env = obind (x,t1) env in
+  let env = ts_bind (x,t1) env in
   tcheck pos env t2
 and ocheck_binder pos env x t o =
-  let env = obind (x,t) env in
+  let env = ts_bind (x,t) env in
   ocheck pos env o
 and ucheckn i pos env a =
   if i != List.length a then raise Error.Internal;

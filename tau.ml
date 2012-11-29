@@ -31,7 +31,7 @@ let rec tau (pos:Error.position) env = function
 		| _ -> raise Error.Internal)
 	    | O_lambda -> (
 		match args with 
-		| [t;LAMBDA( x,o)] -> Helpers.make_TT_Pi t (x, tau pos (obind (x,t) env) o)
+		| [t;LAMBDA( x,o)] -> Helpers.make_TT_Pi t (x, tau pos (ts_bind (x,t) env) o)
 		| _ -> raise Error.Internal)
 	    | O_forall -> (
 		match args with 

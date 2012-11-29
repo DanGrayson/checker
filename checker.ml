@@ -125,7 +125,7 @@ let printCommand x =
   Printf.printf "Print: %s\n" (Printer.lfexpr_to_string x);
   flush stdout
 
-let axiomCommand name t = environment := obind' (Var name, t) !environment
+let axiomCommand name t = environment := ts_bind' (Var name, t) !environment
 
 let ruleCommand num name x =
   rules := (Rule (num,name), x) :: !rules;

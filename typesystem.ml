@@ -527,14 +527,14 @@ let newfresh =
   | Var x | VarGen(_,x) -> newgen x
   | VarUnused as v -> v
 
-let obind' (v,t) env = match v with
+let ts_bind' (v,t) env = match v with
   | VarUnused -> env
   | v -> 
       (LF_Var (newfresh (Var "hast")), hastype (nowhere (Variable v)) t) :: 
       (LF_Var v,oexp) :: 
       env
 
-let obind (v,t) env = obind' (strip_pos_var v, t) env
+let ts_bind (v,t) env = ts_bind' (strip_pos_var v, t) env
 
 let new_hole' = 
   let counter = ref 0 in
