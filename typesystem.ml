@@ -300,6 +300,7 @@ let label_to_string = function
 
 let string_to_label = List.map (fun h -> label_to_string h, h) labels
 	
+(** An atomic term is one that isn't a lambda expression. *)
 type atomic_term = atomic_term' marked
 and atomic_term' =
   | Variable of var'
@@ -509,7 +510,7 @@ let newfresh =
 let ts_bind' (v,t) env = match v with
   | VarUnused -> env
   | v -> 
-      (LF_Var (newfresh (Var "hast")), hastype (ATOMIC (nowhere (Variable v))) t) :: 
+      (LF_Var (newfresh (Var "hast")), hastype (ATOMIC (nowhere (Variable v))) (ATOMIC t)) :: 
       (LF_Var v,oexp) :: 
       env
 

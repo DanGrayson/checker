@@ -23,14 +23,14 @@ let rec memi' i x = function
 
 let memi x = memi' 0 x
 
-let chk uv (lhs,rhs) =
+let chk uv ((lhs:ts_expr),(rhs:ts_expr)) =
   let index name = memi name uv in
-  let rec ev = function
-    | ATOMIC(_,e) -> (match e with
-	| Variable u -> index u
-	| APPLY(U U_next,[u]) -> (ev u) + 1
-	| APPLY(U U_max,[u;v]) -> max (ev u) (ev v)
-	| _ -> raise Error.Internal)
+  let rec ev e = 
+    let (pos,e0) = e 
+    in match e0 with
+    | Variable u -> index u
+    | APPLY(U U_next,[ATOMIC u]) -> (ev u) + 1
+    | APPLY(U U_max,[ATOMIC u;ATOMIC v]) -> max (ev u) (ev v)
     | _ -> raise Error.Internal
   in let chk lhs rhs = if (ev lhs) = (ev rhs) then raise (Inconsistency (lhs, rhs)) in
   chk lhs rhs
