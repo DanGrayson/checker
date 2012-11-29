@@ -53,11 +53,11 @@ let chk_var_ueqns uv eqns = List.iter (chk uv) eqns
 
 let consistency env  = List.iter (chk (get_uvars env)) (get_ueqns env)
 
-let chk_ueqns ueqns = chk_var_ueqns (get_uvars !global_environment) ueqns
+let chk_ueqns ueqns = chk_var_ueqns (get_uvars !global_context) ueqns
 
 let ubind uvars ueqns =
-  global_environment := List.rev_append (List.map (fun u -> (LF_Var (Var u), uexp)) uvars) !global_environment;
-  global_environment := List.rev_append (List.map (fun (u,v) -> (LF_Var (newfresh (Var "ueq")), ulevel_equality (ATOMIC u) (ATOMIC v))) ueqns) !global_environment;
+  global_context := List.rev_append (List.map (fun u -> (LF_Var (Var u), uexp)) uvars) !global_context;
+  global_context := List.rev_append (List.map (fun (u,v) -> (LF_Var (newfresh (Var "ueq")), ulevel_equality (ATOMIC u) (ATOMIC v))) ueqns) !global_context;
   chk_ueqns ueqns
 
 module Equal = struct

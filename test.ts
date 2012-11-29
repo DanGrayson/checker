@@ -90,13 +90,12 @@ Check lambda f:X->T, lambda y:X, f y.
 # Define E6 (u1 u2 u3 : Ulevel)(X1 X2:Type)(x1: X1 -> [U](u1))(x2: [U]([next](u0))) := [j](x1, x2) : _ .
 # Define E7 := ft : _ .
 
-Define foo (u : Ulevel) (t : [U](u)) := *t.
+Define foo (u : Ulevel) (t : [U]([next](u))) := *t.
 
 Show.
 
 # each of the following lines yields an error:
-
-Check lambda x:T, lambda y:U, [foo.0](u1, u2, T, U, x, y).
+Check [foo.0](u1, [u](u1)).
 Check lambda x:T, lambda y:U, lambda t:[foo.1](u0, u0, T, U, x, y), t.
 Check lambda f:T->T->T->T, f f f f f.
 Check lambda f:T->T->T->T->T, f f f f f.  # is the error message right?

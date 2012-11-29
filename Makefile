@@ -51,7 +51,10 @@ wc:; wc -l $(SRCFILES)
 run: checker.byte
 	-OCAMLRUNPARAM=$(RUN) ./$< $(TSFILES)
 debug:
+	ocamlbuild $(BFLAGS) checker.byte 
 	@ echo "enter:"
+	@ echo "  set arg rules.ts"
+	@ echo "    or"
 	@ echo "  set arg test.ts"
 	@ echo "  goto 100"
 	@ echo "  break Debugging.trap"

@@ -17,19 +17,19 @@ and lf_canonical_to_string = function
   | LAMBDA(x,body) -> concat ["(lambda ";vartostring x;", ";lf_canonical_to_string body;")"]
   | ATOMIC e -> lf_atomic_to_string e
 
-let rec lf_type_to_string target (_,t) = match t with
+let rec lf_type_to_string' target (_,t) = match t with
   | F_Pi(v,t,u) -> 
       if v == VarUnused
       then 
-	let k = concat [lf_type_to_string false t; " -> "; lf_type_to_string true u]
+	let k = concat [lf_type_to_string' false t; " -> "; lf_type_to_string u]
 	in if target then k else concat ["("; k; ")"]
       else
-	concat ["Pi "; vartostring' v; ":"; lf_type_to_string false t; ", "; lf_type_to_string true u]
-  | F_hole -> "_"
-  | F_Singleton(x,t) -> concat ["= ";lf_canonical_to_string x;" : ";lf_type_to_string true t;""]
+	concat ["Pi "; vartostring' v; ":"; lf_type_to_string' false t; ", "; lf_type_to_string u]
+  | F_Singleton(x,t) -> concat ["= ";lf_canonical_to_string x;" : ";lf_type_to_string t;""]
   | F_APPLY(hd,args) -> 
       let s = concat [tfhead_to_string hd; concat (List.map (space <<- lf_canonical_to_string) args)] in
       if String.contains s ' ' then concat ["(";s;")"] else s
+and lf_type_to_string t = lf_type_to_string' true t
 
 (** Printing of TS terms in TS format. *)
 
@@ -151,6 +151,6 @@ let ulevel_context_to_string (UContext(uexp_parms,ueqns)) =
 let print_env env = 
   Printf.printf "Environment :\n";
   List.iter 
-    (fun (v,t) -> Printf.printf "   %s : %s\n" (lf_var_tostring v) (lf_type_to_string true t)) 
+    (fun (v,t) -> Printf.printf "   %s : %s\n" (lf_var_tostring v) (lf_type_to_string t)) 
     (List.rev env);
 

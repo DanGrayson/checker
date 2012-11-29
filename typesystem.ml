@@ -348,7 +348,6 @@ and bare_lf_type =
   | F_Pi of var' * lf_type * lf_type
   | F_APPLY of tfHead * lf_expr list
   | F_Singleton of lf_expr * lf_type
-  | F_hole
 
 let tfhead_to_string = function
   | F_uexp -> "uexp"
@@ -491,11 +490,11 @@ type oSubs = (var' * ts_expr) list
 
 (*** Contexts. *)
 
-type environment = (lf_var * lf_type) list
+type context = (lf_var * lf_type) list
 
-let global_environment : environment ref = ref []
+let global_context : context ref = ref []
 
-let def_bind name aspect (pos:position) o t (env:environment) = (LF_VarDefined(name,aspect), (pos,F_Singleton(o,t))) :: env
+let def_bind name aspect (pos:position) o t (env:context) = (LF_VarDefined(name,aspect), (pos,F_Singleton(o,t))) :: env
 
 let newfresh = 
   let genctr = ref 0 in 

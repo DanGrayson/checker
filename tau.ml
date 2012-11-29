@@ -1,13 +1,13 @@
 open Typesystem
 
-let rec get_ts_type (v:var') (env:environment) : ts_expr = (
+let rec get_ts_type (v:var') (env:context) : ts_expr = (
   match env with
   | (_, (pos, F_APPLY(F_hastype,[ATOMIC(_,Variable v'); ATOMIC t]))) :: env -> if v = v' then t else get_ts_type v env
   | _ :: env -> get_ts_type v env
   | [] -> raise Not_found
  )
 
-let rec tau (pos:Error.position) (env:environment) (pos,e) : atomic_term = match e with
+let rec tau (pos:Error.position) (env:context) (pos,e) : atomic_term = match e with
   | EmptyHole _ -> raise (Error.TypingError(pos, "empty hole, type undetermined"))
   | Variable v -> (
       try get_ts_type v env

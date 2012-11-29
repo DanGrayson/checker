@@ -27,8 +27,7 @@ and subst_type (subs : (var' * atomic_term) list) (pos,t) =
        let subs' = (v,v') :: subs in 
        F_Pi(w, subst_type subs a, subst_type subs' b)      
    | F_APPLY(label,args) -> F_APPLY(label, subst_list subs args)
-   | F_Singleton(e,t) -> F_Singleton( subst' subs e, subst_type subs t )
-   | F_hole -> F_hole)
+   | F_Singleton(e,t) -> F_Singleton( subst' subs e, subst_type subs t ))
 
 (* 
   Local Variables:

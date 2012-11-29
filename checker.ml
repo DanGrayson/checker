@@ -106,11 +106,11 @@ let lexpos lexbuf =
   p
 
 let initialize_environment () =
-  global_environment := [];
+  global_context := [];
   rules := []
 
 let add_tVars tvars = 
-  global_environment := 
+  global_context := 
     List.rev_append 
       (List.flatten
 	 (List.map
@@ -123,24 +123,24 @@ let add_tVars tvars =
 	    tvars
 	 )
       )
-      !global_environment
+      !global_context
 
-let fix t = Fillin.fillin !global_environment t
+let fix t = Fillin.fillin !global_context t
 
 let printCommand x =
   Printf.printf "Print: %s\n" (Printer.lf_canonical_to_string x);
   flush stdout
 
-let axiomCommand name t = global_environment := ts_bind' (Var name, t) !global_environment
+let axiomCommand name t = global_context := ts_bind' (Var name, t) !global_context
 
 let ruleCommand num name x =
   rules := (Rule (num,name), x) :: !rules;
-  Printf.printf "Rule %d %s: %s\n" num name (Printer.lf_type_to_string true x);
+  Printf.printf "Rule %d %s: %s\n" num name (Printer.lf_type_to_string x);
   flush stdout;
-  protect1 ( fun () -> Lfcheck.type_validity !global_environment x )
+  protect1 ( fun () -> Lfcheck.type_validity !global_context x )
 
 let lf_type_printCommand x =
-  Printf.printf "F_Print : %s\n" (Printer.lf_type_to_string true x);
+  Printf.printf "F_Print : %s\n" (Printer.lf_type_to_string x);
   flush stdout
 
 let checkCommand x =
@@ -148,17 +148,17 @@ let checkCommand x =
   Printf.printf "   LF : %s\n" (Printer.lf_atomic_to_string x);
   Printf.printf "   filling in ...\n";
   flush stdout;
-  let x = protect1 ( fun () -> Fillin.fillin !global_environment x ) in
+  let x = protect1 ( fun () -> Fillin.fillin !global_context x ) in
   Printf.printf "   LF : %s\n" (Printer.lf_atomic_to_string x);
   flush stdout;
-  let t = protect1 ( fun () -> Lfcheck.type_synthesis !global_environment x ) in
-  Printf.printf " --- LF type synthesis yielded %s\n" (Printer.lf_type_to_string true t);
+  let t = protect1 ( fun () -> Lfcheck.type_synthesis !global_context x ) in
+  Printf.printf " --- LF type synthesis yielded %s\n" (Printer.lf_type_to_string t);
   let (pos,x0) = x in 
   match x0 with
   | APPLY(O _,_) -> 
       Printf.printf "     : o-expression, will check its type\n";
       flush stdout;
-      protect1 (fun () -> Check.ocheck !global_environment x)
+      protect1 (fun () -> Check.ocheck !global_context x)
   | APPLY(R _,_) -> 
       Printf.printf "     : judgment\n"
   | APPLY(T _,_) -> 
@@ -183,15 +183,15 @@ let alphaCommand (x,y) =
 
 let checkUniversesCommand pos =
   try
-    Universe.consistency !global_environment
+    Universe.consistency !global_context
   with Universe.Inconsistency (p,q) -> print_inconsistency p q
 
 let typeCommand x = (
   Printf.printf "Tau: %s ... \n" (Printer.ts_expr_to_string x);
-  let t = protect1 ( fun () -> Lfcheck.type_synthesis !global_environment x ) in
-  Printf.printf " --- LF type synthesis yielded %s\n" (Printer.lf_type_to_string true t);
+  let t = protect1 ( fun () -> Lfcheck.type_synthesis !global_context x ) in
+  Printf.printf " --- LF type synthesis yielded %s\n" (Printer.lf_type_to_string t);
   try 
-    let tx = Tau.tau !global_environment x in
+    let tx = Tau.tau !global_context x in
     Printf.printf "Tau: %s : %s\n" (Printer.ts_expr_to_string x) (Printer.ts_expr_to_string tx);
     flush stdout;
   with 
@@ -202,14 +202,14 @@ let typeCommand x = (
       Tokens.bump_error_count())
     
 let show_command () = 
-  Printer.print_env !global_environment;
+  Printer.print_env !global_context;
   List.iter
     (fun (Rule (num,name), x) ->
-      Printf.printf "Rule %d %s: %s\n" num name (Printer.lf_type_to_string true x))
+      Printf.printf "Rule %d %s: %s\n" num name (Printer.lf_type_to_string x))
     (List.rev !rules);
   flush stdout
 
-let addDefinition name aspect pos o t = global_environment := def_bind name aspect pos o t !global_environment
+let addDefinition name aspect pos o t = global_context := def_bind name aspect pos o t !global_context
 
 let process_command lexbuf = (
   let c = protect (Grammar.command (Tokens.expr_tokens)) lexbuf lexpos in
@@ -270,13 +270,13 @@ let toplevel() =
   (try printCommand (expr_from_string "lambda f:T->U, lambda o:T, f o") with Error_Handled -> ());
   List.iter 
     (
-     fun x -> Printf.printf "F_Print: %s : %s\n" (label_to_string x) (Printer.lf_type_to_string (label_to_lf_type x))
+     fun x -> Printf.printf "F_Print: %s : %s\n" (label_to_string x) (Printer.lf_type_to_string' (label_to_lf_type x))
     )
     labels;
   List.iter 
     (
      fun (Rule(num,name) as head,_) -> 
-       Printf.printf "Rule %d %s : %s\n" num name (Printer.lf_type_to_string (label_to_lf_type (R head)))
+       Printf.printf "Rule %d %s : %s\n" num name (Printer.lf_type_to_string' (label_to_lf_type (R head)))
     )
     (List.rev !rules);
     *)

@@ -5,4 +5,4 @@
    *)
 
 
-val tau : Typesystem.environment -> Typesystem.ts_expr -> Typesystem.ts_expr
+val tau : Typesystem.context -> Typesystem.ts_expr -> Typesystem.ts_expr

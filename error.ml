@@ -42,3 +42,7 @@ let error_format_pos = function
   | Nowhere -> "nowhere:0:0"
 
 let nopos x = error_format_pos Nowhere
+
+let seepos pos =
+  Printf.fprintf stderr "%s: ... debugging ...\n" (error_format_pos pos);
+  flush stderr
