@@ -206,7 +206,7 @@ let show_command () =
   List.iter
     (fun (Rule (num,name), x) ->
       Printf.printf "Rule %d %s: %s\n" num name (Printer.lf_type_to_string true x))
-    !rules;
+    (List.rev !rules);
   flush stdout
 
 let addDefinition name aspect pos o t = global_environment := def_bind name aspect pos o t !global_environment

@@ -126,7 +126,7 @@ Rule 31 El_forall_reduction :
 
      Pi M_1:uexp, Pi M_2:uexp, Pi o_1:oexp, Pi o_2:oexp->oexp,
      ( Pi x:oexp, [ x : ([El] o_1) ] -> [ (o_2 x) : ([U] M_2) ] ) ->
-     [ ([El] ( [forall] M_1 M_2 o_1 o_2 )) : ([U] ( [max] M_1 M_2 )) ].
+     [ ( [forall] M_1 M_2 o_1 o_2 ) : ([U] ( [max] M_1 M_2 )) ].
 
 Rule 32 type_El_forall :
 
