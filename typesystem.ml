@@ -432,7 +432,7 @@ let ohead_to_lftype = function
   | O_j -> uexp @> uexp @> oexp
   | O_ev -> oexp @> oexp @> texp1 @> oexp
   | O_lambda -> texp @> oexp1 @> oexp
-  | O_forall -> uexp @> uexp @> texp @> texp1 @> texp
+  | O_forall -> uexp @> uexp @> oexp @> oexp1 @> oexp
   | O_pair -> oexp @> oexp @> texp1 @> oexp
   | O_pr1 -> texp @> texp1 @> oexp @> oexp
   | O_pr2 -> texp @> texp1 @> oexp @> oexp

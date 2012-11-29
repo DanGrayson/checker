@@ -141,3 +141,11 @@ let ulevel_context_to_string (UContext(uexp_parms,ueqns)) =
 				 ueqns));
 	    ]
       else [] ]
+
+(** Printing of an environment. *)
+let print_env env = 
+  Printf.printf "Environment :\n";
+  List.iter 
+    (fun (v,t) -> Printf.printf "   %s : %s\n" (lf_var_tostring v) (lftype_to_string true t)) 
+    (List.rev env);
+

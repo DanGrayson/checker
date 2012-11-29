@@ -34,14 +34,14 @@ let rec type_validity (env:environment_type) (pos:Error.position) (t:lftype) : b
       false			(* unfilled hole; usually just unimplemented code *)
 
 and type_check (env:environment_type) (pos:Error.position) (e:expr) (t:lftype) : bool = 
-  Printf.printf "  type_check  e = %s   t = %s\n" (Printer.lfexpr_to_string e) (Printer.lftype_to_string true t);
   match e, t with
   | LAMBDA(v,e), F_Pi(w,a,b) ->
       type_check ((LF_Var (strip_pos_var v),a) :: env) pos e (Substitute.subst_type [(w,nowhere (Variable (strip_pos_var v)))] b)
   | _ ->
       match type_synthesis env pos e with
 	Some s -> subtype env pos s t
-      | None -> false
+      | None -> 
+	  false
 
 and subtype (env:environment_type) (pos:Error.position) (t:lftype) (u:lftype) : bool =
   (* driven by syntax *)
@@ -66,7 +66,6 @@ and subtype (env:environment_type) (pos:Error.position) (t:lftype) (u:lftype) : 
 	&&
       raise Error.NotImplemented
   | _ -> 
-      Printf.fprintf stderr "--- not a subtype : t = %s   u = %s\n" (Printer.lftype_to_string true t) (Printer.lftype_to_string true u);
       false
 
 and type_equivalence (env:environment_type) (pos:Error.position) (t:lftype) (u:lftype) : bool =
@@ -92,32 +91,31 @@ and path_equivalence (env:environment_type) (pos:Error.position) (x:expr) (y:exp
   raise Error.NotImplemented
 
 and type_synthesis (env:environment_type) (pos:Error.position) (e:expr) : lftype option =
-  Printf.printf " type_synthesis   e = %s\n" (Printer.lfexpr_to_string e);
   match e with
   | POS(pos,e') -> (
       match e' with
       | Variable v -> (
+	  let t = List.assoc (LF_Var v) env in
 	  try
 	    (* Some (F_Singleton(e, (List.assoc (LF_Var v) env))) ?? *)
-	    Some (List.assoc (LF_Var v) env)
-	  with Not_found -> None
+	    Some t
+	  with Not_found -> 
+	    None
 	 )
       | EmptyHole _ -> None
       | APPLY(label,args) ->
 	  let a = label_to_lftype label in
 	  let rec repeat env pos a args = (
 	    match a, args with
-	    | F_Pi _, [] -> None		(* not enough arguments *)
+	    | F_Pi _, [] -> 
+		None		(* not enough arguments *)
 	    | a, [] -> Some a			(* that's the answer *)
 	    | F_Pi(x,a',a''), m' :: args' ->
-		Printf.printf " m' = %s   a' = %s\n" (Printer.lfexpr_to_string m') (Printer.lftype_to_string true a');
 		if type_check env pos m' a'
 		then 
 		  repeat ((LF_Var x,a') :: env) pos (Substitute.subst_type [(x,m')] a'') args'
 		else None
 	    | _ -> 
-		Printf.printf " a = %s" (Printer.lftype_to_string true a);
-		List.iter (fun arg -> Printf.printf "    arg = %s\n" (Printer.lfexpr_to_string arg)) args;
 		raise Error.NotImplemented)
 	  in repeat env pos a args
 	 )

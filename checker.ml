@@ -142,10 +142,9 @@ let checkCommand x =
   Printf.printf "   filling in ...\n";
   flush stdout;
   let t = Lfcheck.type_synthesis !environment (get_pos x) x in
-  let t = match t with 
-  | None -> raise (Error.TypingError (get_pos x,"LF type synthesis failed"))
-  | Some t -> t in
-  ignore t;
+  match t with 
+  | None -> Printf.printf "%s: LF type synthesis failed\n" (Error.error_format_pos (get_pos x));
+  | Some t -> Printf.printf " --- LF type synthesis yielded %s\n" (Printer.lftype_to_string true t);
   let x = protect1 ( fun () -> Fillin.fillin !environment x ) in
   match x with
   | POS(_,APPLY(O _,_)) -> 
@@ -194,14 +193,7 @@ let typeCommand x = (
       Tokens.bump_error_count())
     
 let show_command () = 
-  Printf.printf "Environment :\n";
-  (
-   List.iter 
-     (fun (v,t) -> Printf.printf "     %s : %s\n" 
-	 (lf_var_tostring v)
-	 (Printer.lftype_to_string true t)) 
-     (List.rev !environment);
-  );
+  Printer.print_env !environment;
   List.iter
     (fun (Rule (num,name), x) ->
       Printf.printf "Rule %d %s: %s\n" num name (Printer.lftype_to_string true x))
