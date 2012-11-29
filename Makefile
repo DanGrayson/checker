@@ -17,15 +17,11 @@ SRCFILES =					\
 	alpha.ml				\
 	reduction.ml				\
 	substitute.ml				\
-	substitute.mli				\
-	equality.ml				\
-	equality.mli				\
+	equality.ml equality.mli				\
 	lfcheck.ml				\
-	check.mli				\
-	check.ml				\
+	check.mli check.ml				\
 	fillin.ml				\
-	tau.ml					\
-	tau.mli					\
+	tau.ml tau.mli					\
 	printer.ml				\
 	grammar0.ml				\
 	grammar.mly				\

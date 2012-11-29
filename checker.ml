@@ -141,6 +141,11 @@ let checkCommand x =
   Printf.printf "   LF : %s\n" (Printer.lfexpr_to_string x);
   Printf.printf "   filling in ...\n";
   flush stdout;
+  let t = Lfcheck.type_synthesis !environment (get_pos x) x in
+  let t = match t with 
+  | None -> raise (Error.TypingError (get_pos x,"LF type synthesis failed"))
+  | Some t -> t in
+  ignore t;
   let x = protect1 ( fun () -> Fillin.fillin !environment x ) in
   match x with
   | POS(_,APPLY(O _,_)) -> 

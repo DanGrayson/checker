@@ -2,6 +2,8 @@
 
 open Typesystem
 
+(* this doesn't yet handle replacing variables in the head position *)
+
 let rec subst_list subs es = List.map (subst subs) es
 and subst subs = function
   | LAMBDA((pos,v), body) -> 
