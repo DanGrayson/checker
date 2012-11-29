@@ -504,8 +504,8 @@ let tfhead_to_kind = function
   | F_ulevel_equality -> uexp @@> uexp @@> K_type
   | F_type_similarity -> texp @@> texp @@> K_type
   | F_type_equality -> texp @@> texp @@> K_type
-  | F_object_similarity -> oexp @@> texp @@> texp @@> K_type
-  | F_object_equality -> oexp @@> texp @@> texp @@> K_type
+  | F_object_similarity -> oexp @@> oexp @@> texp @@> K_type
+  | F_object_equality -> oexp @@> oexp @@> texp @@> K_type
 
 type oSubs = (var' * expr) list
 

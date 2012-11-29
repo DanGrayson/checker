@@ -34,6 +34,11 @@ let protect1 f =
       flush stderr;
       Tokens.bump_error_count();
       raise Error_Handled
+  | Lfcheck.TypingError (p,s) ->
+      Printf.fprintf stderr "%s: LF type checking failure: %s\n" (Error.error_format_pos p) s;
+      flush stderr;
+      Tokens.bump_error_count();
+      raise Error_Handled
   | Universe.Inconsistency (lhs,rhs) ->
       print_inconsistency lhs rhs;
       raise Error_Handled
@@ -130,7 +135,8 @@ let axiomCommand name t = environment := ts_bind' (Var name, t) !environment
 let ruleCommand num name x =
   rules := (Rule (num,name), x) :: !rules;
   Printf.printf "Rule %d %s: %s\n" num name (Printer.lftype_to_string true x);
-  flush stdout
+  flush stdout;
+  protect1 ( fun () -> Lfcheck.type_validity !environment Error.Nowhere x )
 
 let lf_type_printCommand x =
   Printf.printf "F_Print : %s\n" (Printer.lftype_to_string true x);
@@ -141,11 +147,9 @@ let checkCommand x =
   Printf.printf "   LF : %s\n" (Printer.lfexpr_to_string x);
   Printf.printf "   filling in ...\n";
   flush stdout;
-  let t = Lfcheck.type_synthesis !environment (get_pos x) x in
-  match t with 
-  | None -> Printf.printf "%s: LF type synthesis failed\n" (Error.error_format_pos (get_pos x));
-  | Some t -> Printf.printf " --- LF type synthesis yielded %s\n" (Printer.lftype_to_string true t);
   let x = protect1 ( fun () -> Fillin.fillin !environment x ) in
+  let t = protect1 ( fun () -> Lfcheck.type_synthesis !environment (get_pos x) x ) in
+  Printf.printf " --- LF type synthesis yielded %s\n" (Printer.lftype_to_string true t);
   match x with
   | POS(_,APPLY(O _,_)) -> 
       Printf.printf "     : o-expression, will check its type\n";
