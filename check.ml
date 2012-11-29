@@ -2,141 +2,138 @@ open Typesystem
 open Tau
 open Equality
 
-let rec ucheck pos env = function
-    | ATOMIC(pos,e) -> (
-	match e with
-	| EmptyHole _ -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a u-expression"))
-	| Variable v -> (
-	    let t = 
-	      try List.assoc (LF_Var v) env
-	      with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound u-variable: "^(vartostring' v)))
-	    in
-	    if t != uexp then raise (Error.TypeCheckingFailure (pos, "expected a u-variable: "^(vartostring' v))))
-	| APPLY(U U_next, [u]) -> ucheck pos env u
-	| APPLY(U U_max, [u;v]) -> ucheck pos env u;ucheck pos env v
-	| _ -> raise Error.Internal)
-    | _ -> raise Error.Internal
+let rec ucheck pos env (pos,e) = match e with 
+  | EmptyHole _ -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a u-expression"))
+  | Variable v -> (
+      let t = 
+	try List.assoc (LF_Var v) env
+	with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound u-variable: "^(vartostring' v)))
+      in
+      if t != uexp then raise (Error.TypeCheckingFailure (pos, "expected a u-variable: "^(vartostring' v))))
+  | APPLY(U U_next, [ATOMIC u]) -> ucheck pos env u
+  | APPLY(U U_max, [ATOMIC u;ATOMIC v]) -> ucheck pos env u;ucheck pos env v
+  | _ -> raise Error.Internal
 
-let rec tcheck pos env = function
-    | LAMBDA _ -> raise Error.Internal
-    | ATOMIC(pos,e) as oe -> match e with 
-      | EmptyHole _ -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a t-expression"))
-      | Variable v ->(
-	  let t =
-	    try List.assoc (LF_Var v) env
-	    with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound t-variable: "^(vartostring' v)))
-	  in if t != texp then raise (Error.TypeCheckingFailure (pos, "expected a t-variable: "^(vartostring' v))))
-      | APPLY(h,args) -> match h with
-	| L _ -> raise (Unimplemented_expr oe)
-	| R _ -> raise Error.NotImplemented
-	| T th -> (
-	    match th with 
-	    | T_El -> ocheckn 1 pos env args
-	    | T_U -> ucheckn 1 pos env args
-	    | T_Sigma | T_Pi -> (
-		match args with
-		| [t1; LAMBDA( x, t2 )] -> tcheck pos env t1; tcheck_binder pos env x t1 t2
-		| _ -> raise Error.Internal)
-	    | T_Pt -> ()
-	    | T_Coprod -> (
-		match args with
-		| [t1; t2] -> tcheck pos env t1; tcheck pos env t2
-		| _ -> raise Error.Internal)
-	    | T_Coprod2 -> (
-		match args with 
-		| [t;t'; LAMBDA( x,u);LAMBDA( x', u');o] -> raise Error.NotImplemented
-		| _ -> raise Error.Internal)
-	    | T_Empty -> ()
-	    | T_IC -> raise Error.NotImplemented
-	    | T_Id -> (
-		match args with
-		| [t; x; y] -> (
-		    tcheck pos env t; ocheck pos env x; ocheck pos env y; 
-		    overify pos env x t; overify pos env y t)
-		| _ -> raise Error.Internal)
-	   )
-	| U _ -> raise (Error.TypeCheckingFailure(pos, "expected a t-expression but found a u-expression"))
-	| O _ -> raise (Error.TypeCheckingFailure(pos, "expected a t-expression but found an o-expression"))
-and ocheck pos env = function
-  | LAMBDA _ -> raise Error.Internal	(* should have been handled higher up *)
-  | ATOMIC(pos,e) as oe -> match e with
-    | EmptyHole _ -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a o-expression"))
-    | Variable v -> (
-	let t = (
-	  try List.assoc (LF_Var v) env
-	  with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound o-variable: "^(vartostring' v))))
-	in if t != oexp then raise (Error.TypeCheckingFailure (pos, "expected an o-variable: "^(vartostring' v))))
-    | APPLY(h,args) -> match h with
-      | L _ -> raise (Unimplemented_expr oe)
-      | R _ -> raise Error.NotImplemented
-      | U th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a u-expression"))
-      | T th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a t-expression"))
-      | O oh -> match oh with
-	| O_u -> ucheckn 1 pos env args
-	| O_j -> ucheckn 2 pos env args
-	| O_ev -> (
-	    match args with 
-	    | [f;o] -> raise Error.Internal (* type should have been filled in by now *)
-	    | [f;x;LAMBDA( v,t)] -> (
-		ocheck pos env f; 
-		ocheck pos env x; 
-		match strip_pos(tau env f) with
-		| APPLY(T T_Pi, [s; LAMBDA( w,t')]) ->
-		    if not ( (strip_pos w) = (strip_pos v) ) 
-		    then raise Error.NotImplemented;
-		    overify pos env x s;
-		    let env = ts_bind (v,s) env in 
-		    tverify pos env t t'
-		| _ -> raise (Error.TypeCheckingFailure(get_pos f,"expected a function type")))
+let rec tcheck pos env ((pos,e0) as e) = match e0 with
+  | EmptyHole _ -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a t-expression"))
+  | Variable v ->(
+      let t =
+	try List.assoc (LF_Var v) env
+	with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound t-variable: "^(vartostring' v)))
+      in if t != texp then raise (Error.TypeCheckingFailure (pos, "expected a t-variable: "^(vartostring' v))))
+  | APPLY(h,args) -> match h with
+    | L _ -> raise (Unimplemented_expr (ATOMIC e))
+    | R _ -> raise Error.NotImplemented
+    | T th -> (
+	match th with 
+	| T_El -> (match args with
+	    [ATOMIC u] -> ocheck pos env u
 	    | _ -> raise Error.Internal)
-	| O_lambda -> (
-	    match args with 
-	    | [t;LAMBDA( x,o)] -> tcheck pos env t; ocheck_binder pos env x t o
+	| T_U -> (match args with
+	    [ATOMIC u] -> ucheck pos env u
 	    | _ -> raise Error.Internal)
-	| O_forall -> (
-	    match args with 
-	    | [m;m';o;LAMBDA( v,o')] ->
-		ucheck pos env m; 
-		ucheck pos env m'; 	(* probably have to check something here ... *)
-		ocheck pos env o; 
-		ocheck_binder pos env v (with_pos_of o (APPLY(T T_El, [o]))) o'
+	| T_Sigma | T_Pi -> (
+	    match args with
+	    | [ATOMIC t1; LAMBDA( x, ATOMIC t2 )] -> tcheck pos env t1; tcheck_binder pos env x t1 t2
 	    | _ -> raise Error.Internal)
-	| O_pair -> raise Error.NotImplemented
-	| O_pr1 -> raise Error.NotImplemented
-	| O_pr2 -> raise Error.NotImplemented
-	| O_total -> raise Error.NotImplemented
-	| O_pt -> raise Error.NotImplemented
-	| O_pt_r -> raise Error.NotImplemented
-	| O_tt -> raise Error.NotImplemented
-	| O_coprod -> raise Error.NotImplemented
-	| O_ii1 -> raise Error.NotImplemented
-	| O_ii2 -> raise Error.NotImplemented
-	| O_sum -> raise Error.NotImplemented
-	| O_empty -> raise Error.NotImplemented
-	| O_empty_r -> raise Error.NotImplemented
-	| O_c -> raise Error.NotImplemented
-	| O_ic_r -> raise Error.NotImplemented
-	| O_ic -> raise Error.NotImplemented
-	| O_paths -> raise Error.NotImplemented
-	| O_refl -> raise Error.NotImplemented
-	| O_J -> raise Error.NotImplemented
-	| O_rr0 -> raise Error.NotImplemented
-	| O_rr1 -> raise Error.NotImplemented
+	| T_Pt -> ()
+	| T_Coprod -> (
+	    match args with
+	    | [ATOMIC t1; ATOMIC t2] -> tcheck pos env t1; tcheck pos env t2
+	    | _ -> raise Error.Internal)
+	| T_Coprod2 -> (
+	    match args with 
+	    | [ATOMIC t;ATOMIC t'; LAMBDA( x,ATOMIC u);LAMBDA( x', ATOMIC u');ATOMIC o] -> raise Error.NotImplemented
+	    | _ -> raise Error.Internal)
+	| T_Empty -> ()
+	| T_IC -> raise Error.NotImplemented
+	| T_Id -> (
+	    match args with
+	    | [ATOMIC t; ATOMIC x; ATOMIC y] -> (
+		tcheck pos env t; ocheck pos env x; ocheck pos env y; 
+		overify pos env x t; overify pos env y t)
+	    | _ -> raise Error.Internal)
+       )
+    | U _ -> raise (Error.TypeCheckingFailure(pos, "expected a t-expression but found a u-expression"))
+    | O _ -> raise (Error.TypeCheckingFailure(pos, "expected a t-expression but found an o-expression"))
+
+and ocheck pos env ((pos,e0) as e) = 
+  match e0 with 
+  | EmptyHole _ -> raise (Error.TypeCheckingFailure (pos, "encountered empty hole, but expected a o-expression"))
+  | Variable v -> (
+      let t = (
+	try List.assoc (LF_Var v) env
+	with Not_found -> raise (Error.TypeCheckingFailure (pos, "encountered unbound o-variable: "^(vartostring' v))))
+      in if t != oexp then raise (Error.TypeCheckingFailure (pos, "expected an o-variable: "^(vartostring' v))))
+  | APPLY(h,args) -> match h with
+    | L _ -> raise (Unimplemented_expr (ATOMIC e))
+    | R _ -> raise Error.NotImplemented
+    | U th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a u-expression"))
+    | T th -> raise (Error.TypeCheckingFailure(pos, "expected an o-expression but found a t-expression"))
+    | O oh -> match oh with
+      | O_u -> (match args with
+	    [ATOMIC u] -> ucheck pos env u
+	    | _ -> raise Error.Internal)
+      | O_j -> (match args with
+	    [ATOMIC u;ATOMIC v] -> ucheck pos env u;ucheck pos env v
+	    | _ -> raise Error.Internal)
+      | O_ev -> (
+	  match args with 
+	  | [ATOMIC f;ATOMIC o] -> raise Error.Internal (* type should have been filled in by now *)
+	  | [ATOMIC f;ATOMIC x;LAMBDA( v,ATOMIC t)] -> (
+	      ocheck pos env f; 
+	      ocheck pos env x; 
+	      match strip_pos(tau env f) with
+	      | APPLY(T T_Pi, [ATOMIC s; LAMBDA( w,ATOMIC t')]) ->
+		  if not ( (strip_pos w) = (strip_pos v) ) 
+		  then raise Error.NotImplemented;
+		  overify pos env x s;
+		  let env = ts_bind (v, s) env in 
+		  tverify pos env t t'
+	      | _ -> raise (Error.TypeCheckingFailure(get_pos f,"expected a function type")))
+	  | _ -> raise Error.Internal)
+      | O_lambda -> (
+	  match args with 
+	  | [ATOMIC t;LAMBDA(x,ATOMIC o)] -> tcheck pos env t; ocheck_binder pos env x t o
+	  | _ -> raise Error.Internal)
+      | O_forall -> (
+	  match args with 
+	  | [ATOMIC m;ATOMIC m';ATOMIC o;LAMBDA( v,ATOMIC o')] ->
+	      ucheck pos env m; 
+	      ucheck pos env m'; 	(* probably have to check something here ... *)
+	      ocheck pos env o; 
+	      ocheck_binder pos env v (with_pos_of o (APPLY(T T_El, [ATOMIC o]))) o'
+	  | _ -> raise Error.Internal)
+      | O_pair -> raise Error.NotImplemented
+      | O_pr1 -> raise Error.NotImplemented
+      | O_pr2 -> raise Error.NotImplemented
+      | O_total -> raise Error.NotImplemented
+      | O_pt -> raise Error.NotImplemented
+      | O_pt_r -> raise Error.NotImplemented
+      | O_tt -> raise Error.NotImplemented
+      | O_coprod -> raise Error.NotImplemented
+      | O_ii1 -> raise Error.NotImplemented
+      | O_ii2 -> raise Error.NotImplemented
+      | O_sum -> raise Error.NotImplemented
+      | O_empty -> raise Error.NotImplemented
+      | O_empty_r -> raise Error.NotImplemented
+      | O_c -> raise Error.NotImplemented
+      | O_ic_r -> raise Error.NotImplemented
+      | O_ic -> raise Error.NotImplemented
+      | O_paths -> raise Error.NotImplemented
+      | O_refl -> raise Error.NotImplemented
+      | O_J -> raise Error.NotImplemented
+      | O_rr0 -> raise Error.NotImplemented
+      | O_rr1 -> raise Error.NotImplemented
 and tcheck_binder pos env x t1 t2 =
-  let env = ts_bind (x,t1) env in
+  let env = ts_bind (x, t1) env in
   tcheck pos env t2
 and ocheck_binder pos env x t o =
-  let env = ts_bind (x,t) env in
+  let env = ts_bind (x, t) env in
   ocheck pos env o
-and ucheckn i pos env a =
-  if i != List.length a then raise Error.Internal;
-  List.iter (ucheck pos env) a
 and tcheckn i pos env a =
   if i != List.length a then raise Error.Internal;
   List.iter (tcheck pos env) a
-and ocheckn i pos env a =
-  if i != List.length a then raise Error.Internal;
-  List.iter (ocheck pos env) a
 and ucheckl pos env a = List.iter (ucheck pos env) a
 and tcheckl pos env a = List.iter (tcheck pos env) a
 and ocheckl pos env a = List.iter (ocheck pos env) a

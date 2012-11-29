@@ -33,8 +33,9 @@ let fixParmList (p:parm list) : Printer.uContext * (var' list) * ((var' * ts_exp
   in fix [] [] [] p
 
 let tDefinition (name:string) ((ulevel_context,tc,ts_context):(Printer.uContext * (var' list) * ((var' * ts_expr) list))) (t:ts_expr)
-    : (string * int * lf_expr * lf_type) list 
+    : (string * int * Error.position * lf_expr * lf_type) list 
     = 
+  let (pos,t0) = t in 
   let Printer.UContext (uvars,ueqns) = ulevel_context in
   let rec wrap (t:lf_expr) = function
     | [] -> t 
@@ -60,18 +61,18 @@ let tDefinition (name:string) ((ulevel_context,tc,ts_context):(Printer.uContext 
   in let wk = wrapk uexp wk (List.rev_append uvars [])
   in
   [ 
-    ( name, 0, wt, wk );
-    ( name, 1, ATOMIC(new_hole()), istype (ATOMIC t))
+    ( name, 0, pos, wt, wk );
+    ( name, 1, pos, ATOMIC(new_hole()), istype (ATOMIC t))
   ]
 
 let oDefinition (name:string) ((ulevel_context,tc,ts_context):(Printer.uContext * (var' list) * ((var' * ts_expr) list))) (o:ts_expr) (t:ts_expr)
-    : (string * int * lf_expr * lf_type) list 
+    : (string * int * Error.position * lf_expr * lf_type) list 
     = 
   (* still have to wrap the lambdas around it : *)
   [
-   ( name, 0, ATOMIC o, oexp);
-   ( name, 1, ATOMIC t, texp);
-   ( name, 2, ATOMIC (new_hole()), hastype (ATOMIC o) (ATOMIC t))
+   ( name, 0, get_pos o, ATOMIC o, oexp);
+   ( name, 1, get_pos t, ATOMIC t, texp);
+   ( name, 2, get_pos o, ATOMIC (new_hole()), hastype (ATOMIC o) (ATOMIC t))
  ]
 
 let teqDefinition _ _ _ _ = raise (Error.Unimplemented "teqDefinition")

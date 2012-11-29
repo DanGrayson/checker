@@ -12,7 +12,7 @@ exception TypingError of position * string
 
 let err pos msg = raise (TypingError (pos, "did not expect a lambda expression here"))
 
-let rec type_check (pos:position) (env:environment_type) (e:lf_expr) (t:lf_type) : unit = 
+let rec type_check (pos:position) (env:environment) (e:lf_expr) (t:lf_type) : unit = 
   let (_,t0) = t in 
   match e, t0 with
   | LAMBDA(v,e), F_Pi(w,a,b) ->
@@ -20,7 +20,7 @@ let rec type_check (pos:position) (env:environment_type) (e:lf_expr) (t:lf_type)
   | LAMBDA _, _ -> err pos "did not expect a lambda expression here"
   | ATOMIC e, _ -> let s = type_synthesis env e in subtype env s t
 
-and type_validity (env:environment_type) (t:lf_type) : unit =
+and type_validity (env:environment) (t:lf_type) : unit =
   (* driven by syntax *)
   let (pos,t) = t in
   match t with 
@@ -45,7 +45,7 @@ and type_validity (env:environment_type) (t:lf_type) : unit =
   | F_hole -> 
       raise (TypingError (pos, "empty LF type hole"))
 
-and type_synthesis (env:environment_type) (e:ts_expr) : lf_type =
+and type_synthesis (env:environment) (e:ts_expr) : lf_type =
   let (pos,e) = e in
   match e with
   | Variable v -> (
@@ -67,7 +67,7 @@ and type_synthesis (env:environment_type) (e:ts_expr) : lf_type =
 	    raise NotImplemented)
       in repeat env a args
 
-and subtype (env:environment_type) (t:lf_type) (u:lf_type) : unit =
+and subtype (env:environment) (t:lf_type) (u:lf_type) : unit =
   (* driven by syntax *)
   (* see figure 12, page 715 *)
   let (tpos,t0) = t in 
@@ -91,10 +91,10 @@ and subtype (env:environment_type) (t:lf_type) (u:lf_type) : unit =
       raise NotImplemented
   | _ -> raise (TypingError (tpos, "unequal types"));
 
-and type_equivalence (env:environment_type) (t:lf_type) (u:lf_type) : unit =
+and type_equivalence (env:environment) (t:lf_type) (u:lf_type) : unit =
   raise NotImplemented
 
-and term_equivalence (xpos:position) (ypos:position) (env:environment_type) (x:lf_expr) (y:lf_expr) (t:lf_type) : unit =
+and term_equivalence (xpos:position) (ypos:position) (env:environment) (x:lf_expr) (y:lf_expr) (t:lf_type) : unit =
   if x = y then ()
   else (
     type_check xpos env x t;
@@ -106,7 +106,7 @@ and term_equivalence (xpos:position) (ypos:position) (env:environment_type) (x:l
 	term_equivalence xpos ypos env y z u	(* rule 43, sort of *)
     | _ -> raise NotImplemented)
 
-and path_equivalence (env:environment_type) (x:ts_expr) (y:ts_expr) : lf_type =
+and path_equivalence (env:environment) (x:ts_expr) (y:ts_expr) : lf_type =
   if x = y then type_synthesis env x
   else
   raise NotImplemented

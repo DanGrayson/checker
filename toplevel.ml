@@ -11,7 +11,7 @@ type command' =
   | Alpha of ts_expr * ts_expr
   | Axiom of string * ts_expr
   | Type of ts_expr
-  | Definition of (string * int * lf_expr * lf_type) list
+  | Definition of (string * int * Error.position * lf_expr * lf_type) list
   | CheckUniverses
   | Show
   | End

@@ -4,11 +4,9 @@ type alpha_eq = (Typesystem.var' * Typesystem.var') list
 
 val addalpha : Typesystem.var' -> Typesystem.var' -> alpha_eq -> alpha_eq
 
-val testalpha' : 'a -> 'a -> ('a * 'a) list -> bool
-
 val testalpha :
-  Typesystem.lf_expr ->
-  Typesystem.lf_expr ->
+  Typesystem.var' ->
+  Typesystem.var' ->
   (Typesystem.var' * Typesystem.var') list -> bool
 
 module UEqual :

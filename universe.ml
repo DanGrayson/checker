@@ -44,20 +44,20 @@ let get_uvars =
 
 let get_ueqns =
   let rec get_ueqns accu = function
-  | [] -> List.rev accu
-  | (_, F_APPLY(F_ulevel_equality,[u; u'])) :: rest -> get_ueqns ((u,u') :: accu) rest
+  | (_, (pos,F_APPLY(F_ulevel_equality,[ATOMIC u; ATOMIC u']))) :: rest -> get_ueqns ((u,u') :: accu) rest
   | _ :: rest -> get_ueqns accu rest 
+  | [] -> List.rev accu
   in get_ueqns []
 
 let chk_var_ueqns uv eqns = List.iter (chk uv) eqns
 
 let consistency env  = List.iter (chk (get_uvars env)) (get_ueqns env)
 
-let chk_ueqns eqns = chk_var_ueqns (get_uvars !environment) eqns
+let chk_ueqns ueqns = chk_var_ueqns (get_uvars !global_environment) ueqns
 
 let ubind uvars ueqns =
-  environment := List.rev_append (List.map (fun u -> (LF_Var (Var u), uexp)) uvars) !environment;
-  environment := List.rev_append (List.map (fun (u,v) -> (LF_Var (newfresh (Var "ueq")), ulevel_equality u v)) ueqns) !environment;
+  global_environment := List.rev_append (List.map (fun u -> (LF_Var (Var u), uexp)) uvars) !global_environment;
+  global_environment := List.rev_append (List.map (fun (u,v) -> (LF_Var (newfresh (Var "ueq")), ulevel_equality (ATOMIC u) (ATOMIC v))) ueqns) !global_environment;
   chk_ueqns ueqns
 
 module Equal = struct
@@ -86,5 +86,5 @@ module EquivA = struct
 end
 
 module type Equivalence = sig
-  val equiv : Printer.uContext -> ts_expr -> ts_expr -> bool
+  val equiv : Printer.uContext -> lf_expr -> lf_expr -> bool
 end

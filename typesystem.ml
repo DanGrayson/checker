@@ -491,11 +491,11 @@ type oSubs = (var' * ts_expr) list
 
 (*** Contexts. *)
 
-type environment_type = (lf_var * lf_type) list
+type environment = (lf_var * lf_type) list
 
-let environment : environment_type ref = ref []
+let global_environment : environment ref = ref []
 
-let def_bind name aspect o t env = (LF_VarDefined(name,aspect), F_Singleton(o,t)) :: env
+let def_bind name aspect (pos:position) o t (env:environment) = (LF_VarDefined(name,aspect), (pos,F_Singleton(o,t))) :: env
 
 let newfresh = 
   let genctr = ref 0 in 
@@ -514,7 +514,7 @@ let ts_bind' (v,t) env = match v with
       (LF_Var v,oexp) :: 
       env
 
-let ts_bind (v,t) env = ts_bind' (strip_pos v, t) env
+let ts_bind (v,(t:ts_expr)) env = ts_bind' (strip_pos v, t) env
 
 let new_hole' = 
   let counter = ref 0 in

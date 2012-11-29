@@ -4,13 +4,14 @@ type alpha_eq = (var' * var') list
 
 let addalpha x x' (alpha:alpha_eq) = if x=x' then alpha else (x, x') :: alpha
 
-let testalpha' x x' =
-  let rec test = ( 
-    function
-	[] -> x=x'
-      | (y,y') :: alpha -> if x=y then x'=y' else if x'=y' then false else test alpha)
-    in test
-let testalpha  x x' = let x = strip_pos x and x' = strip_pos x' in testalpha' x x'
+type relation = (var' * var') list
+
+let testalpha (x:var') (x':var') (alpha:relation) =
+  let rec test (alpha:relation) =
+    match alpha with
+    | [] -> x=x'
+    | (v,v') :: alpha -> if x=v then x'=v' else if x'=v' then false else test alpha
+  in test alpha
 
 module Make(Ueq: Universe.Equivalence) = struct
 
@@ -28,7 +29,7 @@ module Make(Ueq: Universe.Equivalence) = struct
 	      match (h,h') with
 	      | U _, U _ -> uequiv ulevel_context x y
 	      | _ -> h = h' && List.length args = List.length args' && List.for_all2 (eq alpha) args args')
-	  | Variable t,Variable t' -> testalpha' t t' alpha
+	  | Variable t,Variable t' -> testalpha t t' alpha
 	  | (a,a') -> a = a')
       | _ -> false
     in eq alpha

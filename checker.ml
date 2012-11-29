@@ -4,6 +4,7 @@ open Typesystem
 open Template				(*otherwise unused*)
 open Lfcheck				(*otherwise unused*)
 open Universe
+open Error
 
 exception Error_Handled
 exception FileFinished
@@ -21,41 +22,41 @@ let leave pos =
   raise StopParsingFile
 
 let print_inconsistency lhs rhs =
-  Printf.fprintf stderr "%s: universe inconsistency:\n" (Error.error_format_pos (get_pos lhs)); 
-  Printf.fprintf stderr "%s:         %s\n" (Error.error_format_pos (get_pos lhs)) (Printer.ts_expr_to_string lhs);
-  Printf.fprintf stderr "%s:      != %s\n" (Error.error_format_pos (get_pos rhs)) (Printer.ts_expr_to_string rhs);
+  Printf.fprintf stderr "%s: universe inconsistency:\n" (error_format_pos (get_pos lhs)); 
+  Printf.fprintf stderr "%s:         %s\n" (error_format_pos (get_pos lhs)) (Printer.ts_expr_to_string lhs);
+  Printf.fprintf stderr "%s:      != %s\n" (error_format_pos (get_pos rhs)) (Printer.ts_expr_to_string rhs);
   flush stderr;
   Tokens.bump_error_count()
 
 let protect1 f =
   try f () with
-  | Error.TypingError (p,s) ->
-      Printf.fprintf stderr "%s: %s\n" (Error.error_format_pos p) s;
+  | TypingError (p,s) ->
+      Printf.fprintf stderr "%s: %s\n" (error_format_pos p) s;
       flush stderr;
       Tokens.bump_error_count();
       raise Error_Handled
   | Lfcheck.TypingError (p,s) ->
-      Printf.fprintf stderr "%s: LF type checking failure: %s\n" (Error.error_format_pos p) s;
+      Printf.fprintf stderr "%s: LF type checking failure: %s\n" (error_format_pos p) s;
       flush stderr;
       Tokens.bump_error_count();
       raise Error_Handled
   | Universe.Inconsistency (lhs,rhs) ->
       print_inconsistency lhs rhs;
       raise Error_Handled
-  | Error.TypingUnimplemented (p,s) -> 
-      Printf.fprintf stderr "%s: type checking unimplemented: %s\n" (Error.error_format_pos p) s;
+  | TypingUnimplemented (p,s) -> 
+      Printf.fprintf stderr "%s: type checking unimplemented: %s\n" (error_format_pos p) s;
       flush stderr;
       Tokens.bump_error_count();
       raise Error_Handled
-  | Error.TypeCheckingFailure (p,s) -> 
-      Printf.fprintf stderr "%s: type checking failure: %s\n" (Error.error_format_pos p) s;
+  | TypeCheckingFailure (p,s) -> 
+      Printf.fprintf stderr "%s: type checking failure: %s\n" (error_format_pos p) s;
       flush stderr;
       Tokens.bump_error_count();
       raise Error_Handled
-  | Error.TypeCheckingFailure3 (p1,s1,p2,s2,p3,s3) -> 
-      Printf.fprintf stderr "%s: type checking failure: %s\n" (Error.error_format_pos p1) s1;
-      Printf.fprintf stderr "%s: ... %s\n" (Error.error_format_pos p2) s2;
-      Printf.fprintf stderr "%s: ... %s\n" (Error.error_format_pos p3) s3;
+  | TypeCheckingFailure3 (p1,s1,p2,s2,p3,s3) -> 
+      Printf.fprintf stderr "%s: type checking failure: %s\n" (error_format_pos p1) s1;
+      Printf.fprintf stderr "%s: ... %s\n" (error_format_pos p2) s2;
+      Printf.fprintf stderr "%s: ... %s\n" (error_format_pos p3) s3;
       flush stderr;
       Tokens.bump_error_count();
       raise Error_Handled
@@ -63,12 +64,12 @@ let protect1 f =
 let protect parser lexbuf posfun =
     try parser lexbuf
     with 
-    | Error.Eof -> leave (posfun lexbuf)
+    | Eof -> leave (posfun lexbuf)
     | Universe.Inconsistency (lhs,rhs) ->
 	print_inconsistency lhs rhs;
 	raise Error_Handled
-    | Error.TypingUnimplemented (p,s) -> 
-	Printf.fprintf stderr "%s: type checking unimplemented: %s\n" (Error.error_format_pos p) s;
+    | TypingUnimplemented (p,s) -> 
+	Printf.fprintf stderr "%s: type checking unimplemented: %s\n" (error_format_pos p) s;
 	flush stderr;
 	Tokens.bump_error_count();
 	raise Error_Handled
@@ -77,17 +78,17 @@ let protect parser lexbuf posfun =
 	flush stderr;
 	Tokens.bump_error_count();
 	raise (Failure s)
-    | Error.TypingError (p,s) ->
-	Printf.fprintf stderr "%s: %s\n" (Error.error_format_pos p) s;
+    | TypingError (p,s) ->
+	Printf.fprintf stderr "%s: %s\n" (error_format_pos p) s;
 	flush stderr;
 	Tokens.bump_error_count();
 	raise Error_Handled
-    | Error.GeneralError s ->
+    | GeneralError s ->
 	Printf.fprintf stderr "%s: %s\n" (posfun lexbuf) s;
 	flush stderr;
 	Tokens.bump_error_count();
 	raise Error_Handled
-    | Error.Unimplemented s ->
+    | Unimplemented s ->
 	Printf.fprintf stderr "%s: feature not yet implemented: %s\n" (posfun lexbuf) s;
 	flush stderr;
 	Tokens.bump_error_count();
@@ -105,38 +106,38 @@ let lexpos lexbuf =
   p
 
 let initialize_environment () =
-  environment := [];
+  global_environment := [];
   rules := []
 
 let add_tVars tvars = 
-  environment := 
+  global_environment := 
     List.rev_append 
       (List.flatten
 	 (List.map
 	    (fun t -> 
 	      [
 	       (LF_Var (Var t), texp);
-	       (LF_Var (newfresh (Var "ist")), istype (nowhere (Variable (Var t))));
+	       (LF_Var (newfresh (Var "ist")), istype (ATOMIC (nowhere (Variable (Var t)))));
 	     ]
 	    )
 	    tvars
 	 )
       )
-      !environment
+      !global_environment
 
-let fix t = Fillin.fillin !environment t
+let fix t = Fillin.fillin !global_environment t
 
 let printCommand x =
-  Printf.printf "Print: %s\n" (Printer.lf_atomic_to_string x);
+  Printf.printf "Print: %s\n" (Printer.lf_canonical_to_string x);
   flush stdout
 
-let axiomCommand name t = environment := ts_bind' (Var name, t) !environment
+let axiomCommand name t = global_environment := ts_bind' (Var name, t) !global_environment
 
 let ruleCommand num name x =
   rules := (Rule (num,name), x) :: !rules;
   Printf.printf "Rule %d %s: %s\n" num name (Printer.lf_type_to_string true x);
   flush stdout;
-  protect1 ( fun () -> Lfcheck.type_validity !environment Error.Nowhere x )
+  protect1 ( fun () -> Lfcheck.type_validity !global_environment x )
 
 let lf_type_printCommand x =
   Printf.printf "F_Print : %s\n" (Printer.lf_type_to_string true x);
@@ -147,69 +148,68 @@ let checkCommand x =
   Printf.printf "   LF : %s\n" (Printer.lf_atomic_to_string x);
   Printf.printf "   filling in ...\n";
   flush stdout;
-  let x = protect1 ( fun () -> Fillin.fillin !environment x ) in
+  let x = protect1 ( fun () -> Fillin.fillin !global_environment x ) in
   Printf.printf "   LF : %s\n" (Printer.lf_atomic_to_string x);
   flush stdout;
-  let t = protect1 ( fun () -> Lfcheck.type_synthesis !environment (get_pos x) x ) in
+  let t = protect1 ( fun () -> Lfcheck.type_synthesis !global_environment x ) in
   Printf.printf " --- LF type synthesis yielded %s\n" (Printer.lf_type_to_string true t);
-  match x with
-  | ATOMIC(_,APPLY(O _,_)) -> 
+  let (pos,x0) = x in 
+  match x0 with
+  | APPLY(O _,_) -> 
       Printf.printf "     : o-expression, will check its type\n";
       flush stdout;
-      protect1 (fun () -> Check.ocheck !environment x)
-  | ATOMIC(_,APPLY(R _,_)) -> 
+      protect1 (fun () -> Check.ocheck !global_environment x)
+  | APPLY(R _,_) -> 
       Printf.printf "     : judgment\n"
-  | ATOMIC(_,APPLY(T _,_)) -> 
+  | APPLY(T _,_) -> 
       Printf.printf "     : t-expression\n"
-  | ATOMIC(_,APPLY(U _,_)) -> 
+  | APPLY(U _,_) -> 
       Printf.printf "     : u-expression\n"
-  | ATOMIC(_,APPLY(L _,_)) -> 
+  | APPLY(L _,_) -> 
       Printf.printf "     : lf-application, with variable as label\n"
-  | ATOMIC(_,Variable _) -> 
+  | Variable _ -> 
       Printf.printf "     : variable\n"
-  | ATOMIC(_,EmptyHole n) -> 
-      Printf.printf "     : empty hole ?%d\n" n
-  | LAMBDA _ ->
-      Printf.printf "     : LF lambda, not a TS expression\n";
+  | EmptyHole n -> 
+      Printf.printf "     : empty hole ?%d\n" n;
   flush stdout
 
 let alphaCommand (x,y) =
-  let x = protect fix x Error.nopos in
-  let y = protect fix y Error.nopos in
-  Printf.printf "Alpha: %s\n" (if (Alpha.UEqual.equiv Grammar0.emptyUContext x y) then "true" else "false");
+  let x = protect fix x nopos in
+  let y = protect fix y nopos in
+  Printf.printf "Alpha: %s\n" (if (Alpha.UEqual.equiv Grammar0.emptyUContext (ATOMIC x) (ATOMIC y)) then "true" else "false");
   Printf.printf "     : %s\n" (Printer.ts_expr_to_string x);
   Printf.printf "     : %s\n" (Printer.ts_expr_to_string y);
   flush stdout
 
 let checkUniversesCommand pos =
   try
-    Universe.consistency !environment
+    Universe.consistency !global_environment
   with Universe.Inconsistency (p,q) -> print_inconsistency p q
 
 let typeCommand x = (
   Printf.printf "Tau: %s ... \n" (Printer.ts_expr_to_string x);
-  let t = protect1 ( fun () -> Lfcheck.type_synthesis !environment (get_pos x) x ) in
+  let t = protect1 ( fun () -> Lfcheck.type_synthesis !global_environment x ) in
   Printf.printf " --- LF type synthesis yielded %s\n" (Printer.lf_type_to_string true t);
   try 
-    let tx = Tau.tau !environment x in
+    let tx = Tau.tau !global_environment x in
     Printf.printf "Tau: %s : %s\n" (Printer.ts_expr_to_string x) (Printer.ts_expr_to_string tx);
     flush stdout;
   with 
-  | Error.GeneralError s -> raise Error.NotImplemented
-  | Error.TypingError (p,s) 
-    -> Printf.fprintf stderr "%s: %s\n" (Error.error_format_pos p) s; 
+  | GeneralError s -> raise NotImplemented
+  | TypingError (p,s) 
+    -> Printf.fprintf stderr "%s: %s\n" (error_format_pos p) s; 
       flush stderr;
       Tokens.bump_error_count())
     
 let show_command () = 
-  Printer.print_env !environment;
+  Printer.print_env !global_environment;
   List.iter
     (fun (Rule (num,name), x) ->
       Printf.printf "Rule %d %s: %s\n" num name (Printer.lf_type_to_string true x))
     !rules;
   flush stdout
 
-let addDefinition name aspect o t = environment := def_bind name aspect o t !environment
+let addDefinition name aspect pos o t = global_environment := def_bind name aspect pos o t !global_environment
 
 let process_command lexbuf = (
   let c = protect (Grammar.command (Tokens.expr_tokens)) lexbuf lexpos in
@@ -224,8 +224,8 @@ let process_command lexbuf = (
     | Toplevel.Check x -> checkCommand x
     | Toplevel.Alpha (x,y) -> alphaCommand (x,y)
     | Toplevel.Type x -> typeCommand x
-    | Toplevel.Definition defs -> List.iter (fun (name, aspect, tm, tp) -> addDefinition name aspect tm tp) defs
-    | Toplevel.End -> Printf.printf "%s: ending.\n" (Error.error_format_pos pos) ; flush stdout; raise StopParsingFile
+    | Toplevel.Definition defs -> List.iter (fun (name, aspect, pos, tm, tp) -> addDefinition name aspect pos tm tp) defs
+    | Toplevel.End -> Printf.printf "%s: ending.\n" (error_format_pos pos) ; flush stdout; raise StopParsingFile
     | Toplevel.Show -> show_command()
     | Toplevel.CheckUniverses -> checkUniversesCommand pos
  )
@@ -290,6 +290,6 @@ with
 | Unimplemented_expr ( ATOMIC(pos,_) as e )
 | Unimplemented_expr ( LAMBDA(_,ATOMIC(pos,_)) as e ) 
     as ex ->
-    Printf.fprintf stderr "%s: internal error on ts_expr %s\n" (Error.error_format_pos pos) (Printer.lf_atomic_to_string e);
+    Printf.fprintf stderr "%s: internal error on ts_expr %s\n" (error_format_pos pos) (Printer.lf_canonical_to_string e);
     raise ex
 
