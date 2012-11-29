@@ -45,10 +45,10 @@ Rule 15 U_type :
      Pi M:uexp, 
      [ ([U] M) type ].
 
-# Rule 16 u_univ :
-# 
-#      Pi M:uexp,
-#      [ [u] M : [U] ([plus;1] M) ].
+Rule 16 u_univ :
+
+     Pi M:uexp,
+     [ ([u] M) : ([U] ([next] M)) ].
 
 Rule 17 El_type :
 
@@ -72,8 +72,8 @@ Rule 20 El_eq_reflect :
 
 Rule 21 Pi_istype :
 
-     Pi T:texp, Pi x:oexp, Pi U : oexp -> texp,
-     [ x : T ] -> [ (U x) type ] -> [ ([Pi] T U) type ].
+     Pi T:texp, Pi U : oexp -> texp,
+     (Pi x:oexp, [ x : T ] -> [ (U x) type ]) -> [ ([Pi] T U) type ].
 
 Rule 22 Pi_eq :
 
@@ -144,7 +144,5 @@ Rule 100 teq_empty_eta :
 Rule 101 oeq_empty_eta :
 
      Pi T:texp, Pi x:oexp, Pi y:oexp, Pi a:oexp,
-     [ a : ([Empty]) ] -> [ T type ] -> [ x : T ] -> [ y : T ] -> [ x = y : T ].
+     [ a : ([Empty]) ] -> [ x : T ] -> [ y : T ] -> [ x = y : T ].
 
-
-Show.
