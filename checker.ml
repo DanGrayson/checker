@@ -177,7 +177,7 @@ let checkCommand x =
 let alphaCommand (x,y) =
   let x = protect fix x nopos in
   let y = protect fix y nopos in
-  Printf.printf "Alpha: %s\n" (if (Alpha.UEqual.equiv Grammar0.emptyUContext (ATOMIC x) (ATOMIC y)) then "true" else "false");
+  Printf.printf "Alpha: %s\n" (if (Alpha.UEqual.term_equiv Grammar0.emptyUContext (ATOMIC x) (ATOMIC y)) then "true" else "false");
   Printf.printf "     : %s\n" (Printer.ts_expr_to_string x);
   Printf.printf "     : %s\n" (Printer.ts_expr_to_string y);
   flush stdout

@@ -109,8 +109,6 @@ and ts_expr_to_string ((_,e) as oe) = match e with
 
 (** Printing functions for definitions, provisional. *)
 
-type uContext = UContext of var' list * (ts_expr * ts_expr) list
-
 let parmstostring = function
   | ((UContext(uexp_parms,ueqns):uContext),(texp_parms:var' list),(oexp_parms:(var' * ts_expr) list)) 
     -> concatl [

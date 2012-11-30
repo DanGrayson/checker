@@ -27,6 +27,8 @@ let rec strip_singleton ((_,(_,t)) as u) = match t with
 | F_Singleton a -> strip_singleton a
 | _ -> u
 
+let to_lfexpr v = ATOMIC (Nowhere, Variable (strip_pos v))
+
 (* background assumption: all types in the environment have been verified *)
 
 let rec natural_type (x:lf_expr) : lf_type =
@@ -91,7 +93,7 @@ and type_synthesis (env:context) (e:ts_expr) : lf_type =
 		  err pos ("too few arguments; next argument should be of type "^(lf_type_to_string a))
 	      | F_Pi(x,a',a''), m' :: args' ->
 		  type_check pos env m' a';
-                  repeat ((LF_Var x,a') :: env) (Substitute.subst_type [ (x,m') ] a'') args'
+                  repeat ((LF_Var x,a') :: env) (Substitute.subst_type (x,m') a'') args'
 	      | F_APPLY _, ATOMIC (pos,_) :: _ -> err pos "extra argument"
 	      | F_APPLY _, LAMBDA _ :: _ -> err pos "extra argument"
 	     )
@@ -100,14 +102,14 @@ and type_synthesis (env:context) (e:ts_expr) : lf_type =
 and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : unit =
   (* assume x and y have already been verified to be of type t *)
   (* see figure 11, page 711 *)
-  if x = y then ()
-  else (
-    let (pos,t0) = t in
-    match x, y, t0 with
-    | _, _, F_Singleton _ -> ()
-    | _ -> 
-	mismatch_term xpos x ypos y
-   )
+  if Alpha.UEqual.term_equiv empty_uContext x y then () else (* could slow things down a lot *)
+  let (pos,t0) = t in
+  match x, y, t0 with
+  | _, _, F_Singleton _ -> ()
+  | LAMBDA(v,e), LAMBDA(v',e'), F_Pi(w,a,b) ->
+      raise NotImplemented
+  | _ ->
+      raise NotImplemented
 
 and path_equivalence (env:context) (x:ts_expr) (y:ts_expr) : lf_type =
   (* assume nothing *)
@@ -119,12 +121,9 @@ and path_equivalence (env:context) (x:ts_expr) (y:ts_expr) : lf_type =
 and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
   (* see figure 11, page 711 *)
   (* assume t and u have already been verified to be types *)
-  if t = u then ()
-  else
+  if Alpha.UEqual.type_equiv empty_uContext t u then () else (* could slow things down a lot *)
   let (tpos,t0) = t in 
   let (upos,u0) = u in 
-  if t0 = u0 then ()
-  else 
   match t0, u0 with
   | F_Singleton a, F_Singleton b ->
       let (x,t) = strip_singleton a in
@@ -133,7 +132,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
       term_equivalence tpos upos env x y t
   | F_Pi(v,a,b), F_Pi(w,c,d) ->
       type_equivalence env a c;
-      type_equivalence ((LF_Var v, a) :: env) b (Substitute.subst_type [(w, ATOMIC (Nowhere,Variable v))] d)
+      type_equivalence ((LF_Var v, a) :: env) b (Substitute.subst_type (w, ATOMIC (Nowhere,Variable v)) d)
   | F_APPLY(h,args), F_APPLY(h',args') ->
       if not (h = h') then mismatch_type tpos t upos u;
       let k = tfhead_to_kind h in
@@ -141,7 +140,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
 	match k,args,args' with
         | K_Pi(v,t,k), x :: args, x' :: args' ->
             term_equivalence tpos upos env x x' t;
-            repeat (Substitute.subst_kind [(v,x)] k) args args'
+            repeat (Substitute.subst_kind (v,x) k) args args'
         | K_type, [], [] -> ()
 	| _ -> raise Internal
       in repeat k args args';
@@ -177,7 +176,10 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : unit =
   let (_,t0) = t in 
   match e, t0 with
   | LAMBDA(v,e), F_Pi(w,a,b) ->
-      type_check pos ((LF_Var (strip_pos v),a) :: env) e (Substitute.subst_type [(w,ATOMIC (with_pos (get_pos v) (Variable (strip_pos v))))] b)
+      type_check pos 
+	((LF_Var (strip_pos v),a) :: env)
+	e
+	(Substitute.subst_type (w,to_lfexpr v) b)
   | LAMBDA _, _ -> err pos "did not expect a lambda expression here"
   | ATOMIC e, _ -> let s = type_synthesis env e in subtype env s t
 

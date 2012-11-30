@@ -61,7 +61,7 @@ let ubind uvars ueqns =
   chk_ueqns ueqns
 
 module Equal = struct
-  let equiv ulevel_context = 			(* structural equality *)
+  let term_equiv ulevel_context = 			(* structural equality *)
     let rec ueq a b = match (a,b) with
     | ATOMIC(_,a), ATOMIC(_,b) -> (
 	a == b || 
@@ -77,7 +77,7 @@ module Equal = struct
 end
 
 module EquivA = struct
-  let equiv ulevel_context lhs rhs = 		(* naive *)
+  let term_equiv ulevel_context lhs rhs = 		(* naive *)
     try
       (* not implemented *)
       true
@@ -86,5 +86,5 @@ module EquivA = struct
 end
 
 module type Equivalence = sig
-  val equiv : Printer.uContext -> lf_expr -> lf_expr -> bool
+  val term_equiv : uContext -> lf_expr -> lf_expr -> bool
 end

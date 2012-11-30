@@ -494,6 +494,10 @@ type context = (lf_var * lf_type) list
 
 let global_context : context ref = ref []
 
+type uContext = UContext of var' list * (ts_expr * ts_expr) list
+
+let empty_uContext = UContext([],[])
+
 let def_bind name aspect (pos:position) o t (env:context) = (LF_VarDefined(name,aspect), (pos,F_Singleton(o,t))) :: env
 
 let newfresh = 

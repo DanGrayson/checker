@@ -166,7 +166,7 @@ command0:
     { Toplevel.End }
 
 uParm: vars=nonempty_list(IDENTIFIER) COLON KUlevel eqns=preceded(Wsemi,uEquation)*
-    { UParm (Printer.UContext ((List.map make_Var vars),eqns)) }
+    { UParm (UContext ((List.map make_Var vars),eqns)) }
 tParm: vars=nonempty_list(IDENTIFIER) COLON KType 
     { TParm (List.map make_Var vars) }
 oParm: vars=nonempty_list(IDENTIFIER) COLON t=ts_expr 

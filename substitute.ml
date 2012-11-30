@@ -49,6 +49,10 @@ and subst_kind (subl : (var' * canonical_term) list) k =
        let subs' = (v,ATOMIC v') :: subl in 
        K_Pi(w, subst_type subl a, subst_kind subs' b)      
 
+let subst sub e = subst [sub] e
+let subst_type sub e = subst_type [sub] e
+let subst_kind sub e = subst_kind [sub] e
+
 (* 
   Local Variables:
   compile-command: "ocamlbuild substitute.cmo "

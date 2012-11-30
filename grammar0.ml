@@ -3,16 +3,16 @@
 open Typesystem
 open Helpers
 
-let emptyUContext = Printer.UContext ([],[])
-let mergeUContext : Printer.uContext -> Printer.uContext -> Printer.uContext =
-  function Printer.UContext(uvars,eqns) -> function Printer.UContext(uvars',eqns') -> Printer.UContext(List.rev_append uvars' uvars,List.rev_append eqns' eqns)
+let emptyUContext = UContext ([],[])
+let mergeUContext : uContext -> uContext -> uContext =
+  function UContext(uvars,eqns) -> function UContext(uvars',eqns') -> UContext(List.rev_append uvars' uvars,List.rev_append eqns' eqns)
 
 type parm =
-  | UParm of Printer.uContext
+  | UParm of uContext
   | TParm of var' list
   | OParm of (var' * ts_expr) list
 
-let fixParmList (p:parm list) : Printer.uContext * (var' list) * ((var' * ts_expr) list) = (* this code has to be moved somewhere to use the context *)
+let fixParmList (p:parm list) : uContext * (var' list) * ((var' * ts_expr) list) = (* this code has to be moved somewhere to use the context *)
   let rec fix us ts os p =
     match p with 
     | UParm u :: p -> 
@@ -32,11 +32,11 @@ let fixParmList (p:parm list) : Printer.uContext * (var' list) * ((var' * ts_exp
 	in (ulevel_context,tc,ts_context))
   in fix [] [] [] p
 
-let tDefinition (name:string) ((ulevel_context,tc,ts_context):(Printer.uContext * (var' list) * ((var' * ts_expr) list))) (t:ts_expr)
+let tDefinition (name:string) ((ulevel_context,tc,ts_context):(uContext * (var' list) * ((var' * ts_expr) list))) (t:ts_expr)
     : (string * int * Error.position * lf_expr * lf_type) list 
     = 
   let (pos,t0) = t in 
-  let Printer.UContext (uvars,ueqns) = ulevel_context in
+  let UContext (uvars,ueqns) = ulevel_context in
   let rec wrap (t:lf_expr) = function
     | [] -> t 
     | v :: rest -> wrap (LAMBDA((nowhere v),t)) rest
@@ -65,7 +65,7 @@ let tDefinition (name:string) ((ulevel_context,tc,ts_context):(Printer.uContext 
     ( name, 1, pos, ATOMIC(new_hole()), istype (ATOMIC t))
   ]
 
-let oDefinition (name:string) ((ulevel_context,tc,ts_context):(Printer.uContext * (var' list) * ((var' * ts_expr) list))) (o:ts_expr) (t:ts_expr)
+let oDefinition (name:string) ((ulevel_context,tc,ts_context):(uContext * (var' list) * ((var' * ts_expr) list))) (o:ts_expr) (t:ts_expr)
     : (string * int * Error.position * lf_expr * lf_type) list 
     = 
   (* still have to wrap the lambdas around it : *)

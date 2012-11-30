@@ -1,25 +1,19 @@
 (** Structural comparison of expressions, modulo alpha equivalence and source code positions. *)
 
-type alpha_eq = (Typesystem.var' * Typesystem.var') list
+open Typesystem
 
-val addalpha : Typesystem.var' -> Typesystem.var' -> alpha_eq -> alpha_eq
+type alpha_eq = (var' * var') list
 
-val testalpha :
-  Typesystem.var' ->
-  Typesystem.var' ->
-  (Typesystem.var' * Typesystem.var') list -> bool
+val addalpha : var' -> var' -> alpha_eq -> alpha_eq
 
-module UEqual :
+val testalpha : var' -> var' -> (var' * var') list -> bool
+
+module type S =
   sig
-    val uequiv :
-      Printer.uContext -> Typesystem.lf_expr -> Typesystem.lf_expr -> bool
-    val equiv :
-      Printer.uContext -> Typesystem.lf_expr -> Typesystem.lf_expr -> bool
+    val uequiv     : uContext -> lf_expr -> lf_expr -> bool
+    val term_equiv : uContext -> lf_expr -> lf_expr -> bool
+    val type_equiv : uContext -> lf_type -> lf_type -> bool
   end
-module UEquivA :
-  sig
-    val uequiv :
-      Printer.uContext -> Typesystem.lf_expr -> Typesystem.lf_expr -> bool
-    val equiv :
-      Printer.uContext -> Typesystem.lf_expr -> Typesystem.lf_expr -> bool
-  end
+
+module UEqual : S
+module UEquivA : S
