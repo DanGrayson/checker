@@ -54,8 +54,8 @@ let protect1 f =
       Tokens.bump_error_count();
       raise Error_Handled
   | TypeCheckingFailure2 (p1,s1,p2,s2) -> 
-      Printf.fprintf stderr "%s: type checking failure: %s\n" (error_format_pos p1) s1;
-      Printf.fprintf stderr "%s: ... %s\n" (error_format_pos p2) s2;
+      Printf.fprintf stderr "%s: %s\n" (error_format_pos p1) s1;
+      Printf.fprintf stderr "%s: %s\n" (error_format_pos p2) s2;
       flush stderr;
       Tokens.bump_error_count();
       raise Error_Handled

@@ -24,9 +24,9 @@ open Error
 (** Labels for u-expressions of TS. *)
 type uHead =
   | U_next
-	(** With a [M], denoting [M+1], the successor of [M]. *)
+	(** With [M], denotes [M+1], the successor of [M]. *)
   | U_max
-	(** A pair [(M,M')] denoting [max(M,M')]. *)
+	(** With a pair [(M,M')], denotes [max(M,M')]. *)
 
 let uheads = [ U_max; U_next ]
 
@@ -42,10 +42,10 @@ type tHead =
   | T_U
       (** [T_U m]; a u-level expression, as a type *)
   | T_Pi
-      (** [T_Pi(T,(x,T')) <--> \[Pi;x\](T,T')] *)
+      (** [T_Pi(T,LAMBDA(x,T')) <--> \[Pi;x\](T,T')] *)
       (* TS1: *)
   | T_Sigma
-      (** [T_Sigma(T,(x,T')) <--> \[Sigma;x\](T,T')] *)
+      (** [T_Sigma(T,LAMBDA(x,T')) <--> \[Sigma;x\](T,T')] *)
       (* TS2: *)
   | T_Pt
       (** Corresponds to [Pt]() in the paper; the unit type *)
@@ -57,10 +57,10 @@ type tHead =
       (** The empty type.  
 	  
 	  Voevodsky doesn't list this explicitly in the definition of TS4, but it gets used in derivation rules, so I added it.
-	  Perhaps he intended to write [\[T_El\](\[empty\]())] for it. *)
+	  Perhaps he intended to write [\[El\](\[empty\]())] for it. *)
       (* TS5: *)
   | T_IC
-	(** [T_IC(A,a,(x,B),(x,(y,D)),(x,(y,(z,q)))) <--> \[IC;x,y,z\](A,a,B,D,q)] *)
+	(** [T_IC(ATOMIC A,ATOMIC a,LAMBDA(x,ATOMIC B),LAMBDA(x,LAMBDA(y,ATOMIC D)),LAMBDA(x,LAMBDA(y,LAMBDA(z,ATOMIC q)))) <--> \[IC;x,y,z\](A,a,B,D,q)] *)
       (* TS6: *)
   | T_Id
       (** Identity type; paths type. *)
@@ -85,9 +85,9 @@ let thead_to_string = function
 type oHead =
     (* TS0: *)
   | O_u
-	(** [u]; universe as an object. *)
+	(** [\[u\]]; universe as an object. *)
   | O_j
-	(** [j](U,U') *)
+	(** [\[j\](U,U')] *)
   | O_ev
 	(** [O_ev(f,o,(x,T)) <--> \[ev;x\](f,o,T)]
 	    
@@ -138,52 +138,52 @@ type oHead =
   | O_coprod
 	(** The type of the term is given by the [max] of the two u-levels. *)
   | O_ii1
-	(** The type of a term [O_ii1(T,T',o)] is [Coprod(T,T')]; here [o] has type [T] *)
+	(** The type of a term [\[ii1\](T,T',o)] is [\[Coprod\](T,T')]; here [o] has type [T] *)
   | O_ii2
-	(** The type of a term [O_ii2(T,T',o)] is [Coprod(T,T')]; here [o] has type [T'] *)
+	(** The type of a term [\[ii2\](T,T',o)] is [\[Coprod\](T,T')]; here [o] has type [T'] *)
   | O_sum
-	(** The type of a term [O_sum(T,T',s,s',o,(x,S))] is [S], with [x] replaced by [o]. *)
+	(** The type of a term [\[sum\](T,T',s,s',o,LAMBDA(x,S))] is [S], with [x] replaced by [o]. *)
 	(* TS4: *)
   | O_empty
-      (** [ O_empty <--> \[empty\]() ]
+      (** [ \[empty\]() ]
 				    
-	  The type of [\[empty\]] is the smallest universe, [uuu0]. 
+	  The type of [\[empty\]] is the smallest universe, [uuu0].
 
-	  Remember to make [El]([empty]()) reduce to [Empty]().
+	  Remember to make [\[El\](\[empty\]())] reduce to [\[Empty\]()].
        *)
   | O_empty_r
 	(** The elimination rule for the empty type.
 
-	    The type of [O_empty_r(T,o)] is [T].  Here the type of [o] is [Empty], the empty type. *)
+	    The type of [\[empty_r\](T,o)] is [T].  Here the type of [o] is [\[Empty\]()], the empty type. *)
   | O_c
-	(** Corresponds to [c] in the paper. *)
+	(** Corresponds to [\[c\]] in the paper. *)
   | O_ic_r
 	(** [ic_r] is the elimination rule for inductive types (generalized W-types) *)
   | O_ic
-	(** Corresponds to [ic].  Its type is the max of the three u-level expressions. *)
+	(** Corresponds to [\[ic\]].  Its type is the max of the three u-level expressions. *)
 	(* TS6: *)
   | O_paths
-	(** The object corresponding to the identity type [Id].  
+	(** The object corresponding to the identity type [\[Id\]].  
 
 	    Its type is the type corresponding to the given universe level. *)
   | O_refl
 	(** Reflexivity, or the constant path. 
 	    
-	    The type of [O_refl(T,o)] is [Id(T,o,o)]. *)
+	    The type of [\[refl\](T,o)] is [\[Id\](T,o,o)]. *)
   | O_J
 	(** The elimination rule for Id; Id-elim. *)
       (* TS7: *)
   | O_rr0
 	(** Resizing rule.
 
-	    The type of [O_rr0(M_2,M_1,s,t,e)] is [U(M_1)], resized downward from [U M_2].
+	    The type of [\[rr0\](M_2,M_1,s,t,e)] is [\[U\](M_1)], resized downward from [\[U\](M_2)].
 
 	    By definition, the subexpressions [t] and [e] are not essential.
 	 *)
   | O_rr1
 	(** Resizing rule.
 
-	    The type of [O_rr1(M,a,p)] is [U uuu0], resized downward from [U M].
+	    The type of [\[rr1\](M,a,p)] is [\[U\] uuu0], resized downward from [U M].
 
 	    By definition, the subexpression [p] is not essential.
 	 *)

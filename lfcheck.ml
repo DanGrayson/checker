@@ -1,8 +1,8 @@
 (** Implement the binary equivalence algorithms from sections 5 and 6 of the paper:
 
-    Extensional Equivalence and Singleton Types
+    [EEST]: Extensional Equivalence and Singleton Types
     by Christopher A. Stone and Robert Harper
-    ACM Transactions on Computational Logic, Vol. 7, No. 4, October 2006, Pages 676–722.
+    ACM Transactions on Computational Logic, Vol. 7, No. 4, October 2006, Pages 676-722.
 *)
 
 open Typesystem
@@ -10,6 +10,8 @@ open Error
 open Printer
 
 exception TypingError of position * string
+
+let try_alpha = false (* turning this on could slow things down a lot, not mentioned in the paper *)
 
 let err pos msg = raise (TypingError (pos, msg))
 
@@ -20,8 +22,8 @@ let mismatch_type pos t pos' t' = raise (TypeCheckingFailure2 (
 				    pos', "to match      "^(lf_type_to_string t')))
 
 let mismatch_term pos x pos' x' = raise (TypeCheckingFailure2 (
-				    pos , "expected term "^(lf_canonical_to_string x ),
-				    pos', "to match      "^(lf_canonical_to_string x')))
+				    pos , "expected term\n      "^(lf_canonical_to_string x ),
+				    pos', "to match     \n      "^(lf_canonical_to_string x')))
 
 let rec strip_singleton ((_,(_,t)) as u) = match t with
 | F_Singleton a -> strip_singleton a
@@ -32,21 +34,21 @@ let to_lfexpr v = ATOMIC (Nowhere, Variable (strip_pos v))
 (* background assumption: all types in the environment have been verified *)
 
 let rec natural_type (x:lf_expr) : lf_type =
-  (* see figure 9 page 696 *)
+  (* see figure 9 page 696 [EEST] *)
   raise NotImplemented
 
 let rec head_reduction (x:lf_expr) : lf_expr =
-  (* see figure 9 page 696 *)
+  (* see figure 9 page 696 [EEST] *)
   raise NotImplemented
 
 let rec head_normalization (x:lf_expr) : lf_expr =
-  (* see figure 9 page 696 *)
+  (* see figure 9 page 696 [EEST] *)
   raise NotImplemented
 
 let rec type_validity (env:context) (t:lf_type) : unit =
   (* assume the kinds of constants, and the types in them, have been checked *)
   (* driven by syntax *)
-  (* see figure 12, page 715 *)
+  (* see figure 12, page 715 [EEST] *)
   let (pos,t) = t in
   match t with 
   | F_Pi(v,t,u) -> 
@@ -61,7 +63,7 @@ let rec type_validity (env:context) (t:lf_type) : unit =
 	| K_Pi(v,a,kind'), x :: args ->
 	    type_check pos env x a;
 	    repeat ((LF_Var v,a) :: env) kind' args
-	| K_Pi(_,a,_), [] -> err pos ("too few arguments; next argument should be of type "^(lf_type_to_string a))
+	| K_Pi(_,a,_), [] -> err pos ("missing next argument, of type "^(lf_type_to_string a))
       in repeat env kind args
   | F_Singleton(x,t) -> 
       type_validity env t;
@@ -69,7 +71,7 @@ let rec type_validity (env:context) (t:lf_type) : unit =
 
 and type_synthesis (env:context) (e:ts_expr) : lf_type =
   (* assume nothing *)
-  (* see figure 13, page 716 *)
+  (* see figure 13, page 716 [EEST] *)
   let (pos,e) = e in
      match e with
      | Variable v -> (
@@ -101,27 +103,27 @@ and type_synthesis (env:context) (e:ts_expr) : lf_type =
 
 and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : unit =
   (* assume x and y have already been verified to be of type t *)
-  (* see figure 11, page 711 *)
-  if Alpha.UEqual.term_equiv empty_uContext x y then () else (* could slow things down a lot *)
+  (* see figure 11, page 711 [EEST] *)
+  if try_alpha && Alpha.UEqual.term_equiv empty_uContext x y then () else
   let (pos,t0) = t in
   match x, y, t0 with
   | _, _, F_Singleton _ -> ()
   | LAMBDA(v,e), LAMBDA(v',e'), F_Pi(w,a,b) ->
       raise NotImplemented
   | _ ->
-      raise NotImplemented
+      mismatch_term xpos x ypos y		(* need to implement more cases, though *)
 
 and path_equivalence (env:context) (x:ts_expr) (y:ts_expr) : lf_type =
   (* assume nothing *)
-  (* see figure 11, page 711 *)
+  (* see figure 11, page 711 [EEST] *)
   if x = y then type_synthesis env x
   else
   raise NotImplemented
 
 and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
-  (* see figure 11, page 711 *)
+  (* see figure 11, page 711 [EEST] *)
   (* assume t and u have already been verified to be types *)
-  if Alpha.UEqual.type_equiv empty_uContext t u then () else (* could slow things down a lot *)
+  if try_alpha && Alpha.UEqual.type_equiv empty_uContext t u then () else
   let (tpos,t0) = t in 
   let (upos,u0) = u in 
   match t0, u0 with
@@ -143,8 +145,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
             repeat (Substitute.subst_kind (v,x) k) args args'
         | K_type, [], [] -> ()
 	| _ -> raise Internal
-      in repeat k args args';
-      raise Internal
+      in repeat k args args'
   | F_APPLY _, F_Pi _
   | F_Pi _, F_APPLY _ -> mismatch_type tpos t upos u
   | _ -> raise Internal
@@ -152,7 +153,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
 and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
   (* assume t and u have already been verified to be types *)
   (* driven by syntax *)
-  (* see figure 12, page 715 *)
+  (* see figure 12, page 715 [EEST] *)
   let (tpos,t0) = t in 
   let (upos,u0) = u in 
   match t0, u0 with
@@ -172,7 +173,7 @@ and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
 
 and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : unit = 
   (* assume t has been verified to be a type *)
-  (* see figure 13, page 716 *)
+  (* see figure 13, page 716 [EEST] *)
   let (_,t0) = t in 
   match e, t0 with
   | LAMBDA(v,e), F_Pi(w,a,b) ->

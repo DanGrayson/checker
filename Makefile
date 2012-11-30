@@ -39,7 +39,7 @@ RUN = -b
 
 all: TAGS run doc
 checker.byte checker.native: $(SRCFILES); ocamlbuild $(BFLAGS) $@
-doc: checker.odocl
+doc: checker.odocl $(SRCFILES)
 	ocamlbuild $(BFLAGS) checker.docdir/index.html
 checker.odocl: Makefile
 	for i in $(BASENAMES) ; do echo $$i ; done >$@
