@@ -35,6 +35,7 @@ let ident = first after*
 rule expr_tokens = parse
   | "Check" space "Universes" { WCheckUniverses }
   | "CheckLF" { WCheckLF }
+  | "CheckLFtype" { WCheckLFtype }
   | "Rule" { WRule }
   | "F_Print" { WF_Print }
   | "Alpha" { WAlpha }

@@ -21,8 +21,8 @@ and eq alpha (pos,e) (pos',e') = (
       | Variable o, Variable o' -> testalpha o o' alpha
 
       |   APPLY(O O_ev,[ATOMIC(_,APPLY(O O_lambda,_) as f );ATOMIC o ;LAMBDA(x ,ATOMIC t )]),
-	  APPLY(O O_ev,[ATOMIC(_,APPLY(O O_lambda,_) as f');ATOMIC o';LAMBDA(x',ATOMIC t')]) 
-	-> (eq alpha f f' && eq alpha o o') || (eq alpha (Reduction.beta1 f o) (Reduction.beta1 f' o'))
+          APPLY(O O_ev,[ATOMIC(_,APPLY(O O_lambda,_) as f');ATOMIC o';LAMBDA(x',ATOMIC t')]) 
+        -> (eq alpha f f' && eq alpha o o') || (eq alpha (Reduction.beta1 f o) (Reduction.beta1 f' o'))
 
       | APPLY(O O_ev,[ATOMIC(_,APPLY(O O_lambda,_) as f); ATOMIC o; LAMBDA(x,ATOMIC t)]), e'
 	-> eq alpha (Reduction.beta1 f o) (pos',e')

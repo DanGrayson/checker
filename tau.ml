@@ -27,7 +27,7 @@ let rec tau (pos:Error.position) (env:context) (pos,e) : atomic_term = match e w
 	    | _ -> raise Error.Internal)
 	| O_ev -> (
 	    match args with 
-	    | [ATOMIC f;ATOMIC o;LAMBDA(x,ATOMIC t)] -> strip_pos (Substitute.subst [(strip_pos x,o)] t)
+	    | [ATOMIC f;ATOMIC o;LAMBDA(x,ATOMIC t)] -> strip_pos (Substitute.subst [(strip_pos x,ATOMIC o)] t)
 	    | _ -> raise Error.Internal)
 	| O_lambda -> (
 	    match args with 

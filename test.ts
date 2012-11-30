@@ -91,12 +91,12 @@ Check lambda f:X->T, lambda y:X, f y.
 # Define E7 := ft : _ .
 
 Define foo (u : Ulevel) (t : [U]([next](u))) := *t.
-
+Define bar (T:Type) := T -> T.
 Show.
 
 # each of the following lines yields an error:
+CheckLFtype Pi x:oexp, Pi y:oexp, Pi T:texp, Pi U:texp, [ x = y : T ] -> [ T = U ] -> [ x = y : U ].
 CheckLF (U_type u1).
-CheckLF ([foo.0] u1 ([u] u1) (U_type u1)).
-Check lambda x:T, lambda y:U, lambda t:[foo.1](u0, u0, T, U, x, y), t.
+CheckLF ([foo.0] u1 ([u] u1) (U_type ([next] u1))).
 Check lambda f:T->T->T->T, f f f f f.
 Check lambda f:T->T->T->T->T, f f f f f.  # is the error message right?

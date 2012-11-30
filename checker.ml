@@ -165,6 +165,11 @@ let checkLFCommand x =
       Printf.printf " type : %s\n" (Printer.lf_type_to_string t)
   | _ -> ()
 
+let checkLFtypeCommand x =
+  Printf.printf "CheckLFtype: %s\n" (Printer.lf_type_to_string x);
+  flush stdout;
+  protect1 ( fun () -> Lfcheck.type_validity !global_context x )
+
 let checkCommand x =
   Printf.printf "Check : %s\n" (Printer.ts_expr_to_string x);
   check0 x
@@ -212,6 +217,7 @@ let process_command lexbuf = (
     | Toplevel.Axiom (name,t) -> axiomCommand name t
     | Toplevel.F_Print x -> f_print_Command x
     | Toplevel.CheckLF x -> checkLFCommand x
+    | Toplevel.CheckLFtype x -> checkLFtypeCommand x
     | Toplevel.Check x -> checkCommand x
     | Toplevel.Alpha (x,y) -> alphaCommand (x,y)
     | Toplevel.Type x -> typeCommand x

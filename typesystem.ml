@@ -347,7 +347,7 @@ type lf_type = bare_lf_type marked
 and bare_lf_type =
   | F_Pi of var' * lf_type * lf_type
   | F_APPLY of tfHead * lf_expr list
-  | F_Singleton of lf_expr * lf_type
+  | F_Singleton of (lf_expr * lf_type)
 
 let tfhead_to_string = function
   | F_uexp -> "uexp"
@@ -468,9 +468,9 @@ let label_to_lf_type env = function
 (*** The "kinds" of LF. 
 
     Notation: constructors starting with "K_" refer to kinds of LF. *)
-type lfkind =
+type lf_kind =
   | K_type
-  | K_Pi of var' * lf_type * lfkind
+  | K_Pi of var' * lf_type * lf_kind
 
 let ( @@> ) a b = K_Pi(VarUnused, a, b)
 
