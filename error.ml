@@ -27,7 +27,7 @@ exception TypeCheckingFailure of position * string
 exception TypeCheckingFailure2 of position * string * position * string
 exception TypeCheckingFailure3 of position * string * position * string * position * string
 
-let error_format_pos = function
+let errfmt = function
   | Position(p,q) 
     -> "File \"" ^ p.Lexing.pos_fname ^ "\", " 
       ^ (if p.Lexing.pos_lnum = q.Lexing.pos_lnum
@@ -41,8 +41,8 @@ let error_format_pos = function
          else "characters " ^ (string_of_int i) ^ "-" ^ (string_of_int j))
   | Nowhere -> "nowhere:0:0"
 
-let nopos x = error_format_pos Nowhere
+let nopos () = errfmt Nowhere
 
 let seepos pos =
-  Printf.fprintf stderr "%s: ... debugging ...\n" (error_format_pos pos);
+  Printf.fprintf stderr "%s: ... debugging ...\n" (errfmt pos);
   flush stderr

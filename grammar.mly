@@ -89,7 +89,7 @@ lf_type_constant:
       with 
 	Not_found ->
 	  Printf.fprintf stderr "%s: unknown type constant %s\n" 
-	    (error_format_pos (Position($startpos, $endpos)))
+	    (errfmt (Position($startpos, $endpos)))
 	    l;
 	  flush stderr;
 	  $syntaxerror
@@ -216,7 +216,7 @@ tsterm_head:
      try List.assoc ("[" ^ l ^ "]") string_to_label 
      with Not_found -> 
        Printf.fprintf stderr "%s: unknown term constant [%s]\n" 
-	 (error_format_pos (Position($startpos, $endpos)))
+	 (errfmt (Position($startpos, $endpos)))
 	 l;
        flush stderr;
        $syntaxerror 
@@ -280,7 +280,7 @@ bare_ts_expr:
        try List.assoc ("[" ^ name ^ "]") string_to_label 
        with Not_found -> 
 	 Printf.fprintf stderr "%s: unknown term constant [%s]\n" 
-	   (error_format_pos (Position($startpos, $endpos)))
+	   (errfmt (Position($startpos, $endpos)))
 	   name;
 	 flush stderr;
 	 $syntaxerror
