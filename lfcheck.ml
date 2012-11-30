@@ -12,10 +12,14 @@ open Printer
 exception TypingError of position * string
 
 let err pos msg = raise (TypingError (pos, msg))
+let err2 pos msg pos' msg' = raise (TypeCheckingFailure2 (pos, msg, pos', msg'))
+let mismatch pos t pos' t' = raise (TypeCheckingFailure2 (
+				    pos , "expected type "^(lf_type_to_string t ),
+				    pos', "to match      "^(lf_type_to_string t')))
 
-let rec strip_singleton t = match t with
-| F_Singleton(x,(pos,t)) -> strip_singleton t
-| t -> t
+let rec strip_singleton ((_,(_,t)) as u) = match t with
+| F_Singleton(x,t) -> strip_singleton(x,t)
+| _ -> u
 
 (* background assumption: all types in the environment have been verified *)
 
@@ -84,13 +88,21 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
   if t0 = u0 then ()
   else 
   match t0, u0 with
+  | F_Singleton(x,t), F_Singleton(y,u) ->
+      let (x,t) = strip_singleton (x,t) in
+      let (y,u) = strip_singleton (y,u) in
+      type_equivalence env t u;
+      term_equivalence tpos upos env x y t
   | F_Pi(v,a,b), F_Pi(w,c,d) ->
       type_equivalence env a c;
       type_equivalence ((LF_Var v, a) :: env) b (Substitute.subst_type [(w, (Nowhere,Variable v))] d)
   | F_APPLY(h,a), F_APPLY(h',a') ->
-      if not (h = h') then err tpos "type mismatch";
-      let k = tfhead_to_kind h in
+      if not (h = h') then mismatch tpos t upos u;
+      let _ = tfhead_to_kind h in
       raise Internal
+  | F_APPLY _, F_Pi _
+  | F_Pi _, F_APPLY _ -> mismatch tpos t upos u
+  | _ -> raise Internal
 
 and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
   (* assume t and u have already been verified to be types *)
@@ -98,10 +110,16 @@ and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
   (* see figure 12, page 715 *)
   let (tpos,t0) = t in 
   let (upos,u0) = u in 
-  let t0 = strip_singleton t0 in 
-  let u0 = strip_singleton u0 in 
   match t0, u0 with
-  | _, F_Singleton _ | F_Singleton _, _ -> raise Internal
+  | F_Singleton (x,t), F_Singleton (y,u) ->
+      let (x,t) = strip_singleton (x,t) in
+      let (y,u) = strip_singleton (y,u) in
+      type_equivalence env t u;
+      term_equivalence tpos upos env x y t
+  | _, F_Singleton _ -> err tpos "expected a singleton type"
+  | F_Singleton (x,t), _ -> 
+      let (x,t) = strip_singleton (x,t) in
+      type_equivalence env t u
   | F_Pi(x,a,b) , F_Pi(y,c,d) ->
       subtype env c a;			(* contravariant *)
       subtype ((LF_Var x, a) :: env) b d
@@ -127,6 +145,7 @@ and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (
     match x, y, t0 with
     | _, _, F_Singleton(z,u) ->
 	term_equivalence xpos ypos env x y u	(* rule 43, sort of *)
+    | _ -> raise Internal
    )
 
 and path_equivalence (env:context) (x:ts_expr) (y:ts_expr) : lf_type =

@@ -2,7 +2,7 @@
 
 open Typesystem
 type command' = 
-  | Print of lf_expr
+  | CheckLF of lf_expr
   | F_Print of lf_type
   | Rule of int * string * lf_type
   | Check of ts_expr

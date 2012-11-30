@@ -53,9 +53,7 @@ run: checker.byte
 debug:
 	ocamlbuild $(BFLAGS) checker.byte 
 	@ echo "enter:"
-	@ echo "  set arg rules.ts"
-	@ echo "    or"
-	@ echo "  set arg test.ts"
+	@ echo "  set arg rules.ts test.ts"
 	@ echo "  goto 100"
 	@ echo "  break Debugging.trap"
 	@ echo "  run"

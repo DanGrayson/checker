@@ -15,7 +15,7 @@ Check T.
 Check [El]([u](u2)).
 
 # test LF term input format:
-Print (lambda x, ([ev] f x (lambda y, T))).
+CheckLF (lambda x, ([ev] f x (lambda y, T))).
 
 F_Print Pi u1:uexp, Pi u2:uexp, Pi T:texp, Pi t:oexp, Pi ist:istype T, Pi has:hastype t T, texp.
 
@@ -95,7 +95,8 @@ Define foo (u : Ulevel) (t : [U]([next](u))) := *t.
 Show.
 
 # each of the following lines yields an error:
-Check [foo.0](u1, [u](u1)).
+CheckLF (U_type u1).
+CheckLF ([foo.0] u1 ([u] u1) (U_type u1)).
 Check lambda x:T, lambda y:U, lambda t:[foo.1](u0, u0, T, U, x, y), t.
 Check lambda f:T->T->T->T, f f f f f.
 Check lambda f:T->T->T->T->T, f f f f f.  # is the error message right?

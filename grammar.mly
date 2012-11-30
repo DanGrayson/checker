@@ -18,7 +18,7 @@ open Error
   Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod COLON Wstar Warrow
   Wequalequal Wequal COLONequal Wunderscore WF_Print WRule Wgreaterequal
   Wgreater Wlessequal Wless Wsemi KUlevel Kumax KType Ktype KPi Klambda KSigma
-  WTau WPrint WDefine WShow WEnd WVariable WAlpha Weof WCheck
+  WTau WCheckLF WDefine WShow WEnd WVariable WAlpha Weof WCheck
   WCheckUniverses Wtilde KSingleton Axiom
 
 /* precedences, lowest first */
@@ -133,8 +133,8 @@ command0:
     { Toplevel.UVariable (vars,eqns) }
 | Axiom v=IDENTIFIER COLON t=ts_expr Wperiod
     { Toplevel.Axiom(v,t) }
-| WPrint e=lf_expr Wperiod
-    { Toplevel.Print e }
+| WCheckLF e=lf_expr Wperiod
+    { Toplevel.CheckLF e }
 | WF_Print t=lf_type Wperiod
     { Toplevel.F_Print t }
 | WCheck o=ts_expr Wperiod

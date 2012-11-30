@@ -34,7 +34,7 @@ let newline = [ '\n' '\012' ]
 let ident = first after*
 rule expr_tokens = parse
   | "Check" space "Universes" { WCheckUniverses }
-  | "Print" { WPrint }
+  | "CheckLF" { WCheckLF }
   | "Rule" { WRule }
   | "F_Print" { WF_Print }
   | "Alpha" { WAlpha }

@@ -11,7 +11,7 @@ let rec tau (pos:Error.position) (env:context) (pos,e) : atomic_term = match e w
   | EmptyHole _ -> raise (Error.TypingError(pos, "empty hole, type undetermined"))
   | Variable v -> (
       try get_ts_type v env
-      with Not_found -> raise (Error.TypingError(pos, "unbound variable, not in context: " ^ (vartostring' v))))
+      with Not_found -> raise (Error.TypingError(pos, "unbound variable, not in TS context: " ^ (vartostring' v))))
   | APPLY(h,args) -> with_pos pos (
       match h with
       | L _ -> raise Error.NotImplemented

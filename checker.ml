@@ -53,6 +53,12 @@ let protect1 f =
       flush stderr;
       Tokens.bump_error_count();
       raise Error_Handled
+  | TypeCheckingFailure2 (p1,s1,p2,s2) -> 
+      Printf.fprintf stderr "%s: type checking failure: %s\n" (error_format_pos p1) s1;
+      Printf.fprintf stderr "%s: ... %s\n" (error_format_pos p2) s2;
+      flush stderr;
+      Tokens.bump_error_count();
+      raise Error_Handled
   | TypeCheckingFailure3 (p1,s1,p2,s2,p3,s3) -> 
       Printf.fprintf stderr "%s: type checking failure: %s\n" (error_format_pos p1) s1;
       Printf.fprintf stderr "%s: ... %s\n" (error_format_pos p2) s2;
@@ -127,51 +133,41 @@ let add_tVars tvars =
 
 let fix t = Fillin.fillin !global_context t
 
-let printCommand x =
-  Printf.printf "Print: %s\n" (Printer.lf_canonical_to_string x);
-  flush stdout
-
 let axiomCommand name t = global_context := ts_bind' (Var name, t) !global_context
 
 let ruleCommand num name x =
   rules := (Rule (num,name), x) :: !rules;
   Printf.printf "Rule %d %s: %s\n" num name (Printer.lf_type_to_string x);
+  global_context := (LF_Var (Var name), x) :: !global_context;
   flush stdout;
   protect1 ( fun () -> Lfcheck.type_validity !global_context x )
 
-let lf_type_printCommand x =
+let f_print_Command x =
   Printf.printf "F_Print : %s\n" (Printer.lf_type_to_string x);
   flush stdout
 
-let checkCommand x =
-  Printf.printf "Check : %s\n" (Printer.ts_expr_to_string x);
-  Printf.printf "   LF : %s\n" (Printer.lf_atomic_to_string x);
-  Printf.printf "   filling in ...\n";
+let check0 x =
   flush stdout;
   let x = protect1 ( fun () -> Fillin.fillin !global_context x ) in
   Printf.printf "   LF : %s\n" (Printer.lf_atomic_to_string x);
   flush stdout;
   let t = protect1 ( fun () -> Lfcheck.type_synthesis !global_context x ) in
-  Printf.printf " --- LF type synthesis yielded %s\n" (Printer.lf_type_to_string t);
-  let (pos,x0) = x in 
-  match x0 with
-  | APPLY(O _,_) -> 
-      Printf.printf "     : o-expression, will check its type\n";
-      flush stdout;
-      protect1 (fun () -> Check.ocheck !global_context x)
-  | APPLY(R _,_) -> 
-      Printf.printf "     : judgment\n"
-  | APPLY(T _,_) -> 
-      Printf.printf "     : t-expression\n"
-  | APPLY(U _,_) -> 
-      Printf.printf "     : u-expression\n"
-  | APPLY(L _,_) -> 
-      Printf.printf "     : lf-application, with variable as label\n"
-  | Variable _ -> 
-      Printf.printf "     : variable\n"
-  | EmptyHole n -> 
-      Printf.printf "     : empty hole ?%d\n" n;
+  Printf.printf " type : %s\n" (Printer.lf_type_to_string t);
+  if t = oexp then protect1 (fun () -> Check.ocheck !global_context x);
   flush stdout
+
+let checkLFCommand x =
+  Printf.printf "CheckLF: %s\n" (Printer.lf_canonical_to_string x);
+  flush stdout;
+  match x with 
+  | ATOMIC x ->
+      let t = protect1 ( fun () -> Lfcheck.type_synthesis !global_context x ) in
+      Printf.printf " type : %s\n" (Printer.lf_type_to_string t)
+  | _ -> ()
+
+let checkCommand x =
+  Printf.printf "Check : %s\n" (Printer.ts_expr_to_string x);
+  check0 x
 
 let alphaCommand (x,y) =
   let x = protect fix x nopos in
@@ -202,12 +198,7 @@ let typeCommand x = (
       Tokens.bump_error_count())
     
 let show_command () = 
-  Printer.print_env !global_context;
-  List.iter
-    (fun (Rule (num,name), x) ->
-      Printf.printf "Rule %d %s: %s\n" num name (Printer.lf_type_to_string x))
-    (List.rev !rules);
-  flush stdout
+  Printer.print_env !global_context
 
 let addDefinition name aspect pos o t = global_context := def_bind name aspect pos o t !global_context
 
@@ -219,8 +210,8 @@ let process_command lexbuf = (
     | Toplevel.Variable tvars -> add_tVars tvars
     | Toplevel.Rule (num,name,t) -> ruleCommand num name t
     | Toplevel.Axiom (name,t) -> axiomCommand name t
-    | Toplevel.F_Print x -> lf_type_printCommand x
-    | Toplevel.Print x -> printCommand x
+    | Toplevel.F_Print x -> f_print_Command x
+    | Toplevel.CheckLF x -> checkLFCommand x
     | Toplevel.Check x -> checkCommand x
     | Toplevel.Alpha (x,y) -> alphaCommand (x,y)
     | Toplevel.Type x -> typeCommand x
@@ -231,7 +222,6 @@ let process_command lexbuf = (
  )
 
 let parse_file filename =
-  initialize_environment ();
   Printf.printf "-- parsing file %s\n" filename; flush stdout;
   Tokens.error_count := 0;
   let lexbuf = Lexing.from_channel (open_in filename) in
@@ -266,8 +256,8 @@ let toplevel() =
       "usage: [options] filename ...";
   with FileFinished -> ());
   (*
-  (try printCommand (expr_from_string "Pi f:T->[U](uuu0), Pi o:T, *f o" ) with Error_Handled -> ());
-  (try printCommand (expr_from_string "lambda f:T->U, lambda o:T, f o") with Error_Handled -> ());
+  (try checkLFCommand (expr_from_string "Pi f:T->[U](uuu0), Pi o:T, *f o" ) with Error_Handled -> ());
+  (try checkLFCommand (expr_from_string "lambda f:T->U, lambda o:T, f o") with Error_Handled -> ());
   List.iter 
     (
      fun x -> Printf.printf "F_Print: %s : %s\n" (label_to_string x) (Printer.lf_type_to_string' (label_to_lf_type x))

@@ -153,4 +153,4 @@ let print_env env =
   List.iter 
     (fun (v,t) -> Printf.printf "   %s : %s\n" (lf_var_tostring v) (lf_type_to_string t)) 
     (List.rev env);
-
+  flush stdout
