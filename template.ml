@@ -33,7 +33,7 @@ let template = function
 		| [t;t'; LAMBDA(x,u);LAMBDA( x', u');o] -> ()
 		| _ -> raise Error.Internal)
 	    | T_Empty -> ()
-	    | T_IC -> (
+	    | T_IP -> (
 		match args with
 		| [tA;a;LAMBDA(x1,tB);LAMBDA(x2,LAMBDA(y2,tD));LAMBDA(x3,LAMBDA(y3,LAMBDA(z3,q)))] -> ()
 		| _ -> raise Error.Internal)
@@ -73,8 +73,8 @@ let template = function
 	    | O_empty -> ()
 	    | O_empty_r -> ()
 	    | O_c -> ()
-	    | O_ic_r -> ()
-	    | O_ic -> ()
+	    | O_ip_r -> ()
+	    | O_ip -> ()
 	    | O_paths -> ()
 	    | O_refl -> ()
 	    | O_J -> ()

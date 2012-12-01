@@ -32,10 +32,13 @@ and subst_type (subl : (var' * canonical_term) list) (pos,t) =
   (pos,
    match t with
    | F_Pi(v,a,b) -> 
-       let w = newfresh v in
-       let v' = nowhere (Variable w) in
-       let subs' = (v,ATOMIC v') :: subl in 
-       F_Pi(w, subst_type subl a, subst_type subs' b)      
+       if v = VarUnused then
+	 F_Pi(v, subst_type subl a, subst_type subl b)
+       else
+	 let w = newfresh v in
+	 let v' = nowhere (Variable w) in
+	 let subl' = (v,ATOMIC v') :: subl in 
+	 F_Pi(w, subst_type subl a, subst_type subl' b)
    | F_APPLY(label,args) -> F_APPLY(label, subst_list subl args)
    | F_Singleton(e,t) -> F_Singleton( subst' subl e, subst_type subl t ))
 

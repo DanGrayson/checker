@@ -43,7 +43,7 @@ and fillin env (pos,e) = (pos, match e with
 	  match branches with 
 	    [ATOMIC f;ATOMIC p;LAMBDA(_,ATOMIC(_,EmptyHole _))] -> (
 	      let tf = tau env f in
-	      match strip_pos tf with
+	      match unmark tf with
 	      | APPLY(T T_Pi, [ATOMIC t1; LAMBDA( x, ATOMIC t2)])
 		-> Helpers.make_OO_ev (fillin env f) (fillin env p) (x, (fillin (ts_bind (x,t1) env) t2))
 	      | _ -> raise (TypeCheckingFailure(get_pos f,"expected a TS function:\n    " ^(ts_expr_to_string f) ^"\n  : "^(ts_expr_to_string tf))))

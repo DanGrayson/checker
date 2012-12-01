@@ -23,7 +23,7 @@ let make_TT_Pt = make_TT T_Pt []
 let make_TT_Coprod t t' = make_TT T_Coprod [ATOMIC t;ATOMIC t']
 let make_TT_Coprod2 t t' (x,u) (x',u') o = make_TT T_Coprod2 [ATOMIC t; ATOMIC t'; lambda1 x u; lambda1 x' (u'); o]
 let make_TT_Empty = make_TT T_Empty []
-let make_TT_IC tA a (x,tB,(y,tD,(z,q))) = make_TT T_IC [ATOMIC tA; ATOMIC a; lambda1 x tB; lambda2 x y tD; lambda3 x y z q]
+let make_TT_IP tA a (x,tB,(y,tD,(z,q))) = make_TT T_IP [ATOMIC tA; ATOMIC a; lambda1 x tB; lambda2 x y tD; lambda3 x y z q]
 let make_TT_Id t x y = make_TT T_Id [ATOMIC t;ATOMIC x;ATOMIC y]
 let make_OO_u m = make_OO O_u [ATOMIC m]
 let make_OO_j m n = make_OO O_j [ATOMIC m; ATOMIC n]
@@ -47,11 +47,11 @@ let make_OO_c tA a (x,tB,(y,tD,(z,q))) b f = make_OO O_c [
   a; lambda1 x tB;
   lambda2 x y tD;
   lambda3 x y z q ]
-let make_OO_ic_r tA a (x,tB,(y,tD,(z,q))) i (x',(v,tS)) t = make_OO O_ic_r [
+let make_OO_ip_r tA a (x,tB,(y,tD,(z,q))) i (x',(v,tS)) t = make_OO O_ip_r [
   tA; a;
   lambda1 x tB; lambda2 x y tD; lambda3 x y z q;
   i; lambda2  x' v tS; t]
-let make_OO_ic m1 m2 m3 oA a (x,oB,(y,oD,(z,q))) = make_OO O_ic [
+let make_OO_ip m1 m2 m3 oA a (x,oB,(y,oD,(z,q))) = make_OO O_ip [
   ATOMIC m1; ATOMIC m2; ATOMIC m3;
   ATOMIC oA; ATOMIC a;
   lambda1 x oB; lambda2 x y oD; lambda3 x y z q ]

@@ -27,7 +27,7 @@ module Make(Ueq: Universe.Equivalence) : S = struct
   let rec term_eq ulevel_context alpha =
     let rec term_eq alpha x y = x = y || match (x, y) with 
       | LAMBDA (x,body), LAMBDA (x',body') ->
-	  let alpha = addalpha (strip_pos x) (strip_pos x') alpha 
+	  let alpha = addalpha (unmark x) (unmark x') alpha 
 	  in term_eq alpha body body'
       | ATOMIC(_,d), ATOMIC(_,e) -> (
 	  d == e || 

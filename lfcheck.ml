@@ -29,7 +29,7 @@ let rec strip_singleton ((_,(_,t)) as u) = match t with
 | F_Singleton a -> strip_singleton a
 | _ -> u
 
-let to_lfexpr v = ATOMIC (Nowhere, Variable (strip_pos v))
+let to_lfexpr v = ATOMIC (Nowhere, Variable (unmark v))
 
 (* background assumption: all types in the environment have been verified *)
 
@@ -81,7 +81,7 @@ and type_synthesis (env:context) (e:ts_expr) : lf_type =
      | EmptyHole _ -> err pos "empty hole"
      | APPLY(label,args) ->
 	 with_pos pos 				(* the position of the type will reflect the position of the expression *)
-	   (strip_pos (
+	   (unmark (
 	    let a = 
 	      try label_to_lf_type env label
 	      with Not_found -> err pos ("unbound variable: "^(label_to_string label))
@@ -108,8 +108,6 @@ and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (
   let (pos,t0) = t in
   match x, y, t0 with
   | _, _, F_Singleton _ -> ()
-  | LAMBDA(v,e), LAMBDA(v',e'), F_Pi(w,a,b) ->
-      raise NotImplemented
   | _ ->
       mismatch_term xpos x ypos y		(* need to implement more cases, though *)
 
@@ -146,9 +144,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
         | K_type, [], [] -> ()
 	| _ -> raise Internal
       in repeat k args args'
-  | F_APPLY _, F_Pi _
-  | F_Pi _, F_APPLY _ -> mismatch_type tpos t upos u
-  | _ -> raise Internal
+  | _ -> mismatch_type tpos t upos u
 
 and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
   (* assume t and u have already been verified to be types *)
@@ -178,7 +174,7 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : unit =
   match e, t0 with
   | LAMBDA(v,e), F_Pi(w,a,b) ->
       type_check pos 
-	((LF_Var (strip_pos v),a) :: env)
+	((LF_Var (unmark v),a) :: env)
 	e
 	(Substitute.subst_type (w,to_lfexpr v) b)
   | LAMBDA _, _ -> err pos "did not expect a lambda expression here"

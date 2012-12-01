@@ -15,7 +15,7 @@ let rec tau (pos:Error.position) (env:context) (pos,e) : atomic_term = match e w
   | APPLY(h,args) -> with_pos pos (
       match h with
       | L _ -> raise Error.NotImplemented
-      | R _ | U _ | T _ -> raise Error.Internal
+      | U _ | T _ -> raise Error.Internal
       | O oh -> match oh with
 	| O_u -> (
 	    match args with 
@@ -27,7 +27,7 @@ let rec tau (pos:Error.position) (env:context) (pos,e) : atomic_term = match e w
 	    | _ -> raise Error.Internal)
 	| O_ev -> (
 	    match args with 
-	    | [ATOMIC f;ATOMIC o;LAMBDA(x,ATOMIC t)] -> strip_pos (Substitute.subst (strip_pos x,ATOMIC o) t)
+	    | [ATOMIC f;ATOMIC o;LAMBDA(x,ATOMIC t)] -> unmark (Substitute.subst (unmark x,ATOMIC o) t)
 	    | _ -> raise Error.Internal)
 	| O_lambda -> (
 	    match args with 
@@ -51,8 +51,8 @@ let rec tau (pos:Error.position) (env:context) (pos,e) : atomic_term = match e w
 	| O_empty -> raise Error.NotImplemented
 	| O_empty_r -> raise Error.NotImplemented
 	| O_c -> raise Error.NotImplemented
-	| O_ic_r -> raise Error.NotImplemented
-	| O_ic -> raise Error.NotImplemented
+	| O_ip_r -> raise Error.NotImplemented
+	| O_ip -> raise Error.NotImplemented
 	| O_paths -> raise Error.NotImplemented
 	| O_refl -> raise Error.NotImplemented
 	| O_J -> raise Error.NotImplemented

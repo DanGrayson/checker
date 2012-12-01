@@ -28,7 +28,7 @@ Check Sigma x:T, Sigma y:U, V -> X .
 Check [Coprod](T,T').
 # Check [Coprod;x,x'](T,T',U,U',[u](u0)).
 Check [Empty]().
-# Check lambda a:A, lambda q:B, lambda t:[IC;x,y,z](A,a,B,D,q), t.
+# Check lambda a:A, lambda q:B, lambda t:[IP;x,y,z](A,a,B,D,q), t.
 Check lambda x:T, lambda y:T, lambda t:[Id](T,x,y), t.
 
 Check lambda o:T, lambda o':T, [forall;x](u1,u2,o,o').

@@ -53,7 +53,7 @@ and ts_expr_to_string ((_,e) as oe) = match e with
 	| T_Pi -> (
 	    match args with
 	    | [ATOMIC t1; LAMBDA( x, ATOMIC t2 )] -> 
-		if strip_pos x = VarUnused
+		if unmark x = VarUnused
 		then concat ["(";ts_expr_to_string t1;"->";ts_expr_to_string t2;")"]
 		else concat ["[Pi;";vartostring x;"](";ts_expr_to_string t1;",";ts_expr_to_string t2;")"]
 	    | _ -> lf_atomic_p oe)
@@ -69,13 +69,13 @@ and ts_expr_to_string ((_,e) as oe) = match e with
 		^ (ts_expr_to_string o)
 		^ ")"
 	    | _ -> lf_atomic_p oe)
-	| T_IC -> (
+	| T_IP -> (
 	    match args with 
 	      [ATOMIC tA; ATOMIC a;
 	       LAMBDA(x1,ATOMIC tB);
 	       LAMBDA(x2,LAMBDA(y2,ATOMIC tD));
 	       LAMBDA(x3,LAMBDA(y3,LAMBDA(z3,ATOMIC q)))]
-	      -> "[IC;" 
+	      -> "[IP;" 
 		^ (vartostring x1) ^ ","
 		^ (vartostring x2) ^ "," ^ (vartostring y2) ^ "," 
 		^ (vartostring x3) ^ "," ^ (vartostring y3) ^ "," ^ (vartostring z3) 

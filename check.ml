@@ -25,7 +25,6 @@ let rec tcheck pos env ((pos,e0) as e) = match e0 with
       in if t != texp then raise (TypeCheckingFailure (pos, "expected a t-variable: "^(vartostring' v))))
   | APPLY(h,args) -> match h with
     | L _ -> raise (Unimplemented_expr (ATOMIC e))
-    | R _ -> raise NotImplemented
     | T th -> (
 	match th with 
 	| T_El -> (match args with
@@ -48,7 +47,7 @@ let rec tcheck pos env ((pos,e0) as e) = match e0 with
 	    | [ATOMIC t;ATOMIC t'; LAMBDA( x,ATOMIC u);LAMBDA( x', ATOMIC u');ATOMIC o] -> raise NotImplemented
 	    | _ -> raise Internal)
 	| T_Empty -> ()
-	| T_IC -> raise NotImplemented
+	| T_IP -> raise NotImplemented
 	| T_Id -> (
 	    match args with
 	    | [ATOMIC t; ATOMIC x; ATOMIC y] -> (
@@ -69,7 +68,6 @@ and ocheck pos env ((pos,e0) as e) =
       in if t != oexp then raise (TypeCheckingFailure (pos, "expected an o-variable: "^(vartostring' v))))
   | APPLY(h,args) -> match h with
     | L _ -> raise (Unimplemented_expr (ATOMIC e))
-    | R _ -> raise NotImplemented
     | U th -> raise (TypeCheckingFailure(pos, "expected an o-expression but found a u-expression"))
     | T th -> raise (TypeCheckingFailure(pos, "expected an o-expression but found a t-expression"))
     | O oh -> match oh with
@@ -86,9 +84,9 @@ and ocheck pos env ((pos,e0) as e) =
 	      ocheck pos env f; 
 	      ocheck pos env x; 
 	      let tf = tau env f in
-	      match strip_pos tf with
+	      match unmark tf with
 	      | APPLY(T T_Pi, [ATOMIC s; LAMBDA( w,ATOMIC t')]) ->
-		  if not ( (strip_pos w) = (strip_pos v) ) 
+		  if not ( (unmark w) = (unmark v) ) 
 		  then raise NotImplemented;
 		  overify pos env x s;
 		  let env = ts_bind (v, s) env in 
@@ -121,8 +119,8 @@ and ocheck pos env ((pos,e0) as e) =
       | O_empty -> raise NotImplemented
       | O_empty_r -> raise NotImplemented
       | O_c -> raise NotImplemented
-      | O_ic_r -> raise NotImplemented
-      | O_ic -> raise NotImplemented
+      | O_ip_r -> raise NotImplemented
+      | O_ip -> raise NotImplemented
       | O_paths -> raise NotImplemented
       | O_refl -> raise NotImplemented
       | O_J -> raise NotImplemented

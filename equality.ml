@@ -11,7 +11,7 @@ and eq' alpha e e' = (
   match (e,e') with
   | ATOMIC e, ATOMIC e' -> eq alpha e e'
   | LAMBDA(x,e), LAMBDA(x',e') -> 
-      let alpha = addalpha (strip_pos x) (strip_pos x') alpha in eq' alpha e e'
+      let alpha = addalpha (unmark x) (unmark x') alpha in eq' alpha e e'
   | _ -> false
  )
 

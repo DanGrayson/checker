@@ -59,15 +59,15 @@ type tHead =
 	  Voevodsky doesn't list this explicitly in the definition of TS4, but it gets used in derivation rules, so I added it.
 	  Perhaps he intended to write [\[El\](\[empty\]())] for it. *)
       (* TS5: *)
-  | T_IC
-	(** [T_IC(ATOMIC A,ATOMIC a,LAMBDA(x,ATOMIC B),LAMBDA(x,LAMBDA(y,ATOMIC D)),LAMBDA(x,LAMBDA(y,LAMBDA(z,ATOMIC q)))) <--> \[IC;x,y,z\](A,a,B,D,q)] *)
+  | T_IP
+	(** [T_IP(ATOMIC A,ATOMIC a,LAMBDA(x,ATOMIC B),LAMBDA(x,LAMBDA(y,ATOMIC D)),LAMBDA(x,LAMBDA(y,LAMBDA(z,ATOMIC q)))) <--> \[IP;x,y,z\](A,a,B,D,q)] *)
       (* TS6: *)
   | T_Id
       (** Identity type; paths type. *)
       (* TS7: *)
       (* end of TS *)
 
-let theads = [ T_El; T_U; T_Pi; T_Sigma; T_Pt; T_Coprod; T_Coprod2; T_Empty; T_IC; T_Id ]
+let theads = [ T_El; T_U; T_Pi; T_Sigma; T_Pt; T_Coprod; T_Coprod2; T_Empty; T_IP; T_Id ]
 
 let thead_to_string = function
   | T_El -> "El"
@@ -78,7 +78,7 @@ let thead_to_string = function
   | T_Coprod -> "Coprod"
   | T_Coprod2 -> "Coprod2"
   | T_Empty -> "Empty"
-  | T_IC -> "IC"
+  | T_IP -> "IP"
   | T_Id -> "Id"
 
 (** The various labels for o-expressions of TS. *)
@@ -157,10 +157,10 @@ type oHead =
 	    The type of [\[empty_r\](T,o)] is [T].  Here the type of [o] is [\[Empty\]()], the empty type. *)
   | O_c
 	(** Corresponds to [\[c\]] in the paper. *)
-  | O_ic_r
-	(** [ic_r] is the elimination rule for inductive types (generalized W-types) *)
-  | O_ic
-	(** Corresponds to [\[ic\]].  Its type is the max of the three u-level expressions. *)
+  | O_ip_r
+	(** [ip_r] is the elimination rule for inductive types (generalized W-types) *)
+  | O_ip
+	(** Corresponds to [\[ip\]].  Its type is the max of the three u-level expressions. *)
 	(* TS6: *)
   | O_paths
 	(** The object corresponding to the identity type [\[Id\]].  
@@ -209,8 +209,8 @@ let ohead_to_string = function
   | O_empty -> "empty"
   | O_empty_r -> "empty_r"
   | O_c -> "c"
-  | O_ic_r -> "ic_r"
-  | O_ic -> "ic"
+  | O_ip_r -> "ip_r"
+  | O_ip -> "ip"
   | O_paths -> "paths"
   | O_refl -> "refl"
   | O_J -> "J"
@@ -219,19 +219,12 @@ let ohead_to_string = function
 
 let oheads = [ O_u; O_j; O_ev; O_lambda; O_forall; O_pair; O_pr1; O_pr2;
   O_total; O_pt; O_pt_r; O_tt; O_coprod; O_ii1; O_ii2; O_sum; O_empty;
-  O_empty_r; O_c; O_ic_r; O_ic; O_paths; O_refl; O_J; O_rr0; O_rr1 ]
-
-(** Heads for inference rules. *)
-type ruleHead =
-  | Rule of int * string		(* the number of the rule in the paper, together with a convenient name *)
-
-let rulehead_to_string = function
-  | Rule (n,s) -> s
+  O_empty_r; O_c; O_ip_r; O_ip; O_paths; O_refl; O_J; O_rr0; O_rr1 ]
 
 (** Source code positions. *)
 
 type 'a marked = position * 'a
-let strip_pos ((_:position), x) = x
+let unmark ((_:position), x) = x
 let get_pos ((pos:position), _) = pos
 let with_pos (pos:position) e = (pos, e)
 let with_pos_of ((pos:position),_) e = (pos,e)
@@ -244,12 +237,14 @@ and  var' =				(* a variable in both TS and LF *)
   | Var of string
   | VarGen of int * string
   | VarUnused
+  | VarRule of int * string		(* the number of the inference rule in the paper, together with a convenient name *)
 
 let vartostring' = function
   | Var x -> x
   | VarGen(i,x) -> x ^ "_" ^ (string_of_int i)
   | VarUnused -> "_"
-let vartostring v = vartostring' (strip_pos v)
+  | VarRule (n,s) -> s
+let vartostring v = vartostring' (unmark v)
 
 type lf_var =				(* a variable in LF *)
   | LF_Var of var'
@@ -283,7 +278,6 @@ type label =
   | U of uHead			(** labels for u-expressions of TS *)
   | T of tHead			(** labels for t-expressions of TS *)
   | O of oHead			(** labels for o-expressions of TS *)
-  | R of ruleHead		(** names of inference rules of TS *)
 
 let labels = List.concat [
   List.map (fun h -> U h) uheads;
@@ -296,11 +290,16 @@ let label_to_string = function
   | U h -> "[" ^ uhead_to_string h ^ "]"
   | T h -> "[" ^ thead_to_string h ^ "]"
   | O h -> "[" ^ ohead_to_string h ^ "]"
-  | R h -> rulehead_to_string h
 
 let string_to_label = List.map (fun h -> label_to_string h, h) labels
 	
-(** An atomic term is one that isn't a lambda expression. *)
+(** An atomic term is one that isn't a lambda expression.
+
+    In an atomic term, top level simplification (evaluation) may be possible;
+    for example, a variable with a defined value could be replaced by its
+    value.
+
+ *)
 type atomic_term = atomic_term' marked
 and atomic_term' =
   | Variable of var'
@@ -309,9 +308,12 @@ and atomic_term' =
         (** An empty hole, to be filled in later. *)
   | APPLY of label * canonical_term list
 	(** Iterated function application. *)
+
+(** Canonical terms include the atomic terms, as well as one new type of term
+    (lambda expressions), which admits no top level simplification
+    (evaluation). *)
 and canonical_term = 
   | ATOMIC of atomic_term
-	(** A wrapper that gives the position in the TS source code, for error messages *)
   | LAMBDA of var * canonical_term
 	(** The lambda of LF. *)
 
@@ -405,7 +407,7 @@ let thead_to_lf_type = function
   | T_Coprod -> texp @> texp @> texp
   | T_Coprod2 -> texp @> texp @> texp1 @> texp1 @> texp
   | T_Empty -> texp
-  | T_IC -> texp @> oexp @> texp1 @> texp2 @> oexp3 @> texp
+  | T_IP -> texp @> oexp @> texp1 @> texp2 @> oexp3 @> texp
   | T_Id -> texp @> oexp @> oexp @> texp
 
 let ohead_to_lf_type = function
@@ -428,8 +430,8 @@ let ohead_to_lf_type = function
   | O_empty -> oexp
   | O_empty_r -> texp @> oexp @> oexp
   | O_c -> texp @> oexp @> texp1 @> texp2 @> oexp3 @> oexp @> oexp @> oexp
-  | O_ic_r -> texp @> oexp @> texp1 @> texp2 @> oexp3 @> oexp @> texp2 @> oexp @> oexp
-  | O_ic -> oexp @> oexp @> oexp1 @> oexp2 @> oexp3 @> oexp
+  | O_ip_r -> texp @> oexp @> texp1 @> texp2 @> oexp3 @> oexp @> texp2 @> oexp @> oexp
+  | O_ip -> oexp @> oexp @> oexp1 @> oexp2 @> oexp3 @> oexp
   | O_paths -> texp @> oexp @> oexp @> oexp
   | O_refl -> texp @> oexp @> oexp
   | O_J -> texp @> oexp @> oexp @> oexp @> oexp @> texp2 @> oexp
@@ -439,8 +441,8 @@ let ohead_to_lf_type = function
 type vardist = int list list
 let head_to_vardist = function
   | T T_Coprod2 -> Some (2, [] :: [] :: [0] :: [1] :: [])
-  | O O_ic_r -> Some (5, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [] :: [3;4] :: [] :: [])
-  | T T_IC -> Some (3, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [])
+  | O O_ip_r -> Some (5, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [] :: [3;4] :: [] :: [])
+  | T T_IP -> Some (3, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [])
   | O O_ev -> Some (1, [] :: [] :: [0] :: [])
   | T T_Pi | T T_Sigma | O O_lambda -> Some (1, [] :: [0] :: [])
   | O O_forall -> Some (1, [] :: [] :: [] :: [0] :: [])
@@ -449,20 +451,14 @@ let head_to_vardist = function
   | O O_total -> Some (1, [] :: [] :: [] :: [0] :: [])
   | O O_pt_r -> Some (1, [] :: [0] :: [])
   | O O_c -> Some (3, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [] :: [] :: [])
-  | O O_ic -> Some (3, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [])
+  | O O_ip -> Some (3, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [])
   | O O_J -> Some (2, [] :: [] :: [] :: [] :: [] :: [0;1] :: [])
   | _ -> None
-
-(** The derivation rules of TS. 
-
-    The list of rules is part of the LF signature, giving LF types for LF term constants. *)
-let rules = ref []
 
 let label_to_lf_type env = function
   | U h -> uhead_to_lf_type h
   | T h -> thead_to_lf_type h
   | O h -> ohead_to_lf_type h
-  | R h -> List.assoc h !rules
   | L v -> List.assoc v env
 
 (*** The "kinds" of LF. 
@@ -508,7 +504,7 @@ let newfresh =
     VarGen (!genctr, x)) in
   fun v -> match v with 
   | Var x | VarGen(_,x) -> newgen x
-  | VarUnused as v -> v
+  | VarRule _ | VarUnused -> raise Internal
 
 let ts_bind' (v,t) env = match v with
   | VarUnused -> env
@@ -517,7 +513,7 @@ let ts_bind' (v,t) env = match v with
       (LF_Var v,oexp) :: 
       env
 
-let ts_bind (v,(t:ts_expr)) env = ts_bind' (strip_pos v, t) env
+let ts_bind (v,(t:ts_expr)) env = ts_bind' (unmark v, t) env
 
 let new_hole' = 
   let counter = ref 0 in

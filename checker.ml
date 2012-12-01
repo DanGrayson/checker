@@ -2,9 +2,9 @@
 
 open Typesystem
 open Template				(*otherwise unused*)
-open Lfcheck				(*otherwise unused*)
 open Universe
 open Error
+open Hash
 
 exception Error_Handled
 exception FileFinished
@@ -99,9 +99,7 @@ let lexpos lexbuf =
   let _ = Tokens.command_flush lexbuf in
   p
 
-let initialize_environment () =
-  global_context := [];
-  rules := []
+let initialize_environment () = global_context := []
 
 let add_tVars tvars = 
   global_context := 
@@ -124,7 +122,6 @@ let fix t = Fillin.fillin !global_context t
 let axiomCommand name t = global_context := ts_bind' (Var name, t) !global_context
 
 let ruleCommand num name x =
-  rules := (Rule (num,name), x) :: !rules;
   Printf.printf "Rule %d %s: %s\n" num name (Printer.lf_type_to_string x);
   global_context := (LF_Var (Var name), x) :: !global_context;
   flush stdout;
