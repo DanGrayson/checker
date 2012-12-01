@@ -491,7 +491,7 @@ type uContext = UContext of var' list * (ts_expr * ts_expr) list
 
 let empty_uContext = UContext([],[])
 
-let def_bind name aspect (pos:position) o t (env:context) = (VarDefined(name,aspect), (pos,F_Singleton(o,t))) :: env
+let def_bind v (pos:position) o t (env:context) = (v, (pos,F_Singleton(o,t))) :: env
 
 let newfresh = 
   let genctr = ref 0 in 

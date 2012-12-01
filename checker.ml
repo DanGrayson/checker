@@ -200,8 +200,8 @@ let typeCommand x = (
 let show_command () = 
   print_env !global_context
 
-let addDefinition name aspect pos o t = 
-  global_context := def_bind name aspect pos o t !global_context
+let addDefinition v pos o t = 
+  global_context := def_bind v pos o t !global_context
 
 let process_command lexbuf = (
   let c = protect (Grammar.command (Tokens.expr_tokens)) lexbuf (fun () -> lexpos lexbuf) in
@@ -218,11 +218,11 @@ let process_command lexbuf = (
     | Toplevel.Type x -> typeCommand x
     | Toplevel.Definition defs -> protect1 ( fun () -> 
 	List.iter
-	  (fun (name, aspect, pos, tm, tp) -> 
-	    printf "Define [%s.%d] := %s : %s\n" name aspect (lf_canonical_to_string tm) (lf_type_to_string tp);
+	  (fun (v, pos, tm, tp) -> 
+	    printf "Define %s := %s : %s\n" (vartostring' v) (lf_canonical_to_string tm) (lf_type_to_string tp);
 	    flush stdout;
 	    Lfcheck.type_check pos !global_context tm tp;
-	    addDefinition name aspect pos tm tp
+	    addDefinition v pos tm tp
 	  ) 
 	  defs)
     | Toplevel.End -> printf "%s: ending.\n" (errfmt pos) ; flush stdout; raise StopParsingFile

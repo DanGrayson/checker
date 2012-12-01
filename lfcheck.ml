@@ -31,7 +31,6 @@ let mismatch_type pos t pos' t' =
   raise (TypeCheckingFailure2 (
 	 pos , "expected type "^(lf_type_to_string t ),
 	 pos', "to match      "^(lf_type_to_string t')))
-
 let mismatch_term_t pos x pos' x' t = 
   let (pos,pos') = fix2 pos pos' in
   raise (TypeCheckingFailure3 (
@@ -267,6 +266,10 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : unit =
 	e
 	(subst_type (w,to_lfexpr v) b)
   | LAMBDA _, _ -> err pos "did not expect a lambda expression here"
+  | ATOMIC (pos, EmptyHole n), _ -> 
+      raise (TypeCheckingFailure2 (
+	 pos, "hole found : "^(lf_canonical_to_string e),
+	 pos, "   of type : "^(lf_type_to_string t)))
   | ATOMIC e, _ -> let s = type_synthesis env e in subtype env s t
 
 (* 
