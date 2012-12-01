@@ -15,11 +15,11 @@ open Error
 %token <string * int> DEFINED_VARIABLE
 %token
 
-  Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod COLON Wstar Warrow
-  Wequalequal Wequal COLONequal Wunderscore WRule Wgreaterequal
-  Wgreater Wlessequal Wless Wsemi KUlevel Kumax KType Ktype KPi Klambda KSigma
-  WCheckLF WCheckLFtype WDefine WShow WEnd WVariable WAlpha Weof WCheck
-  WCheckUniverses Wtilde KSingleton Axiom
+  Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod COLON Wstar Warrow Wmapsto
+  Wequalequal Wequal COLONequal Wunderscore WRule Wgreaterequal Wgreater
+  Wlessequal Wless Wsemi KUlevel Kumax KType Ktype KPi Klambda KSigma WCheckLF
+  WCheckLFtype WDefine WShow WEnd WVariable WAlpha Weof WCheck WCheckUniverses
+  Wtilde KSingleton Axiom
 
 /* precedences, lowest first */
 %right
@@ -98,9 +98,25 @@ lf_type_constant:
 lf_expr:
 | e=atomic_term
     { ATOMIC(Position($startpos, $endpos), e)  }
+| e=lf_lambda_expression
+    { e }
+
+lf_lambda_expression:
 | Wlparen Klambda v=variable Wcomma body=lf_expr Wrparen
     { LAMBDA(v,body) }
+| Wlparen v=variable Wmapsto body=lf_lambda_expression_body Wrparen
+    { LAMBDA(v,body) }
 | Wlparen Klambda v=variable_unused Wcomma body=lf_expr Wrparen
+    { LAMBDA(v,body) }
+| Wlparen v=variable_unused Wmapsto body=lf_lambda_expression_body Wrparen
+    { LAMBDA(v,body) }
+
+lf_lambda_expression_body:
+| e=lf_expr
+    { e }
+| v=variable Wmapsto body=lf_lambda_expression_body
+    { LAMBDA(v,body) }
+| v=variable_unused Wmapsto body=lf_lambda_expression_body
     { LAMBDA(v,body) }
 
 variable_unused:

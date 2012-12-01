@@ -1,3 +1,5 @@
+(* -*- coding: utf-8 -*- *)
+
 (** Voevodsky's type system TS mixed with the type system LF of Logical Frameworks (Edinburgh style).
 
 @author Dan Grayson
@@ -72,10 +74,10 @@ let theads = [ T_El; T_U; T_Pi; T_Sigma; T_Pt; T_Coprod; T_Coprod2; T_Empty; T_I
 let thead_to_string = function
   | T_El -> "El"
   | T_U -> "U"
-  | T_Pi -> "Pi"
-  | T_Sigma -> "Sigma"
+  | T_Pi -> "∏"
+  | T_Sigma -> "Σ"
   | T_Pt -> "Pt"
-  | T_Coprod -> "Coprod"
+  | T_Coprod -> "∐"
   | T_Coprod2 -> "Coprod2"
   | T_Empty -> "Empty"
   | T_IP -> "IP"
@@ -193,8 +195,8 @@ let ohead_to_string = function
   | O_u -> "u"
   | O_j -> "j"
   | O_ev -> "ev"
-  | O_lambda -> "lambda"
-  | O_forall -> "forall"
+  | O_lambda -> "λ"
+  | O_forall -> "∀"
   | O_pair -> "pair"
   | O_pr1 -> "pr1"
   | O_pr2 -> "pr2"

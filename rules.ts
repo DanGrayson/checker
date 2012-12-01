@@ -1,148 +1,127 @@
+# -*- coding: utf-8 -*-
+
 # the derivation rules for TS0
 
-Rule 7 tsimeq :
+Rule 7 tsimeq : ∏ T:texp, ∏ U:texp,
 
-     Pi T:texp, Pi U:texp,
-     [ T ~ U ] -> [ T = U ].
+     [ T ~ U ] ⟶ [ T = U ].
 
-Rule 8 teqsymm :
+Rule 8 teqsymm : ∏ T:texp, ∏ U:texp,
 
-     Pi T:texp, Pi U:texp,
-     [ T = U ] -> [ U = T ].
+     [ T = U ] ⟶ [ U = T ].
 
-Rule 9 teqtrans :
+Rule 9 teqtrans : ∏ T:texp, ∏ U:texp, ∏ V:texp,
 
-     Pi T:texp, Pi U:texp, Pi V:texp,
-     [ T = U ] -> [ U = V ] -> [ T = V ].
+     [ T = U ] ⟶ [ U = V ] ⟶ [ T = V ].
 
-Rule 10 osimeq :
+Rule 10 osimeq : ∏ x:oexp, ∏ y:oexp, ∏ T:texp,
 
-     Pi x:oexp, Pi y:oexp, Pi T:texp,
-     [ x ~ y : T ] -> [ x = y : T ].
+     [ x ~ y : T ] ⟶ [ x = y : T ].
 
-Rule 11 oeqsymm :
+Rule 11 oeqsymm : ∏ x:oexp, ∏ y:oexp, ∏ T:texp,
 
-     Pi x:oexp, Pi y:oexp, Pi T:texp,
-     [ x = y : T ] -> [ y = x : T ].
+     [ x = y : T ] ⟶ [ y = x : T ].
 
-Rule 12 oeqtrans :
+Rule 12 oeqtrans : ∏ x:oexp, ∏ y:oexp, ∏ z:oexp, ∏ T:texp,
 
-     Pi x:oexp, Pi y:oexp, Pi z:oexp, Pi T:texp,
-     [ x = y : T ] -> [ y = z : T ] -> [ x = z : T ].
+     [ x = y : T ] ⟶ [ y = z : T ] ⟶ [ x = z : T ].
 
-Rule 13 cast :
+Rule 13 cast : ∏ o:oexp, ∏ T:texp, ∏ U:texp,
 
-     Pi o:oexp, Pi T:texp, Pi U:texp,
-     [ o : T ] -> [ T = U ] -> [ o : U  ].
+     [ o : T ] ⟶ [ T = U ] ⟶ [ o : U  ].
 
-Rule 14 oeqcast :
+Rule 14 oeqcast : ∏ x:oexp, ∏ y:oexp, ∏ T:texp, ∏ U:texp,
 
-     Pi x:oexp, Pi y:oexp, Pi T:texp, Pi U:texp,
-     [ x = y : T ] -> [ T = U ] -> [ x = y : U ].
+     [ x = y : T ] ⟶ [ T = U ] ⟶ [ x = y : U ].
 
-Rule 15 U_type :
+Rule 15 U_type : ∏ M:uexp, 
 
-     Pi M:uexp, 
      [ ([U] M) type ].
 
-Rule 16 u_univ :
+Rule 16 u_univ : ∏ M:uexp,
 
-     Pi M:uexp,
      [ ([u] M) : ([U] ([next] M)) ].
 
-Rule 17 El_type :
+Rule 17 El_type : ∏ M:uexp, ∏ o:oexp,
 
-     Pi M:uexp, Pi o:oexp,
-     [ o : ([U] M) ] -> [ ([El] o) type ].
+     [ o : ([U] M) ] ⟶ [ ([El] o) type ].
 
-Rule 18 El_u_univ :
+Rule 18 El_u_univ : ∏ M:uexp,
 
-     Pi M:uexp,
      [ ([El]([u] M)) = ([U] M) ].
 
-Rule 19 El_eq :
+Rule 19 El_eq : ∏ M:uexp, ∏ x:oexp, ∏ y:oexp, 
 
-     Pi M:uexp, Pi x:oexp, Pi y:oexp, 
-     [ x = y : ([U] M) ] -> [ ([El] x) = ([El] y) ].
+     [ x = y : ([U] M) ] ⟶ [ ([El] x) = ([El] y) ].
 
-Rule 20 El_eq_reflect :
+Rule 20 El_eq_reflect : ∏ M:uexp, ∏ x:oexp, ∏ y:oexp, 
 
-     Pi M:uexp, Pi x:oexp, Pi y:oexp, 
-     [ x : ([U] M) ] -> [ y : ([U] M) ] -> [ ([El] x) = ([El] y) ] -> [ x = y : ([U] M) ].
+     [ x : ([U] M) ] ⟶ [ y : ([U] M) ] ⟶ [ ([El] x) = ([El] y) ] ⟶ [ x = y : ([U] M) ].
 
-Rule 21 Pi_istype :
+Rule 21 ∏_istype : ∏ T:texp, ∏ U : oexp ⟶ texp,
 
-     Pi T:texp, Pi U : oexp -> texp,
-     (Pi x:oexp, [ x : T ] -> [ (U x) type ]) -> [ ([Pi] T U) type ].
+     (∏ x:oexp, [ x : T ] ⟶ [ (U x) type ]) ⟶ [ ([∏] T U) type ].
 
-Rule 22 Pi_eq :
+Rule 22 ∏_eq : ∏ T:texp, ∏ T':texp, ∏ U : oexp ⟶ texp, ∏ U' : oexp ⟶ texp, 
 
-     Pi T:texp, Pi T':texp, 
-     Pi U : oexp -> texp, Pi U' : oexp -> texp, 
-     (Pi x:oexp, [ x : T ] -> [ (U x) = (U' x)])
-     -> [ ([Pi] T U) = ([Pi] T' U')  ].
+     (∏ x:oexp, [ x : T ] ⟶ [ (U x) = (U' x)])
 
-Rule 23 lambda_hastype :
+     ⟶ [ ([∏] T U) = ([∏] T' U')  ].
 
-     Pi T:texp, Pi U:oexp->texp, Pi o:oexp->oexp,
-     (Pi x:oexp, [ x : T ] -> [ (o x) : (U x) ])
-     -> [ ([lambda] T o) : ([Pi] T U) ].
+Rule 23 λ_hastype : ∏ T:texp, ∏ U:oexp ⟶ texp, ∏ o:oexp ⟶ oexp,
 
-Rule 25 ev_hastype : 
+     (∏ x:oexp, [ x : T ] ⟶ [ (o x) : (U x) ])
 
-     Pi T : texp, Pi U : oexp -> texp, Pi f : oexp, Pi o : oexp,
-     [ f : ([Pi] T U) ] -> [ o : T ] -> [ ([ev] f o U) : (U o)].
+     ⟶ [ ([λ] T o) : ([∏] T U) ].
 
-Rule 26 ev_eq :
+Rule 25 ev_hastype : ∏ T : texp, ∏ U : oexp ⟶ texp, ∏ f : oexp, ∏ o : oexp,
 
-     Pi T : texp, Pi U : oexp -> texp, Pi f : oexp, Pi o : oexp,
-     Pi T' : texp, Pi U' : oexp -> texp, Pi f' : oexp, Pi o' : oexp,
-     (Pi x:oexp, [ x : T ] -> [ (U x) = (U' x) ]) -> 
-     [ f = f' : ([Pi] T U) ] -> [ o = o' : T ] -> [ ([ev] f o U) = ([ev] f' o' U') : (U o)].
+     [ f : ([∏] T U) ] ⟶ 
+     [ o : T ] ⟶ 
+     [ ([ev] f o U) : (U o)].
 
-Rule 27 beta_reduction :
+Rule 26 ev_eq : ∏ T : texp, ∏ U : oexp ⟶ texp, ∏ f : oexp, ∏ o : oexp,
+     ∏ T' : texp, ∏ U' : oexp ⟶ texp, ∏ f' : oexp, ∏ o' : oexp,
 
-     Pi T : texp, Pi U : oexp -> texp, Pi x : oexp, Pi y : oexp->oexp,
-     [ x : T ] -> 
-     (Pi x:oexp, [ (y x) : (U x) ]) ->
-     [ ([ev] ( [lambda] T y ) x U) = (y x) : (U x) ].
+     (∏ x:oexp, [ x : T ] ⟶ [ (U x) = (U' x) ]) ⟶ 
+     [ f = f' : ([∏] T U) ] ⟶ 
+     [ o = o' : T ] ⟶ 
+     [ ([ev] f o U) = ([ev] f' o' U') : (U o)].
 
-Rule 28 eta_reduction :
+Rule 27 beta_reduction : ∏ T : texp, ∏ U : oexp ⟶ texp, ∏ x : oexp, ∏ y : oexp ⟶ oexp,
 
-     Pi T:texp, Pi U:oexp->texp, Pi f:oexp,
-     [ f : ([Pi] T U) ] -> [ ([lambda] T (lambda x, ([ev] f x (lambda y, (U y))))) = f : ([Pi] T U) ].
+     [ x : T ] ⟶ 
+     (∏ x:oexp, [ (y x) : (U x) ]) ⟶
+     [ ([ev] ( [λ] T y ) x U) = (y x) : (U x) ].
 
-Rule 29 j_type :
+Rule 28 eta_reduction : ∏ T:texp, ∏ U:oexp ⟶ texp, ∏ f:oexp,
 
-     Pi M_1:uexp, Pi M_2:uexp, 
-     uequal ([max] M_1 M_2) M_2 -> [ ([j] M_1 M_2) : ([Pi] ([U] M_1) (lambda _, ([U] M_2))) ].
+     [ f : ([∏] T U) ] ⟶ 
+     [ ( [λ] T (x ⟼ ([ev] f x (y ⟼ (U y))))) = f : ([∏] T U) ].
 
-Rule 30 El_j_reduction :
+Rule 29 j_type : ∏ M_1:uexp, ∏ M_2:uexp, 
 
-     Pi M_1:uexp, Pi M_2:uexp, Pi o:oexp,
-     [ o : ([U] M_1) ] -> uequal ([max] M_1 M_2) M_2 -> [ ([El]( [ev] ([j] M_1 M_2) o (lambda _, ([U] M_2)) )) = ([El] o) ].
+     uequal ([max] M_1 M_2) M_2 ⟶ [ ([j] M_1 M_2) : ([∏] ([U] M_1) (_ ⟼ ([U] M_2))) ].
 
-Rule 31 El_forall_reduction :
+Rule 30 El_j_reduction : ∏ M_1:uexp, ∏ M_2:uexp, ∏ o:oexp,
 
-     Pi M_1:uexp, Pi M_2:uexp, Pi o_1:oexp, Pi o_2:oexp->oexp,
-     ( Pi x:oexp, [ x : ([El] o_1) ] -> [ (o_2 x) : ([U] M_2) ] ) ->
-     [ ( [forall] M_1 M_2 o_1 o_2 ) : ([U] ( [max] M_1 M_2 )) ].
+     [ o : ([U] M_1) ] ⟶ uequal ([max] M_1 M_2) M_2 ⟶ [ ([El]( [ev] ([j] M_1 M_2) o (_ ⟼ ([U] M_2)) )) = ([El] o) ].
 
-Rule 32 type_El_forall :
+Rule 31 El_forall_reduction : ∏ M_1:uexp, ∏ M_2:uexp, ∏ o_1:oexp, ∏ o_2:oexp ⟶ oexp,
 
-     Pi M_1 : uexp, Pi M_2 : uexp, Pi o_1 : oexp, Pi o_2 : oexp -> oexp,
-     [ o_1 : ([U] M_1) ] ->
-     (Pi x: oexp, [ x : ([El] o_1) ] -> [ (o_2 x) : ([U] M_2) ])
-     ->
-     [ ([El] ([forall] M_1 M_2 o_1 o_2)) = ([Pi] ([El] o_1) (lambda x, ([El] (o_2 x)))) ].
+     ( ∏ x:oexp, [ x : ([El] o_1) ] ⟶ [ (o_2 x) : ([U] M_2) ] ) ⟶
+     [ ( [∀] M_1 M_2 o_1 o_2 ) : ([U] ( [max] M_1 M_2 )) ].
 
-Rule 100 teq_empty_eta :
+Rule 32 type_El_forall : ∏ M_1 : uexp, ∏ M_2 : uexp, ∏ o_1 : oexp, ∏ o_2 : oexp ⟶ oexp,
 
-     Pi T:texp, Pi T':texp, Pi a:oexp,
-     [ a : ([Empty]) ] -> [ T type ] -> [ T' type ] -> [ T = T'].
+     [ o_1 : ([U] M_1) ] ⟶
+     (∏ x: oexp, [ x : ([El] o_1) ] ⟶ [ (o_2 x) : ([U] M_2) ]) ⟶
+     [ ([El] ([∀] M_1 M_2 o_1 o_2)) = ([∏] ([El] o_1) (x ⟼ ([El] (o_2 x)))) ].
 
-Rule 101 oeq_empty_eta :
+Rule 100 teq_empty_eta : ∏ T:texp, ∏ T':texp, ∏ a:oexp,
 
-     Pi T:texp, Pi x:oexp, Pi y:oexp, Pi a:oexp,
-     [ a : ([Empty]) ] -> [ x : T ] -> [ y : T ] -> [ x = y : T ].
+     [ a : ([Empty]) ] ⟶ [ T type ] ⟶ [ T' type ] ⟶ [ T = T'].
 
+Rule 101 oeq_empty_eta : ∏ T:texp, ∏ x:oexp, ∏ y:oexp, ∏ a:oexp,
+
+     [ a : ([Empty]) ] ⟶ [ x : T ] ⟶ [ y : T ] ⟶ [ x = y : T ].

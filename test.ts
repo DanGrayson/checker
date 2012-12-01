@@ -1,8 +1,12 @@
+# -*- coding: utf-8 -*-
+
 Variable u0 u1 u2 : Ulevel ; [next](u0) <= u1; [next](u1) < u2.
 Variable T T' U V X Y : Type.
 Axiom t0: T.
 Axiom x0 : X.
-Axiom f : T -> T.
+Axiom f : T ⟶ T.
+
+Axiom 你好 : T ⟶ T.
 
 Check Universes.
 
@@ -11,88 +15,89 @@ Check Universes.
 # Define e := x == y : X.
 # Define e := X == Y.
 
-Check TS lambda x:T, x.
+Check TS λ x:T, x.
 Check TS T.
 Check TS [El]([u](u2)).
 
-Check LF (lambda x, ([ev] f x (lambda y, T))).
+Check LF (λ x, ([ev] f x (λ y, T))).
+Check LF (x ⟼ ([ev] f x (λ y, T))).
 
 Check TS [U](u1).
 Check TS [j](u1, u2).
 Check TS *[u](u1).
 Check TS max ([next](u1), u0).
-Check TS [Sigma;x](T,T').
-Check TS Sigma x:T, Sigma y:U, V -> X .
-Check TS [Coprod](T,T').
+Check TS [Σ;x](T,T').
+Check TS Σ x:T, Σ y:U, V ⟶ X .
+Check TS [∐](T,T').
 Check TS [Empty]().
-Check TS lambda x:T, lambda y:T, lambda t:[Id](T,x,y), t.
+Check TS λ x:T, λ y:T, λ t:[Id](T,x,y), t.
 
-Check TS lambda o:T, lambda o':T, [forall;x](u1,u2,o,o').
+Check TS λ o:T, λ o':T, [∀;x](u1,u2,o,o').
 
 Alpha Pi x:T, U  ==  Pi y:T, U .
-Alpha lambda g:T->U, lambda x:T, g x
-  ==  lambda h:T->U, lambda y:T, h y  .
-Alpha lambda g:Pi a:T, U, lambda x:T, g x
-  ==  lambda h:Pi b:T, U, lambda y:T, h y  .
-Alpha lambda g:T->U, lambda x:T, g a
-  ==  lambda h:T->U, lambda y:T, h y  .
-Alpha lambda g:T->U, lambda x:T, g x
-  ==  lambda h:T->U, lambda y:T, h b  .
-Alpha lambda g:T->U, lambda x:T, g h
-  ==  lambda h:T->U, lambda y:T, h y  .
-Alpha lambda g:T->U, lambda x:T, g x
-  ==  lambda h:T->U, lambda y:T, h h  .
+Alpha λ g:T ⟶ U, λ x:T, g x
+  ==  λ h:T ⟶ U, λ y:T, h y  .
+Alpha λ g:Pi a:T, U, λ x:T, g x
+  ==  λ h:Pi b:T, U, λ y:T, h y  .
+Alpha λ g:T ⟶ U, λ x:T, g a
+  ==  λ h:T ⟶ U, λ y:T, h y  .
+Alpha λ g:T ⟶ U, λ x:T, g x
+  ==  λ h:T ⟶ U, λ y:T, h b  .
+Alpha λ g:T ⟶ U, λ x:T, g h
+  ==  λ h:T ⟶ U, λ y:T, h y  .
+Alpha λ g:T ⟶ U, λ x:T, g x
+  ==  λ h:T ⟶ U, λ y:T, h h  .
 
 Check TS Pi x : T, [U]([next](u0)).
 Check TS Pi x : T, [U](u0).
 
 Check TS u1.
 Check TS T.
-Check TS lambda x:T, x.
+Check TS λ x:T, x.
 
-Check TS lambda e:U, lambda x : T, e.
+Check TS λ e:U, λ x : T, e.
 
 # ought to give a type checking error, and explain it well:
-# Check TS lambda f:T -> T, f f.
+# Check TS λ f:T ⟶ T, f f.
 
-Check TS lambda g:T -> [U](u1), lambda f:Pi t:T, *g t, lambda o:T, f o.
+Check TS λ g:T ⟶ [U](u1), λ f:Pi t:T, *g t, λ o:T, f o.
 
 # ought to give a type checking error, and explain it well
-# Check TS lambda g:T -> *[u](u1), lambda f:Pi t:T, *g t, lambda o:T, f f.
+# Check TS λ g:T ⟶ *[u](u1), λ f:Pi t:T, *g t, λ o:T, f f.
 
-Check TS T -> U -> X -> Y.
+Check TS T ⟶ U ⟶ X ⟶ Y.
 
-Check TS lambda f:(X->X)->U, f lambda x:X, x.
+Check TS λ f:(X ⟶ X) ⟶ U, f λ x:X, x.
 
 Check TS [u](u1).
 Check TS [j](u1,u2).
 Check TS [ev;x](f,t0,T).
-Check TS [lambda;x](T,x).
-Check TS [forall;x](u1,u2,x0,x0).
+Check TS [λ;x](T,x).
+Check TS [∀;x](u1,u2,x0,x0).
 
-Check TS lambda f:T->U, lambda o:T, [ev;_](f,o,U).
-Check TS lambda f:T->U, lambda o:T, f o.
-Check TS lambda k:U, lambda g:T -> *k, lambda f:Pi t:T, *g t, lambda o:T, f o.
-Check TS lambda r:U, lambda f:T->U, lambda o:T, lambda x : *r, f o.
-Check TS lambda f:X->T, lambda y:X, [ev;_](f,y,T).
-Check TS lambda f:X->T, lambda y:X, f y.
+Check TS λ f:T ⟶ U, λ o:T, [ev;_](f,o,U).
+Check TS λ f:T ⟶ U, λ o:T, f o.
+Check TS λ k:U, λ g:T ⟶ *k, λ f:Pi t:T, *g t, λ o:T, f o.
+Check TS λ r:U, λ f:T ⟶ U, λ o:T, λ x : *r, f o.
+Check TS λ f:X ⟶ T, λ y:X, [ev;_](f,y,T).
+Check TS λ f:X ⟶ T, λ y:X, f y.
 
 # Define E1 (u:Ulevel)(K:Type)(x:K) := x : K.
-# Define E2 (u1 u2 u3:Ulevel)(K:Type) := K->K .
-# Define E3 (u1 u2 u3 : Ulevel)(K:Type)(x1: K -> [U](u1))(x2: [U]([next](u0))) := [U](u2) .
-# Define E5 (u1 u2 u3 : Ulevel; max (u1, u2) = max (u2, u3); u1 >= [next](u2) )(K:Type)(x1: K -> [U](u1))(x2: [U]([next](u0))) := [j](x1, x2) : [U](u2) .
-# Define E7 (T U:Type)(t:T)(u:U)(f:T->U) := f t : _.
-# Define E7 (K L:Type)(t:K)(g:K -> [U](u0))(u:L)(f:Pi x:K, *g x) := f t : _.
-# Define E6 (u1 u2 u3 : Ulevel)(X1 X2:Type)(x1: X1 -> [U](u1))(x2: [U]([next](u0))) := [j](x1, x2) : _ .
+# Define E2 (u1 u2 u3:Ulevel)(K:Type) := K⟶K .
+# Define E3 (u1 u2 u3 : Ulevel)(K:Type)(x1: K ⟶ [U](u1))(x2: [U]([next](u0))) := [U](u2) .
+# Define E5 (u1 u2 u3 : Ulevel; max (u1, u2) = max (u2, u3); u1 >= [next](u2) )(K:Type)(x1: K ⟶ [U](u1))(x2: [U]([next](u0))) := [j](x1, x2) : [U](u2) .
+# Define E7 (T U:Type)(t:T)(u:U)(f:T ⟶ U) := f t : _.
+# Define E7 (K L:Type)(t:K)(g:K ⟶ [U](u0))(u:L)(f:Pi x:K, *g x) := f t : _.
+# Define E6 (u1 u2 u3 : Ulevel)(X1 X2:Type)(x1: X1 ⟶ [U](u1))(x2: [U]([next](u0))) := [j](x1, x2) : _ .
 
-# Define bar (T:Type) := T -> T.
+# Define bar (T:Type) := T ⟶ T.
 # Define univ (u:Ulevel) := [U](u).
 # 
-# Define g1 := f : T -> T.
-# Define g2 (T:Type) := lambda x:T, x : T -> T.
-# Define g3 (T:Type)(t:T) := lambda x:T, t : T -> T.
+# Define g1 := f : T ⟶ T.
+# Define g2 (T:Type) := λ x:T, x : T ⟶ T.
+# Define g3 (T:Type)(t:T) := λ x:T, t : T ⟶ T.
 
-Check LF type Pi x:oexp, Pi y:oexp, Pi T:texp, Pi U:texp, [ x = y : T ] -> [ T = U ] -> [ x = y : U ].
+Check LF type Pi x:oexp, Pi y:oexp, Pi T:texp, Pi U:texp, [ x = y : T ] ⟶ [ T = U ] ⟶ [ x = y : U ].
 Check TS U_type.
 Check LF (U_type u1).
 

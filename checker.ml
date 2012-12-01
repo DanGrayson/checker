@@ -126,6 +126,7 @@ let add_tVars tvars =
 let fix t = Fillin.fillin !global_context t
 
 let axiomCommand name t = 
+  printf "Axiom %s: %s\n" name (lf_atomic_to_string t);
   protect1 ( fun () -> Lfcheck.type_check (get_pos t) !global_context (ATOMIC t) texp);
   global_context := ts_bind' (Var name, t) !global_context
 
@@ -156,7 +157,7 @@ let check0 x =
     flush stdout)
 
 let checkLFCommand x =
-  printf "CheckLF    : %s\n" (lf_canonical_to_string x);
+  printf "Check LF   : %s\n" (lf_canonical_to_string x);
   flush stdout;
   match x with 
   | ATOMIC x ->

@@ -1,3 +1,5 @@
+(* -*- coding: utf-8 -*- *)
+
 (** The lexical analyzer for the type theory. *)
 
 {
@@ -27,8 +29,8 @@
 }
 let nzdigit = [ '1'-'9' ]
 let digit = [ '0'-'9' ]
-let first = [ 'A'-'Z' 'a'-'z' ]
-let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' '_' ]
+let first = [ 'A'-'Z' 'a'-'z' '\128'-'\255' ]
+let after = [ 'A'-'Z' 'a'-'z' '\128'-'\255' '0'-'9' '\'' '_' ]
 let space = [ ' ' '\r' ]*
 let newline = [ '\n' '\012' ]
 let ident = first after*
@@ -50,6 +52,11 @@ rule expr_tokens = parse
   | "Pi" { KPi }
   | "Singleton" { KSingleton }
   | "lambda" { Klambda }
+  | "∏" { KPi }
+  | "λ" { Klambda }
+  | "⟼" { Wmapsto }
+  | "⟶" { Warrow }
+  | "Σ" { KSigma }
   | "Sigma" { KSigma }
   | "Ulevel" { KUlevel }
   | "Type" { KType }
@@ -60,6 +67,7 @@ rule expr_tokens = parse
   | ']'  { Wrbracket }
   | '['  { Wlbracket }
   | '-' '>'  { Warrow }
+  | '|' '-' '>'  { Wmapsto }
   | '*'  { Wstar }
   | ';'  { Wsemi }
   | '.'  { Wperiod }

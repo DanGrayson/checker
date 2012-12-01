@@ -13,18 +13,21 @@ let rec lf_atomic_to_string (_,e) = match e with
   | EmptyHole n -> "?" ^ (string_of_int n)
   | Variable v -> vartostring' v
   | APPLY(h,args) -> concat ["(";(label_to_string h);(concat (List.map (space <<- lf_canonical_to_string) args));")"]
+and lf_canonical_to_string' = function
+  | LAMBDA(x,body) -> concat [vartostring x;" ⟼ " (* |-> *) ;lf_canonical_to_string' body]
+  | ATOMIC e -> lf_atomic_to_string e
 and lf_canonical_to_string = function
-  | LAMBDA(x,body) -> concat ["(lambda ";vartostring x;", ";lf_canonical_to_string body;")"]
+  | LAMBDA(x,body) -> concat ["(";vartostring x;" ⟼ ";lf_canonical_to_string' body;")"]
   | ATOMIC e -> lf_atomic_to_string e
 
 let rec lf_type_to_string' target (_,t) = match t with
   | F_Pi(v,t,u) -> 
       if v == VarUnused
       then 
-	let k = concat [lf_type_to_string' false t; " -> "; lf_type_to_string u]
+	let k = concat [lf_type_to_string' false t; " ⟶ " (* -> *) ; lf_type_to_string u]
 	in if target then k else concat ["("; k; ")"]
       else
-	concat ["Pi "; vartostring' v; ":"; lf_type_to_string' false t; ", "; lf_type_to_string u]
+	concat ["∏ " (* Pi *); vartostring' v; ":"; lf_type_to_string' false t; ", "; lf_type_to_string u]
   | F_Singleton(x,t) -> concat ["Singleton(";lf_canonical_to_string x;" : ";lf_type_to_string t;")"]
   | F_APPLY(hd,args) -> 
       let s = concat [tfhead_to_string hd; concat (List.map (space <<- lf_canonical_to_string) args)] in
@@ -55,7 +58,7 @@ and ts_expr_to_string ((_,e) as oe) = match e with
 	    | [ATOMIC t1; LAMBDA( x, ATOMIC t2 )] -> 
 		if unmark x = VarUnused
 		then concat ["(";ts_expr_to_string t1;"->";ts_expr_to_string t2;")"]
-		else concat ["[Pi;";vartostring x;"](";ts_expr_to_string t1;",";ts_expr_to_string t2;")"]
+		else concat ["[∏;";vartostring x;"](";ts_expr_to_string t1;",";ts_expr_to_string t2;")"]
 	    | _ -> lf_atomic_p oe)
 	| T_Sigma -> (
 	    match args with [ATOMIC t1; LAMBDA( x, ATOMIC t2 )] -> "[Sigma;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string t1) ^ "," ^ (ts_expr_to_string t2) ^ ")"
@@ -96,7 +99,7 @@ and ts_expr_to_string ((_,e) as oe) = match e with
 	| O_lambda -> (
 	    match args with 
 	    | [ATOMIC t;LAMBDA( x,ATOMIC o)] ->
-		"[lambda;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string t) ^ "," ^ (ts_expr_to_string o) ^ ")"
+		"[λ;" (* lambda *) ^ (vartostring x) ^ "](" ^ (ts_expr_to_string t) ^ "," ^ (ts_expr_to_string o) ^ ")"
 	    | _ -> lf_atomic_p oe)
 	| O_forall -> (
 	    match args with 
