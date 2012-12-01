@@ -22,10 +22,13 @@ and subst (subl : (var' * canonical_term) list) ((pos,e) as d) = match e with
 and subst' (subl : (var' * canonical_term) list) = function
   | ATOMIC e -> ATOMIC(subst subl e)
   | LAMBDA((pos,v), body) -> 
-      let w = newfresh v in
-      let v' = (pos, Variable w) in
-      let subl = (v,ATOMIC v') :: subl in 
-      LAMBDA((pos,w), subst' subl body)
+      if v = VarUnused
+      then 
+	LAMBDA((pos,v), subst' subl body)
+      else
+	let w = newfresh v in
+	let subl = (v,to_lfexpr' w) :: subl in 
+	LAMBDA((pos,w), subst' subl body)
 
 let rec subst_type_list (subl : (var' * canonical_term) list) ts = List.map (subst_type subl) ts
 and subst_type (subl : (var' * canonical_term) list) (pos,t) = 
@@ -36,8 +39,7 @@ and subst_type (subl : (var' * canonical_term) list) (pos,t) =
 	 F_Pi(v, subst_type subl a, subst_type subl b)
        else
 	 let w = newfresh v in
-	 let v' = nowhere (Variable w) in
-	 let subl' = (v,ATOMIC v') :: subl in 
+	 let subl' = (v,to_lfexpr' w) :: subl in 
 	 F_Pi(w, subst_type subl a, subst_type subl' b)
    | F_APPLY(label,args) -> F_APPLY(label, subst_list subl args)
    | F_Singleton(e,t) -> F_Singleton( subst' subl e, subst_type subl t ))
@@ -47,10 +49,13 @@ and subst_kind (subl : (var' * canonical_term) list) k =
    match k with
    | K_type -> K_type
    | K_Pi(v,a,b) -> 
-       let w = newfresh v in
-       let v' = nowhere (Variable w) in
-       let subs' = (v,ATOMIC v') :: subl in 
-       K_Pi(w, subst_type subl a, subst_kind subs' b)      
+       if v = VarUnused
+       then
+	 K_Pi(v, subst_type subl a, subst_kind subl b)
+       else
+	 let w = newfresh v in
+	 let subs' = (v,to_lfexpr' w) :: subl in 
+	 K_Pi(w, subst_type subl a, subst_kind subs' b)
 
 let subst sub e = subst [sub] e
 let subst' sub e = subst' [sub] e

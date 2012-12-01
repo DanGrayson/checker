@@ -20,26 +20,26 @@ let template = function
 	    | T_U -> ()
 	    | T_Pi -> (
 		match args with
-		| [t1; LAMBDA( x, t2 )] -> ()
+		| [ATOMIC t1; LAMBDA( x, ATOMIC t2 )] -> ()
 		| _ -> raise Error.Internal)
 	    | T_Sigma -> (
 		match args with
-		| [t1; LAMBDA( x, t2 )] -> ()
+		| [ATOMIC t1; LAMBDA( x, ATOMIC t2 )] -> ()
 		| _ -> raise Error.Internal)
 	    | T_Pt -> ()
 	    | T_Coprod -> ()
 	    | T_Coprod2 -> (
 		match args with
-		| [t;t'; LAMBDA(x,u);LAMBDA( x', u');o] -> ()
+		| [ATOMIC t;ATOMIC t'; LAMBDA(x,ATOMIC u);LAMBDA( x', ATOMIC u'); ATOMIC o] -> ()
 		| _ -> raise Error.Internal)
 	    | T_Empty -> ()
 	    | T_IP -> (
 		match args with
-		| [tA;a;LAMBDA(x1,tB);LAMBDA(x2,LAMBDA(y2,tD));LAMBDA(x3,LAMBDA(y3,LAMBDA(z3,q)))] -> ()
+		| [ATOMIC tA;ATOMIC a;LAMBDA(x1,ATOMIC tB);LAMBDA(x2,LAMBDA(y2,ATOMIC tD));LAMBDA(x3,LAMBDA(y3,LAMBDA(z3,ATOMIC q)))] -> ()
 		| _ -> raise Error.Internal)
 	    | T_Id -> (
 		match args with
-		| [tX; x; x'] -> ()
+		| [ATOMIC tX; ATOMIC x; ATOMIC x'] -> ()
 		| _ -> raise Error.Internal)
 	   )
 	| O oh -> (
@@ -48,16 +48,16 @@ let template = function
 	    | O_j -> ()
 	    | O_ev -> (
 		match args with
-		| [f;o;LAMBDA( x,t)] -> ()
-		| [f;o] -> ()
+		| [ATOMIC f; ATOMIC o;LAMBDA( x,ATOMIC t)] -> ()
+		| [ATOMIC f; ATOMIC o] -> ()
 		| _ -> raise Error.Internal)
 	    | O_lambda -> (
 		match args with
-		| [t;LAMBDA( x,o)] -> ()
+		| [ATOMIC t;LAMBDA( x,ATOMIC o)] -> ()
 		| _ -> raise Error.Internal)
 	    | O_forall -> (
 		match args with
-		| [u;u';o;LAMBDA( x,o')] -> ()
+		| [ATOMIC u;ATOMIC u';ATOMIC o;LAMBDA( x,ATOMIC o')] -> ()
 		| _ -> raise Error.Internal)
 	    | O_pair -> ()
 	    | O_pr1 -> ()

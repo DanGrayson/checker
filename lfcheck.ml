@@ -9,6 +9,7 @@ open Typesystem
 open Error
 open Printer
 open Substitute
+open Printf
 
 exception TypingError of position * string
 
@@ -22,10 +23,15 @@ let mismatch_type pos t pos' t' = raise (TypeCheckingFailure2 (
 				    pos , "expected type "^(lf_type_to_string t ),
 				    pos', "to match      "^(lf_type_to_string t')))
 
-let mismatch_term pos x pos' x' t = raise (TypeCheckingFailure3 (
+let mismatch_term_t pos x pos' x' t = raise (TypeCheckingFailure3 (
 				    pos , "expected term\n\t"^(lf_canonical_to_string x ),
 				    pos',      "to match\n\t"^(lf_canonical_to_string x'),
 			       get_pos t,       "of type\n\t"^(lf_type_to_string t)
+					  ))
+
+let mismatch_term pos x pos' x' = raise (TypeCheckingFailure2 (
+				    pos , "expected term\n\t"^(lf_canonical_to_string x ),
+				    pos',      "to match\n\t"^(lf_canonical_to_string x')
 					  ))
 
 let errmissingarg pos a = err pos ("missing next argument, of type "^(lf_type_to_string a))
@@ -40,7 +46,10 @@ let lookup_type env v = List.assoc v env
 
 let unfold env v =
   match unmark( lookup_type env v ) with
-  | F_Singleton a -> let (x,t) = strip_singleton a in x
+  | F_Singleton a -> 
+      let (x,t) = strip_singleton a in 
+      printf " unfolded variable %s to value %s\n" (vartostring' v) (lf_canonical_to_string x);
+      x
   | _ -> raise Not_found
 
 let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
@@ -158,15 +167,32 @@ and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (
 	(subst' (unmark u,to_lfexpr' w') x)
 	(subst' (unmark v,to_lfexpr' w') y)
 	(subst_type (w,to_lfexpr' w') b)
-  | _ ->
-      mismatch_term xpos x ypos y t		(* need to implement more cases, though *)
+  | x, y, F_Pi _ -> mismatch_term_t xpos x ypos y t
+  | x, y, F_APPLY(j,args) ->
+      let t' = path_equivalence env x y in
+      type_equivalence env t t'
 
-and path_equivalence (env:context) (x:ts_expr) (y:ts_expr) : lf_type =
-  (* assume nothing *)
+and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
   (* see figure 11, page 711 [EEST] *)
-  if x = y then type_synthesis env x
-  else
-  raise NotImplemented
+  match x,y with
+  | ATOMIC (xpos,x0), ATOMIC (ypos,y0) -> (
+      match x0,y0 with
+      | Variable v, Variable w ->
+	  if not (v = w) then mismatch_term xpos x ypos y;
+	  ( try lookup_type env v with Not_found -> err xpos ("unbound variable: "^(vartostring' v)) )
+      | APPLY(f,args), APPLY(f',args') ->
+          if not (f = f') then mismatch_term xpos x ypos y;
+          let t = label_to_lf_type env f in
+          let rec repeat t args args' =
+            match t,args,args' with
+            | t, [], [] -> t
+            | (pos,F_Pi(v,a,b)), x :: args, y :: args' ->
+                term_equivalence xpos ypos env x y a;
+                repeat (subst_type (v,x) b) args args'
+            | _ -> mismatch_term xpos x ypos y
+	  in repeat t args args'
+      | _ -> mismatch_term xpos x ypos y)
+  | _  -> raise Internal
 
 and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
   (* see figure 11, page 711 [EEST] *)
