@@ -237,22 +237,16 @@ and  var' =				(* a variable in both TS and LF *)
   | Var of string
   | VarGen of int * string
   | VarUnused
+  | VarDefined of string * int         (** A definition, appearing as a variable of LF. *)
   | VarRule of int * string		(* the number of the inference rule in the paper, together with a convenient name *)
 
 let vartostring' = function
   | Var x -> x
   | VarGen(i,x) -> x ^ "_" ^ (string_of_int i)
   | VarUnused -> "_"
+  | VarDefined (name,aspect) -> "[" ^ name ^ "." ^ (string_of_int aspect) ^ "]"
   | VarRule (n,s) -> s
 let vartostring v = vartostring' (unmark v)
-
-type lf_var =				(* a variable in LF *)
-  | LF_Var of var'
-  | LF_VarDefined of string * int         (** A definition, appearing as a variable of LF. *)
-
-let lf_var_tostring = function
-  | LF_Var v -> vartostring' v
-  | LF_VarDefined (name,aspect) -> "[" ^ name ^ "." ^ (string_of_int aspect) ^ "]"
 
     (** The type [label] accommodates the variables of LF, and the constants of
         LF, which in turn include the labels of TS, the inference rules of TS,
@@ -274,7 +268,7 @@ let lf_var_tostring = function
 	judgment in TS. *)
 
 type label =
-  | L of lf_var
+  | L of var'
   | U of uHead			(** labels for u-expressions of TS *)
   | T of tHead			(** labels for t-expressions of TS *)
   | O of oHead			(** labels for o-expressions of TS *)
@@ -286,7 +280,7 @@ let labels = List.concat [
 ]
 
 let label_to_string = function
-  | L v -> lf_var_tostring v
+  | L v -> vartostring' v
   | U h -> "[" ^ uhead_to_string h ^ "]"
   | T h -> "[" ^ thead_to_string h ^ "]"
   | O h -> "[" ^ ohead_to_string h ^ "]"
@@ -486,7 +480,7 @@ type oSubs = (var' * ts_expr) list
 
 (*** Contexts. *)
 
-type context = (lf_var * lf_type) list
+type context = (var' * lf_type) list
 
 let global_context : context ref = ref []
 
@@ -494,7 +488,7 @@ type uContext = UContext of var' list * (ts_expr * ts_expr) list
 
 let empty_uContext = UContext([],[])
 
-let def_bind name aspect (pos:position) o t (env:context) = (LF_VarDefined(name,aspect), (pos,F_Singleton(o,t))) :: env
+let def_bind name aspect (pos:position) o t (env:context) = (VarDefined(name,aspect), (pos,F_Singleton(o,t))) :: env
 
 let newfresh = 
   let genctr = ref 0 in 
@@ -504,13 +498,13 @@ let newfresh =
     VarGen (!genctr, x)) in
   fun v -> match v with 
   | Var x | VarGen(_,x) -> newgen x
-  | VarRule _ | VarUnused -> raise Internal
+  | VarDefined _ | VarRule _ | VarUnused -> raise Internal
 
 let ts_bind' (v,t) env = match v with
   | VarUnused -> env
   | v -> 
-      (LF_Var (newfresh (Var "hast")), hastype (ATOMIC (nowhere (Variable v))) (ATOMIC t)) :: 
-      (LF_Var v,oexp) :: 
+      (newfresh (Var "hast") , hastype (ATOMIC (nowhere (Variable v))) (ATOMIC t)) :: 
+      (v,oexp) :: 
       env
 
 let ts_bind (v,(t:ts_expr)) env = ts_bind' (unmark v, t) env

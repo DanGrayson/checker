@@ -8,7 +8,7 @@ let rec ucheck pos env (pos,e) = match e with
   | EmptyHole _ -> raise (TypeCheckingFailure (pos, "encountered empty hole, but expected a u-expression"))
   | Variable v -> (
       let t = 
-	try List.assoc (LF_Var v) env
+	try List.assoc v env
 	with Not_found -> raise (TypeCheckingFailure (pos, "encountered unbound u-variable: "^(vartostring' v)))
       in
       if t != uexp then raise (TypeCheckingFailure (pos, "expected a u-variable: "^(vartostring' v))))
@@ -20,7 +20,7 @@ let rec tcheck pos env ((pos,e0) as e) = match e0 with
   | EmptyHole _ -> raise (TypeCheckingFailure (pos, "encountered empty hole, but expected a t-expression"))
   | Variable v ->(
       let t =
-	try List.assoc (LF_Var v) env
+	try List.assoc v env
 	with Not_found -> raise (TypeCheckingFailure (pos, "encountered unbound t-variable: "^(vartostring' v)))
       in if t != texp then raise (TypeCheckingFailure (pos, "expected a t-variable: "^(vartostring' v))))
   | APPLY(h,args) -> match h with
@@ -63,7 +63,7 @@ and ocheck pos env ((pos,e0) as e) =
   | EmptyHole _ -> raise (TypeCheckingFailure (pos, "encountered empty hole, but expected a o-expression"))
   | Variable v -> (
       let t = (
-	try List.assoc (LF_Var v) env
+	try List.assoc v env
 	with Not_found -> raise (TypeCheckingFailure (pos, "encountered unbound o-variable: "^(vartostring' v))))
       in if t != oexp then raise (TypeCheckingFailure (pos, "expected an o-variable: "^(vartostring' v))))
   | APPLY(h,args) -> match h with

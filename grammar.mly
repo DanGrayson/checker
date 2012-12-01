@@ -119,7 +119,7 @@ lf_expr_head:
 | tsterm_head
     { $1 }
 | bare_variable
-    { L (LF_Var $1) }
+    { L $1 }
 
 command: c=command0 
   { Position($startpos, $endpos), c }
@@ -210,7 +210,7 @@ ts_expr:
 
 tsterm_head:
 | def=DEFINED_VARIABLE
-    { let (name,aspect) = def in L (LF_VarDefined(name,aspect)) }
+    { let (name,aspect) = def in L (VarDefined(name,aspect)) }
 | l=CONSTANT
     {
      try List.assoc ("[" ^ l ^ "]") string_to_label 

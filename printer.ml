@@ -149,6 +149,6 @@ let ulevel_context_to_string (UContext(uexp_parms,ueqns)) =
 let print_env env = 
   Printf.printf "Environment :\n";
   List.iter 
-    (fun (v,t) -> Printf.printf "   %s : %s\n" (lf_var_tostring v) (lf_type_to_string t)) 
+    (fun (v,t) -> Printf.printf "   %s : %s\n" (vartostring' v) (lf_type_to_string t)) 
     (List.rev env);
   flush stdout

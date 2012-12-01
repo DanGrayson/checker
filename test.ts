@@ -96,6 +96,8 @@ Show.
 
 # each of the following lines yields an error:
 CheckLFtype Pi x:oexp, Pi y:oexp, Pi T:texp, Pi U:texp, [ x = y : T ] -> [ T = U ] -> [ x = y : U ].
+Check U_type.
+Check U_type u1.
 CheckLF (U_type u1).
 CheckLF ([foo.0] u1 ([u] u1) (U_type ([next] u1)) (u_univ u1)).
 Check lambda f:T->T->T->T, f f f f f.

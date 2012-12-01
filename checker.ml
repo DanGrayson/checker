@@ -108,8 +108,8 @@ let add_tVars tvars =
 	 (List.map
 	    (fun t -> 
 	      [
-	       (LF_Var (Var t), texp);
-	       (LF_Var (newfresh (Var "ist")), istype (ATOMIC (nowhere (Variable (Var t)))));
+	       (Var t, texp);
+	       (newfresh (Var "ist"), istype (ATOMIC (nowhere (Variable (Var t)))));
 	     ]
 	    )
 	    tvars
@@ -123,7 +123,7 @@ let axiomCommand name t = global_context := ts_bind' (Var name, t) !global_conte
 
 let ruleCommand num name x =
   Printf.printf "Rule %d %s: %s\n" num name (Printer.lf_type_to_string x);
-  global_context := (LF_Var (Var name), x) :: !global_context;
+  global_context := (Var name, x) :: !global_context;
   flush stdout;
   protect1 ( fun () -> Lfcheck.type_validity !global_context x )
 

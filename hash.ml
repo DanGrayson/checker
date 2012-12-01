@@ -50,7 +50,7 @@ let hhash = function
   | U h -> uhash h
   | T h -> thash h
   | O h -> ohash h
-  | L (LF_Var (VarRule(n,_))) -> 13 * n
+  | L (VarRule(n,_)) -> 13 * n
   | L h -> 2
 
 let rec chash = function

@@ -38,7 +38,7 @@ let chk uv ((lhs:ts_expr),(rhs:ts_expr)) =
 let get_uvars =
   let rec get_uvars accu = function
   | [] -> List.rev accu
-  | (LF_Var u,t) :: rest -> if t = uexp then get_uvars (u :: accu) rest else get_uvars accu rest
+  | (u,t) :: rest -> if t = uexp then get_uvars (u :: accu) rest else get_uvars accu rest
   | _ :: rest -> get_uvars accu rest 
   in get_uvars []
 
@@ -56,8 +56,8 @@ let consistency env  = List.iter (chk (get_uvars env)) (get_ueqns env)
 let chk_ueqns ueqns = chk_var_ueqns (get_uvars !global_context) ueqns
 
 let ubind uvars ueqns =
-  global_context := List.rev_append (List.map (fun u -> (LF_Var (Var u), uexp)) uvars) !global_context;
-  global_context := List.rev_append (List.map (fun (u,v) -> (LF_Var (newfresh (Var "ueq")), ulevel_equality (ATOMIC u) (ATOMIC v))) ueqns) !global_context;
+  global_context := List.rev_append (List.map (fun u -> ((Var u), uexp)) uvars) !global_context;
+  global_context := List.rev_append (List.map (fun (u,v) -> (newfresh (Var "ueq"), ulevel_equality (ATOMIC u) (ATOMIC v))) ueqns) !global_context;
   chk_ueqns ueqns
 
 module Equal = struct

@@ -11,7 +11,7 @@ let rec subst_list (subl : (var' * canonical_term) list) es = List.map (subst' s
 and subst (subl : (var' * canonical_term) list) ((pos,e) as d) = match e with 
   | APPLY(label,args) -> 
       (match label with 
-       | L LF_Var v ->
+       | L v ->
 	   let _ = try List.assoc v subl
 	   with Not_found -> raise NotImplemented (* hereditary substitution *) 
 	   in ()

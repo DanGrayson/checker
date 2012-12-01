@@ -53,7 +53,7 @@ let rec type_validity (env:context) (t:lf_type) : unit =
   match t with 
   | F_Pi(v,t,u) -> 
       type_validity env t;
-      type_validity ((LF_Var v,t) :: env) u
+      type_validity ((v,t) :: env) u
   | F_APPLY(head,args) ->
       let kind = tfhead_to_kind head in
       let rec repeat env kind (args:lf_expr list) = 
@@ -62,7 +62,7 @@ let rec type_validity (env:context) (t:lf_type) : unit =
 	| K_type, x :: args -> err pos "at least one argument too many"
 	| K_Pi(v,a,kind'), x :: args ->
 	    type_check pos env x a;
-	    repeat ((LF_Var v,a) :: env) kind' args
+	    repeat ((v,a) :: env) kind' args
 	| K_Pi(_,a,_), [] -> err pos ("missing next argument, of type "^(lf_type_to_string a))
       in repeat env kind args
   | F_Singleton(x,t) -> 
@@ -75,7 +75,7 @@ and type_synthesis (env:context) (e:ts_expr) : lf_type =
   let (pos,e) = e in
      match e with
      | Variable v -> (
-	 try (pos, F_Singleton(ATOMIC(pos,e), (List.assoc (LF_Var v) env)))
+	 try (pos, F_Singleton(ATOMIC(pos,e), (List.assoc v env)))
 	 with Not_found -> err pos "unbound variable"
 	)
      | EmptyHole _ -> err pos "empty hole"
@@ -95,7 +95,7 @@ and type_synthesis (env:context) (e:ts_expr) : lf_type =
 		  err pos ("too few arguments; next argument should be of type "^(lf_type_to_string a))
 	      | F_Pi(x,a',a''), m' :: args' ->
 		  type_check pos env m' a';
-                  repeat ((LF_Var x,a') :: env) (Substitute.subst_type (x,m') a'') args'
+                  repeat ((x,a') :: env) (Substitute.subst_type (x,m') a'') args'
 	      | F_APPLY _, ATOMIC (pos,_) :: _ -> err pos "extra argument"
 	      | F_APPLY _, LAMBDA _ :: _ -> err pos "extra argument"
 	     )
@@ -132,7 +132,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
       term_equivalence tpos upos env x y t
   | F_Pi(v,a,b), F_Pi(w,c,d) ->
       type_equivalence env a c;
-      type_equivalence ((LF_Var v, a) :: env) b (Substitute.subst_type (w, ATOMIC (Nowhere,Variable v)) d)
+      type_equivalence ((v, a) :: env) b (Substitute.subst_type (w, ATOMIC (Nowhere,Variable v)) d)
   | F_APPLY(h,args), F_APPLY(h',args') ->
       if not (h = h') then mismatch_type tpos t upos u;
       let k = tfhead_to_kind h in
@@ -164,7 +164,7 @@ and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
       type_equivalence env t u
   | F_Pi(x,a,b) , F_Pi(y,c,d) ->
       subtype env c a;			(* contravariant *)
-      subtype ((LF_Var x, a) :: env) b d
+      subtype ((x, a) :: env) b d
   | _ -> type_equivalence env (tpos,t0) (upos,u0)
 
 and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : unit = 
@@ -174,7 +174,7 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : unit =
   match e, t0 with
   | LAMBDA(v,e), F_Pi(w,a,b) ->
       type_check pos 
-	((LF_Var (unmark v),a) :: env)
+	((unmark v,a) :: env)
 	e
 	(Substitute.subst_type (w,to_lfexpr v) b)
   | LAMBDA _, _ -> err pos "did not expect a lambda expression here"
