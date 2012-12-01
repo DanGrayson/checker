@@ -128,7 +128,8 @@ let fix t = Fillin.fillin !global_context t
 let axiomCommand name t = 
   printf "Axiom %s: %s\n" name (lf_atomic_to_string t);
   protect1 ( fun () -> Lfcheck.type_check (get_pos t) !global_context (ATOMIC t) texp);
-  global_context := ts_bind' (Var name, t) !global_context
+  global_context := ts_bind' (Var name, t) !global_context;
+  flush stdout
 
 let ruleCommand num name x =
   printf "Rule %d %s: %s\n" num name (lf_type_to_string x);
@@ -144,16 +145,9 @@ let check0 x =
   flush stdout;
   let t = protect1 ( fun () -> Lfcheck.type_synthesis !global_context x ) in
   printf "    LF type: %s\n" (lf_type_to_string t);
-  if unmark t = unmark uexp then (
-    protect1 (fun () -> Check.ucheck !global_context x);
-    flush stdout)
-  else if unmark t = unmark texp then (
-    protect1 (fun () -> Check.tcheck !global_context x);
-    flush stdout)
-  else if unmark t = unmark oexp then (
+  if unmark t = unmark oexp then (
     let ts = protect1 ( fun () -> Tau.tau !global_context x ) in
-    printf "    TS type: %s\n" (ts_expr_to_string ts);
-    protect1 (fun () -> Check.ocheck !global_context x);
+    printf "    TS type: %s ?\n" (ts_expr_to_string ts);
     flush stdout)
 
 let checkLFCommand x =
@@ -184,7 +178,8 @@ let alphaCommand (x,y) =
 
 let checkUniversesCommand pos =
   try
-    Universe.consistency !global_context
+    Universe.consistency !global_context;
+    printf "Check Universes: okay\n"
   with Universe.Inconsistency (p,q) -> print_inconsistency p q
     
 let show_command () = 
@@ -193,9 +188,21 @@ let show_command () =
 let addDefinition v pos o t = 
   global_context := def_bind v pos o t !global_context
 
+let defCommand defs = protect1 ( fun () -> 
+  List.iter
+    (fun (v, pos, tm, tp) -> 
+      printf "Define %s = %s\n" (vartostring' v) (lf_canonical_to_string tm);
+      printf "       %s : %s\n" (vartostring' v) (lf_type_to_string tp);
+      flush stdout;
+      Lfcheck.type_validity !global_context tp;
+      Lfcheck.type_check pos !global_context tm tp;
+      addDefinition v pos tm tp
+    ) 
+    defs)
+
 let process_command lexbuf = (
   let c = protect (Grammar.command (Tokens.expr_tokens)) lexbuf (fun () -> lexpos lexbuf) in
-  match c with (pos,c) ->
+  match c with (pos,c) -> (
     match c with
     | Toplevel.UVariable (uvars,eqns) -> protect1 ( fun () -> ubind uvars eqns )
     | Toplevel.Variable tvars -> add_tVars tvars
@@ -205,21 +212,12 @@ let process_command lexbuf = (
     | Toplevel.CheckLFtype x -> checkLFtypeCommand x
     | Toplevel.Check x -> checkCommand x
     | Toplevel.Alpha (x,y) -> alphaCommand (x,y)
-    | Toplevel.Definition defs -> protect1 ( fun () -> 
-	List.iter
-	  (fun (v, pos, tm, tp) -> 
-	    printf "Define %s = %s\n" (vartostring' v) (lf_canonical_to_string tm);
-	    printf "       %s : %s\n" (vartostring' v) (lf_type_to_string tp);
-	    flush stdout;
-	    Lfcheck.type_validity !global_context tp;
-	    Lfcheck.type_check pos !global_context tm tp;
-	    addDefinition v pos tm tp
-	  ) 
-	  defs)
+    | Toplevel.Definition defs -> defCommand defs
     | Toplevel.End -> printf "%s: ending.\n" (errfmt pos) ; flush stdout; raise StopParsingFile
     | Toplevel.Show -> show_command()
-    | Toplevel.CheckUniverses -> checkUniversesCommand pos
- )
+    | Toplevel.CheckUniverses -> checkUniversesCommand pos);
+    printf "\n";
+    flush stdout)
 
 let parse_file filename =
   printf "parsing file %s\n" filename; flush stdout;

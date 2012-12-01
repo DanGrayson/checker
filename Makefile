@@ -11,18 +11,17 @@ SRCFILES =					\
 	debugging.ml				\
 	error.ml				\
 	typesystem.ml				\
-	hash.ml \
+	hash.ml					\
 	helpers.ml				\
 	template.ml				\
 	universe.ml				\
-	alpha.ml alpha.mli				\
+	alpha.ml alpha.mli			\
 	reduction.ml				\
 	substitute.ml				\
-	equality.ml equality.mli				\
+	equality.ml equality.mli		\
 	lfcheck.ml				\
-	check.mli check.ml				\
 	fillin.ml				\
-	tau.ml tau.mli					\
+	tau.ml tau.mli				\
 	printer.ml				\
 	grammar0.ml				\
 	grammar.mly				\

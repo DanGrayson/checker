@@ -57,7 +57,7 @@ and ts_expr_to_string ((_,e) as oe) = match e with
 	    match args with
 	    | [ATOMIC t1; LAMBDA( x, ATOMIC t2 )] -> 
 		if unmark x = VarUnused
-		then concat ["(";ts_expr_to_string t1;"->";ts_expr_to_string t2;")"]
+		then concat ["(";ts_expr_to_string t1;" ⟶ ";ts_expr_to_string t2;")"]
 		else concat ["[∏;";vartostring x;"](";ts_expr_to_string t1;",";ts_expr_to_string t2;")"]
 	    | _ -> lf_atomic_p oe)
 	| T_Sigma -> (
