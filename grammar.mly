@@ -12,7 +12,7 @@ open Error
 %type <Typesystem.lf_expr> lf_expr
 %token <int> Nat
 %token <string> IDENTIFIER CONSTANT CONSTANT_SEMI
-%token <string * int> DEFINED_VARIABLE
+%token <Typesystem.var'> VARIABLE
 %token
 
   Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod COLON Wstar Warrow Wmapsto
@@ -44,8 +44,8 @@ open Error
 
   /* These are the other tokens that can begin a TS-expression : ditto. */
 
-  Wunderscore Wlparen Kumax DEFINED_VARIABLE CONSTANT_SEMI CONSTANT Wstar
-  Klambda KSigma KPi
+  Wunderscore Wlparen Kumax CONSTANT_SEMI CONSTANT Wstar
+  Klambda KSigma KPi VARIABLE
 
 %left
 
@@ -164,7 +164,9 @@ command0:
     { Toplevel.Rule (num,name,t) }
 
 | WDefine name=IDENTIFIER parms=parmList COLONequal t=ts_expr Wperiod 
-    { Toplevel.Definition (tDefinition name (fixParmList parms) t) }
+    { Toplevel.Definition (tDefinition name (fixParmList parms) t  None    ) }
+| WDefine name=IDENTIFIER parms=parmList COLONequal t=ts_expr Wsemi d1=lf_expr Wperiod 
+    { Toplevel.Definition (tDefinition name (fixParmList parms) t (Some d1)) }
 | WDefine name=IDENTIFIER parms=parmList COLONequal o=ts_expr COLON t=ts_expr Wperiod 
     { Toplevel.Definition (oDefinition name (fixParmList parms) o t) }
 | WDefine name=IDENTIFIER parms=parmList COLONequal t1=ts_expr Wequalequal t2=ts_expr Wperiod 
@@ -221,8 +223,8 @@ ts_expr:
     {$1}
 
 tsterm_head:
-| def=DEFINED_VARIABLE
-    { let (name,aspect) = def in L (VarDefined(name,aspect)) }
+| v=VARIABLE
+    { L v }
 | l=CONSTANT
     {
      try List.assoc ("[" ^ l ^ "]") string_to_label 

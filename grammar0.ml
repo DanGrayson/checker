@@ -32,7 +32,7 @@ let fixParmList (p:parm list) : uContext * (var' list) * ((var' * ts_expr) list)
 	in (ulevel_context,tc,ts_context))
   in fix [] [] [] p
 
-let tDefinition (name:string) ((ulevel_context,tvars,ts_context):(uContext * (var' list) * ((var' * ts_expr) list))) (t:ts_expr)
+let tDefinition (name:string) ((ulevel_context,tvars,ts_context):(uContext * (var' list) * ((var' * ts_expr) list))) (t:ts_expr) (d1:lf_expr option)
     : (var' * Error.position * lf_expr * lf_type) list 
     = 
   let pos = get_pos t in
@@ -48,7 +48,10 @@ let tDefinition (name:string) ((ulevel_context,tvars,ts_context):(uContext * (va
 
   let tm0 = ATOMIC t in
   let tp0 = texp in
-  let tm1 = ATOMIC(pos, new_hole'()) in
+  let tm1 = match d1 with
+  | Some tm1 -> tm1
+  | None -> ATOMIC(pos, new_hole'()) in
+
   let tp1 = istype (ATOMIC (nowhere (APPLY(L v0, List.map to_lfexpr' allvars)))) in
 
   let g v t = LAMBDA((nowhere v),t) in

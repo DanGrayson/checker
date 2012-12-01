@@ -244,7 +244,7 @@ and  var' =				(* a variable in both TS and LF *)
 
 let vartostring' = function
   | Var x -> x
-  | VarGen(i,x) -> x ^ "_" ^ (string_of_int i)
+  | VarGen(i,x) -> x ^ "$" ^ (string_of_int i)
   | VarUnused -> "_"
   | VarDefined (name,aspect) -> "[" ^ name ^ "." ^ (string_of_int aspect) ^ "]"
   | VarRule (n,s) -> s

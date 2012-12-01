@@ -63,10 +63,7 @@ let lookup_type env v = List.assoc v env
 
 let unfold env v =
   match unmark( lookup_type env v ) with
-  | F_Singleton a -> 
-      let (x,t) = strip_singleton a in 
-      printf " unfolded variable %s to value %s\n" (vartostring' v) (lf_canonical_to_string x);
-      x
+  | F_Singleton a -> let (x,t) = strip_singleton a in x
   | _ -> raise Not_found
 
 let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
@@ -77,7 +74,7 @@ let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
       match x with
       | Variable v -> (
 	  try lookup_type env v 
-	  with Not_found -> err pos ("unbound variable: "^(vartostring' v)))
+	  with Not_found -> err pos ("unbound variable (1): "^(vartostring' v)))
       | EmptyHole _ -> err pos "empty hole found"
       | APPLY(l,args) -> 
 	  let t = unmark (label_to_lf_type env l) in
@@ -100,13 +97,12 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
       | Variable v -> unfold env v
       | EmptyHole _ -> err pos "empty hole found"
       | APPLY(L f,args) -> (
-	  match unfold env f with
-	  | LAMBDA(v,body) -> (
-	      match args with 
-	      | x :: args -> subst' (unmark v,x) body
-	      | [] -> err pos "too few arguments"
-	     )
-	  | _ -> raise Not_found)
+	  match unfold env f, args with
+	  | LAMBDA(v,body), x :: args -> subst' (unmark v,x) body
+	  | LAMBDA(v,body), [] -> err pos "too few arguments" (* or is this an internal error ? *)
+	  | _, x :: args -> err pos "too many arguments"
+	  | x, [] -> x			(* variables are "called" with 0 arguments *)
+	 )
       | APPLY _ -> raise Not_found)
   | LAMBDA _ -> x
       
@@ -146,7 +142,9 @@ and type_synthesis (env:context) (e:ts_expr) : lf_type =
      match e0 with
      | Variable v -> (
 	 try (pos, F_Singleton(ATOMIC e, (List.assoc v env)))
-	 with Not_found -> err pos "unbound variable"
+	 with Not_found -> 
+	   print_env env;
+	   err pos ("unbound variable (2): "^(vartostring' v))
 	)
      | EmptyHole _ -> err pos ("empty hole: "^(lf_atomic_to_string e))
      | APPLY(label,args) ->
@@ -154,7 +152,7 @@ and type_synthesis (env:context) (e:ts_expr) : lf_type =
 	   (unmark (
 	    let a = 
 	      try label_to_lf_type env label
-	      with Not_found -> err pos ("unbound variable: "^(label_to_string label))
+	      with Not_found -> err pos ("unbound variable (3): "^(label_to_string label))
 	    in
 	    let rec repeat env (a:lf_type) (args:lf_expr list) : lf_type = (
 	      let (apos,a0) = a in
@@ -175,6 +173,8 @@ and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (
   (* assume x and y have already been verified to be of type t *)
   (* see figure 11, page 711 [EEST] *)
   let try_path_equivalence x y =
+    let x = head_normalization env x in (* not mentioned in the paper (?) *)
+    let y = head_normalization env y in (* not mentioned in the paper (?) *)
     let t' = path_equivalence env x y in
     type_equivalence env t t' in
   if try_alpha && Alpha.UEqual.term_equiv empty_uContext x y then () else
@@ -204,7 +204,7 @@ and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
       | Variable v, Variable w ->
 	  if not (v = w) 
 	  then mismatch_term xpos x ypos y; (* x and y aren't variables with definitions, because they are head reduced *)
-	  ( try lookup_type env v with Not_found -> err (best2 xpos ypos) ("unbound variable: "^(vartostring' v)) )
+	  ( try lookup_type env v with Not_found -> err (best2 xpos ypos) ("unbound variable (4): "^(vartostring' v)) )
       | APPLY(f,args), APPLY(f',args') ->
           if not (f = f') 
 	  then mismatch_term xpos x ypos y; (* f and g aren't variables with definitions, because they are head reduced *)

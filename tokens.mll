@@ -46,7 +46,6 @@ rule expr_tokens = parse
   | "Define" { WDefine }
   | "End" { WEnd }
   | "Show" { WShow }
-  | '[' (ident as name) '.' (digit+ as aspect) ']' { DEFINED_VARIABLE(name,int_of_string aspect) }
   | '[' (ident as id) ']' { CONSTANT id }
   | '[' (ident as id) ';' { CONSTANT_SEMI id }
   | "Pi" { KPi }
@@ -84,6 +83,8 @@ rule expr_tokens = parse
   | ':' '='  { COLONequal }
   | digit+ as n { Nat (int_of_string n) } (* eventually check for overflow and leading 0 *)
   | ident as id { IDENTIFIER id }
+  | '[' (ident as name) '.' (digit+ as aspect) ']' { VARIABLE (VarDefined(name,int_of_string aspect)) }
+  | (ident as name) '$' (digit+ as gen) { VARIABLE (VarGen(int_of_string gen,name)) }
   | '\t' { tab lexbuf; expr_tokens lexbuf }
   | space { expr_tokens lexbuf }
   | '#' [ ^ '\n' ]* { expr_tokens lexbuf }
