@@ -13,7 +13,7 @@ open Printer
 
 let rec fillinlist pos env es = List.map (fillin' pos env) es
 and fillin' pos env = function
-  | LAMBDA(v,body) as l -> raise (Internal_expr l)
+  | LAMBDA(v,body) as l -> raise (Unimplemented_expr l)
   | ATOMIC e -> ATOMIC(fillin env e)
 and fillin env (pos,e) = (pos, match e with
   | EmptyHole _ -> raise (TypingError(pos,"empty hole, no method for filling"))

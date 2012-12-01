@@ -11,10 +11,11 @@ let rec subst_list (subl : (var' * canonical_term) list) es = List.map (subst' s
 and subst (subl : (var' * canonical_term) list) ((pos,e) as d) = match e with 
   | APPLY(label,args) -> 
       (match label with 
-       | L v ->
-	   let _ = try List.assoc v subl
-	   with Not_found -> raise NotImplemented (* hereditary substitution *) 
-	   in ()
+       | L v -> (
+	   try 
+	     let _ = List.assoc v subl
+	     in raise (Unimplemented_expr (ATOMIC d)) (* hereditary substitution *) 
+	   with Not_found -> ())
        | _ -> ());
       pos, APPLY(label,subst_list subl args)
   | Variable v ->(try atomic (List.assoc v subl) with Not_found -> d)

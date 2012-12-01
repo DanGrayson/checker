@@ -37,37 +37,47 @@ let tDefinition (name:string) ((ulevel_context,tvars,ts_context):(uContext * (va
     = 
   let pos = get_pos t in
 
+  let UContext (uvars,ueqns) = ulevel_context in
+  let ovars = List.map fst ts_context in
+  let hts_context = List.map (fun (z,u) -> (z,u,newfresh (Var "hast"))) ts_context in
+  let hastvars = List.map (fun (z,u,hast) -> hast) hts_context in
+  let allvars = List.flatten [uvars;tvars;ovars;hastvars] in
+
   let v0 = VarDefined(name,0) in
   let v1 = VarDefined(name,1) in
 
-  let tm = ATOMIC t in
-  let tp = texp in
-  let UContext (uvars,ueqns) = ulevel_context in
-  let ovars = List.map fst ts_context in
-  let hastvars = List.map (fun (z,u) -> newfresh z) ts_context in
-
-  let tm = List.fold_right
-      (fun v t -> LAMBDA(nowhere v,t))
-      hastvars tm in
-  let tp = List.fold_right
-      (fun (z,u) t -> nowhere (F_Pi(VarUnused,hastype (to_lfexpr' z) (ATOMIC u), t)))
-      ts_context tp in
+  let tm0 = ATOMIC t in
+  let tp0 = texp in
+  let tm1 = ATOMIC(new_hole()) in
+  let tp1 = istype (ATOMIC (nowhere (APPLY(L v0, List.map to_lfexpr' allvars)))) in
 
   let g v t = LAMBDA((nowhere v),t) in
   let h sort v t = nowhere (F_Pi(v,sort,t)) in
+  let hast (z,u,h) t = nowhere (F_Pi(h,hastype (to_lfexpr' z) (ATOMIC u), t)) in
 
-  let tm = List.fold_right g ovars tm in
-  let tp = List.fold_right (h oexp) ovars tp in
+  let tm0 = List.fold_right g hastvars tm0 in
+  let tm1 = List.fold_right g hastvars tm1 in
+  let tp0 = List.fold_right hast hts_context tp0 in
+  let tp1 = List.fold_right hast hts_context tp1 in
 
-  let tm = List.fold_right g tvars tm in
-  let tp = List.fold_right (h texp) tvars tp in
+  let tm0 = List.fold_right g ovars tm0 in
+  let tm1 = List.fold_right g ovars tm1 in
+  let tp0 = List.fold_right (h oexp) ovars tp0 in
+  let tp1 = List.fold_right (h oexp) ovars tp1 in
 
-  let tm = List.fold_right g uvars tm in
-  let tp = List.fold_right (h uexp) uvars tp in
+  let tm0 = List.fold_right g tvars tm0 in
+  let tm1 = List.fold_right g tvars tm1 in
+  let tp0 = List.fold_right (h texp) tvars tp0 in
+  let tp1 = List.fold_right (h texp) tvars tp1 in
+
+  let tm0 = List.fold_right g uvars tm0 in
+  let tm1 = List.fold_right g uvars tm1 in
+  let tp0 = List.fold_right (h uexp) uvars tp0 in
+  let tp1 = List.fold_right (h uexp) uvars tp1 in
 
   [ 
-    ( v0, pos, tm, tp );
-    ( v1, pos, ATOMIC(new_hole()), istype (ATOMIC t))
+    ( v0, pos, tm0, tp0 );
+    ( v1, pos, tm1, tp1)
   ]
 
 let oDefinition (name:string) ((ulevel_context,tc,ts_context):(uContext * (var' list) * ((var' * ts_expr) list))) (o:ts_expr) (t:ts_expr)

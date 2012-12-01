@@ -35,7 +35,7 @@ let rec tcheck pos env ((pos,e0) as e) = match e0 with
 	    | _ -> raise Internal)
 	| T_Sigma | T_Pi -> (
 	    match args with
-	    | [ATOMIC t1; LAMBDA( x, ATOMIC t2 )] -> tcheck pos env t1; tcheck_binder pos env x t1 t2
+	    | [ATOMIC t1; LAMBDA(x, ATOMIC t2 )] -> tcheck pos env t1; tcheck_binder pos env x t1 t2
 	    | _ -> raise Internal)
 	| T_Pt -> ()
 	| T_Coprod -> (
@@ -44,7 +44,7 @@ let rec tcheck pos env ((pos,e0) as e) = match e0 with
 	    | _ -> raise Internal)
 	| T_Coprod2 -> (
 	    match args with 
-	    | [ATOMIC t;ATOMIC t'; LAMBDA( x,ATOMIC u);LAMBDA( x', ATOMIC u');ATOMIC o] -> raise NotImplemented
+	    | [ATOMIC t;ATOMIC t'; LAMBDA(x,ATOMIC u);LAMBDA(x', ATOMIC u');ATOMIC o] -> raise NotImplemented
 	    | _ -> raise Internal)
 	| T_Empty -> ()
 	| T_IP -> raise NotImplemented
@@ -80,17 +80,15 @@ and ocheck pos env ((pos,e0) as e) =
       | O_ev -> (
 	  match args with 
 	  | [ATOMIC f;ATOMIC o] -> raise Internal (* type should have been filled in by now *)
-	  | [ATOMIC f;ATOMIC x;LAMBDA( v,ATOMIC t)] -> (
+	  | [ATOMIC f;ATOMIC x;LAMBDA(v,ATOMIC t)] -> (
 	      ocheck pos env f; 
 	      ocheck pos env x; 
 	      let tf = tau env f in
 	      match unmark tf with
-	      | APPLY(T T_Pi, [ATOMIC s; LAMBDA( w,ATOMIC t')]) ->
-		  if not ( (unmark w) = (unmark v) ) 
-		  then raise NotImplemented;
+	      | APPLY(T T_Pi, [ATOMIC s; LAMBDA(w,ATOMIC t')]) ->
 		  overify pos env x s;
 		  let env = ts_bind (v, s) env in 
-		  tverify pos env t t'
+		  tverify pos env t t'	(* incorrect: variable v should be identified with variable w *)
 	      | _ -> raise (TypeCheckingFailure(get_pos f,"expected a TS function:\n    " ^(ts_expr_to_string f) ^"\n  : "^(ts_expr_to_string tf))))
 	  | _ -> raise Internal)
       | O_lambda -> (
@@ -99,7 +97,7 @@ and ocheck pos env ((pos,e0) as e) =
 	  | _ -> raise Internal)
       | O_forall -> (
 	  match args with 
-	  | [ATOMIC m;ATOMIC m';ATOMIC o;LAMBDA( v,ATOMIC o')] ->
+	  | [ATOMIC m;ATOMIC m';ATOMIC o;LAMBDA(v,ATOMIC o')] ->
 	      ucheck pos env m; 
 	      ucheck pos env m'; 	(* probably have to check something here ... *)
 	      ocheck pos env o; 

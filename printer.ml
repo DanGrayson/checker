@@ -25,7 +25,7 @@ let rec lf_type_to_string' target (_,t) = match t with
 	in if target then k else concat ["("; k; ")"]
       else
 	concat ["Pi "; vartostring' v; ":"; lf_type_to_string' false t; ", "; lf_type_to_string u]
-  | F_Singleton(x,t) -> concat ["= ";lf_canonical_to_string x;" : ";lf_type_to_string t;""]
+  | F_Singleton(x,t) -> concat ["Singleton(";lf_canonical_to_string x;" : ";lf_type_to_string t;")"]
   | F_APPLY(hd,args) -> 
       let s = concat [tfhead_to_string hd; concat (List.map (space <<- lf_canonical_to_string) args)] in
       if String.contains s ' ' then concat ["(";s;")"] else s

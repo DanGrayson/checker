@@ -34,15 +34,14 @@ let newline = [ '\n' '\012' ]
 let ident = first after*
 rule expr_tokens = parse
   | "Check" space "Universes" { WCheckUniverses }
-  | "CheckLF" { WCheckLF }
-  | "CheckLFtype" { WCheckLFtype }
+  | "Check" space "LF" { WCheckLF }
+  | "Check" space "TS" { WCheck }
+  | "Check" space "LF" space "type" { WCheckLFtype }
+  | "Axiom" { Axiom }
   | "Rule" { WRule }
   | "Alpha" { WAlpha }
-  | "Check" { WCheck }
-  | "Tau" { WTau }
   | "Variable" { WVariable }
   | "Define" { WDefine }
-  | "Axiom" { Axiom }
   | "End" { WEnd }
   | "Show" { WShow }
   | '[' (ident as name) '.' (digit+ as aspect) ']' { DEFINED_VARIABLE(name,int_of_string aspect) }

@@ -11,6 +11,10 @@ open Printer
 exception Error_Handled
 exception FileFinished
 exception StopParsingFile
+exception Debugging
+
+let debug = false
+let raise_switch ex1 ex2 = raise (if debug then ex1 else ex2)
 
 let error_summary pos =
   let n = !Tokens.error_count in
@@ -34,62 +38,62 @@ let print_inconsistency lhs rhs =
 
 let handle_exception (posfun:unit->string) = function
   | Eof -> leave (posfun ())
-  | Failure s -> 
+  | Failure s as ex -> 
       fprintf stderr "%s: failure: %s\n" (posfun ()) s;
       flush stderr;
       Tokens.bump_error_count();
-      raise (Failure s)
-  | GeneralError s ->
+      raise_switch ex (Failure s)
+  | GeneralError s as ex ->
       fprintf stderr "%s: %s\n" (posfun ()) s;
       flush stderr;
       Tokens.bump_error_count();
-      raise Error_Handled
-  | Grammar.Error | Parsing.Parse_error -> 
+      raise_switch ex Error_Handled
+  | Grammar.Error | Parsing.Parse_error as ex -> 
       fprintf stderr "%s: syntax error\n" (posfun ());
       flush stderr;
       Tokens.bump_error_count();
-      raise Error_Handled
-  | Lfcheck.TypingError (p,s) ->
+      raise_switch ex Error_Handled
+  | Lfcheck.TypingError (p,s) as ex ->
       fprintf stderr "%s: LF type checking failure: %s\n" (errfmt p) s;
       flush stderr;
       Tokens.bump_error_count();
-      raise Error_Handled
-  | TypeCheckingFailure (p,s) -> 
+      raise_switch ex Error_Handled
+  | TypeCheckingFailure (p,s) as ex -> 
       fprintf stderr "%s: type checking failure: %s\n" (errfmt p) s;
       flush stderr;
       Tokens.bump_error_count();
-      raise Error_Handled
-  | TypeCheckingFailure2 (p1,s1,p2,s2) -> 
+      raise_switch ex Error_Handled
+  | TypeCheckingFailure2 (p1,s1,p2,s2) as ex -> 
       fprintf stderr "%s: type mismatch: %s\n" (errfmt p1) s1;
       fprintf stderr "%s:      ...       %s\n" (errfmt p2) s2;
       flush stderr;
       Tokens.bump_error_count();
-      raise Error_Handled
-  | TypeCheckingFailure3 (p1,s1,p2,s2,p3,s3) -> 
+      raise_switch ex Error_Handled
+  | TypeCheckingFailure3 (p1,s1,p2,s2,p3,s3) as ex -> 
       fprintf stderr "%s: type mismatch: %s\n" (errfmt p1) s1;
       fprintf stderr "%s:      ...       %s\n" (errfmt p2) s2;
       fprintf stderr "%s:      ...       %s\n" (errfmt p3) s3;
       flush stderr;
       Tokens.bump_error_count();
-      raise Error_Handled
-  | TypingError (p,s) ->
+      raise_switch ex Error_Handled
+  | TypingError (p,s) as ex ->
       fprintf stderr "%s: %s\n" (errfmt p) s;
       flush stderr;
       Tokens.bump_error_count();
-      raise Error_Handled
-  | TypingUnimplemented (p,s) -> 
+      raise_switch ex Error_Handled
+  | TypingUnimplemented (p,s) as ex -> 
       fprintf stderr "%s: type checking unimplemented: %s\n" (errfmt p) s;
       flush stderr;
       Tokens.bump_error_count();
-      raise Error_Handled
-  | Unimplemented s ->
+      raise_switch ex Error_Handled
+  | Unimplemented s as ex ->
       fprintf stderr "%s: feature not yet implemented: %s\n" (posfun ()) s;
       flush stderr;
       Tokens.bump_error_count();
-      raise Error_Handled
-  | Universe.Inconsistency (lhs,rhs) ->
+      raise_switch ex Error_Handled
+  | Universe.Inconsistency (lhs,rhs) as ex ->
       print_inconsistency lhs rhs;
-      raise Error_Handled
+      raise_switch ex Error_Handled
   | e -> raise e
 
 let protect f x posfun = try f x with d -> handle_exception posfun d
@@ -181,21 +185,6 @@ let checkUniversesCommand pos =
   try
     Universe.consistency !global_context
   with Universe.Inconsistency (p,q) -> print_inconsistency p q
-
-let typeCommand x = (
-  printf "Tau        : %s\n" (ts_expr_to_string x);
-  let t = protect1 ( fun () -> Lfcheck.type_synthesis !global_context x ) in
-  printf "           : LF type synthesis yielded %s\n" (lf_type_to_string t);
-  try 
-    let tx = Tau.tau !global_context x in
-    printf "           : %s : %s\n" (ts_expr_to_string x) (ts_expr_to_string tx);
-    flush stdout;
-  with 
-  | GeneralError s -> raise NotImplemented
-  | TypingError (p,s) 
-    -> fprintf stderr "%s: %s\n" (errfmt p) s; 
-      flush stderr;
-      Tokens.bump_error_count())
     
 let show_command () = 
   print_env !global_context
@@ -215,12 +204,13 @@ let process_command lexbuf = (
     | Toplevel.CheckLFtype x -> checkLFtypeCommand x
     | Toplevel.Check x -> checkCommand x
     | Toplevel.Alpha (x,y) -> alphaCommand (x,y)
-    | Toplevel.Type x -> typeCommand x
     | Toplevel.Definition defs -> protect1 ( fun () -> 
 	List.iter
 	  (fun (v, pos, tm, tp) -> 
-	    printf "Define %s := %s : %s\n" (vartostring' v) (lf_canonical_to_string tm) (lf_type_to_string tp);
+	    printf "Define %s = %s\n" (vartostring' v) (lf_canonical_to_string tm);
+	    printf "       %s : %s\n" (vartostring' v) (lf_type_to_string tp);
 	    flush stdout;
+	    Lfcheck.type_validity !global_context tp;
 	    Lfcheck.type_check pos !global_context tm tp;
 	    addDefinition v pos tm tp
 	  ) 
@@ -231,7 +221,7 @@ let process_command lexbuf = (
  )
 
 let parse_file filename =
-  printf "        : -- parsing file %s\n" filename; flush stdout;
+  printf "parsing file %s\n" filename; flush stdout;
   Tokens.error_count := 0;
   let lexbuf = Lexing.from_channel (open_in filename) in
   lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = filename};
@@ -275,9 +265,12 @@ let _ = try
 with
 | Internal_expr      ( ATOMIC(pos,_) as e ) 
 | Internal_expr      ( LAMBDA(_,ATOMIC(pos,_)) as e ) 
+    as ex ->
+    fprintf stderr "%s: internal error: %s\n" (errfmt pos) (lf_canonical_to_string e);
+    raise ex
 | Unimplemented_expr ( ATOMIC(pos,_) as e )
 | Unimplemented_expr ( LAMBDA(_,ATOMIC(pos,_)) as e ) 
     as ex ->
-    fprintf stderr "%s: internal error on ts_expr %s\n" (errfmt pos) (lf_canonical_to_string e);
+    fprintf stderr "%s: unimplemented feature: %s\n" (errfmt pos) (lf_canonical_to_string e);
     raise ex
 
