@@ -17,8 +17,6 @@ Check [El]([u](u2)).
 # test LF term input format:
 CheckLF (lambda x, ([ev] f x (lambda y, T))).
 
-F_Print Pi u1:uexp, Pi u2:uexp, Pi T:texp, Pi t:oexp, Pi ist:istype T, Pi has:hastype t T, texp.
-
 Check [U](u1).
 Check [j](u1, u2).
 Check *[u](u1).
@@ -82,20 +80,18 @@ Check lambda f:X->T, lambda y:X, [ev;_](f,y,T).
 Check lambda f:X->T, lambda y:X, f y.
 
 # Define E1 (u:Ulevel)(K:Type)(x:K) := x : K.
-# Define E2 (u1 u2 u3:Ulevel)(K:Type) := K->K .
-# Define E3 (u1 u2 u3 : Ulevel)(K:Type)(x1: K -> [U](u1))(x2: [U]([next](u0))) := [U](u2) .
-# Define E5 (u1 u2 u3 : Ulevel; max (u1, u2) = max (u2, u3); u1 >= [next](u2) )(K:Type)(x1: K -> [U](u1))(x2: [U]([next](u0))) := [j](x1, x2) : [U](u2) .
-# Define E7 (T U:Type)(t:T)(u:U)(f:T->U) := f t : _.
-# Define E7 (K L:Type)(t:K)(g:K -> [U](u0))(u:L)(f:Pi x:K, *g x) := f t : _.
-# Define E6 (u1 u2 u3 : Ulevel)(X1 X2:Type)(x1: X1 -> [U](u1))(x2: [U]([next](u0))) := [j](x1, x2) : _ .
-# Define E7 := ft : _ .
+Define E2 (u1 u2 u3:Ulevel)(K:Type) := K->K .
+Define E3 (u1 u2 u3 : Ulevel)(K:Type)(x1: K -> [U](u1))(x2: [U]([next](u0))) := [U](u2) .
+Define E5 (u1 u2 u3 : Ulevel; max (u1, u2) = max (u2, u3); u1 >= [next](u2) )(K:Type)(x1: K -> [U](u1))(x2: [U]([next](u0))) := [j](x1, x2) : [U](u2) .
+Define E7 (T U:Type)(t:T)(u:U)(f:T->U) := f t : _.
+Define E7 (K L:Type)(t:K)(g:K -> [U](u0))(u:L)(f:Pi x:K, *g x) := f t : _.
+Define E6 (u1 u2 u3 : Ulevel)(X1 X2:Type)(x1: X1 -> [U](u1))(x2: [U]([next](u0))) := [j](x1, x2) : _ .
 
-Define foo (u : Ulevel) (t : [U]([next](u))) := *t.
 Define bar (T:Type) := T -> T.
-Show.
 
-# each of the following lines yields an error:
 CheckLFtype Pi x:oexp, Pi y:oexp, Pi T:texp, Pi U:texp, [ x = y : T ] -> [ T = U ] -> [ x = y : U ].
 Check U_type.
 CheckLF (U_type u1).
-CheckLF ([foo.0] u1 ([u] u1) (U_type ([next] u1)) (u_univ u1)).
+
+Define foo (u : Ulevel) (t : [U]([next](u))) := *t.
+CheckLF ([foo.0] u1 ([u] u1) (u_univ u1)).

@@ -36,29 +36,28 @@ let tDefinition (name:string) ((ulevel_context,tc,ts_context):(uContext * (var' 
     : (string * int * Error.position * lf_expr * lf_type) list 
     = 
   let (pos,t0) = t in 
-  let UContext (uvars,ueqns) = ulevel_context in
-  let rec wrap (t:lf_expr) = function
-    | [] -> t 
-    | v :: rest -> wrap (LAMBDA((nowhere v),t)) rest
-  in let rec wrapk tf t = function
-    | [] -> t 
-    | v :: rest -> wrapk tf (nowhere (F_Pi(v,tf,t))) rest
-  in let rec wrapi t = function
-    | [] -> t
-    | (z,u) :: rest -> 
-	let t = nowhere (F_Pi(VarUnused,hastype (to_lfexpr' z) u,t)) in
-	let t = nowhere (F_Pi(VarUnused,istype u,t)) in
-	wrapi t rest
-  in let k = texp
+  let UContext (uvars,ueqns) = ulevel_context
   in let wt = ATOMIC t
-  in let wt = wrap wt (List.rev_append (List.map fst ts_context) [])
-  in let wt = wrap wt (List.rev_append tc [])
-  in let wt = wrap wt (List.rev_append uvars [])
-  in let wk = k
-  in let wk = wrapi wk (List.rev_append (List.map (fun (v,t) -> (v,ATOMIC t)) ts_context) [])
-  in let wk = wrapk oexp wk (List.rev_append (List.map fst ts_context) [])
-  in let wk = wrapk texp wk (List.rev_append tc [])
-  in let wk = wrapk uexp wk (List.rev_append uvars [])
+  in let wk = texp
+
+  in let wt = List.fold_right
+      (fun (z,u) t -> LAMBDA(nowhere(newfresh z),t))
+      ts_context wt
+
+  in let wk = List.fold_right
+      (fun (z,u) t -> nowhere (F_Pi(VarUnused,hastype (to_lfexpr' z) (ATOMIC u), t)))
+      ts_context wk
+
+  in let wt = List.fold_right
+      (fun v t -> LAMBDA((nowhere v),t))
+      (List.flatten [uvars; tc; (List.map fst ts_context)]) wt
+
+  in let f sort = fun v t -> nowhere (F_Pi(v,sort,t))
+
+  in let wk = List.fold_right (f oexp) (List.map fst ts_context) wk
+  in let wk = List.fold_right (f texp) tc wk
+  in let wk = List.fold_right (f uexp) uvars wk
+
   in
   [ 
     ( name, 0, pos, wt, wk );

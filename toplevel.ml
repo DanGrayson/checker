@@ -4,7 +4,6 @@ open Typesystem
 type command' = 
   | CheckLF of lf_expr
   | CheckLFtype of lf_type
-  | F_Print of lf_type
   | Rule of int * string * lf_type
   | Check of ts_expr
   | UVariable of string list * (ts_expr * ts_expr) list

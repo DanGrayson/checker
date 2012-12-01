@@ -17,22 +17,35 @@ let try_alpha = false (* turning this on could slow things down a lot, not menti
 
 let err pos msg = raise (TypingError (pos, msg))
 
-let err2 pos msg pos' msg' = raise (TypeCheckingFailure2 (pos, msg, pos', msg'))
+let fix2 pos pos' = match (pos,pos') with
+| Nowhere, pos -> pos, pos
+| pos, Nowhere -> pos, pos
+| _ -> pos, pos'
 
-let mismatch_type pos t pos' t' = raise (TypeCheckingFailure2 (
-				    pos , "expected type "^(lf_type_to_string t ),
-				    pos', "to match      "^(lf_type_to_string t')))
+let err2 pos msg pos' msg' = 
+  let (pos,pos') = fix2 pos pos' in
+  raise (TypeCheckingFailure2 (pos, msg, pos', msg'))
 
-let mismatch_term_t pos x pos' x' t = raise (TypeCheckingFailure3 (
-				    pos , "expected term\n\t"^(lf_canonical_to_string x ),
-				    pos',      "to match\n\t"^(lf_canonical_to_string x'),
-			       get_pos t,       "of type\n\t"^(lf_type_to_string t)
-					  ))
+let mismatch_type pos t pos' t' = 
+  let (pos,pos') = fix2 pos pos' in
+  raise (TypeCheckingFailure2 (
+	 pos , "expected type "^(lf_type_to_string t ),
+	 pos', "to match      "^(lf_type_to_string t')))
 
-let mismatch_term pos x pos' x' = raise (TypeCheckingFailure2 (
-				    pos , "expected term\n\t"^(lf_canonical_to_string x ),
-				    pos',      "to match\n\t"^(lf_canonical_to_string x')
-					  ))
+let mismatch_term_t pos x pos' x' t = 
+  let (pos,pos') = fix2 pos pos' in
+  raise (TypeCheckingFailure3 (
+		    pos , "expected term\n\t"^(lf_canonical_to_string x ),
+		    pos',      "to match\n\t"^(lf_canonical_to_string x'),
+	       get_pos t,       "of type\n\t"^(lf_type_to_string t)
+			  ))
+
+let mismatch_term pos x pos' x' = 
+  let (pos,pos') = fix2 pos pos' in
+  raise (TypeCheckingFailure2 (
+		    pos , "expected term\n\t"^(lf_canonical_to_string x ),
+		    pos',      "to match\n\t"^(lf_canonical_to_string x')
+			  ))
 
 let errmissingarg pos a = err pos ("missing next argument, of type "^(lf_type_to_string a))
 
@@ -125,13 +138,13 @@ let rec type_validity (env:context) (t:lf_type) : unit =
 and type_synthesis (env:context) (e:ts_expr) : lf_type =
   (* assume nothing *)
   (* see figure 13, page 716 [EEST] *)
-  let (pos,e) = e in
-     match e with
+  let (pos,e0) = e in
+     match e0 with
      | Variable v -> (
-	 try (pos, F_Singleton(ATOMIC(pos,e), (List.assoc v env)))
+	 try (pos, F_Singleton(ATOMIC e, (List.assoc v env)))
 	 with Not_found -> err pos "unbound variable"
 	)
-     | EmptyHole _ -> err pos "empty hole"
+     | EmptyHole _ -> err pos ("empty hole: "^(lf_atomic_to_string e))
      | APPLY(label,args) ->
 	 with_pos pos 				(* the position of the type will reflect the position of the expression *)
 	   (unmark (

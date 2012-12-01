@@ -37,7 +37,6 @@ rule expr_tokens = parse
   | "CheckLF" { WCheckLF }
   | "CheckLFtype" { WCheckLFtype }
   | "Rule" { WRule }
-  | "F_Print" { WF_Print }
   | "Alpha" { WAlpha }
   | "Check" { WCheck }
   | "Tau" { WTau }

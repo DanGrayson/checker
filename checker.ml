@@ -6,6 +6,7 @@ open Universe
 open Error
 open Hash
 open Printf
+open Printer
 
 exception Error_Handled
 exception FileFinished
@@ -26,8 +27,8 @@ let errpos x = errfmt (get_pos x)
 
 let print_inconsistency lhs rhs =
   fprintf stderr "%s: universe inconsistency:\n" (errpos lhs);
-  fprintf stderr "%s:         %s\n" (errpos lhs) (Printer.ts_expr_to_string lhs);
-  fprintf stderr "%s:      != %s\n" (errpos lhs) (Printer.ts_expr_to_string rhs);
+  fprintf stderr "%s:         %s\n" (errpos lhs) (ts_expr_to_string lhs);
+  fprintf stderr "%s:      != %s\n" (errpos lhs) (ts_expr_to_string rhs);
   flush stderr;
   Tokens.bump_error_count()
 
@@ -120,25 +121,24 @@ let add_tVars tvars =
 
 let fix t = Fillin.fillin !global_context t
 
-let axiomCommand name t = global_context := ts_bind' (Var name, t) !global_context
+let axiomCommand name t = 
+  protect1 ( fun () -> Lfcheck.type_check (get_pos t) !global_context (ATOMIC t) texp);
+  global_context := ts_bind' (Var name, t) !global_context
 
 let ruleCommand num name x =
-  printf "Rule %d %s: %s\n" num name (Printer.lf_type_to_string x);
+  printf "Rule %d %s: %s\n" num name (lf_type_to_string x);
+  Lfcheck.type_validity !global_context x;
+  protect1 ( fun () -> Lfcheck.type_validity !global_context x );
   global_context := (Var name, x) :: !global_context;
-  flush stdout;
-  protect1 ( fun () -> Lfcheck.type_validity !global_context x )
-
-let f_print_Command x =
-  printf "F_Print    : %s\n" (Printer.lf_type_to_string x);
   flush stdout
 
 let check0 x =
   flush stdout;
   let x = protect1 ( fun () -> Fillin.fillin !global_context x ) in
-  printf "        LF : %s\n" (Printer.lf_atomic_to_string x);
+  printf "        LF : %s\n" (lf_atomic_to_string x);
   flush stdout;
   let t = protect1 ( fun () -> Lfcheck.type_synthesis !global_context x ) in
-  printf "    LF type: %s\n" (Printer.lf_type_to_string t);
+  printf "    LF type: %s\n" (lf_type_to_string t);
   if unmark t = unmark uexp then (
     protect1 (fun () -> Check.ucheck !global_context x);
     flush stdout)
@@ -147,34 +147,34 @@ let check0 x =
     flush stdout)
   else if unmark t = unmark oexp then (
     let ts = protect1 ( fun () -> Tau.tau !global_context x ) in
-    printf "    TS type: %s\n" (Printer.ts_expr_to_string ts);
+    printf "    TS type: %s\n" (ts_expr_to_string ts);
     protect1 (fun () -> Check.ocheck !global_context x);
     flush stdout)
 
 let checkLFCommand x =
-  printf "CheckLF    : %s\n" (Printer.lf_canonical_to_string x);
+  printf "CheckLF    : %s\n" (lf_canonical_to_string x);
   flush stdout;
   match x with 
   | ATOMIC x ->
       let t = protect1 ( fun () -> Lfcheck.type_synthesis !global_context x ) in
-      printf "    type   : %s\n" (Printer.lf_type_to_string t)
+      printf "    type   : %s\n" (lf_type_to_string t)
   | _ -> ()
 
 let checkLFtypeCommand x =
-  printf "CheckLFtype: %s\n" (Printer.lf_type_to_string x);
+  printf "CheckLFtype: %s\n" (lf_type_to_string x);
   flush stdout;
   protect1 ( fun () -> Lfcheck.type_validity !global_context x )
 
 let checkCommand x =
-  printf "Check      : %s\n" (Printer.ts_expr_to_string x);
+  printf "Check      : %s\n" (ts_expr_to_string x);
   check0 x
 
 let alphaCommand (x,y) =
   let x = protect fix x (fun () -> errpos x) in
   let y = protect fix y nopos in
   printf "Alpha      : %s\n" (if (Alpha.UEqual.term_equiv Grammar0.emptyUContext (ATOMIC x) (ATOMIC y)) then "true" else "false");
-  printf "           : %s\n" (Printer.ts_expr_to_string x);
-  printf "           : %s\n" (Printer.ts_expr_to_string y);
+  printf "           : %s\n" (ts_expr_to_string x);
+  printf "           : %s\n" (ts_expr_to_string y);
   flush stdout
 
 let checkUniversesCommand pos =
@@ -183,12 +183,12 @@ let checkUniversesCommand pos =
   with Universe.Inconsistency (p,q) -> print_inconsistency p q
 
 let typeCommand x = (
-  printf "Tau        : %s\n" (Printer.ts_expr_to_string x);
+  printf "Tau        : %s\n" (ts_expr_to_string x);
   let t = protect1 ( fun () -> Lfcheck.type_synthesis !global_context x ) in
-  printf "           : LF type synthesis yielded %s\n" (Printer.lf_type_to_string t);
+  printf "           : LF type synthesis yielded %s\n" (lf_type_to_string t);
   try 
     let tx = Tau.tau !global_context x in
-    printf "           : %s : %s\n" (Printer.ts_expr_to_string x) (Printer.ts_expr_to_string tx);
+    printf "           : %s : %s\n" (ts_expr_to_string x) (ts_expr_to_string tx);
     flush stdout;
   with 
   | GeneralError s -> raise NotImplemented
@@ -198,9 +198,10 @@ let typeCommand x = (
       Tokens.bump_error_count())
     
 let show_command () = 
-  Printer.print_env !global_context
+  print_env !global_context
 
-let addDefinition name aspect pos o t = global_context := def_bind name aspect pos o t !global_context
+let addDefinition name aspect pos o t = 
+  global_context := def_bind name aspect pos o t !global_context
 
 let process_command lexbuf = (
   let c = protect (Grammar.command (Tokens.expr_tokens)) lexbuf (fun () -> lexpos lexbuf) in
@@ -210,13 +211,20 @@ let process_command lexbuf = (
     | Toplevel.Variable tvars -> add_tVars tvars
     | Toplevel.Rule (num,name,t) -> ruleCommand num name t
     | Toplevel.Axiom (name,t) -> axiomCommand name t
-    | Toplevel.F_Print x -> f_print_Command x
     | Toplevel.CheckLF x -> checkLFCommand x
     | Toplevel.CheckLFtype x -> checkLFtypeCommand x
     | Toplevel.Check x -> checkCommand x
     | Toplevel.Alpha (x,y) -> alphaCommand (x,y)
     | Toplevel.Type x -> typeCommand x
-    | Toplevel.Definition defs -> List.iter (fun (name, aspect, pos, tm, tp) -> addDefinition name aspect pos tm tp) defs
+    | Toplevel.Definition defs -> protect1 ( fun () -> 
+	List.iter
+	  (fun (name, aspect, pos, tm, tp) -> 
+	    printf "Define [%s.%d] := %s : %s\n" name aspect (lf_canonical_to_string tm) (lf_type_to_string tp);
+	    flush stdout;
+	    Lfcheck.type_check pos !global_context tm tp;
+	    addDefinition name aspect pos tm tp
+	  ) 
+	  defs)
     | Toplevel.End -> printf "%s: ending.\n" (errfmt pos) ; flush stdout; raise StopParsingFile
     | Toplevel.Show -> show_command()
     | Toplevel.CheckUniverses -> checkUniversesCommand pos
@@ -259,17 +267,6 @@ let toplevel() =
   (*
   (try checkLFCommand (expr_from_string "Pi f:T->[U](uuu0), Pi o:T, *f o" ) with Error_Handled -> ());
   (try checkLFCommand (expr_from_string "lambda f:T->U, lambda o:T, f o") with Error_Handled -> ());
-  List.iter 
-    (
-     fun x -> printf "F_Print: %s : %s\n" (label_to_string x) (Printer.lf_type_to_string' (label_to_lf_type x))
-    )
-    labels;
-  List.iter 
-    (
-     fun (Rule(num,name) as head,_) -> 
-       printf "Rule %d %s : %s\n" num name (Printer.lf_type_to_string' (label_to_lf_type (R head)))
-    )
-    (List.rev !rules);
     *)
   flush stdout
 
@@ -281,6 +278,6 @@ with
 | Unimplemented_expr ( ATOMIC(pos,_) as e )
 | Unimplemented_expr ( LAMBDA(_,ATOMIC(pos,_)) as e ) 
     as ex ->
-    fprintf stderr "%s: internal error on ts_expr %s\n" (errfmt pos) (Printer.lf_canonical_to_string e);
+    fprintf stderr "%s: internal error on ts_expr %s\n" (errfmt pos) (lf_canonical_to_string e);
     raise ex
 
