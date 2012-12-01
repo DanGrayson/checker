@@ -48,7 +48,7 @@ let tDefinition (name:string) ((ulevel_context,tvars,ts_context):(uContext * (va
 
   let tm0 = ATOMIC t in
   let tp0 = texp in
-  let tm1 = ATOMIC(new_hole()) in
+  let tm1 = ATOMIC(pos, new_hole'()) in
   let tp1 = istype (ATOMIC (nowhere (APPLY(L v0, List.map to_lfexpr' allvars)))) in
 
   let g v t = LAMBDA((nowhere v),t) in
@@ -83,11 +83,13 @@ let tDefinition (name:string) ((ulevel_context,tvars,ts_context):(uContext * (va
 let oDefinition (name:string) ((ulevel_context,tc,ts_context):(uContext * (var' list) * ((var' * ts_expr) list))) (o:ts_expr) (t:ts_expr)
     : (var' * Error.position * lf_expr * lf_type) list 
     = 
+  let pos = get_pos o in
+
   (* still have to wrap the lambdas around it : *)
   [
    ( VarDefined(name, 0), get_pos o, ATOMIC o, oexp);
    ( VarDefined(name, 1), get_pos t, ATOMIC t, texp);
-   ( VarDefined(name, 2), get_pos o, ATOMIC (new_hole()), hastype (ATOMIC o) (ATOMIC t))
+   ( VarDefined(name, 2), get_pos o, ATOMIC (pos, new_hole'()), hastype (ATOMIC o) (ATOMIC t))
  ]
 
 let teqDefinition _ _ _ _ = raise (Error.Unimplemented "teqDefinition")

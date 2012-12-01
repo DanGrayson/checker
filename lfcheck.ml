@@ -22,6 +22,11 @@ let fix2 pos pos' = match (pos,pos') with
 | pos, Nowhere -> pos, pos
 | _ -> pos, pos'
 
+let best2 pos pos' = match (pos,pos') with
+| Nowhere, pos -> pos
+| pos, Nowhere -> pos
+| _ -> pos
+
 let err2 pos msg pos' msg' = 
   let (pos,pos') = fix2 pos pos' in
   raise (TypeCheckingFailure2 (pos, msg, pos', msg'))
@@ -169,31 +174,40 @@ and type_synthesis (env:context) (e:ts_expr) : lf_type =
 and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : unit =
   (* assume x and y have already been verified to be of type t *)
   (* see figure 11, page 711 [EEST] *)
+  let try_path_equivalence x y =
+    let t' = path_equivalence env x y in
+    type_equivalence env t t' in
   if try_alpha && Alpha.UEqual.term_equiv empty_uContext x y then () else
   let (pos,t0) = t in
   match x, y, t0 with
   | _, _, F_Singleton _ -> ()
-  | LAMBDA(u,x), LAMBDA(v,y), F_Pi(w,a,b) ->
-      let w' = newfresh w in
-      term_equivalence xpos ypos ((w',a) :: env) (* all this variable substitution should be handled by alpha equivalence in the future *)
-	(subst' (unmark u,to_lfexpr' w') x)
-	(subst' (unmark v,to_lfexpr' w') y)
-	(subst_type (w,to_lfexpr' w') b)
-  | x, y, F_Pi _ -> mismatch_term_t xpos x ypos y t
-  | x, y, F_APPLY(j,args) ->
-      let t' = path_equivalence env x y in
-      type_equivalence env t t'
+  | x, y, F_Pi (w,a,b) -> (
+      let x = head_normalization env x in (* not mentioned in the paper (?) *)
+      let y = head_normalization env y in (* not mentioned in the paper (?) *)
+      match x,y with
+      | LAMBDA(u,x), LAMBDA(v,y) ->
+	  let w' = newfresh w in
+	  term_equivalence xpos ypos ((w',a) :: env) (* all this variable substitution should be handled by alpha equivalence in the future *)
+	    (subst' (unmark u,to_lfexpr' w') x)
+	    (subst' (unmark v,to_lfexpr' w') y)
+	    (subst_type (w,to_lfexpr' w') b)
+      | x,y -> try_path_equivalence x y
+     )
+  | x, y, F_APPLY(j,args) -> try_path_equivalence x y
 
 and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
+  (* assume x and y are head reduced *)
   (* see figure 11, page 711 [EEST] *)
   match x,y with
   | ATOMIC (xpos,x0), ATOMIC (ypos,y0) -> (
       match x0,y0 with
       | Variable v, Variable w ->
-	  if not (v = w) then mismatch_term xpos x ypos y;
-	  ( try lookup_type env v with Not_found -> err xpos ("unbound variable: "^(vartostring' v)) )
+	  if not (v = w) 
+	  then mismatch_term xpos x ypos y; (* x and y aren't variables with definitions, because they are head reduced *)
+	  ( try lookup_type env v with Not_found -> err (best2 xpos ypos) ("unbound variable: "^(vartostring' v)) )
       | APPLY(f,args), APPLY(f',args') ->
-          if not (f = f') then mismatch_term xpos x ypos y;
+          if not (f = f') 
+	  then mismatch_term xpos x ypos y; (* f and g aren't variables with definitions, because they are head reduced *)
           let t = label_to_lf_type env f in
           let rec repeat t args args' =
             match t,args,args' with
@@ -220,8 +234,9 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
       term_equivalence tpos upos env x y t
   | F_Pi(v,a,b), F_Pi(w,c,d) ->
       type_equivalence env a c;
-      type_equivalence ((v, a) :: env) b (subst_type (w, ATOMIC (Nowhere,Variable v)) d)
+      type_equivalence ((v, a) :: env) b (subst_type (w, to_lfexpr' v) d)
   | F_APPLY(h,args), F_APPLY(h',args') ->
+      (* Here we augment the algorithm in the paper to handle the type families of LF. *)
       if not (h = h') then mismatch_type tpos t upos u;
       let k = tfhead_to_kind h in
       let rec repeat (k:lf_kind) args args' : unit =
