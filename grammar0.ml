@@ -46,7 +46,7 @@ let tDefinition (name:string) ((ulevel_context,tc,ts_context):(uContext * (var' 
   in let rec wrapi t = function
     | [] -> t
     | (z,u) :: rest -> 
-	let t = nowhere (F_Pi(VarUnused,hastype (ATOMIC (nowhere (Variable z))) u,t)) in
+	let t = nowhere (F_Pi(VarUnused,hastype (to_lfexpr' z) u,t)) in
 	let t = nowhere (F_Pi(VarUnused,istype u,t)) in
 	wrapi t rest
   in let k = texp

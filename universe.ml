@@ -39,7 +39,6 @@ let get_uvars =
   let rec get_uvars accu = function
   | [] -> List.rev accu
   | (u,t) :: rest -> if t = uexp then get_uvars (u :: accu) rest else get_uvars accu rest
-  | _ :: rest -> get_uvars accu rest 
   in get_uvars []
 
 let get_ueqns =

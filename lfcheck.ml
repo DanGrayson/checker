@@ -8,6 +8,7 @@
 open Typesystem
 open Error
 open Printer
+open Substitute
 
 exception TypingError of position * string
 
@@ -21,29 +22,72 @@ let mismatch_type pos t pos' t' = raise (TypeCheckingFailure2 (
 				    pos , "expected type "^(lf_type_to_string t ),
 				    pos', "to match      "^(lf_type_to_string t')))
 
-let mismatch_term pos x pos' x' = raise (TypeCheckingFailure2 (
-				    pos , "expected term\n      "^(lf_canonical_to_string x ),
-				    pos', "to match     \n      "^(lf_canonical_to_string x')))
+let mismatch_term pos x pos' x' t = raise (TypeCheckingFailure3 (
+				    pos , "expected term\n\t"^(lf_canonical_to_string x ),
+				    pos',      "to match\n\t"^(lf_canonical_to_string x'),
+			       get_pos t,       "of type\n\t"^(lf_type_to_string t)
+					  ))
+
+let errmissingarg pos a = err pos ("missing next argument, of type "^(lf_type_to_string a))
 
 let rec strip_singleton ((_,(_,t)) as u) = match t with
 | F_Singleton a -> strip_singleton a
 | _ -> u
 
-let to_lfexpr v = ATOMIC (Nowhere, Variable (unmark v))
-
 (* background assumption: all types in the environment have been verified *)
 
-let rec natural_type (x:lf_expr) : lf_type =
-  (* see figure 9 page 696 [EEST] *)
-  raise NotImplemented
+let lookup_type env v = List.assoc v env
 
-let rec head_reduction (x:lf_expr) : lf_expr =
-  (* see figure 9 page 696 [EEST] *)
-  raise NotImplemented
+let unfold env v =
+  match unmark( lookup_type env v ) with
+  | F_Singleton a -> let (x,t) = strip_singleton a in x
+  | _ -> raise Not_found
 
-let rec head_normalization (x:lf_expr) : lf_expr =
+let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
+  (* assume nothing *)
   (* see figure 9 page 696 [EEST] *)
-  raise NotImplemented
+  match x with
+  | ATOMIC (pos,x) -> (
+      match x with
+      | Variable v -> (
+	  try lookup_type env v 
+	  with Not_found -> err pos ("unbound variable: "^(vartostring' v)))
+      | EmptyHole _ -> err pos "empty hole found"
+      | APPLY(l,args) -> 
+	  let t = unmark (label_to_lf_type env l) in
+	  let rec repeat args t =
+	    match args, t with
+	    | x :: args, F_Pi(v,a,b) -> repeat args (unmark (subst_type (v,x) b))
+	    | x :: args, _ -> err pos "at least one argument too many"
+	    | [], F_Pi(v,a,b) -> errmissingarg pos a (* we insist on eta-long format *)
+	    | [], t -> t
+	  in nowhere (repeat args t))
+  | LAMBDA _ -> err pos "LF lambda expression found, has no natural type"
+
+let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
+  (* assume nothing *)
+  (* see figure 9 page 696 [EEST] *)
+  (* may raise Not_found if there is no head reduction *)
+  match x with
+  | ATOMIC (pos,x) -> (
+      match x with
+      | Variable v -> unfold env v
+      | EmptyHole _ -> err pos "empty hole found"
+      | APPLY(L f,args) -> (
+	  match unfold env f with
+	  | LAMBDA(v,body) -> (
+	      match args with 
+	      | x :: args -> subst' (unmark v,x) body
+	      | [] -> err pos "too few arguments"
+	     )
+	  | _ -> raise Not_found)
+      | APPLY _ -> raise Not_found)
+  | LAMBDA _ -> x
+      
+let rec head_normalization (env:context) (x:lf_expr) : lf_expr =
+  (* see figure 9 page 696 [EEST] *)
+  try head_normalization env (head_reduction env x)
+  with Not_found -> x
 
 let rec type_validity (env:context) (t:lf_type) : unit =
   (* assume the kinds of constants, and the types in them, have been checked *)
@@ -63,7 +107,7 @@ let rec type_validity (env:context) (t:lf_type) : unit =
 	| K_Pi(v,a,kind'), x :: args ->
 	    type_check pos env x a;
 	    repeat ((v,a) :: env) kind' args
-	| K_Pi(_,a,_), [] -> err pos ("missing next argument, of type "^(lf_type_to_string a))
+	| K_Pi(_,a,_), [] -> errmissingarg pos a
       in repeat env kind args
   | F_Singleton(x,t) -> 
       type_validity env t;
@@ -95,7 +139,7 @@ and type_synthesis (env:context) (e:ts_expr) : lf_type =
 		  err pos ("too few arguments; next argument should be of type "^(lf_type_to_string a))
 	      | F_Pi(x,a',a''), m' :: args' ->
 		  type_check pos env m' a';
-                  repeat ((x,a') :: env) (Substitute.subst_type (x,m') a'') args'
+                  repeat ((x,a') :: env) (subst_type (x,m') a'') args'
 	      | F_APPLY _, ATOMIC (pos,_) :: _ -> err pos "extra argument"
 	      | F_APPLY _, LAMBDA _ :: _ -> err pos "extra argument"
 	     )
@@ -108,8 +152,14 @@ and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (
   let (pos,t0) = t in
   match x, y, t0 with
   | _, _, F_Singleton _ -> ()
+  | LAMBDA(u,x), LAMBDA(v,y), F_Pi(w,a,b) ->
+      let w' = newfresh w in
+      term_equivalence xpos ypos ((w',a) :: env) (* all this variable substitution should be handled by alpha equivalence in the future *)
+	(subst' (unmark u,to_lfexpr' w') x)
+	(subst' (unmark v,to_lfexpr' w') y)
+	(subst_type (w,to_lfexpr' w') b)
   | _ ->
-      mismatch_term xpos x ypos y		(* need to implement more cases, though *)
+      mismatch_term xpos x ypos y t		(* need to implement more cases, though *)
 
 and path_equivalence (env:context) (x:ts_expr) (y:ts_expr) : lf_type =
   (* assume nothing *)
@@ -132,7 +182,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
       term_equivalence tpos upos env x y t
   | F_Pi(v,a,b), F_Pi(w,c,d) ->
       type_equivalence env a c;
-      type_equivalence ((v, a) :: env) b (Substitute.subst_type (w, ATOMIC (Nowhere,Variable v)) d)
+      type_equivalence ((v, a) :: env) b (subst_type (w, ATOMIC (Nowhere,Variable v)) d)
   | F_APPLY(h,args), F_APPLY(h',args') ->
       if not (h = h') then mismatch_type tpos t upos u;
       let k = tfhead_to_kind h in
@@ -140,7 +190,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
 	match k,args,args' with
         | K_Pi(v,t,k), x :: args, x' :: args' ->
             term_equivalence tpos upos env x x' t;
-            repeat (Substitute.subst_kind (v,x) k) args args'
+            repeat (subst_kind (v,x) k) args args'
         | K_type, [], [] -> ()
 	| _ -> raise Internal
       in repeat k args args'
@@ -176,7 +226,7 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : unit =
       type_check pos 
 	((unmark v,a) :: env)
 	e
-	(Substitute.subst_type (w,to_lfexpr v) b)
+	(subst_type (w,to_lfexpr v) b)
   | LAMBDA _, _ -> err pos "did not expect a lambda expression here"
   | ATOMIC e, _ -> let s = type_synthesis env e in subtype env s t
 

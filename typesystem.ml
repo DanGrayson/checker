@@ -317,6 +317,9 @@ type lf_expr = canonical_term
 
 (** Notation. *)
 
+let to_lfexpr' v = ATOMIC (Nowhere, Variable v)
+let to_lfexpr v = ATOMIC (Nowhere, Variable (unmark v))
+
 let ( ** ) f x = nowhere(APPLY(f,x))
 
 (** Canonical type families of LF.
@@ -503,7 +506,7 @@ let newfresh =
 let ts_bind' (v,t) env = match v with
   | VarUnused -> env
   | v -> 
-      (newfresh (Var "hast") , hastype (ATOMIC (nowhere (Variable v))) (ATOMIC t)) :: 
+      (newfresh (Var "hast") , hastype (to_lfexpr' v) (ATOMIC t)) :: 
       (v,oexp) :: 
       env
 

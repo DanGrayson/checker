@@ -58,15 +58,15 @@ let handle_exception (posfun:unit->string) = function
       Tokens.bump_error_count();
       raise Error_Handled
   | TypeCheckingFailure2 (p1,s1,p2,s2) -> 
-      Printf.fprintf stderr "%s: %s\n" (errfmt p1) s1;
-      Printf.fprintf stderr "%s: %s\n" (errfmt p2) s2;
+      Printf.fprintf stderr "%s: type mismatch: %s\n" (errfmt p1) s1;
+      Printf.fprintf stderr "%s:      ...       %s\n" (errfmt p2) s2;
       flush stderr;
       Tokens.bump_error_count();
       raise Error_Handled
   | TypeCheckingFailure3 (p1,s1,p2,s2,p3,s3) -> 
-      Printf.fprintf stderr "%s: type checking failure: %s\n" (errfmt p1) s1;
-      Printf.fprintf stderr "%s: ... %s\n" (errfmt p2) s2;
-      Printf.fprintf stderr "%s: ... %s\n" (errfmt p3) s3;
+      Printf.fprintf stderr "%s: type mismatch: %s\n" (errfmt p1) s1;
+      Printf.fprintf stderr "%s:      ...       %s\n" (errfmt p2) s2;
+      Printf.fprintf stderr "%s:      ...       %s\n" (errfmt p3) s3;
       flush stderr;
       Tokens.bump_error_count();
       raise Error_Handled
@@ -109,7 +109,7 @@ let add_tVars tvars =
 	    (fun t -> 
 	      [
 	       (Var t, texp);
-	       (newfresh (Var "ist"), istype (ATOMIC (nowhere (Variable (Var t)))));
+	       (newfresh (Var "ist"), istype (to_lfexpr' (Var t)));
 	     ]
 	    )
 	    tvars
