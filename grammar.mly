@@ -223,8 +223,6 @@ ts_expr:
     {$1}
 
 tsterm_head:
-| v=VARIABLE
-    { L v }
 | l=CONSTANT
     {
      try List.assoc ("[" ^ l ^ "]") string_to_label 
@@ -243,6 +241,8 @@ arglist:
 bare_variable:
 | IDENTIFIER
     { Var $1 }
+| v=VARIABLE
+    { v }
 
 bare_variable_or_unused:
 | v=bare_variable
