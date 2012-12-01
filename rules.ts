@@ -4,7 +4,7 @@
 
 Rule 7 tsimeq : ∏ T:texp, ∏ U:texp,
 
-     [ T ~ U ] ⟶ [ T = U ].
+     [ T type ] ⟶ [ U type ] ⟶ [ T ~ U ] ⟶ [ T = U ].
 
 Rule 8 teqsymm : ∏ T:texp, ∏ U:texp,
 
@@ -56,7 +56,9 @@ Rule 19 El_eq : ∏ M:uexp, ∏ x:oexp, ∏ y:oexp,
 
 Rule 20 El_eq_reflect : ∏ M:uexp, ∏ x:oexp, ∏ y:oexp, 
 
-     [ x : ([U] M) ] ⟶ [ y : ([U] M) ] ⟶ [ ([El] x) = ([El] y) ] ⟶ [ x = y : ([U] M) ].
+     [ x : ([U] M) ] ⟶ [ y : ([U] M) ] ⟶ 
+
+     [ ([El] x) = ([El] y) ] ⟶ [ x = y : ([U] M) ].
 
 Rule 21 ∏_istype : ∏ T:texp, ∏ U : oexp ⟶ texp,
 
@@ -64,15 +66,19 @@ Rule 21 ∏_istype : ∏ T:texp, ∏ U : oexp ⟶ texp,
 
 Rule 22 ∏_eq : ∏ T:texp, ∏ T':texp, ∏ U : oexp ⟶ texp, ∏ U' : oexp ⟶ texp, 
 
+     [ T = T' ] ⟶
+
      (∏ x:oexp, [ x : T ] ⟶ [ (U x) = (U' x)])
 
      ⟶ [ ([∏] T U) = ([∏] T' U')  ].
 
 Rule 23 λ_hastype : ∏ T:texp, ∏ U:oexp ⟶ texp, ∏ o:oexp ⟶ oexp,
 
-     (∏ x:oexp, [ x : T ] ⟶ [ (o x) : (U x) ])
+     [ T type ] ⟶
 
-     ⟶ [ ([λ] T o) : ([∏] T U) ].
+     (∏ x:oexp, [ x : T ] ⟶ [ (o x) : (U x) ]) ⟶
+
+     [ ([λ] T o) : ([∏] T U) ].
 
 Rule 25 ev_hastype : ∏ T : texp, ∏ U : oexp ⟶ texp, ∏ f : oexp, ∏ o : oexp,
 
