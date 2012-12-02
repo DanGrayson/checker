@@ -4,9 +4,8 @@ open Typesystem
 
 let template = function
   | LAMBDA(x,body) -> ()
-  | ATOMIC(pos,e) -> match e with
+  | CAN(pos,e) -> match e with
     | EmptyHole _ -> ()
-    | Variable t -> ()
     | APPLY(h,args) -> (
 	match h with
 	| U uh -> (
@@ -20,26 +19,26 @@ let template = function
 	    | T_U -> ()
 	    | T_Pi -> (
 		match args with
-		| [ATOMIC t1; LAMBDA( x, ATOMIC t2 )] -> ()
+		| [CAN t1; LAMBDA( x, CAN t2 )] -> ()
 		| _ -> raise Error.Internal)
 	    | T_Sigma -> (
 		match args with
-		| [ATOMIC t1; LAMBDA( x, ATOMIC t2 )] -> ()
+		| [CAN t1; LAMBDA( x, CAN t2 )] -> ()
 		| _ -> raise Error.Internal)
 	    | T_Pt -> ()
 	    | T_Coprod -> ()
 	    | T_Coprod2 -> (
 		match args with
-		| [ATOMIC t;ATOMIC t'; LAMBDA(x,ATOMIC u);LAMBDA( x', ATOMIC u'); ATOMIC o] -> ()
+		| [CAN t;CAN t'; LAMBDA(x,CAN u);LAMBDA( x', CAN u'); CAN o] -> ()
 		| _ -> raise Error.Internal)
 	    | T_Empty -> ()
 	    | T_IP -> (
 		match args with
-		| [ATOMIC tA;ATOMIC a;LAMBDA(x1,ATOMIC tB);LAMBDA(x2,LAMBDA(y2,ATOMIC tD));LAMBDA(x3,LAMBDA(y3,LAMBDA(z3,ATOMIC q)))] -> ()
+		| [CAN tA;CAN a;LAMBDA(x1,CAN tB);LAMBDA(x2,LAMBDA(y2,CAN tD));LAMBDA(x3,LAMBDA(y3,LAMBDA(z3,CAN q)))] -> ()
 		| _ -> raise Error.Internal)
 	    | T_Id -> (
 		match args with
-		| [ATOMIC tX; ATOMIC x; ATOMIC x'] -> ()
+		| [CAN tX; CAN x; CAN x'] -> ()
 		| _ -> raise Error.Internal)
 	   )
 	| O oh -> (
@@ -48,16 +47,16 @@ let template = function
 	    | O_j -> ()
 	    | O_ev -> (
 		match args with
-		| [ATOMIC f; ATOMIC o;LAMBDA( x,ATOMIC t)] -> ()
-		| [ATOMIC f; ATOMIC o] -> ()
+		| [CAN f; CAN o;LAMBDA( x,CAN t)] -> ()
+		| [CAN f; CAN o] -> ()
 		| _ -> raise Error.Internal)
 	    | O_lambda -> (
 		match args with
-		| [ATOMIC t;LAMBDA( x,ATOMIC o)] -> ()
+		| [CAN t;LAMBDA( x,CAN o)] -> ()
 		| _ -> raise Error.Internal)
 	    | O_forall -> (
 		match args with
-		| [ATOMIC u;ATOMIC u';ATOMIC o;LAMBDA( x,ATOMIC o')] -> ()
+		| [CAN u;CAN u';CAN o;LAMBDA( x,CAN o')] -> ()
 		| _ -> raise Error.Internal)
 	    | O_pair -> ()
 	    | O_pr1 -> ()

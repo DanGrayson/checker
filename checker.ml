@@ -115,7 +115,7 @@ let add_tVars tvars =
 	    (fun t -> 
 	      [
 	       (Var t, texp);
-	       (newfresh (Var "ist"), istype (to_lfexpr' (Var t)));
+	       (newfresh (Var "ist"), istype (var_to_lf (Var t)));
 	     ]
 	    )
 	    tvars
@@ -127,8 +127,8 @@ let fix t = Fillin.fillin !global_context t
 
 let axiomCommand name t = 
   printf "Axiom %s: %s\n" name (lf_atomic_to_string t);
-  protect1 ( fun () -> Lfcheck.type_check (get_pos t) !global_context (ATOMIC t) texp);
-  global_context := ts_bind' (Var name, t) !global_context;
+  protect1 ( fun () -> Lfcheck.type_check (get_pos t) !global_context (CAN t) texp);
+  global_context := ts_bind (Var name, t) !global_context;
   flush stdout
 
 let ruleCommand num name x =
@@ -154,7 +154,7 @@ let checkLFCommand x =
   printf "Check LF   : %s\n" (lf_canonical_to_string x);
   flush stdout;
   match x with 
-  | ATOMIC x ->
+  | CAN x ->
       let t = protect1 ( fun () -> Lfcheck.type_synthesis !global_context x ) in
       printf "    type   : %s\n" (lf_type_to_string t)
   | _ -> ()
@@ -171,7 +171,7 @@ let checkCommand x =
 let alphaCommand (x,y) =
   let x = protect fix x (fun () -> errpos x) in
   let y = protect fix y nopos in
-  printf "Alpha      : %s\n" (if (Alpha.UEqual.term_equiv Grammar0.emptyUContext (ATOMIC x) (ATOMIC y)) then "true" else "false");
+  printf "Alpha      : %s\n" (if (Alpha.UEqual.term_equiv Grammar0.emptyUContext (CAN x) (CAN y)) then "true" else "false");
   printf "           : %s\n" (ts_expr_to_string x);
   printf "           : %s\n" (ts_expr_to_string y);
   flush stdout
@@ -191,8 +191,8 @@ let addDefinition v pos o t =
 let defCommand defs = protect1 ( fun () -> 
   List.iter
     (fun (v, pos, tm, tp) -> 
-      printf "Define %s = %s\n" (vartostring' v) (lf_canonical_to_string tm);
-      printf "       %s : %s\n" (vartostring' v) (lf_type_to_string tp);
+      printf "Define %s = %s\n" (vartostring v) (lf_canonical_to_string tm);
+      printf "       %s : %s\n" (vartostring v) (lf_type_to_string tp);
       flush stdout;
       Lfcheck.type_validity !global_context tp;
       Lfcheck.type_check pos !global_context tm tp;
@@ -262,13 +262,13 @@ let toplevel() =
 let _ = try
   toplevel()
 with
-| Internal_expr      ( ATOMIC(pos,_) as e ) 
-| Internal_expr      ( LAMBDA(_,ATOMIC(pos,_)) as e ) 
+| Internal_expr      ( CAN(pos,_) as e ) 
+| Internal_expr      ( LAMBDA(_,CAN(pos,_)) as e ) 
     as ex ->
     fprintf stderr "%s: internal error: %s\n" (errfmt pos) (lf_canonical_to_string e);
     raise ex
-| Unimplemented_expr ( ATOMIC(pos,_) as e )
-| Unimplemented_expr ( LAMBDA(_,ATOMIC(pos,_)) as e ) 
+| Unimplemented_expr ( CAN(pos,_) as e )
+| Unimplemented_expr ( LAMBDA(_,CAN(pos,_)) as e ) 
     as ex ->
     fprintf stderr "%s: unimplemented feature: %s\n" (errfmt pos) (lf_canonical_to_string e);
     raise ex

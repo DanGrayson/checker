@@ -1,12 +1,12 @@
 open Typesystem
 
-type alpha_eq = (var' * var') list
+type alpha_eq = (var * var) list
 
 let addalpha x x' (alpha:alpha_eq) = if x=x' then alpha else (x, x') :: alpha
 
-type relation = (var' * var') list
+type relation = (var * var) list
 
-let testalpha (x:var') (x':var') (alpha:relation) =
+let testalpha (x:var) (x':var) (alpha:relation) =
   let rec test (alpha:relation) =
     match alpha with
     | [] -> x=x'
@@ -27,16 +27,16 @@ module Make(Ueq: Universe.Equivalence) : S = struct
   let rec term_eq ulevel_context alpha =
     let rec term_eq alpha x y = x = y || match (x, y) with 
       | LAMBDA (x,body), LAMBDA (x',body') ->
-	  let alpha = addalpha (unmark x) (unmark x') alpha 
+	  let alpha = addalpha x x' alpha 
 	  in term_eq alpha body body'
-      | ATOMIC(_,d), ATOMIC(_,e) -> (
+      | CAN(_,d), CAN(_,e) -> (
 	  d == e || 
 	  match (d,e) with
+	  | APPLY(V t,[]), APPLY(V t',[]) -> testalpha t t' alpha
 	  | APPLY(h,args), APPLY(h',args') -> (
 	      match (h,h') with
 	      | U _, U _ -> uequiv ulevel_context x y
 	      | _ -> h = h' && List.length args = List.length args' && List.for_all2 (term_eq alpha) args args')
-	  | Variable t,Variable t' -> testalpha t t' alpha
 	  | (a,a') -> a = a')
       | _ -> false
     in term_eq alpha

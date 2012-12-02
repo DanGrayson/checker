@@ -62,7 +62,7 @@ type tHead =
 	  Perhaps he intended to write [\[El\](\[empty\]())] for it. *)
       (* TS5: *)
   | T_IP
-	(** [T_IP(ATOMIC A,ATOMIC a,LAMBDA(x,ATOMIC B),LAMBDA(x,LAMBDA(y,ATOMIC D)),LAMBDA(x,LAMBDA(y,LAMBDA(z,ATOMIC q)))) <--> \[IP;x,y,z\](A,a,B,D,q)] *)
+	(** [T_IP(A,a,LAMBDA(x,B),LAMBDA(x,LAMBDA(y,D)),LAMBDA(x,LAMBDA(y,LAMBDA(z,q)))) <--> \[IP;x,y,z\](A,a,B,D,q)] *)
       (* TS6: *)
   | T_Id
       (** Identity type; paths type. *)
@@ -234,21 +234,17 @@ let nowhere x = (Nowhere,x)
 
 (** Variables *)
 
-type var = var' marked
-and  var' =				(* a variable in both TS and LF *)
+type var =				(* a variable *)
   | Var of string
   | VarGen of int * string
   | VarUnused
-  | VarDefined of string * int         (** A definition, appearing as a variable of LF. *)
-  | VarRule of int * string		(* the number of the inference rule in the paper, together with a convenient name *)
+  | VarDefined of string * int         (** A definition. *)
 
-let vartostring' = function
+let vartostring = function
   | Var x -> x
   | VarGen(i,x) -> x ^ "$" ^ (string_of_int i)
   | VarUnused -> "_"
   | VarDefined (name,aspect) -> "[" ^ name ^ "." ^ (string_of_int aspect) ^ "]"
-  | VarRule (n,s) -> s
-let vartostring v = vartostring' (unmark v)
 
     (** The type [label] accommodates the variables of LF, and the constants of
         LF, which in turn include the labels of TS, the inference rules of TS,
@@ -270,10 +266,10 @@ let vartostring v = vartostring' (unmark v)
 	judgment in TS. *)
 
 type label =
-  | L of var'
   | U of uHead			(** labels for u-expressions of TS *)
   | T of tHead			(** labels for t-expressions of TS *)
   | O of oHead			(** labels for o-expressions of TS *)
+  | V of var			(** labels for variables of TS *)
 
 let labels = List.concat [
   List.map (fun h -> U h) uheads;
@@ -282,7 +278,7 @@ let labels = List.concat [
 ]
 
 let label_to_string = function
-  | L v -> vartostring' v
+  | V v -> vartostring v
   | U h -> "[" ^ uhead_to_string h ^ "]"
   | T h -> "[" ^ thead_to_string h ^ "]"
   | O h -> "[" ^ ohead_to_string h ^ "]"
@@ -298,8 +294,6 @@ let string_to_label = List.map (fun h -> label_to_string h, h) labels
  *)
 type atomic_term = atomic_term' marked
 and atomic_term' =
-  | Variable of var'
-	(** A variable. *)
   | EmptyHole of int
         (** An empty hole, to be filled in later. *)
   | APPLY of label * canonical_term list
@@ -309,23 +303,27 @@ and atomic_term' =
     (lambda expressions), which admits no top level simplification
     (evaluation). *)
 and canonical_term = 
-  | ATOMIC of atomic_term
+  | CAN of atomic_term
   | LAMBDA of var * canonical_term
 	(** The lambda of LF. *)
 
-type ts_expr = atomic_term
-
+(**  Expressions of LF are the canonical terms. *)
 type lf_expr = canonical_term
 
-let search_pos (x:canonical_term) =
+(** Expressions of TS are the same as atomic terms.  The constructor CAN
+    implements the embedding from TS into LF. *)
+type ts_expr = atomic_term
+
+let rec get_pos_can (x:canonical_term) =
   match x with
-  | ATOMIC x -> get_pos x
-  | LAMBDA(x,b) -> get_pos x
+  | CAN x -> get_pos x
+  | LAMBDA(x,b) -> get_pos_can b
 
 (** Notation. *)
 
-let to_lfexpr' v = ATOMIC (Nowhere, Variable v)
-let to_lfexpr v = ATOMIC (Nowhere, Variable (unmark v))
+let var_to_ts v = APPLY(V v,[])
+
+let var_to_lf v = CAN (Nowhere, var_to_ts v)
 
 let ( ** ) f x = nowhere(APPLY(f,x))
 
@@ -351,7 +349,7 @@ type tfHead =
 
 type lf_type = bare_lf_type marked
 and bare_lf_type =
-  | F_Pi of var' * lf_type * lf_type
+  | F_Pi of var * lf_type * lf_type
   | F_APPLY of tfHead * lf_expr list
   | F_Singleton of (lf_expr * lf_type)
 
@@ -459,18 +457,20 @@ let head_to_vardist = function
   | O O_J -> Some (2, [] :: [] :: [] :: [] :: [] :: [0;1] :: [])
   | _ -> None
 
-let label_to_lf_type env = function
+let lookup_type env v = List.assoc v env
+
+let label_to_lf_type env = function	(* can raise Not_found, and in that case the argument was an unbound variable *)
   | U h -> uhead_to_lf_type h
   | T h -> thead_to_lf_type h
   | O h -> ohead_to_lf_type h
-  | L v -> List.assoc v env
+  | V v -> List.assoc v env
 
 (*** The "kinds" of LF. 
 
     Notation: constructors starting with "K_" refer to kinds of LF. *)
 type lf_kind =
   | K_type
-  | K_Pi of var' * lf_type * lf_kind
+  | K_Pi of var * lf_type * lf_kind
 
 let ( @@> ) a b = K_Pi(VarUnused, a, b)
 
@@ -486,15 +486,15 @@ let tfhead_to_kind = function
   | F_object_uequality -> oexp @@> oexp @@> texp @@> K_type
   | F_object_equality -> oexp @@> oexp @@> texp @@> K_type
 
-type oSubs = (var' * ts_expr) list
+type oSubs = (var * ts_expr) list
 
 (*** Contexts. *)
 
-type context = (var' * lf_type) list
+type context = (var * lf_type) list
 
 let global_context : context ref = ref []
 
-type uContext = UContext of var' list * (ts_expr * ts_expr) list
+type uContext = UContext of var list * (ts_expr * ts_expr) list
 
 let empty_uContext = UContext([],[])
 
@@ -508,24 +508,21 @@ let newfresh =
     VarGen (!genctr, x)) in
   fun v -> match v with 
   | Var x | VarGen(_,x) -> newgen x
-  | VarDefined _ | VarRule _ | VarUnused -> raise Internal
+  | VarDefined _ | VarUnused -> raise Internal
 
-let ts_bind' (v,t) env = match v with
+let ts_bind (v,t) env = match v with
   | VarUnused -> env
   | v -> 
-      (newfresh (Var "hast") , hastype (to_lfexpr' v) (ATOMIC t)) :: 
+      (newfresh (Var "hast") , hastype (var_to_lf v) (CAN t)) :: 
       (v,oexp) :: 
       env
 
-let ts_bind (v,(t:ts_expr)) env = ts_bind' (unmark v, t) env
-
-let new_hole' = 
+let new_hole = 
   let counter = ref 0 in
   function () -> (
     let h = EmptyHole !counter in
     incr counter;
     h)
-let new_hole () = nowhere (new_hole' ())
 
 exception Internal_expr of lf_expr
 exception Unimplemented_expr of lf_expr

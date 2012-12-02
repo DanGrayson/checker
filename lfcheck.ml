@@ -59,8 +59,6 @@ let rec strip_singleton ((_,(_,t)) as u) = match t with
 
 (* background assumption: all types in the environment have been verified *)
 
-let lookup_type env v = List.assoc v env
-
 let unfold env v =
   match unmark( lookup_type env v ) with
   | F_Singleton a -> let (x,t) = strip_singleton a in x
@@ -70,21 +68,20 @@ let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
   (* assume nothing *)
   (* see figure 9 page 696 [EEST] *)
   match x with
-  | ATOMIC (pos,x) -> (
+  | CAN (pos,x) -> (
       match x with
-      | Variable v -> (
-	  try lookup_type env v 
-	  with Not_found -> err pos ("unbound variable (1): "^(vartostring' v)))
       | EmptyHole _ -> err pos "empty hole found"
       | APPLY(l,args) -> 
-	  let t = unmark (label_to_lf_type env l) in
-	  let rec repeat args t =
-	    match args, t with
-	    | x :: args, F_Pi(v,a,b) -> repeat args (unmark (subst_type (v,x) b))
+          let t =
+            try label_to_lf_type env l
+            with Not_found -> err pos ("unbound variable: "^(label_to_string l)) in
+          let rec repeat args t =
+            match args, unmark t with
+	    | x :: args, F_Pi(v,a,b) -> repeat args (subst_type (v,x) b)
 	    | x :: args, _ -> err pos "at least one argument too many"
 	    | [], F_Pi(v,a,b) -> errmissingarg pos a (* we insist on eta-long format *)
 	    | [], t -> t
-	  in nowhere (repeat args t))
+	  in nowhere(repeat args t))
   | LAMBDA _ -> err pos "LF lambda expression found, has no natural type"
 
 let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
@@ -92,16 +89,15 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
   (* may raise Not_found if there is no head reduction *)
   match x with
-  | ATOMIC (pos,x) -> (
+  | CAN (pos,x) -> (
       match x with
-      | Variable v -> unfold env v
       | EmptyHole _ -> err pos "empty hole found"
-      | APPLY(L f,args) -> (
+      | APPLY(V f, args) -> (
 	  match unfold env f, args with
-	  | LAMBDA(v,body), x :: args -> subst' (unmark v,x) body
+	  | LAMBDA(v,body), x :: args -> subst' (v,x) body
 	  | LAMBDA(v,body), [] -> err pos "too few arguments" (* or is this an internal error ? *)
 	  | _, x :: args -> err pos "too many arguments"
-	  | x, [] -> x			(* variables are "called" with 0 arguments *)
+	  | x, [] -> x
 	 )
       | APPLY _ -> raise Not_found)
   | LAMBDA _ -> raise Not_found
@@ -140,19 +136,19 @@ and type_synthesis (env:context) (e:ts_expr) : lf_type =
   (* see figure 13, page 716 [EEST] *)
   let (pos,e0) = e in
      match e0 with
-     | Variable v -> (
-	 try (pos, F_Singleton(ATOMIC e, (List.assoc v env)))
+     | EmptyHole _ -> err pos ("empty hole: "^(lf_atomic_to_string e))
+     | APPLY(V v, []) -> (
+	 try (pos, F_Singleton(CAN e, (List.assoc v env)))
 	 with Not_found -> 
 	   print_env env;
-	   err pos ("unbound variable (2): "^(vartostring' v))
+	   err pos ("unbound variable: "^(vartostring v))
 	)
-     | EmptyHole _ -> err pos ("empty hole: "^(lf_atomic_to_string e))
      | APPLY(label,args) ->
 	 with_pos pos 				(* the position of the type will reflect the position of the expression *)
 	   (unmark (
 	    let a = 
 	      try label_to_lf_type env label
-	      with Not_found -> err pos ("unbound variable (3): "^(label_to_string label))
+	      with Not_found -> raise Internal (* covered in the case above *)
 	    in
 	    let rec repeat env (a:lf_type) (args:lf_expr list) : lf_type = (
 	      let (apos,a0) = a in
@@ -164,7 +160,7 @@ and type_synthesis (env:context) (e:ts_expr) : lf_type =
 	      | F_Pi(x,a',a''), m' :: args' ->
 		  type_check pos env m' a';
                   repeat ((x,a') :: env) (subst_type (x,m') a'') args'
-	      | F_APPLY _, ATOMIC (pos,_) :: _ -> err pos "extra argument"
+	      | F_APPLY _, CAN (pos,_) :: _ -> err pos "extra argument"
 	      | F_APPLY _, LAMBDA _ :: _ -> err pos "extra argument"
 	     )
 	    in repeat env a args))
@@ -188,9 +184,9 @@ and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (
       | LAMBDA(u,x), LAMBDA(v,y) ->
 	  let w' = newfresh w in
 	  term_equivalence xpos ypos ((w',a) :: env) (* all this variable substitution should be handled by alpha equivalence in the future *)
-	    (subst' (unmark u,to_lfexpr' w') x)
-	    (subst' (unmark v,to_lfexpr' w') y)
-	    (subst_type (w,to_lfexpr' w') b)
+	    (subst' (u,var_to_lf w') x)
+	    (subst' (v,var_to_lf w') y)
+	    (subst_type (w,var_to_lf w') b)
       | x,y -> try_path_equivalence x y
      )
   | x, y, F_APPLY(j,args) -> try_path_equivalence x y
@@ -199,16 +195,14 @@ and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
   (* assume x and y are head reduced *)
   (* see figure 11, page 711 [EEST] *)
   match x,y with
-  | ATOMIC (xpos,x0), ATOMIC (ypos,y0) -> (
+  | CAN (xpos,x0), CAN (ypos,y0) -> (
       match x0,y0 with
-      | Variable v, Variable w ->
-	  if not (v = w) 
-	  then mismatch_term xpos x ypos y; (* x and y aren't variables with definitions, because they are head reduced *)
-	  ( try lookup_type env v with Not_found -> err (best2 xpos ypos) ("unbound variable (4): "^(vartostring' v)) )
       | APPLY(f,args), APPLY(f',args') ->
           if not (f = f') 
-	  then mismatch_term xpos x ypos y; (* f and g aren't variables with definitions, because they are head reduced *)
-          let t = label_to_lf_type env f in
+	  then mismatch_term xpos x ypos y;
+          let t = 
+	    try label_to_lf_type env f 
+	    with Not_found -> err (best2 xpos ypos) ("unbound variable: "^(label_to_string f)) in
           let rec repeat t args args' =
             match t,args,args' with
             | t, [], [] -> t
@@ -218,7 +212,7 @@ and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
             | _ -> mismatch_term xpos x ypos y
 	  in repeat t args args'
       | _ -> mismatch_term xpos x ypos y)
-  | _  -> mismatch_term (search_pos x) x (search_pos y) y
+  | _  -> mismatch_term (get_pos_can x) x (get_pos_can y) y
 
 and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
   (* see figure 11, page 711 [EEST] *)
@@ -234,7 +228,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
       term_equivalence tpos upos env x y t
   | F_Pi(v,a,b), F_Pi(w,c,d) ->
       type_equivalence env a c;
-      type_equivalence ((v, a) :: env) b (subst_type (w, to_lfexpr' v) d)
+      type_equivalence ((v, a) :: env) b (subst_type (w, var_to_lf v) d)
   | F_APPLY(h,args), F_APPLY(h',args') ->
       (* Here we augment the algorithm in the paper to handle the type families of LF. *)
       if not (h = h') then mismatch_type tpos t upos u;
@@ -277,15 +271,15 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : unit =
   match e, t0 with
   | LAMBDA(v,e), F_Pi(w,a,b) ->
       type_check pos 
-	((unmark v,a) :: env)
+	((v,a) :: env)
 	e
-	(subst_type (w,to_lfexpr v) b)
+	(subst_type (w,var_to_lf v) b)
   | LAMBDA _, _ -> err pos "did not expect a lambda expression here"
-  | ATOMIC (pos, EmptyHole n), _ -> 
+  | CAN (pos, EmptyHole n), _ -> 
       raise (TypeCheckingFailure2 (
 	 pos, "hole found : "^(lf_canonical_to_string e),
 	 pos, "   of type : "^(lf_type_to_string t)))
-  | ATOMIC e, _ -> let s = type_synthesis env e in subtype env s t
+  | CAN e, _ -> let s = type_synthesis env e in subtype env s t
 
 (* 
   Local Variables:

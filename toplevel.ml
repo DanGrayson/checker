@@ -10,7 +10,7 @@ type command' =
   | UVariable of string list * (ts_expr * ts_expr) list
   | Variable of string list
   | Alpha of ts_expr * ts_expr
-  | Definition of (var' * Error.position * lf_expr * lf_type) list
+  | Definition of (var * Error.position * lf_expr * lf_type) list
   | CheckUniverses
   | Show
   | End

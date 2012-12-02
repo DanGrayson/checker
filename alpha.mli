@@ -2,11 +2,11 @@
 
 open Typesystem
 
-type alpha_eq = (var' * var') list
+type alpha_eq = (var * var) list
 
-val addalpha : var' -> var' -> alpha_eq -> alpha_eq
+val addalpha : var -> var -> alpha_eq -> alpha_eq
 
-val testalpha : var' -> var' -> (var' * var') list -> bool
+val testalpha : var -> var -> (var * var) list -> bool
 
 module type S =
   sig

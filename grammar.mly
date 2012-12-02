@@ -7,12 +7,13 @@ open Error
 %start command ts_exprEof
 %type <Toplevel.command> command
 %type <Typesystem.ts_expr> ts_exprEof ts_expr
+%type <Typesystem.atomic_term'> bare_ts_expr
 %type <Typesystem.ts_expr list> arglist
 %type <Typesystem.lf_type> lf_type
 %type <Typesystem.lf_expr> lf_expr
 %token <int> Nat
 %token <string> IDENTIFIER CONSTANT CONSTANT_SEMI
-%token <Typesystem.var'> VARIABLE
+%token <Typesystem.var> VARIABLE
 %token
 
   Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod COLON Wstar Warrow Wmapsto
@@ -97,7 +98,7 @@ lf_type_constant:
 
 lf_expr:
 | e=atomic_term
-    { ATOMIC(Position($startpos, $endpos), e)  }
+    { CAN(Position($startpos, $endpos), e)  }
 | e=lf_lambda_expression
     { e }
 
@@ -121,13 +122,13 @@ lf_lambda_expression_body:
 
 variable_unused:
 | Wunderscore
-    { Position($startpos, $endpos), VarUnused }
+    { VarUnused }
 
 atomic_term:
 | bare_variable
-    { Variable $1 }
+    { APPLY(V $1,[]) }
 | Wunderscore
-    { new_hole' () }
+    { new_hole () }
 | Wlparen f=lf_expr_head args=list(lf_expr) Wrparen
     { APPLY(f,args) }
 
@@ -135,7 +136,7 @@ lf_expr_head:
 | tsterm_head
     { $1 }
 | bare_variable
-    { L $1 }
+    { V $1 }
 
 command: c=command0 
   { Position($startpos, $endpos), c }
@@ -190,13 +191,13 @@ uEquation:
 | u=ts_expr Wequal v=ts_expr 
     { (u,v) }
 | v=ts_expr Wgreaterequal u=ts_expr 
-    { (Position($startpos, $endpos), APPLY(U U_max, [ ATOMIC u; ATOMIC v])), v }
+    { (Position($startpos, $endpos), APPLY(U U_max, [ CAN u; CAN v])), v }
 | u=ts_expr Wlessequal v=ts_expr 
-    { (Position($startpos, $endpos), APPLY(U U_max, [ ATOMIC u; ATOMIC v])), v }
+    { (Position($startpos, $endpos), APPLY(U U_max, [ CAN u; CAN v])), v }
 | v=ts_expr Wgreater u=ts_expr 
-    { (Position($startpos, $endpos), APPLY(U U_max, [ ATOMIC (Position($startpos, $endpos), APPLY( U U_next,[ATOMIC u])); ATOMIC v])), v }
+    { (Position($startpos, $endpos), APPLY(U U_max, [ CAN (Position($startpos, $endpos), APPLY( U U_next,[CAN u])); CAN v])), v }
 | u=ts_expr Wless v=ts_expr 
-    { (Position($startpos, $endpos), APPLY(U U_max, [ ATOMIC (Position($startpos, $endpos), APPLY( U U_next,[ATOMIC u])); ATOMIC v])), v }
+    { (Position($startpos, $endpos), APPLY(U U_max, [ CAN (Position($startpos, $endpos), APPLY( U U_next,[CAN u])); CAN v])), v }
 
 parenthesized(X): x=delimited(Wlparen,X,Wrparen) {x}
 list_of_parenthesized(X): list(parenthesized(X)) {$1}
@@ -210,11 +211,11 @@ ts_exprEof: a=ts_expr Weof {a}
 
 variable:
 | bare_variable
-    { Position($startpos, $endpos), $1 }
+    { $1 }
 
 variable_or_unused:
 | bare_variable_or_unused
-    { Position($startpos, $endpos), $1 }
+    { $1 }
 
 ts_expr:
 | bare_ts_expr
@@ -252,12 +253,12 @@ bare_variable_or_unused:
 
 bare_ts_expr:
 | bare_variable
-    { Variable $1 }
+    { APPLY(V $1,[]) }
 | Wunderscore
-    { new_hole' () }
+    { new_hole () }
 | f=ts_expr o=ts_expr
     %prec Reduce_application
-    { make_OO_ev f o ((Nowhere, VarUnused), (Position($startpos, $endpos), new_hole'())) }
+    { make_OO_ev f o (VarUnused, (Position($startpos, $endpos), new_hole())) }
 | Klambda x=variable COLON t=ts_expr Wcomma o=ts_expr
     %prec Reduce_binder
     { make_OO_lambda t (x,o) }
@@ -268,16 +269,16 @@ bare_ts_expr:
     %prec Reduce_binder
     { make_TT_Pi t1 (x,t2) }
 | t=ts_expr Warrow u=ts_expr
-    { make_TT_Pi t ((Nowhere, VarUnused),u) }
+    { make_TT_Pi t (VarUnused,u) }
 | KSigma x=variable COLON t1=ts_expr Wcomma t2=ts_expr
     %prec Reduce_binder
     { make_TT_Sigma t1 (x,t2) }
 | Kumax Wlparen u=ts_expr Wcomma v=ts_expr Wrparen
-    { APPLY(U U_max,[ATOMIC u;ATOMIC v])  }
+    { APPLY(U U_max,[CAN u;CAN v])  }
 | label=tsterm_head args=arglist
     {
      match label with
-     | L _ -> APPLY(label,to_atomic args)
+     | V _ -> APPLY(label,to_atomic args)
      | _ -> (
 	 match head_to_vardist label with
 	 | None -> APPLY(label,to_atomic args)
@@ -314,10 +315,10 @@ bare_ts_expr:
 		      "expected " ^ (string_of_int nargs) ^ " argument" ^ (if nargs != 1 then "s" else "")));
 	 let args = List.map2 (
 	   fun indices arg ->
-	     (* example: indices = [0;1], change arg to (LAMBDA v_0, (LAMBDA v_1, ATOMIC arg)) *)
+	     (* example: indices = [0;1], change arg to (LAMBDA v_0, (LAMBDA v_1, CAN arg)) *)
 	     List.fold_right (
 	     fun index arg -> LAMBDA( List.nth vars index, arg)
-		 ) indices (ATOMIC arg)
+		 ) indices (CAN arg)
 	  ) varindices args
 	 in
 	 APPLY(label,args)

@@ -9,10 +9,10 @@ let mergeUContext : uContext -> uContext -> uContext =
 
 type parm =
   | UParm of uContext
-  | TParm of var' list
-  | OParm of (var' * ts_expr) list
+  | TParm of var list
+  | OParm of (var * ts_expr) list
 
-let fixParmList (p:parm list) : uContext * (var' list) * ((var' * ts_expr) list) =
+let fixParmList (p:parm list) : uContext * (var list) * ((var * ts_expr) list) =
   let rec fix us ts os p =
     match p with 
     | UParm u :: p -> 
@@ -32,8 +32,8 @@ let fixParmList (p:parm list) : uContext * (var' list) * ((var' * ts_expr) list)
 	in (ulevel_context,tc,ts_context))
   in fix [] [] [] p
 
-let tDefinition (name:string) ((ulevel_context,tvars,ts_context):(uContext * (var' list) * ((var' * ts_expr) list))) (t:ts_expr) (d1:lf_expr option)
-    : (var' * Error.position * lf_expr * lf_type) list 
+let tDefinition (name:string) ((ulevel_context,tvars,ts_context):(uContext * (var list) * ((var * ts_expr) list))) (t:ts_expr) (d1:lf_expr option)
+    : (var * Error.position * lf_expr * lf_type) list 
     = 
   let pos = get_pos t in
 
@@ -46,17 +46,17 @@ let tDefinition (name:string) ((ulevel_context,tvars,ts_context):(uContext * (va
   let v0 = VarDefined(name,0) in
   let v1 = VarDefined(name,1) in
 
-  let tm0 = ATOMIC t in
+  let tm0 = CAN t in
   let tp0 = texp in
   let tm1 = match d1 with
   | Some tm1 -> tm1
-  | None -> ATOMIC(pos, new_hole'()) in
+  | None -> CAN(pos, new_hole()) in
 
-  let tp1 = istype (ATOMIC (nowhere (APPLY(L v0, List.map to_lfexpr' allvars)))) in
+  let tp1 = istype (CAN (nowhere (APPLY(V v0, List.map var_to_lf allvars)))) in
 
-  let g v t = LAMBDA((nowhere v),t) in
+  let g v t = LAMBDA(v,t) in
   let h sort v t = nowhere (F_Pi(v,sort,t)) in
-  let hast (z,u,h) t = nowhere (F_Pi(h,hastype (to_lfexpr' z) (ATOMIC u), t)) in
+  let hast (z,u,h) t = nowhere (F_Pi(h,hastype (var_to_lf z) (CAN u), t)) in
 
   let tm0 = List.fold_right g hastvars tm0 in
   let tm1 = List.fold_right g hastvars tm1 in
@@ -83,16 +83,16 @@ let tDefinition (name:string) ((ulevel_context,tvars,ts_context):(uContext * (va
     ( v1, pos, tm1, tp1)
   ]
 
-let oDefinition (name:string) ((ulevel_context,tc,ts_context):(uContext * (var' list) * ((var' * ts_expr) list))) (o:ts_expr) (t:ts_expr)
-    : (var' * Error.position * lf_expr * lf_type) list 
+let oDefinition (name:string) ((ulevel_context,tc,ts_context):(uContext * (var list) * ((var * ts_expr) list))) (o:ts_expr) (t:ts_expr)
+    : (var * Error.position * lf_expr * lf_type) list 
     = 
   let pos = get_pos o in
 
   (* still have to wrap the lambdas around it : *)
   [
-   ( VarDefined(name, 0), get_pos o, ATOMIC o, oexp);
-   ( VarDefined(name, 1), get_pos t, ATOMIC t, texp);
-   ( VarDefined(name, 2), get_pos o, ATOMIC (pos, new_hole'()), hastype (ATOMIC o) (ATOMIC t))
+   ( VarDefined(name, 0), get_pos o, CAN o, oexp);
+   ( VarDefined(name, 1), get_pos t, CAN t, texp);
+   ( VarDefined(name, 2), get_pos o, CAN (pos, new_hole()), hastype (CAN o) (CAN t))
  ]
 
 let teqDefinition _ _ _ _ = raise (Error.Unimplemented "teqDefinition")

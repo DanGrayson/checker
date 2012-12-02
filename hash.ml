@@ -50,17 +50,15 @@ let hhash = function
   | U h -> uhash h
   | T h -> thash h
   | O h -> ohash h
-  | L (VarRule(n,_)) -> 13 * n
-  | L h -> 2
+  | V h -> 2
 
 let rec chash = function
   | LAMBDA(_,body) -> chash body
-  | ATOMIC e -> ahash e
+  | CAN e -> ahash e
 and clhash = function
   | [] -> 1
   | c :: r -> chash c + 2345 * (clhash r)
 and ahash = function
   | (pos,e) -> match e with 
     | EmptyHole n -> 123*n
-    | Variable _ -> 1234
     | APPLY(h,args) -> hhash h + clhash args
