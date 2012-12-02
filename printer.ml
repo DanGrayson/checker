@@ -149,9 +149,22 @@ let ulevel_context_to_string (UContext(uexp_parms,ueqns)) =
       else [] ]
 
 (** Printing of an environment. *)
-let print_env env = 
-  Printf.printf "Environment:\n";
-  List.iter 
-    (fun (v,t) -> Printf.printf "           %s : %s\n" (vartostring v) (lf_type_to_string t)) 
-    (List.rev env);
-  flush stdout
+
+exception Limit
+
+let rec iteri i f = function
+    [] -> ()
+  | a::l -> f i a; iteri (i + 1) f l
+
+let iteri f l = iteri 0 f l
+
+let print_context n file env = 
+  Printf.fprintf file "Context:\n";
+  try
+    iteri
+      (fun i (v,t) ->
+	if i = n then raise Limit;
+	Printf.fprintf file "           %s : %s\n" (vartostring v) (lf_type_to_string t)) 
+      env
+    with Limit -> ();
+  flush file

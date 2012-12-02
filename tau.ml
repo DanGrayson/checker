@@ -10,10 +10,10 @@ let rec get_ts_type (v:var) (env:context) : ts_expr = (
  )
 
 let rec tau (pos:position) (env:context) (pos,e) : atomic_term = match e with
-  | EmptyHole _ -> raise (TypingError(pos, "empty hole, type undetermined"))
+  | EmptyHole _ -> raise (TypeCheckingFailure(env, pos, "empty hole, type undetermined"))
   | APPLY(V v,[]) -> (
       try get_ts_type v env
-      with Not_found -> raise (TypingError(pos, "unbound variable, not in TS context: " ^ (vartostring v))))
+      with Not_found -> raise (TypeCheckingFailure(env,pos, "unbound variable, not in TS context: " ^ (vartostring v))))
   | APPLY(h,args) -> with_pos pos (
       match h with
       | V v -> 
@@ -41,7 +41,7 @@ let rec tau (pos:position) (env:context) (pos,e) : atomic_term = match e with
 		| _ -> raise Internal)
 	    | O_forall -> (
 		match args with 
-		| CAN u :: CAN u' :: _ -> Helpers.make_TT_U (nowhere (Helpers.make_UU U_max [CAN u; CAN u']))
+		| CAN u :: CAN u' :: _ -> Helpers.make_TT_U (nowhere 6 (Helpers.make_UU U_max [CAN u; CAN u']))
 		| _ -> raise Internal)
 	    | O_pair -> raise NotImplemented
 	    | O_pr1 -> raise NotImplemented
@@ -67,4 +67,4 @@ let rec tau (pos:position) (env:context) (pos,e) : atomic_term = match e with
 	 )
      )
 
-let tau = tau Nowhere
+let tau env e = tau (no_pos 2) env e

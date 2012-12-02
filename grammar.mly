@@ -285,7 +285,7 @@ bare_ts_expr:
 	 | Some (n,_) ->
 	     if n = 0 then APPLY(label,to_atomic args)
 	     else
-	       raise (TypingError
+	       raise (MarkedError
 			( Position($startpos, $endpos),
 			  "expected " ^ (string_of_int n) ^ " variable" ^ (if n != 1 then "s" else ""))))
    }
@@ -301,16 +301,16 @@ bare_ts_expr:
 	 $syntaxerror
      in
      match head_to_vardist label with
-     | None -> raise (TypingError (Position($startpos, $endpos), "expected no variables"))
+     | None -> raise (MarkedError (Position($startpos, $endpos), "expected no variables"))
      | Some (nvars,varindices) ->
 	 if nvars != List.length vars then
-	   raise (TypingError
+	   raise (MarkedError
 		    ( Position($startpos, $endpos),
 		      "expected " ^ (string_of_int nvars) ^ " variable" ^ (if nvars != 1 then "s" else "")));
 	 let nargs = List.length varindices
 	 in
 	 if List.length args != nargs then
-	   raise (TypingError
+	   raise (MarkedError
 		    ( Position($startpos, $endpos),
 		      "expected " ^ (string_of_int nargs) ^ " argument" ^ (if nargs != 1 then "s" else "")));
 	 let args = List.map2 (

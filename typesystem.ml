@@ -223,15 +223,6 @@ let oheads = [ O_u; O_j; O_ev; O_lambda; O_forall; O_pair; O_pr1; O_pr2;
   O_total; O_pt; O_pt_r; O_tt; O_coprod; O_ii1; O_ii2; O_sum; O_empty;
   O_empty_r; O_c; O_ip_r; O_ip; O_paths; O_refl; O_J; O_rr0; O_rr1 ]
 
-(** Source code positions. *)
-
-type 'a marked = position * 'a
-let unmark ((_:position), x) = x
-let get_pos ((pos:position), _) = pos
-let with_pos (pos:position) e = (pos, e)
-let with_pos_of ((pos:position),_) e = (pos,e)
-let nowhere x = (Nowhere,x)
-
 (** Variables *)
 
 type var =				(* a variable *)
@@ -321,9 +312,9 @@ let rec get_pos_can (x:canonical_term) =
 
 let var_to_ts v = APPLY(V v,[])
 
-let var_to_lf v = CAN (Nowhere, var_to_ts v)
+let var_to_lf v = CAN (nowhere 1 (var_to_ts v))
 
-let ( ** ) f x = nowhere(APPLY(f,x))
+let ( ** ) f x = nowhere 2 (APPLY(f,x))
 
 (** Canonical type families of LF.
 
@@ -370,13 +361,13 @@ let tfheads = [
 let tfhead_strings = List.map (fun x -> tfhead_to_string x, x) tfheads
 
 
-let ( *** ) f x = nowhere (F_APPLY(f,x))
+let ( *** ) f x = nowhere 3 (F_APPLY(f,x))
 
 let uexp = F_uexp *** []
 let texp = F_texp *** []
 let oexp = F_oexp *** []
 
-let ( @> ) a b = nowhere (F_Pi(VarUnused, a, b))
+let ( @> ) a b = nowhere 4 (F_Pi(VarUnused, a, b))
 
 let istype t = F_istype *** [t]
 let hastype o t = F_hastype *** [o;t]
@@ -498,10 +489,14 @@ let empty_uContext = UContext([],[])
 
 let def_bind v (pos:position) o t (env:context) = (v, (pos,F_Singleton(o,t))) :: env
 
+(* raise an exception when a certain fresh variable is generated *)
+let genctr_trap = 0
+
 let newfresh = 
   let genctr = ref 0 in 
   let newgen x = (
-    incr genctr; 
+    incr genctr;
+    if !genctr = genctr_trap then raise DebugMe;
     if !genctr < 0 then raise GensymCounterOverflow;
     VarGen (!genctr, x)) in
   fun v -> match v with 
@@ -524,6 +519,9 @@ let new_hole =
 
 exception Internal_expr of lf_expr
 exception Unimplemented_expr of lf_expr
+exception TypeCheckingFailure of context * position * string
+exception TypeCheckingFailure2 of context * position * string * position * string
+exception TypeCheckingFailure3 of context * position * string * position * string * position * string
 
 (* 
   Local Variables:

@@ -1,31 +1,10 @@
 (** Exceptions, error message handling, and source code positions. *)
 
-exception GeneralError of string
-exception GensymCounterOverflow
-exception NotImplemented
-exception Unimplemented of string
-exception Internal
-exception VariableNotInContext
-exception NoMatchingRule
-exception Eof
+(** Source code positions. *)
 
 type position =
   | Position of Lexing.position * Lexing.position (** start, end *)
-  | Nowhere
-
-let merge_position p q =
-  match p with 
-  | Nowhere -> q
-  | Position(a,b) ->
-      match q with
-      | Nowhere -> p
-      | Position(c,d) -> Position(a,d)
-
-exception TypingError of position * string
-exception TypingUnimplemented of position * string
-exception TypeCheckingFailure of position * string
-exception TypeCheckingFailure2 of position * string * position * string
-exception TypeCheckingFailure3 of position * string * position * string * position * string
+  | Nowhere of int * int
 
 let errfmt = function
   | Position(p,q) 
@@ -39,10 +18,26 @@ let errfmt = function
          if i = j
 	 then "character " ^ (string_of_int i)
          else "characters " ^ (string_of_int i) ^ "-" ^ (string_of_int j))
-  | Nowhere -> "nowhere:0:0"
+  | Nowhere(i,j) -> "nowhere:"^(string_of_int i)^":"^(string_of_int j)
 
-let nopos () = errfmt Nowhere
+type 'a marked = position * 'a
+let unmark ((_:position), x) = x
+let get_pos ((pos:position), _) = pos
+let with_pos (pos:position) e = (pos, e)
+let with_pos_of ((pos:position),_) e = (pos,e)
+let nowhere_ctr = ref 0
+let no_pos i = incr nowhere_ctr; Nowhere(i, !nowhere_ctr)
+let nowhere i x = (no_pos i,x)
+let nopos i = errfmt (no_pos i)
+let seepos pos = Printf.fprintf stderr "%s: ... debugging ...\n" (errfmt pos); flush stderr
 
-let seepos pos =
-  Printf.fprintf stderr "%s: ... debugging ...\n" (errfmt pos);
-  flush stderr
+exception DebugMe
+exception GeneralError of string
+exception GensymCounterOverflow
+exception NotImplemented
+exception Unimplemented of string
+exception Internal
+exception VariableNotInContext
+exception NoMatchingRule
+exception Eof
+exception MarkedError of position * string

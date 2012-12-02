@@ -16,7 +16,7 @@ and fillin' pos env = function
   | LAMBDA(v,body) as l -> raise (Unimplemented_expr l)
   | CAN e -> CAN(fillin env e)
 and fillin env (pos,e) = (pos, match e with
-  | EmptyHole _ -> raise (TypingError(pos,"empty hole, no method for filling"))
+  | EmptyHole _ -> raise (TypeCheckingFailure(env,pos,"empty hole, no method for filling"))
   | APPLY(V _,[]) as v -> v
   | APPLY(label,branches) ->
       match label with
@@ -46,7 +46,7 @@ and fillin env (pos,e) = (pos, match e with
 	      match unmark tf with
 	      | APPLY(T T_Pi, [CAN t1; LAMBDA( x, CAN t2)])
 		-> Helpers.make_OO_ev (fillin env f) (fillin env p) (x, (fillin (ts_bind (x,t1) env) t2))
-	      | _ -> raise (TypeCheckingFailure(get_pos f,"expected a TS function:\n    " ^(ts_expr_to_string f) ^"\n  : "^(ts_expr_to_string tf))))
+	      | _ -> raise (TypeCheckingFailure(env,get_pos f,"expected a TS function:\n    " ^(ts_expr_to_string f) ^"\n  : "^(ts_expr_to_string tf))))
 	  | [CAN f; CAN p; LAMBDA( x,CAN t2)] ->
 	      let p = fillin env p in
 	      let t1 = tau env p in

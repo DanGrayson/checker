@@ -2,6 +2,7 @@
 
 open Typesystem
 open Helpers
+open Error
 
 let emptyUContext = UContext ([],[])
 let mergeUContext : uContext -> uContext -> uContext =
@@ -16,10 +17,10 @@ let fixParmList (p:parm list) : uContext * (var list) * ((var * ts_expr) list) =
   let rec fix us ts os p =
     match p with 
     | UParm u :: p -> 
-	if List.length ts > 0 or List.length os > 0 then raise (Error.GeneralError "expected universe-level variables first");
+	if List.length ts > 0 or List.length os > 0 then raise (GeneralError "expected universe-level variables first");
 	fix (u::us) ts os p
     | TParm t :: p -> 
-	if List.length os > 0 then raise (Error.Unimplemented "a type parameter after an object parameter");
+	if List.length os > 0 then raise (Unimplemented "a type parameter after an object parameter");
 	fix us (t::ts) os p
     | OParm o :: p -> fix us ts (o::os) p
     | [] -> ( 
@@ -28,12 +29,12 @@ let fixParmList (p:parm list) : uContext * (var list) * ((var * ts_expr) list) =
 	and ulevel_context = match (List.rev_append us []) with
 	| [] -> emptyUContext
 	| (ulevel_context :: []) -> ulevel_context
-	| _ -> raise (Error.Unimplemented "merging of universe level variable lists")
+	| _ -> raise (Unimplemented "merging of universe level variable lists")
 	in (ulevel_context,tc,ts_context))
   in fix [] [] [] p
 
 let tDefinition (name:string) ((ulevel_context,tvars,ts_context):(uContext * (var list) * ((var * ts_expr) list))) (t:ts_expr) (d1:lf_expr option)
-    : (var * Error.position * lf_expr * lf_type) list 
+    : (var * position * lf_expr * lf_type) list 
     = 
   let pos = get_pos t in
 
@@ -52,11 +53,11 @@ let tDefinition (name:string) ((ulevel_context,tvars,ts_context):(uContext * (va
   | Some tm1 -> tm1
   | None -> CAN(pos, new_hole()) in
 
-  let tp1 = istype (CAN (nowhere (APPLY(V v0, List.map var_to_lf allvars)))) in
+  let tp1 = istype (CAN (nowhere 7 (APPLY(V v0, List.map var_to_lf allvars)))) in
 
   let g v t = LAMBDA(v,t) in
-  let h sort v t = nowhere (F_Pi(v,sort,t)) in
-  let hast (z,u,h) t = nowhere (F_Pi(h,hastype (var_to_lf z) (CAN u), t)) in
+  let h sort v t = nowhere 8 (F_Pi(v,sort,t)) in
+  let hast (z,u,h) t = nowhere 9 (F_Pi(h,hastype (var_to_lf z) (CAN u), t)) in
 
   let tm0 = List.fold_right g hastvars tm0 in
   let tm1 = List.fold_right g hastvars tm1 in
@@ -84,7 +85,7 @@ let tDefinition (name:string) ((ulevel_context,tvars,ts_context):(uContext * (va
   ]
 
 let oDefinition (name:string) ((ulevel_context,tc,ts_context):(uContext * (var list) * ((var * ts_expr) list))) (o:ts_expr) (t:ts_expr)
-    : (var * Error.position * lf_expr * lf_type) list 
+    : (var * position * lf_expr * lf_type) list 
     = 
   let pos = get_pos o in
 
@@ -95,6 +96,6 @@ let oDefinition (name:string) ((ulevel_context,tc,ts_context):(uContext * (var l
    ( VarDefined(name, 2), get_pos o, CAN (pos, new_hole()), hastype (CAN o) (CAN t))
  ]
 
-let teqDefinition _ _ _ _ = raise (Error.Unimplemented "teqDefinition")
+let teqDefinition _ _ _ _ = raise (Unimplemented "teqDefinition")
 
-let oeqDefinition _ _ _ _ _ = raise (Error.Unimplemented "oeqDefinition")
+let oeqDefinition _ _ _ _ _ = raise (Unimplemented "oeqDefinition")

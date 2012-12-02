@@ -15,6 +15,7 @@ exception Debugging
 
 let debug = false
 let raise_switch ex1 ex2 = raise (if debug then ex1 else ex2)
+let env_limit = 10
 
 let error_summary pos =
   let n = !Tokens.error_count in
@@ -53,36 +54,29 @@ let handle_exception (posfun:unit->string) = function
       flush stderr;
       Tokens.bump_error_count();
       raise_switch ex Error_Handled
-  | Lfcheck.TypingError (p,s) as ex ->
-      fprintf stderr "%s: LF type checking failure: %s\n" (errfmt p) s;
-      flush stderr;
-      Tokens.bump_error_count();
-      raise_switch ex Error_Handled
-  | TypeCheckingFailure (p,s) as ex -> 
+  | TypeCheckingFailure (env,p,s) as ex -> 
       fprintf stderr "%s: type checking failure: %s\n" (errfmt p) s;
       flush stderr;
+      print_context env_limit stderr env;
       Tokens.bump_error_count();
       raise_switch ex Error_Handled
-  | TypeCheckingFailure2 (p1,s1,p2,s2) as ex -> 
+  | TypeCheckingFailure2 (env,p1,s1,p2,s2) as ex -> 
       fprintf stderr "%s: type mismatch: %s\n" (errfmt p1) s1;
       fprintf stderr "%s:      ...       %s\n" (errfmt p2) s2;
       flush stderr;
+      print_context env_limit stderr env;
       Tokens.bump_error_count();
       raise_switch ex Error_Handled
-  | TypeCheckingFailure3 (p1,s1,p2,s2,p3,s3) as ex -> 
+  | TypeCheckingFailure3 (env,p1,s1,p2,s2,p3,s3) as ex -> 
       fprintf stderr "%s: type mismatch: %s\n" (errfmt p1) s1;
       fprintf stderr "%s:      ...       %s\n" (errfmt p2) s2;
       fprintf stderr "%s:      ...       %s\n" (errfmt p3) s3;
       flush stderr;
+      print_context env_limit stderr env;
       Tokens.bump_error_count();
       raise_switch ex Error_Handled
-  | TypingError (p,s) as ex ->
+  | MarkedError (p,s) as ex ->
       fprintf stderr "%s: %s\n" (errfmt p) s;
-      flush stderr;
-      Tokens.bump_error_count();
-      raise_switch ex Error_Handled
-  | TypingUnimplemented (p,s) as ex -> 
-      fprintf stderr "%s: type checking unimplemented: %s\n" (errfmt p) s;
       flush stderr;
       Tokens.bump_error_count();
       raise_switch ex Error_Handled
@@ -98,7 +92,7 @@ let handle_exception (posfun:unit->string) = function
 
 let protect f x posfun = try f x with d -> handle_exception posfun d
 
-let protect1 f = protect f () nopos
+let protect1 f = protect f () (fun () -> nopos 11)
 
 let lexpos lexbuf = 
   let p = Tokens.lexing_pos lexbuf in
@@ -170,7 +164,7 @@ let checkCommand x =
 
 let alphaCommand (x,y) =
   let x = protect fix x (fun () -> errpos x) in
-  let y = protect fix y nopos in
+  let y = protect fix y (fun () -> nopos 13) in
   printf "Alpha      : %s\n" (if (Alpha.UEqual.term_equiv Grammar0.emptyUContext (CAN x) (CAN y)) then "true" else "false");
   printf "           : %s\n" (ts_expr_to_string x);
   printf "           : %s\n" (ts_expr_to_string y);
@@ -183,7 +177,7 @@ let checkUniversesCommand pos =
   with Universe.Inconsistency (p,q) -> print_inconsistency p q
     
 let show_command () = 
-  print_env !global_context
+  print_context (-1) stdout !global_context
 
 let addDefinition v pos o t = 
   global_context := def_bind v pos o t !global_context
