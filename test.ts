@@ -105,6 +105,12 @@ Check LF type ∏ x:oexp, ∏ y:oexp, ∏ T:texp, ∏ U:texp, [ x = y : T ] ⟶ 
 Check TS U_type.
 Check LF (U_type u1).
 
-Define foo (u : Ulevel) (t : [U]([next](u))) := *t; _.
+Define foo (u : Ulevel) (t : [U]([next](u))) := *t; (El_type ([next] u) t hast$116).
+
+# Define foo (u : Ulevel) (t : [U]([next](u))) := *t; (El_type u t hast$116).
+# Define foo (u : Ulevel) (t : [U]([next](u))) := *t; (El_type u t _).
+# Define foo (u : Ulevel) (t : [U]([next](u))) := *t; (El_type _ _).
+# Define foo (u : Ulevel) (t : [U]([next](u))) := *t; _.
+
 Check LF ([foo.0] u1 ([u] u1) (u_univ u1)).
 Check LF ([foo.0] u1 ([u] u1) _).

@@ -104,7 +104,7 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
 	  | x, [] -> x			(* variables are "called" with 0 arguments *)
 	 )
       | APPLY _ -> raise Not_found)
-  | LAMBDA _ -> x
+  | LAMBDA _ -> raise Not_found
       
 let rec head_normalization (env:context) (x:lf_expr) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
@@ -218,7 +218,7 @@ and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
             | _ -> mismatch_term xpos x ypos y
 	  in repeat t args args'
       | _ -> mismatch_term xpos x ypos y)
-  | _  -> raise Internal
+  | _  -> mismatch_term (search_pos x) x (search_pos y) y
 
 and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
   (* see figure 11, page 711 [EEST] *)

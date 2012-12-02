@@ -317,6 +317,11 @@ type ts_expr = atomic_term
 
 type lf_expr = canonical_term
 
+let search_pos (x:canonical_term) =
+  match x with
+  | ATOMIC x -> get_pos x
+  | LAMBDA(x,b) -> get_pos x
+
 (** Notation. *)
 
 let to_lfexpr' v = ATOMIC (Nowhere, Variable v)

@@ -80,6 +80,14 @@ Rule 23 λ_hastype : ∏ T:texp, ∏ U:oexp ⟶ texp, ∏ o:oexp ⟶ oexp,
 
      [ ([λ] T o) : ([∏] T U) ].
 
+Rule 24 λ_equality : ∏ T:texp, ∏ T':texp, ∏ U:oexp ⟶ texp, ∏ o:oexp ⟶ oexp, ∏ o':oexp ⟶ oexp,
+
+     [ T = T' ] ⟶
+
+     (∏ x:oexp, [ x : T ] ⟶ [ (o x) = (o' x) : (U x) ]) ⟶
+
+     [ ([λ] T o) = ([λ] T o') : ([∏] T U) ].
+
 Rule 25 ev_hastype : ∏ T : texp, ∏ U : oexp ⟶ texp, ∏ f : oexp, ∏ o : oexp,
 
      [ f : ([∏] T U) ] ⟶ 
