@@ -85,20 +85,10 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
       | APPLY _ -> raise Not_found)
   | LAMBDA _ -> raise Not_found
 
-let hc = ref 0
-
 let rec head_normalization (env:context) (x:lf_expr) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
-  let h = !hc in
-  incr hc;
-  try
-    fprintf stderr "head_normalization %d receives %s\n" h (lf_canonical_to_string x);
-    let r = head_normalization env (head_reduction env x) in
-    fprintf stderr "head_normalization %d returns %s\n" h (lf_canonical_to_string r);
-    r
-  with Not_found -> 
-    fprintf stderr "head_normalization %d returns %s\n" h (lf_canonical_to_string x);
-    x
+  try let r = head_normalization env (head_reduction env x) in r
+  with Not_found -> x
 
 let rec type_validity (env:context) (t:lf_type) : unit =
   (* assume the kinds of constants, and the types in them, have been checked *)
