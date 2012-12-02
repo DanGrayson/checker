@@ -288,16 +288,14 @@ let string_to_label = List.map (fun h -> label_to_string h, h) labels
 (** An atomic term is one that isn't a lambda expression.
 
     In an atomic term, top level simplification (evaluation) may be possible;
-    for example, a variable with a defined value could be replaced by its
-    value.
-
- *)
+    for example, a variable appearing as a label, with a defined value, could
+    be replaced by its value, which is then applied to the arguments, if any. *)
 type atomic_term = atomic_term' marked
 and atomic_term' =
   | EmptyHole of int
-        (** An empty hole, to be filled in later. *)
+    (** An empty hole, to be filled in later. *)
   | APPLY of label * canonical_term list
-	(** Iterated function application. *)
+    (** A variable or constant applied iteratively to its arguments, if any. *)
 
 (** Canonical terms include the atomic terms, as well as one new type of term
     (lambda expressions), which admits no top level simplification
@@ -305,12 +303,12 @@ and atomic_term' =
 and canonical_term = 
   | CAN of atomic_term
   | LAMBDA of var * canonical_term
-	(** The lambda of LF. *)
+    (** Lambda expression of LF. *)
 
-(**  Expressions of LF are the canonical terms. *)
+(** Expressions of LF are the canonical terms. *)
 type lf_expr = canonical_term
 
-(** Expressions of TS are the same as atomic terms.  The constructor CAN
+(** Expressions of TS are the atomic terms.  The constructor CAN above
     implements the embedding from TS into LF. *)
 type ts_expr = atomic_term
 
