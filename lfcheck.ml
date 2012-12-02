@@ -72,16 +72,19 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
   | CAN (pos,x) -> (
       match x with
       | EmptyHole _ -> err env pos "empty hole found"
-      | APPLY(V f, args) -> (
-	  let f = unfold env f in
+      | APPLY(V v, args) -> (
+	  let f = unfold env v in
 	  let rec repeat f args = 
-	    match f, args with
-	    | LAMBDA(v,body), x :: args -> repeat (subst' (v,x) body) args
-	    | LAMBDA(v,body), [] -> err env pos "too few arguments"
-	    | _, x :: args -> err env pos "too many arguments"
-	    | x, [] -> x
-	  in repeat f args
-	 )
+	    match f with
+	    | LAMBDA(v,body) -> (
+		match args with
+		| x :: args -> repeat (subst' (v,x) body) args
+		| [] -> err env pos "too few arguments")
+	    | x -> (
+		match args with
+		| [] -> x
+		| _ -> err env pos "too many arguments")
+	  in repeat f args)
       | APPLY _ -> raise Not_found)
   | LAMBDA _ -> raise Not_found
 
