@@ -145,8 +145,7 @@ and type_synthesis (env:context) (e:ts_expr) : lf_type =
 	      | F_Pi(x,a',a''), m' :: args' ->
 		  type_check pos env m' a';
                   repeat ((x,a') :: env) (subst_type (x,m') a'') args'
-	      | F_APPLY _, CAN (pos,_) :: _ -> err env pos "extra argument"
-	      | F_APPLY _, LAMBDA _ :: _ -> err env pos "extra argument"
+	      | F_APPLY _, arg :: _ -> err env (get_pos_can arg) "extra argument"
 	     )
 	    in repeat env a args))
 
