@@ -121,7 +121,7 @@ to
 
     	..., x : oexp, i : (hastype x phi(T)), ... |-
 	
-and send judgments
+Interpret the judgments of TS as types of LF
 
     	|- T type			|- _ : istype phi(T)
 
@@ -130,4 +130,15 @@ and send judgments
 	|- T = T'			|- _ : tequal phi(T) phi(T')
 
 	|- o = o' : T			|- _ : oequal phi(o) phi(o') phi(T)
+
+A verfication of a judgment (e.g., used as a premise in an inference rule) can
+be added to the environment:
+
+	..., j : istype phi(T), ... |-
+
+	..., j : hastype phi(o) phi(T), ... |-
+
+	..., j : tequal phi(T) phi(T'), ... |-
+
+	..., j : oequal phi(o) phi(o') phi(T), ... |-
 
