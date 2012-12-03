@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 Variable T : Type.
-Show.
 Define TT := T ; ist$1.
 
 Variable u0 u1 u2 : Ulevel ; [next](u0) <= u1; [next](u1) < u2.
@@ -111,6 +110,7 @@ Define foo (u : Ulevel) (t : [U]([next](u))) := *t; (El_type ([next] u) t hast$1
 # Define foo (u : Ulevel) (t : [U]([next](u))) := *t; (El_type u t _).
 # Define foo (u : Ulevel) (t : [U]([next](u))) := *t; (El_type _ _).
 # Define foo (u : Ulevel) (t : [U]([next](u))) := *t; _.
+Show.
 
 Check LF ([foo.0] u1 ([u] u1) (u_univ u1)).
 Check LF ([foo.0] u1 ([u] u1) _).

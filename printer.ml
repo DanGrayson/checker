@@ -1,6 +1,7 @@
 (** Functions for converting expressions to strings for printing *)
 
 open Typesystem
+open Printf
 
 let space x = " " ^ x
 let ( <<- ) f g x = f (g x)
@@ -33,6 +34,11 @@ let rec lf_type_to_string' target (_,t) = match t with
       let s = concat [tfhead_to_string hd; concat (List.map (space <<- lf_canonical_to_string) args)] in
       if String.contains s ' ' then concat ["(";s;")"] else s
 and lf_type_to_string t = lf_type_to_string' true t
+
+let rec lf_kind_to_string = function
+  | K_type -> "type"
+  | K_Pi(VarUnused,a,k) -> concat [lf_type_to_string' false a;" ⟶ ";lf_kind_to_string k]
+  | K_Pi(x,a,k) -> concat ["∏ ";vartostring x;" : ";lf_type_to_string' false a;", ";lf_kind_to_string k]
 
 (** Printing of TS terms in TS format. *)
 
@@ -159,12 +165,21 @@ let rec iteri i f = function
 let iteri f l = iteri 0 f l
 
 let print_context n file env = 
-  Printf.fprintf file "Context:\n";
+  let n = match n with  None -> -1 | Some n -> n in
+  fprintf file "Context:\n";
   try
     iteri
       (fun i (v,t) ->
 	if i = n then raise Limit;
-	Printf.fprintf file "           %s : %s\n" (vartostring v) (lf_type_to_string t)) 
+	fprintf file "           %s : %s\n" (vartostring v) (lf_type_to_string t)) 
       env
     with Limit -> ();
+  flush file
+
+let print_signature file =
+  fprintf file "Signature:\n";
+  fprintf file "  Type family constants:\n";
+  List.iter (fun h -> fprintf file "     %s : %s\n" (tfhead_to_string h) (lf_kind_to_string (tfhead_to_kind h))) tfheads;
+  fprintf file "  Object constants:\n";
+  List.iter (fun h -> fprintf file "     %s : %s\n" (label_to_string h) (lf_type_to_string (label_to_lf_type !global_context h))) labels;
   flush file

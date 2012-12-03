@@ -15,7 +15,7 @@ exception Debugging
 
 let debug = false
 let raise_switch ex1 ex2 = raise (if debug then ex1 else ex2)
-let env_limit = 10
+let env_limit = Some 10
 
 let error_summary pos =
   let n = !Tokens.error_count in
@@ -175,9 +175,10 @@ let checkUniversesCommand pos =
     Universe.consistency !global_context;
     printf "Check Universes: okay\n"
   with Universe.Inconsistency (p,q) -> print_inconsistency p q
-    
+
 let show_command () = 
-  print_context (-1) stdout !global_context
+  print_signature stdout;
+  print_context None stdout !global_context
 
 let addDefinition v pos o t = 
   global_context := def_bind v pos o t !global_context

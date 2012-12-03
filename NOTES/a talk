@@ -54,9 +54,9 @@ TS
 
   but beta reduction was annoying, because of the substitution
 
-Revelation: LF
+LF:
 
-   idea, embed TS in LF, an ambient type system, sharing contexts and variables
+   embed TS in LF, an ambient type system, sharing contexts and variables
 
    	phi : TS ---> LF
 
@@ -76,3 +76,58 @@ Revelation: LF
 
 	objects may have types		M : T
 
+embedding TS in LF:
+
+  Type family constants:
+
+     uexp : type
+     texp : type
+     oexp : type
+     istype : texp ⟶ type
+     hastype : oexp ⟶ texp ⟶ type
+     uequal : uexp ⟶ uexp ⟶ type
+     tsim : texp ⟶ texp ⟶ type
+     tequal : texp ⟶ texp ⟶ type
+     osim : oexp ⟶ oexp ⟶ texp ⟶ type
+     oequal : oexp ⟶ oexp ⟶ texp ⟶ type
+
+  Object constants:
+
+     [max] : uexp ⟶ uexp ⟶ uexp
+     [next] : uexp ⟶ uexp
+     [El] : oexp ⟶ texp
+     [U] : uexp ⟶ texp
+     [∏] : texp ⟶ (oexp ⟶ texp) ⟶ texp
+     [Σ] : texp ⟶ (oexp ⟶ texp) ⟶ texp
+     [Pt] : texp
+     [∐] : texp ⟶ texp ⟶ texp
+     [Coprod2] : texp ⟶ texp ⟶ (oexp ⟶ texp) ⟶ (oexp ⟶ texp) ⟶ texp
+     [Empty] : texp
+     [IP] : texp ⟶ oexp ⟶ (oexp ⟶ texp) ⟶ (oexp ⟶ oexp ⟶ texp) ⟶ (oexp ⟶ oexp ⟶ oexp ⟶ oexp) ⟶ texp
+     [Id] : texp ⟶ oexp ⟶ oexp ⟶ texp
+     [u] : uexp ⟶ oexp
+     [j] : uexp ⟶ uexp ⟶ oexp
+     [ev] : oexp ⟶ oexp ⟶ (oexp ⟶ texp) ⟶ oexp
+     [λ] : texp ⟶ (oexp ⟶ oexp) ⟶ oexp
+     [∀] : uexp ⟶ uexp ⟶ oexp ⟶ (oexp ⟶ oexp) ⟶ oexp
+     [pair] : oexp ⟶ oexp ⟶ (oexp ⟶ texp) ⟶ oexp
+     [pr1] : texp ⟶ (oexp ⟶ texp) ⟶ oexp ⟶ oexp
+     [pr2] : texp ⟶ (oexp ⟶ texp) ⟶ oexp ⟶ oexp
+     [total] : uexp ⟶ uexp ⟶ oexp ⟶ (oexp ⟶ oexp) ⟶ oexp
+     [pt] : oexp
+     [pt_r] : oexp ⟶ (oexp ⟶ texp) ⟶ oexp
+     [tt] : oexp
+     [coprod] : uexp ⟶ uexp ⟶ oexp ⟶ oexp ⟶ oexp
+     [ii1] : texp ⟶ texp ⟶ oexp ⟶ oexp
+     [ii2] : texp ⟶ texp ⟶ oexp ⟶ oexp
+     [sum] : texp ⟶ texp ⟶ oexp ⟶ oexp ⟶ oexp ⟶ (oexp ⟶ texp) ⟶ oexp
+     [empty] : oexp
+     [empty_r] : texp ⟶ oexp ⟶ oexp
+     [c] : texp ⟶ oexp ⟶ (oexp ⟶ texp) ⟶ (oexp ⟶ oexp ⟶ texp) ⟶ (oexp ⟶ oexp ⟶ oexp ⟶ oexp) ⟶ oexp ⟶ oexp ⟶ oexp
+     [ip_r] : texp ⟶ oexp ⟶ (oexp ⟶ texp) ⟶ (oexp ⟶ oexp ⟶ texp) ⟶ (oexp ⟶ oexp ⟶ oexp ⟶ oexp) ⟶ oexp ⟶ (oexp ⟶ oexp ⟶ texp) ⟶ oexp ⟶ oexp
+     [ip] : oexp ⟶ oexp ⟶ (oexp ⟶ oexp) ⟶ (oexp ⟶ oexp ⟶ oexp) ⟶ (oexp ⟶ oexp ⟶ oexp ⟶ oexp) ⟶ oexp
+     [paths] : texp ⟶ oexp ⟶ oexp ⟶ oexp
+     [refl] : texp ⟶ oexp ⟶ oexp
+     [J] : texp ⟶ oexp ⟶ oexp ⟶ oexp ⟶ oexp ⟶ (oexp ⟶ oexp ⟶ texp) ⟶ oexp
+     [rr0] : uexp ⟶ uexp ⟶ oexp ⟶ oexp ⟶ oexp ⟶ oexp
+     [rr1] : uexp ⟶ oexp ⟶ oexp ⟶ oexp
