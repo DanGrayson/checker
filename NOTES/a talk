@@ -1,0 +1,78 @@
+TS
+
+  see: A universe polymorphic type system, by Vladimir Voevodsky.
+
+     universe levels		u-expressions
+     types			t-expressions
+     objects			o-expressions
+     
+  some expressions	uto	encoding as a syntax tree	explanation
+
+     Pi x:A, B		t	[Pi;x](A,B)			A and B are t, x is bound in B
+     lambda x:A, b	o	[lambda;x](A,b)			A is t, b is o, x is bound in b, has type Pi x:A, B if x:A |- b:B
+     f z		o	[ev;x](f,z,B)			f z are o, B is t, x is bound in B, has type B[z/x]
+
+  some judgments
+
+       T type
+       o : T
+       T = T'
+       o = o' : T
+
+  some inference rules (total of 38)
+
+ 	  G |- o : T         G |- T = T'
+ 	--------------------------------- ("cast", rule 13 in the paper UPTS)
+ 		   G |- o : T'
+
+
+	  G |- a:Empty     G |- T type     G |- T' type
+	-------------------------------------------------  (eta for empty type)
+			G |- T = T'
+
+
+	G |- y : T			   G, x : T |- u : U
+	---------------------------------------------------------- (beta reduction)
+	G |- [ev;x]( [lambda;x](T,u) , y , U ) = u[y/x] : U[y/x]
+
+  some definitions
+
+	Definition foo1 : Pi (u1 ... : Ulevel), (T1 ... : Type), (o1:A1) ... , T.
+
+	Definition foo2 : Pi (u1 ... : Ulevel), (T1 ... : Type), (o1:A1) ... , o : T.
+
+  first ideas about encoding inference rules and derivations in syntax:
+
+             cast :: Pi {G : MContext} {T T' : MType} {o : MObject},
+		     Pi oT :: G |- o : T,
+		     Pi TT' :: G |- T = T',
+		     G |- o : T'.
+
+        tetaempty :: Pi {G : MContext} (T T' : MType),
+		     Pi j :: G |- a : Empty,
+		     G |- T = T'.
+
+  but beta reduction was annoying, because of the substitution
+
+Revelation: LF
+
+   idea, embed TS in LF, an ambient type system, sharing contexts and variables
+
+   	phi : TS ---> LF
+
+   LF syntax:
+
+	atomic objects		 R ::=  x M_1 ... M_n  |  c M_1 ... M_n
+
+	canonical objects	 M ::=  R  |  lambda x, M
+
+        type families    	 T ::=  b o_1 ... o_n   |  Pi x: T, T'
+
+   	kinds            	 K ::=  Pi x_1:T_1, ..., x_n:T_n, type
+
+	type families may have kinds 	T : K
+
+	some of them are types		T : type
+
+	objects may have types		M : T
+
