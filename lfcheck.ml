@@ -152,28 +152,23 @@ and type_synthesis (env:context) (e:ts_expr) : lf_type =
 and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : unit =
   (* assume x and y have already been verified to be of type t *)
   (* see figure 11, page 711 [EEST] *)
-  let try_path_equivalence x y =
-    let x = head_normalization env x in (* not mentioned in the paper (?) *)
-    let y = head_normalization env y in (* not mentioned in the paper (?) *)
-    let t' = path_equivalence env x y in
-    type_equivalence env t t' in
   if try_alpha && Alpha.UEqual.term_equiv empty_uContext x y then () else
   let (pos,t0) = t in
   match x, y, t0 with
   | _, _, F_Singleton _ -> ()
   | x, y, F_Pi (w,a,b) -> (
-      let x = head_normalization env x in (* not mentioned in the paper (?) *)
-      let y = head_normalization env y in (* not mentioned in the paper (?) *)
       match x,y with
       | LAMBDA(u,x), LAMBDA(v,y) ->
-	  let w' = newfresh w in
-	  term_equivalence xpos ypos ((w',a) :: env) (* all this variable substitution should be handled by alpha equivalence in the future *)
+	  let w' = newfresh w in term_equivalence xpos ypos 
+	    ((w',a) :: env)
 	    (subst' (u,var_to_lf w') x)
-	    (subst' (v,var_to_lf w') y)
-	    (subst_type (w,var_to_lf w') b)
-      | x,y -> try_path_equivalence x y
-     )
-  | x, y, F_APPLY(j,args) -> try_path_equivalence x y
+	    (subst' (v,var_to_lf w') y) (subst_type (w,var_to_lf w') b)
+      | x,y -> raise Internal)
+  | x, y, F_APPLY(j,args) ->
+      let x = head_normalization env x in
+      let y = head_normalization env y in
+      let t' = path_equivalence env x y in
+      type_equivalence env t t'
 
 and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
   (* assume x and y are head reduced *)
