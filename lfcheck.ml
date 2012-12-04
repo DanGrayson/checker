@@ -39,6 +39,13 @@ let rec strip_singleton ((_,(_,t)) as u) = match t with
 
 (* background assumption: all types in the environment have been verified *)
 
+let no_hole env pos = function		(* for debugging *)
+  | CAN(_,TacticHole n) -> 
+      err env pos "encountered a tactic hole about to be added to the context"
+  | CAN(_,EmptyHole  n) -> 
+      err env pos "encountered an empty hole about to be added to the context"
+  | _ -> ()
+
 type tactic_function = context -> position -> lf_type -> lf_expr option
 
 let tactics : (string * tactic_function) list ref = ref []
@@ -70,14 +77,16 @@ let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
           let t = label_to_type env pos l in
           let rec repeat args t =
             match args, unmark t with
-	    | x :: args, F_Pi(v,a,b) -> repeat args (subst_type (v,x) b)
+	    | x :: args, F_Pi(v,a,b) -> 
+		no_hole env pos x;
+		repeat args (subst_type (v,x) b)
 	    | x :: args, _ -> err env pos "at least one argument too many"
 	    | [], F_Pi(v,a,b) -> errmissingarg env pos a (* we insist on eta-long format *)
 	    | [], t -> t
 	  in nowhere 5 (repeat args t))
   | LAMBDA _ -> err env pos "LF lambda expression found, has no natural type"
 
-let apply_arg (f:lf_expr) (arg:canonical_term) =
+let apply_arg env pos (f:lf_expr) (arg:canonical_term) =
   match f with
   | LAMBDA(v,body) -> subst' (v,arg) body
   | _ -> raise Internal
@@ -87,7 +96,8 @@ let apply_args env pos (f:lf_expr) (args:canonical_term list) =
     match f with
     | LAMBDA(v,body) -> (
 	match args with
-	| x :: args -> repeat (subst' (v,x) body) args
+	| x :: args -> 
+	    repeat (subst' (v,x) body) args
 	| [] -> err env pos "too few arguments")
     | x -> (
 	match args with
@@ -118,7 +128,7 @@ let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
   let (pos,t0) = t in
   match t0 with 
   | F_Pi(v,a,b) ->
-      let x' = term_normalization ((v,a) :: env) (apply_arg x (var_to_lf v)) b in
+      let x' = term_normalization ((v,a) :: env) (apply_arg env pos x (var_to_lf v)) b in
       LAMBDA(v,x')
   | F_APPLY _
   | F_Singleton _ ->
@@ -144,6 +154,7 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
 		  match args with
 		  | [] -> err env pos "too few arguments"
 		  | x :: args ->
+		      no_hole env pos x;
 		      let b = subst_type (v,x) b in
 		      let x = term_normalization env x a in
 		      let (c,args) = repeat b args in
@@ -181,33 +192,41 @@ let rec type_normalization (env:context) (t:lf_type) : lf_type =
   in (pos,t)
 
 
-let rec type_validity (env:context) (t:lf_type) : unit =
+let rec type_validity (env:context) (t:lf_type) : lf_type =
   (* assume the kinds of constants, and the types in them, have been checked *)
   (* driven by syntax *)
+  (* return the same type t, but with tactic holes replaced *)
   (* see figure 12, page 715 [EEST] *)
-  let (pos,t) = t in
-  match t with 
-  | F_Pi(v,t,u) -> 
-      type_validity env t;
-      type_validity ((v,t) :: env) u
-  | F_APPLY(head,args) ->
-      let kind = tfhead_to_kind head in
-      let rec repeat env kind (args:lf_expr list) = 
-	match kind, args with 
-	| K_type, [] -> ()
-	| K_type, x :: args -> err env pos "at least one argument too many"
-	| K_Pi(v,a,kind'), x :: args ->
-	    type_check pos env x a;
-	    repeat ((v,a) :: env) kind' args
-	| K_Pi(_,a,_), [] -> errmissingarg env pos a
-      in repeat env kind args
-  | F_Singleton(x,t) -> 
-      type_validity env t;
-      type_check pos env x t		(* rule 46 *)
+  let (pos,t) = t 
+  in 
+  ( pos,
+    match t with 
+    | F_Pi(v,t,u) ->
+	let t = type_validity env t in
+	let u = type_validity ((v,t) :: env) u in
+	F_Pi(v,t,u)
+    | F_APPLY(head,args) ->
+	let kind = tfhead_to_kind head in
+	let rec repeat env kind (args:lf_expr list) = 
+	  match kind, args with 
+	  | K_type, [] -> []
+	  | K_type, x :: args -> err env pos "at least one argument too many";
+	  | K_Pi(v,a,kind'), x :: args -> 
+	      type_check pos env x a :: repeat ((v,a) :: env) kind' args
+	  | K_Pi(_,a,_), [] -> errmissingarg env pos a
+	in 
+	let args' = repeat env kind args in
+	F_APPLY(head,args')
+    | F_Singleton(x,t) -> 
+	let t = type_validity env t in
+	let x = type_check pos env x t in		(* rule 46 *)
+	F_Singleton(x,t))
 
-and type_synthesis (env:context) (x:lf_expr) : lf_type =
+and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
   (* assume nothing *)
   (* see figure 13, page 716 [EEST] *)
+  (* return a pair consisting of the original expression with any tactic holes filled in, 
+     and the synthesized type *)
   match x with
   | LAMBDA _ -> err env (get_pos_can x) ("function has no type: "^(lf_canonical_to_string x))
   | CAN e ->
@@ -215,24 +234,27 @@ and type_synthesis (env:context) (x:lf_expr) : lf_type =
       match e0 with
       | TacticHole n -> err env pos ("tactic hole: "^(lf_atomic_to_string e))
       | EmptyHole _ -> err env pos ("empty hole: "^(lf_atomic_to_string e))
-      | APPLY(V v, []) -> (pos, F_Singleton(CAN e, fetch_type env pos v))
-      | APPLY(label,args) ->
-	  with_pos pos 				(* the position of the type will reflect the position of the expression *)
-	    (unmark (
-	     let a = label_to_type env pos label in
-	     let rec repeat env (a:lf_type) (args:lf_expr list) : lf_type = (
-	       let (apos,a0) = a in
-	       match a0, args with
-	       | F_APPLY _ as t, [] -> (pos,t)
-	       | F_Singleton(e,t), args -> repeat env t args
-	       | F_Pi(v,a,_), [] -> 
-		   err env pos ("too few arguments; next argument should be of type "^(lf_type_to_string a))
-	       | F_Pi(x,a',a''), m' :: args' ->
-		   type_check pos env m' a';
-		   repeat ((x,a') :: env) (subst_type (x,m') a'') args'
-	       | F_APPLY _, arg :: _ -> err env (get_pos_can arg) "extra argument"
-	      )
-	     in repeat env a args))
+      | APPLY(V v, []) -> x, (pos, F_Singleton(CAN e, fetch_type env pos v))
+      | APPLY(label,args) -> (
+	  let a = label_to_type env pos label in
+	  let rec repeat env (a:lf_type) (args:lf_expr list) : lf_expr list * lf_type = (
+	    let (apos,a0) = a in
+	    match a0, args with
+	    | F_APPLY _ as t, [] -> [], (pos,t)
+	    | F_Singleton(e,t), args -> repeat env t args
+	    | F_Pi(v,a,_), [] -> 
+		err env pos ("too few arguments; next argument should be of type "^(lf_type_to_string a))
+	    | F_Pi(x,a',a''), m' :: args' ->
+		let m' = type_check pos env m' a' in
+		no_hole env pos m';
+		let (args'',u) = repeat ((x,a') :: env) (subst_type (x,m') a'') args' in
+		m' :: args'', u
+	    | F_APPLY _, arg :: _ -> err env (get_pos_can arg) "extra argument"
+	   )
+	  in
+	  let (args',t) = repeat env a args
+	  in CAN(pos,APPLY(label,args')), t
+	 )
 
 and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : unit =
   (* assume x and y have already been verified to be of type t *)
@@ -271,6 +293,7 @@ and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
             | t, [], [] -> t
             | (pos,F_Pi(v,a,b)), x :: args, y :: args' ->
                 term_equivalence xpos ypos env x y a;
+		no_hole env pos x;
                 repeat (subst_type (v,x) b) args args'
             | _ -> mismatch_term env xpos x ypos y
 	  in repeat t args args'
@@ -333,16 +356,15 @@ and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
       subtype ((x, a) :: env) b d
   | _ -> type_equivalence env (tpos,t0) (upos,u0)
 
-and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : unit = 
+and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr = 
   (* assume t has been verified to be a type *)
   (* see figure 13, page 716 [EEST] *)
-  let (_,t0) = t in 
+  (* we modify the algorithm to return a possibly modified expression e, with holes filled in by tactics *)
+  let (pos,t0) = t in 
   match e, t0 with
   | LAMBDA(v,e), F_Pi(w,a,b) ->
-      type_check pos 
-	((v,a) :: env)
-	e
-	(subst_type (w,var_to_lf v) b)
+      let e = type_check pos ((v,a) :: env) e (subst_type (w,var_to_lf v) b) in
+      LAMBDA(v,e)
   | LAMBDA _, _ -> err env pos "did not expect a lambda expression here"
   | CAN(pos, x), _ ->
       match x with
@@ -357,7 +379,10 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : unit =
 	      raise (TypeCheckingFailure2 (env,
 					   pos, "tactic failed     : "^(tactic_to_string n),
 					   pos, "  in hole of type : "^(lf_type_to_string t))))	  
-      | APPLY _ -> let s = type_synthesis env e in subtype env s t
+      | APPLY _ -> 
+	  let (e,s) = type_synthesis env e in 
+	  subtype env s t;
+	  e
 
 let rec assumption env pos t =
   match env with 
@@ -367,7 +392,9 @@ let rec assumption env pos t =
       else assumption env pos t
   | [] -> None
 
-let _ = add_tactic "assumption" assumption
+let _ = 
+  add_tactic "assumption" assumption;
+  add_tactic "a" assumption
 
 (* 
   Local Variables:
