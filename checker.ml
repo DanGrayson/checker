@@ -135,23 +135,25 @@ let check0 x =
   let x = protect1 ( fun () -> Fillin.fillin !global_context x ) in
   printf "        LF : %s\n" (lf_atomic_to_string x);
   flush stdout;
-  let t = protect1 ( fun () -> Lfcheck.type_synthesis !global_context x ) in
+  let t = protect1 ( fun () -> Lfcheck.type_synthesis !global_context (CAN x) ) in
   printf "    LF type: %s\n" (lf_type_to_string t);
   if unmark t = unmark oexp then (
     let ts = protect1 ( fun () -> Tau.tau !global_context x ) in
     printf "    TS type: %s ?\n" (ts_expr_to_string ts);
     flush stdout)
 
-let checkLFCommand x =
+let is_lambda = function LAMBDA _ -> true | _ -> false
+
+let checkLFCommand pos x =
   printf "Check LF   = %s\n" (lf_canonical_to_string x);
   flush stdout;
-  match x with 
-  | CAN x ->
-      let t = protect1 ( fun () -> Lfcheck.type_synthesis !global_context x ) in
-      let x' = protect1 ( fun () -> Lfcheck.term_normalization !global_context (CAN x) t) in
-      printf "           = %s\n" (lf_canonical_to_string x');
-      printf "           : %s\n" (lf_type_to_string t)
-  | _ -> ()
+  if not (is_lambda x) then 
+    let t = protect1 ( fun () -> Lfcheck.type_synthesis !global_context x ) in
+    let x' = protect1 ( fun () -> Lfcheck.term_normalization !global_context x t) in
+    printf "           = %s\n" (lf_canonical_to_string x');
+    printf "           : %s\n" (lf_type_to_string t);
+    let t' = protect1 ( fun () -> Lfcheck.type_normalization !global_context t) in
+    printf "           = %s\n" (lf_type_to_string t')
 
 let checkLFtypeCommand x =
   printf "CheckLFtype: %s\n" (lf_type_to_string x);
@@ -203,7 +205,7 @@ let process_command lexbuf = (
     | Toplevel.Variable tvars -> add_tVars tvars
     | Toplevel.Rule (num,name,t) -> ruleCommand num name t
     | Toplevel.Axiom (name,t) -> axiomCommand name t
-    | Toplevel.CheckLF x -> checkLFCommand x
+    | Toplevel.CheckLF x -> checkLFCommand pos x
     | Toplevel.CheckLFtype x -> checkLFtypeCommand x
     | Toplevel.Check x -> checkCommand x
     | Toplevel.Alpha (x,y) -> alphaCommand (x,y)

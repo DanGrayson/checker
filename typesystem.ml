@@ -74,10 +74,10 @@ let theads = [ T_El; T_U; T_Pi; T_Sigma; T_Pt; T_Coprod; T_Coprod2; T_Empty; T_I
 let thead_to_string = function
   | T_El -> "El"
   | T_U -> "U"
-  | T_Pi -> "∏"
-  | T_Sigma -> "Σ"
+  | T_Pi -> "Pi"
+  | T_Sigma -> "Sigma"
   | T_Pt -> "Pt"
-  | T_Coprod -> "∐"
+  | T_Coprod -> "Coprod"
   | T_Coprod2 -> "Coprod2"
   | T_Empty -> "Empty"
   | T_IP -> "IP"
@@ -195,8 +195,8 @@ let ohead_to_string = function
   | O_u -> "u"
   | O_j -> "j"
   | O_ev -> "ev"
-  | O_lambda -> "λ"
-  | O_forall -> "∀"
+  | O_lambda -> "lambda"
+  | O_forall -> "forall"
   | O_pair -> "pair"
   | O_pr1 -> "pr1"
   | O_pr2 -> "pr2"
@@ -274,7 +274,15 @@ let label_to_string = function
   | T h -> "[" ^ thead_to_string h ^ "]"
   | O h -> "[" ^ ohead_to_string h ^ "]"
 
-let string_to_label = List.map (fun h -> label_to_string h, h) labels
+let string_to_label = 
+  let a = List.map (fun h -> label_to_string h, h) labels in
+  let b = [
+    ("[∏]", T T_Pi);
+    ("[Σ]", T T_Sigma);
+    ("[∐]", T T_Coprod);
+    ("[λ]", O O_lambda);
+    ("[∀]", O O_forall)] in
+  List.concat [a;b]
 	
 (** Canonical terms include the atomic terms, as well as one new type of term
     (lambda expressions), which admits no top level simplification

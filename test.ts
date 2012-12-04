@@ -100,17 +100,19 @@ Check TS λ f:X ⟶ T, λ y:X, f y.
 # Define g2 (T:Type) := λ x:T, x : T ⟶ T.
 # Define g3 (T:Type)(t:T) := λ x:T, t : T ⟶ T.
 
-Check LF type ∏ x:oexp, ∏ y:oexp, ∏ T:texp, ∏ U:texp, [ x = y : T ] ⟶ [ T = U ] ⟶ [ x = y : U ].
 Check TS U_type.
+Check TS [Pi;x](T,T).
+
+Check LF type ∏ x:oexp, ∏ y:oexp, ∏ T:texp, ∏ U:texp, [ x = y : T ] ⟶ [ T = U ] ⟶ [ x = y : U ].
 Check LF (U_type u1).
 
-Define foo (u : Ulevel) (t : [U]([next](u))) := *t; (El_type ([next] u) t hast$116).
+Define foo (u : Ulevel) (t : [U]([next](u))) := *t; (El_type ([next] u) t hast$117).
 
 # Define foo (u : Ulevel) (t : [U](u)) := *t.
 # Define foo (u : Ulevel) (t : [U](u)) := *t; _.
 # Define foo (u : Ulevel) (t : [U](u)) := *t; (El_type _ _).
 # Define foo (u : Ulevel) (t : [U](u)) := *t; (El_type u t _).
-Define foo (u : Ulevel) (t : [U](u)) := *t; (El_type u t hast$130).
+Define foo (u : Ulevel) (t : [U](u)) := *t; (El_type u t hast$131).
 Check LF ([foo.0] ([next] u1) ([u] u1) (u_univ u1)).
 Check LF ([foo.1] ([next] u1) ([u] u1) (u_univ u1)).
 Show.

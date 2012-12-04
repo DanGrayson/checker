@@ -99,7 +99,6 @@ let rec head_normalization (env:context) (x:lf_expr) : lf_expr =
 
 let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
-  fprintf stderr "term_normalization gets %s : %s\n" (lf_canonical_to_string x) (lf_type_to_string t);
   let (pos,t0) = t in
   match t0 with 
   | F_Pi(v,a,b) ->
@@ -113,7 +112,6 @@ let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
       
 and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
   (* see figure 9 page 696 [EEST] *)
-  fprintf stderr "path_normalization gets %s\n" (lf_canonical_to_string x);
   match x with
   | LAMBDA _ -> err env pos "path_normalization encountered a function"
   | CAN y ->
@@ -140,9 +138,31 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
 	    in repeat t args
 	  in (CAN(pos,APPLY(f,args)), t)
 
-let type_normalization (env:context) (x:lf_type) : lf_type =
+let rec type_normalization (env:context) (t:lf_type) : lf_type =
   (* see figure 9 page 696 [EEST] *)
-  raise NotImplemented
+  let (pos,t0) = t in
+  let t = match t0 with
+  | F_Pi(v,a,b) -> 
+      let a' = type_normalization env a in
+      let b' = type_normalization ((v,a) :: env) b in
+      F_Pi(v,a',b')
+  | F_APPLY(head,args) ->
+      let kind = tfhead_to_kind head in
+      let args =
+	let rec repeat env kind (args:lf_expr list) = 
+	  match kind, args with 
+	  | K_type, [] -> []
+	  | K_type, x :: args -> err env pos "too many arguments"
+	  | K_Pi(v,a,kind'), x :: args ->
+	      term_normalization env x a ::
+	      repeat ((v,a) :: env) kind' args
+	  | K_Pi(_,a,_), [] -> errmissingarg env pos a
+	in repeat env kind args
+      in F_APPLY(head,args)
+  | F_Singleton(x,t) -> 
+      F_Singleton( term_normalization env x t, type_normalization env t )
+  in (pos,t)
+
 
 let rec type_validity (env:context) (t:lf_type) : unit =
   (* assume the kinds of constants, and the types in them, have been checked *)
@@ -168,30 +188,33 @@ let rec type_validity (env:context) (t:lf_type) : unit =
       type_validity env t;
       type_check pos env x t		(* rule 46 *)
 
-and type_synthesis (env:context) (e:ts_expr) : lf_type =
+and type_synthesis (env:context) (x:lf_expr) : lf_type =
   (* assume nothing *)
   (* see figure 13, page 716 [EEST] *)
-  let (pos,e0) = e in
-     match e0 with
-     | EmptyHole _ -> err env pos ("empty hole: "^(lf_atomic_to_string e))
-     | APPLY(V v, []) -> (pos, F_Singleton(CAN e, fetch_type env pos v))
-     | APPLY(label,args) ->
-	 with_pos pos 				(* the position of the type will reflect the position of the expression *)
-	   (unmark (
-	    let a = label_to_type env pos label in
-	    let rec repeat env (a:lf_type) (args:lf_expr list) : lf_type = (
-	      let (apos,a0) = a in
-	      match a0, args with
-	      | F_APPLY _ as t, [] -> (pos,t)
-	      | F_Singleton(e,t), args -> repeat env t args
-	      | F_Pi(v,a,_), [] -> 
-		  err env pos ("too few arguments; next argument should be of type "^(lf_type_to_string a))
-	      | F_Pi(x,a',a''), m' :: args' ->
-		  type_check pos env m' a';
-                  repeat ((x,a') :: env) (subst_type (x,m') a'') args'
-	      | F_APPLY _, arg :: _ -> err env (get_pos_can arg) "extra argument"
-	     )
-	    in repeat env a args))
+  match x with
+  | LAMBDA _ -> err env (get_pos_can x) ("function has no type: "^(lf_canonical_to_string x))
+  | CAN e ->
+      let (pos,e0) = e in
+      match e0 with
+      | EmptyHole _ -> err env pos ("empty hole: "^(lf_atomic_to_string e))
+      | APPLY(V v, []) -> (pos, F_Singleton(CAN e, fetch_type env pos v))
+      | APPLY(label,args) ->
+	  with_pos pos 				(* the position of the type will reflect the position of the expression *)
+	    (unmark (
+	     let a = label_to_type env pos label in
+	     let rec repeat env (a:lf_type) (args:lf_expr list) : lf_type = (
+	       let (apos,a0) = a in
+	       match a0, args with
+	       | F_APPLY _ as t, [] -> (pos,t)
+	       | F_Singleton(e,t), args -> repeat env t args
+	       | F_Pi(v,a,_), [] -> 
+		   err env pos ("too few arguments; next argument should be of type "^(lf_type_to_string a))
+	       | F_Pi(x,a',a''), m' :: args' ->
+		   type_check pos env m' a';
+		   repeat ((x,a') :: env) (subst_type (x,m') a'') args'
+	       | F_APPLY _, arg :: _ -> err env (get_pos_can arg) "extra argument"
+	      )
+	     in repeat env a args))
 
 and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : unit =
   (* assume x and y have already been verified to be of type t *)
@@ -307,7 +330,7 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : unit =
       raise (TypeCheckingFailure2 (env,
 	 pos, "hole found : "^(lf_canonical_to_string e),
 	 pos, "   of type : "^(lf_type_to_string t)))
-  | CAN e, _ -> let s = type_synthesis env e in subtype env s t
+  | CAN _, _ -> let s = type_synthesis env e in subtype env s t
 
 (* 
   Local Variables:
