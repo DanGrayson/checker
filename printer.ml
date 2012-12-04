@@ -10,7 +10,9 @@ let concatl = concat <<- List.flatten
 
 (** Printing of LF expressions. *)
 
-let rec lf_atomic_to_string (_,e) = match e with
+let rec lf_atomic_to_string (_,e) = 
+  match e with
+  | TacticHole n -> tactic_to_string n
   | EmptyHole n -> "?" ^ (string_of_int n)
   | APPLY(V v,[]) -> vartostring v
   | APPLY(h,args) -> concat ["(";(label_to_string h);(concat (List.map (space <<- lf_canonical_to_string) args));")"]
@@ -52,6 +54,7 @@ and ts_can_to_string = function
   | CAN e -> ts_expr_to_string e
   | LAMBDA _ as e -> lf_canonical_p e		(* normally this branch will not be used *)
 and ts_expr_to_string ((_,e) as oe) = match e with 
+  | TacticHole n -> tactic_to_string n
   | EmptyHole n -> "?" ^ (string_of_int n)
   | APPLY(V v,[]) -> vartostring v
   | APPLY(h,args) -> 

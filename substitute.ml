@@ -20,6 +20,7 @@ and subst (subl : (var * canonical_term) list) ((pos,e) as d) =
 	   with Not_found -> ())
        | _ -> ());
       pos, APPLY(label,subst_list subl args)
+  | TacticHole n -> d
   | EmptyHole _ -> d  
 and subst' (subl : (var * canonical_term) list) = function
   | CAN e -> CAN(subst subl e)

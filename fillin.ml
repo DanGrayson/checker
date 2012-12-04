@@ -16,6 +16,7 @@ and fillin' pos env = function
   | LAMBDA(v,body) as l -> raise (Unimplemented_expr l)
   | CAN e -> CAN(fillin env e)
 and fillin env (pos,e) = (pos, match e with
+  | TacticHole n -> raise NotImplemented
   | EmptyHole _ -> raise (TypeCheckingFailure(env,pos,"empty hole, no method for filling"))
   | APPLY(V _,[]) as v -> v
   | APPLY(label,branches) ->

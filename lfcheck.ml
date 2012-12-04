@@ -39,6 +39,16 @@ let rec strip_singleton ((_,(_,t)) as u) = match t with
 
 (* background assumption: all types in the environment have been verified *)
 
+type tactic_function = context -> position -> lf_type -> lf_expr option
+
+let tactics : (string * tactic_function) list ref = ref []
+
+let add_tactic name f =
+  tactics := (name,f) :: !tactics
+
+let apply_tactic_function env pos f t =
+  raise NotImplemented
+
 let unfold env v =
   match unmark( lookup_type env v ) with
   | F_Singleton a -> let (x,t) = strip_singleton a in x
@@ -50,6 +60,7 @@ let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
   match x with
   | CAN (pos,x) -> (
       match x with
+      | TacticHole n -> raise NotImplemented
       | EmptyHole _ -> err env pos "empty hole found"
       | APPLY(l,args) -> 
           let t = label_to_type env pos l in
@@ -87,6 +98,7 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
   match x with
   | CAN (pos,x) -> (
       match x with
+      | TacticHole n -> raise NotImplemented
       | EmptyHole _ -> err env pos "empty hole found"
       | APPLY(V v, args) -> let f = unfold env v in apply_args env pos f args
       | APPLY _ -> raise Not_found)
@@ -117,6 +129,7 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
   | CAN y ->
       let (pos,y0) = y in
       match y0 with
+      | TacticHole n -> raise NotImplemented
       | EmptyHole _ -> err env pos "path_normalization encountered an empty hole"
       | APPLY(f,args) ->
 	  let t = label_to_type env pos f in
@@ -196,6 +209,7 @@ and type_synthesis (env:context) (x:lf_expr) : lf_type =
   | CAN e ->
       let (pos,e0) = e in
       match e0 with
+      | TacticHole n -> err env pos ("tactic hole: "^(lf_atomic_to_string e))
       | EmptyHole _ -> err env pos ("empty hole: "^(lf_atomic_to_string e))
       | APPLY(V v, []) -> (pos, F_Singleton(CAN e, fetch_type env pos v))
       | APPLY(label,args) ->
@@ -331,6 +345,11 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : unit =
 	 pos, "hole found : "^(lf_canonical_to_string e),
 	 pos, "   of type : "^(lf_type_to_string t)))
   | CAN _, _ -> let s = type_synthesis env e in subtype env s t
+
+let assumption env pos t =
+  Some (CAN (pos, EmptyHole 1234 ))
+
+let _ = add_tactic "assumption" assumption
 
 (* 
   Local Variables:

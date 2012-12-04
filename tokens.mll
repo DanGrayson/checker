@@ -61,6 +61,7 @@ rule expr_tokens = parse
   | "Type" { KType }
   | "type" { Ktype }
   | "max" { Kumax }
+  | '$'  { Wdollar }
   | '('  { Wlparen }
   | ')'  { Wrparen }
   | ']'  { Wrbracket }

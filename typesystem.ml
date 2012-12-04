@@ -237,6 +237,10 @@ let vartostring = function
   | VarUnused -> "_"
   | VarDefined (name,aspect) -> "[" ^ name ^ "." ^ (string_of_int aspect) ^ "]"
 
+(** Tactics *)
+
+type tactic_expr = string
+
     (** The type [label] accommodates the variables of LF, and the constants of
         LF, which in turn include the labels of TS, the inference rules of TS,
         and the definitions of TS (in various aspects).
@@ -301,6 +305,8 @@ and atomic_term = atomic_term' marked
 and atomic_term' =
   | EmptyHole of int
     (** An empty hole, to be filled in later. *)
+  | TacticHole of tactic_expr
+    (** An empty hole, to be filled in later by calling a tactic routine writtn in OCAML. *)
   | APPLY of label * canonical_term list
     (** A variable or constant applied iteratively to its arguments, if any. *)
 
@@ -535,6 +541,9 @@ let label_to_type env pos = function
   | T h -> thead_to_lf_type h
   | O h -> ohead_to_lf_type h
   | V v -> fetch_type env pos v
+
+let tactic_to_string : tactic_expr -> string = function
+  | n -> n
 
 (* 
   Local Variables:

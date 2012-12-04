@@ -20,7 +20,7 @@ open Error
   Wequalequal Wequal COLONequal Wunderscore WRule Wgreaterequal Wgreater
   Wlessequal Wless Wsemi KUlevel Kumax KType Ktype KPi Klambda KSigma WCheckLF
   WCheckLFtype WDefine WShow WEnd WVariable WAlpha Weof WCheck WCheckUniverses
-  Wtilde KSingleton Axiom
+  Wtilde KSingleton Axiom Wdollar
 
 /* precedences, lowest first */
 %right
@@ -124,7 +124,13 @@ variable_unused:
 | Wunderscore
     { VarUnused }
 
+tactic_expr:
+| c=IDENTIFIER
+  { c }
+
 atomic_term:
+| Wdollar name=tactic_expr
+    { TacticHole name }
 | bare_variable
     { APPLY(V $1,[]) }
 | Wunderscore

@@ -1,5 +1,8 @@
 TSFILES = rules.ts test.ts 
 
+CHECKER_EXE = checker.byte
+CHECKER = OCAMLRUNPARAM=$(RUN) ./$(CHECKER_EXE) rules.ts
+
 BFLAGS = -cflags -g,-annot -lflags -g -yaccflag -v
 BFLAGS += -use-menhir
 
@@ -47,8 +50,8 @@ TAGS: $(SRCFILES) $(TSFILES) scripts/ts.etags Makefile
 	( scripts/etags.ocaml $(SRCFILES) && etags --regex=@scripts/ts.etags $(TSFILES) -o - ) >$@
 clean::; rm -f TAGS checker.odocl .DS_Store
 wc:; wc -l $(SRCFILES)
-run: checker.byte
-	-OCAMLRUNPARAM=$(RUN) ./$< $(TSFILES)
+run:  $(CHECKER_EXE) rules.ts test.ts ; -$(CHECKER) test.ts
+demo: $(CHECKER_EXE) rules.ts test.ts ; -$(CHECKER) demo.ts
 debug:
 	ocamlbuild $(BFLAGS) checker.byte 
 	@ echo "enter:"

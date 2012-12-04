@@ -9,7 +9,9 @@ let rec get_ts_type (v:var) (env:context) : ts_expr = (
   | [] -> raise Not_found
  )
 
-let rec tau (pos:position) (env:context) (pos,e) : atomic_term = match e with
+let rec tau (pos:position) (env:context) (pos,e) : atomic_term = 
+  match e with
+  | TacticHole n -> raise NotImplemented
   | EmptyHole _ -> raise (TypeCheckingFailure(env, pos, "empty hole, type undetermined"))
   | APPLY(V v,[]) -> (
       try get_ts_type v env

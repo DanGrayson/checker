@@ -5,6 +5,7 @@ open Typesystem
 let template = function
   | LAMBDA(x,body) -> ()
   | CAN(pos,e) -> match e with
+    | TacticHole _ -> ()
     | EmptyHole _ -> ()
     | APPLY(h,args) -> (
 	match h with

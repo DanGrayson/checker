@@ -60,5 +60,6 @@ and clhash = function
   | c :: r -> chash c + 2345 * (clhash r)
 and ahash = function
   | (pos,e) -> match e with 
+    | TacticHole _ -> 111
     | EmptyHole n -> 123*n
     | APPLY(h,args) -> hhash h + clhash args

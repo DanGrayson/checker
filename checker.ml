@@ -1,5 +1,9 @@
 (** Top level code. *)
 
+let debug = false
+
+let env_limit = Some 10
+
 open Typesystem
 open Template				(*otherwise unused*)
 open Universe
@@ -13,9 +17,7 @@ exception FileFinished
 exception StopParsingFile
 exception Debugging
 
-let debug = false
 let raise_switch ex1 ex2 = raise (if debug then ex1 else ex2)
-let env_limit = Some 10
 
 let error_summary pos =
   let n = !Tokens.error_count in
@@ -197,9 +199,9 @@ let defCommand defs = protect1 ( fun () ->
     ) 
     defs)
 
-let process_command lexbuf = (
+let process_command lexbuf = 
   let c = protect (Grammar.command (Tokens.expr_tokens)) lexbuf (fun () -> lexpos lexbuf) in
-  match c with (pos,c) -> (
+  match c with (pos,c) ->
     match c with
     | Toplevel.UVariable (uvars,eqns) -> protect1 ( fun () -> ubind uvars eqns )
     | Toplevel.Variable tvars -> add_tVars tvars
@@ -212,21 +214,14 @@ let process_command lexbuf = (
     | Toplevel.Definition defs -> defCommand defs
     | Toplevel.End -> printf "%s: ending.\n" (errfmt pos) ; flush stdout; raise StopParsingFile
     | Toplevel.Show -> show_command()
-    | Toplevel.CheckUniverses -> checkUniversesCommand pos);
-    printf "\n";
-    flush stdout)
+    | Toplevel.CheckUniverses -> checkUniversesCommand pos
 
 let parse_file filename =
-  printf "parsing file %s\n" filename; flush stdout;
   Tokens.error_count := 0;
   let lexbuf = Lexing.from_channel (open_in filename) in
   lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = filename};
-  (
-   try
-     while true do (try process_command lexbuf with Error_Handled -> ());
-     done
-   with StopParsingFile -> ()
-  )
+  try while true do (try process_command lexbuf with Error_Handled -> ()) done
+  with StopParsingFile -> printf "parsing file %s\n" filename; flush stdout
   
 let strname =
   let n = ref 0 in
