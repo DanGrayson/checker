@@ -52,9 +52,7 @@ let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
       match x with
       | EmptyHole _ -> err env pos "empty hole found"
       | APPLY(l,args) -> 
-          let t =
-            try label_to_lf_type env l
-            with Not_found -> err env pos ("unbound variable: "^(label_to_string l)) in
+          let t = label_to_type env pos l in
           let rec repeat args t =
             match args, unmark t with
 	    | x :: args, F_Pi(v,a,b) -> repeat args (subst_type (v,x) b)
@@ -64,6 +62,24 @@ let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
 	  in nowhere 5 (repeat args t))
   | LAMBDA _ -> err env pos "LF lambda expression found, has no natural type"
 
+let apply_arg (f:lf_expr) (arg:canonical_term) =
+  match f with
+  | LAMBDA(v,body) -> subst' (v,arg) body
+  | _ -> raise Internal
+
+let apply_args env pos (f:lf_expr) (args:canonical_term list) =
+  let rec repeat f args = 
+    match f with
+    | LAMBDA(v,body) -> (
+	match args with
+	| x :: args -> repeat (subst' (v,x) body) args
+	| [] -> err env pos "too few arguments")
+    | x -> (
+	match args with
+	| [] -> x
+	| _ -> err env pos "too many arguments")
+  in repeat f args
+
 let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
   (* assume nothing *)
   (* see figure 9 page 696 [EEST] *)
@@ -72,19 +88,7 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
   | CAN (pos,x) -> (
       match x with
       | EmptyHole _ -> err env pos "empty hole found"
-      | APPLY(V v, args) -> (
-	  let f = unfold env v in
-	  let rec repeat f args = 
-	    match f with
-	    | LAMBDA(v,body) -> (
-		match args with
-		| x :: args -> repeat (subst' (v,x) body) args
-		| [] -> err env pos "too few arguments")
-	    | x -> (
-		match args with
-		| [] -> x
-		| _ -> err env pos "too many arguments")
-	  in repeat f args)
+      | APPLY(V v, args) -> let f = unfold env v in apply_args env pos f args
       | APPLY _ -> raise Not_found)
   | LAMBDA _ -> raise Not_found
 
@@ -92,6 +96,53 @@ let rec head_normalization (env:context) (x:lf_expr) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
   try let r = head_normalization env (head_reduction env x) in r
   with Not_found -> x
+
+let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
+  (* see figure 9 page 696 [EEST] *)
+  fprintf stderr "term_normalization gets %s : %s\n" (lf_canonical_to_string x) (lf_type_to_string t);
+  let (pos,t0) = t in
+  match t0 with 
+  | F_Pi(v,a,b) ->
+      let x' = term_normalization ((v,a) :: env) (apply_arg x (var_to_lf v)) b in
+      LAMBDA(v,x')
+  | F_APPLY _
+  | F_Singleton _ ->
+      let x = head_normalization env x in
+      let (x,t) = path_normalization env pos x in
+      x
+      
+and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
+  (* see figure 9 page 696 [EEST] *)
+  fprintf stderr "path_normalization gets %s\n" (lf_canonical_to_string x);
+  match x with
+  | LAMBDA _ -> err env pos "path_normalization encountered a function"
+  | CAN y ->
+      let (pos,y0) = y in
+      match y0 with
+      | EmptyHole _ -> err env pos "path_normalization encountered an empty hole"
+      | APPLY(f,args) ->
+	  let t = label_to_type env pos f in
+	  let (t,args) =
+	    let rec repeat t args : lf_type * lf_expr list = (
+	      match unmark t with
+	      | F_Pi(v,a,b) -> (
+		  match args with
+		  | [] -> err env pos "too few arguments"
+		  | x :: args ->
+		      let b = subst_type (v,x) b in
+		      let x = term_normalization env x a in
+		      let (c,args) = repeat b args in
+		      (c, x :: args))
+	      | _ -> (
+		  match args with
+		  | [] -> (t,[])
+		  | _ -> err env pos "expected a function"))
+	    in repeat t args
+	  in (CAN(pos,APPLY(f,args)), t)
+
+let type_normalization (env:context) (x:lf_type) : lf_type =
+  (* see figure 9 page 696 [EEST] *)
+  raise NotImplemented
 
 let rec type_validity (env:context) (t:lf_type) : unit =
   (* assume the kinds of constants, and the types in them, have been checked *)
@@ -123,18 +174,11 @@ and type_synthesis (env:context) (e:ts_expr) : lf_type =
   let (pos,e0) = e in
      match e0 with
      | EmptyHole _ -> err env pos ("empty hole: "^(lf_atomic_to_string e))
-     | APPLY(V v, []) -> (
-	 try (pos, F_Singleton(CAN e, (List.assoc v env)))
-	 with Not_found -> 
-	   err env pos ("unbound variable: "^(vartostring v))
-	)
+     | APPLY(V v, []) -> (pos, F_Singleton(CAN e, fetch_type env pos v))
      | APPLY(label,args) ->
 	 with_pos pos 				(* the position of the type will reflect the position of the expression *)
 	   (unmark (
-	    let a = 
-	      try label_to_lf_type env label
-	      with Not_found -> raise Internal (* covered in the case above *)
-	    in
+	    let a = label_to_type env pos label in
 	    let rec repeat env (a:lf_type) (args:lf_expr list) : lf_type = (
 	      let (apos,a0) = a in
 	      match a0, args with
@@ -156,13 +200,14 @@ and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (
   let (pos,t0) = t in
   match x, y, t0 with
   | _, _, F_Singleton _ -> ()
-  | x, y, F_Pi (w,a,b) -> (
+  | x, y, F_Pi (v,a,b) -> (
       match x,y with
       | LAMBDA(u,x), LAMBDA(v,y) ->
-	  let w' = newfresh w in term_equivalence xpos ypos 
-	    ((w',a) :: env)
-	    (subst' (u,var_to_lf w') x)
-	    (subst' (v,var_to_lf w') y) (subst_type (w,var_to_lf w') b)
+	  let w = newfresh v in term_equivalence xpos ypos 
+	    ((w,a) :: env)
+	    (subst' (u,var_to_lf w) x)	(* with deBruijn indices, this will go away *)
+	    (subst' (v,var_to_lf w) y) 
+	    (subst_type (v,var_to_lf w) b)
       | x,y -> raise Internal)
   | x, y, F_APPLY(j,args) ->
       let x = head_normalization env x in
@@ -179,9 +224,7 @@ and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
       | APPLY(f,args), APPLY(f',args') ->
           if not (f = f') 
 	  then mismatch_term env xpos x ypos y;
-          let t = 
-	    try label_to_lf_type env f 
-	    with Not_found -> err env xpos ("unbound variable: "^(label_to_string f)) in
+          let t = label_to_type env xpos f in
           let rec repeat t args args' =
             match t,args,args' with
             | t, [], [] -> t
@@ -268,6 +311,6 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : unit =
 
 (* 
   Local Variables:
-  compile-command: "ocamlbuild lfcheck.cmo "
+  compile-command: "ocamlbuild -cflags -g,-annot lfcheck.cmo "
   End:
  *)

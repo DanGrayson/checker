@@ -106,11 +106,12 @@ Check LF (U_type u1).
 
 Define foo (u : Ulevel) (t : [U]([next](u))) := *t; (El_type ([next] u) t hast$116).
 
-Define foo (u : Ulevel) (t : [U](u)) := *t.
-Define foo (u : Ulevel) (t : [U](u)) := *t; _.
-Define foo (u : Ulevel) (t : [U](u)) := *t; (El_type _ _).
-Define foo (u : Ulevel) (t : [U](u)) := *t; (El_type u t _).
+# Define foo (u : Ulevel) (t : [U](u)) := *t.
+# Define foo (u : Ulevel) (t : [U](u)) := *t; _.
+# Define foo (u : Ulevel) (t : [U](u)) := *t; (El_type _ _).
+# Define foo (u : Ulevel) (t : [U](u)) := *t; (El_type u t _).
 Define foo (u : Ulevel) (t : [U](u)) := *t; (El_type u t hast$130).
 Check LF ([foo.0] ([next] u1) ([u] u1) (u_univ u1)).
+Check LF ([foo.1] ([next] u1) ([u] u1) (u_univ u1)).
 Show.
 

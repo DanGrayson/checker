@@ -181,5 +181,5 @@ let print_signature file =
   fprintf file "  Type family constants:\n";
   List.iter (fun h -> fprintf file "     %s : %s\n" (tfhead_to_string h) (lf_kind_to_string (tfhead_to_kind h))) tfheads;
   fprintf file "  Object constants:\n";
-  List.iter (fun h -> fprintf file "     %s : %s\n" (label_to_string h) (lf_type_to_string (label_to_lf_type !global_context h))) labels;
+  List.iter (fun h -> fprintf file "     %s : %s\n" (label_to_string h) (lf_type_to_string (label_to_type !global_context (Error.no_pos 23) h))) labels;
   flush file

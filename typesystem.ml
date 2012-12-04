@@ -276,25 +276,25 @@ let label_to_string = function
 
 let string_to_label = List.map (fun h -> label_to_string h, h) labels
 	
+(** Canonical terms include the atomic terms, as well as one new type of term
+    (lambda expressions), which admits no top level simplification
+    (evaluation). *)
+type canonical_term = 
+  | LAMBDA of var * canonical_term
+    (** Lambda expression of LF. *)
+  | CAN of atomic_term
+
 (** An atomic term is one that isn't a lambda expression.
 
     In an atomic term, top level simplification (evaluation) may be possible;
     for example, a variable appearing as a label, with a defined value, could
     be replaced by its value, which is then applied to the arguments, if any. *)
-type atomic_term = atomic_term' marked
+and atomic_term = atomic_term' marked
 and atomic_term' =
   | EmptyHole of int
     (** An empty hole, to be filled in later. *)
   | APPLY of label * canonical_term list
     (** A variable or constant applied iteratively to its arguments, if any. *)
-
-(** Canonical terms include the atomic terms, as well as one new type of term
-    (lambda expressions), which admits no top level simplification
-    (evaluation). *)
-and canonical_term = 
-  | CAN of atomic_term
-  | LAMBDA of var * canonical_term
-    (** Lambda expression of LF. *)
 
 (** Expressions of LF are the canonical terms. *)
 type lf_expr = canonical_term
@@ -448,12 +448,6 @@ let head_to_vardist = function
 
 let lookup_type env v = List.assoc v env
 
-let label_to_lf_type env = function	(* can raise Not_found, and in that case the argument was an unbound variable *)
-  | U h -> uhead_to_lf_type h
-  | T h -> thead_to_lf_type h
-  | O h -> ohead_to_lf_type h
-  | V v -> List.assoc v env
-
 (*** The "kinds" of LF. 
 
     Notation: constructors starting with "K_" refer to kinds of LF. *)
@@ -522,6 +516,17 @@ exception Unimplemented_expr of lf_expr
 exception TypeCheckingFailure of context * position * string
 exception TypeCheckingFailure2 of context * position * string * position * string
 exception TypeCheckingFailure3 of context * position * string * position * string * position * string
+
+let fetch_type env pos v = 
+  try List.assoc v env
+  with Not_found -> 
+    raise (TypeCheckingFailure (env, pos, ("unbound variable: "^(vartostring v))))
+
+let label_to_type env pos = function
+  | U h -> uhead_to_lf_type h
+  | T h -> thead_to_lf_type h
+  | O h -> ohead_to_lf_type h
+  | V v -> fetch_type env pos v
 
 (* 
   Local Variables:
