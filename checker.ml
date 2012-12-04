@@ -126,11 +126,9 @@ let axiomCommand name t =
   flush stdout
 
 let ruleCommand num name x =
-  printf "Rule %d %s: %s\n" num name (lf_type_to_string x);
   Lfcheck.type_validity !global_context x;
   protect1 ( fun () -> Lfcheck.type_validity !global_context x );
-  global_context := (Var name, x) :: !global_context;
-  flush stdout
+  global_context := (Var name, x) :: !global_context
 
 let check0 x =
   flush stdout;
