@@ -1,9 +1,7 @@
 
-Define foo (u : Ulevel) (t : [U](u)) := *t; $assumption.
+Define foo (u : Ulevel) (t : [U](u)) := *t; (El_type u t h$1).
 
-End.
-Define foo (u : Ulevel) (t : [U](u)) := *t.
-
+# Define foo (u : Ulevel) (t : [U](u)) := *t; (El_type _ _ $assumption).
 
 #   Local Variables:
 #   compile-command: "make demo "

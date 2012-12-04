@@ -46,8 +46,12 @@ let tactics : (string * tactic_function) list ref = ref []
 let add_tactic name f =
   tactics := (name,f) :: !tactics
 
-let apply_tactic_function env pos f t =
-  raise NotImplemented
+let apply_tactic env pos name t =
+  let tactic = 
+    try List.assoc name !tactics
+    with Not_found -> err env pos ("unknown tactic: "^name)
+  in
+  tactic env pos t
 
 let unfold env v =
   match unmark( lookup_type env v ) with
@@ -340,14 +344,28 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : unit =
 	e
 	(subst_type (w,var_to_lf v) b)
   | LAMBDA _, _ -> err env pos "did not expect a lambda expression here"
-  | CAN (pos, EmptyHole n), _ -> 
-      raise (TypeCheckingFailure2 (env,
-	 pos, "hole found : "^(lf_canonical_to_string e),
-	 pos, "   of type : "^(lf_type_to_string t)))
-  | CAN _, _ -> let s = type_synthesis env e in subtype env s t
+  | CAN(pos, x), _ ->
+      match x with
+      | EmptyHole _ -> 
+	  raise (TypeCheckingFailure2 (env,
+				       pos, "hole found : "^(lf_canonical_to_string e),
+				       pos, "   of type : "^(lf_type_to_string t)))
+      | TacticHole n -> (
+	  match apply_tactic env pos n t with
+	  | Some e -> type_check pos env e t
+	  | None ->
+	      raise (TypeCheckingFailure2 (env,
+					   pos, "tactic failed     : "^(tactic_to_string n),
+					   pos, "  in hole of type : "^(lf_type_to_string t))))	  
+      | APPLY _ -> let s = type_synthesis env e in subtype env s t
 
-let assumption env pos t =
-  Some (CAN (pos, EmptyHole 1234 ))
+let rec assumption env pos t =
+  match env with 
+  | (v,u) :: env ->
+      if Alpha.UEqual.type_equiv empty_uContext t u
+      then Some(var_to_lf v)
+      else assumption env pos t
+  | [] -> None
 
 let _ = add_tactic "assumption" assumption
 

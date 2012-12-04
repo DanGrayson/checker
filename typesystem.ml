@@ -514,7 +514,7 @@ let newfresh =
 let ts_bind (v,t) env = match v with
   | VarUnused -> env
   | v -> 
-      (newfresh (Var "hast") , hastype (var_to_lf v) (CAN t)) :: 
+      (newfresh (Var "h") , hastype (var_to_lf v) (CAN t)) :: 
       (v,oexp) :: 
       env
 
@@ -543,7 +543,7 @@ let label_to_type env pos = function
   | V v -> fetch_type env pos v
 
 let tactic_to_string : tactic_expr -> string = function
-  | n -> n
+  | n -> "$" ^ n
 
 (* 
   Local Variables:

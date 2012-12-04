@@ -40,7 +40,7 @@ let tDefinition (name:string) ((ulevel_context,tvars,ts_context):(uContext * (va
 
   let UContext (uvars,ueqns) = ulevel_context in
   let ovars = List.map fst ts_context in
-  let hts_context = List.map (fun (z,u) -> (z,u,newfresh (Var "hast"))) ts_context in
+  let hts_context = List.map (fun (z,u) -> (z,u,newfresh (Var "h"))) ts_context in
   let hastvars = List.map (fun (z,u,hast) -> hast) hts_context in
   let allvars = List.flatten [uvars;tvars;ovars;hastvars] in
 
