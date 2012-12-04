@@ -130,7 +130,9 @@ tactic_expr:
 
 atomic_term:
 | Wdollar name=tactic_expr
-    { TacticHole name }
+    { TacticHole (Q_name name) }
+| Wdollar index=Nat
+    { TacticHole (Q_index index) }
 | bare_variable
     { APPLY(V $1,[]) }
 | Wunderscore

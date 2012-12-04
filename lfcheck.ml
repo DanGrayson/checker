@@ -40,10 +40,8 @@ let rec strip_singleton ((_,(_,t)) as u) = match t with
 (* background assumption: all types in the environment have been verified *)
 
 let no_hole env pos = function		(* for debugging *)
-  | CAN(_,TacticHole n) -> 
-      err env pos "encountered a tactic hole about to be added to the context"
-  | CAN(_,EmptyHole  n) -> 
-      err env pos "encountered an empty hole about to be added to the context"
+  | CAN(_,TacticHole _) -> err env pos "encountered a tactic hole about to be added to the context"
+  | CAN(_,EmptyHole  _) -> err env pos "encountered an empty hole about to be added to the context"
   | _ -> ()
 
 type tactic_function = context -> position -> lf_type -> lf_expr option
@@ -53,12 +51,17 @@ let tactics : (string * tactic_function) list ref = ref []
 let add_tactic name f =
   tactics := (name,f) :: !tactics
 
-let apply_tactic env pos name t =
-  let tactic = 
-    try List.assoc name !tactics
-    with Not_found -> err env pos ("unknown tactic: "^name)
-  in
-  tactic env pos t
+let apply_tactic env pos t = function
+  | Q_name name ->
+      let tactic = 
+	try List.assoc name !tactics
+	with Not_found -> err env pos ("unknown tactic: "^name)
+      in
+      tactic env pos t
+  | Q_index n ->
+      let (v,u) = List.nth env n in
+      if Alpha.UEqual.type_equiv empty_uContext t u then Some(var_to_lf v)
+      else mismatch_type env pos t (get_pos u) u
 
 let unfold env v =
   match unmark( lookup_type env v ) with
@@ -98,7 +101,7 @@ let apply_args env pos (f:lf_expr) (args:canonical_term list) =
 	match args with
 	| x :: args -> 
 	    repeat (subst' (v,x) body) args
-	| [] -> err env pos "too few arguments")
+	| [] -> err env pos "too few arguments .")
     | x -> (
 	match args with
 	| [] -> x
@@ -123,6 +126,10 @@ let rec head_normalization (env:context) (x:lf_expr) : lf_expr =
   try let r = head_normalization env (head_reduction env x) in r
   with Not_found -> x
 
+let rec num_args t = match unmark t with 
+  | F_Pi(_,_,b) -> 1 + num_args b
+  | _ -> 0
+
 let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
   let (pos,t0) = t in
@@ -146,13 +153,15 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
       | TacticHole n -> raise NotImplemented
       | EmptyHole _ -> err env pos "path_normalization encountered an empty hole"
       | APPLY(f,args) ->
-	  let t = label_to_type env pos f in
+	  let t0 = label_to_type env pos f in
 	  let (t,args) =
 	    let rec repeat t args : lf_type * lf_expr list = (
 	      match unmark t with
 	      | F_Pi(v,a,b) -> (
 		  match args with
-		  | [] -> err env pos "too few arguments"
+		  | [] -> raise (TypeCheckingFailure2 (env,
+		    pos , ("expected "^(string_of_int (num_args t))^" more arguments"),
+		    (get_pos t0), (" using:\n\t"^(label_to_string f)^" : "^(lf_type_to_string t0))))
 		  | x :: args ->
 		      no_hole env pos x;
 		      let b = subst_type (v,x) b in
@@ -163,7 +172,7 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
 		  match args with
 		  | [] -> (t,[])
 		  | _ -> err env pos "expected a function"))
-	    in repeat t args
+	    in repeat t0 args
 	  in (CAN(pos,APPLY(f,args)), t)
 
 let rec type_normalization (env:context) (t:lf_type) : lf_type =
@@ -373,7 +382,7 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr =
 				       pos, "hole found : "^(lf_canonical_to_string e),
 				       pos, "   of type : "^(lf_type_to_string t)))
       | TacticHole n -> (
-	  match apply_tactic env pos n t with
+	  match apply_tactic env pos t n with
 	  | Some e -> type_check pos env e t
 	  | None ->
 	      raise (TypeCheckingFailure2 (env,

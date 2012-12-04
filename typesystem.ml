@@ -239,7 +239,9 @@ let vartostring = function
 
 (** Tactics *)
 
-type tactic_expr = string
+type tactic_expr = 
+  | Q_name of string
+  | Q_index of int
 
     (** The type [label] accommodates the variables of LF, and the constants of
         LF, which in turn include the labels of TS, the inference rules of TS,
@@ -543,7 +545,8 @@ let label_to_type env pos = function
   | V v -> fetch_type env pos v
 
 let tactic_to_string : tactic_expr -> string = function
-  | n -> "$" ^ n
+  | Q_name n -> "$" ^ n
+  | Q_index n -> "$" ^ (string_of_int n)
 
 (* 
   Local Variables:

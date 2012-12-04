@@ -174,7 +174,8 @@ let print_context n file env =
     iteri
       (fun i (v,t) ->
 	if i = n then raise Limit;
-	fprintf file "     %s : %s\n" (vartostring v) (lf_type_to_string t)) 
+	fprintf file "     %s : %s\n" (vartostring v) (lf_type_to_string t);
+	flush file) 
       env
     with Limit -> ();
   flush file

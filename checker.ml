@@ -2,7 +2,7 @@
 
 let debug = false
 
-let env_limit = Some 10
+let env_limit = Some 5
 
 open Typesystem
 open Template				(*otherwise unused*)
@@ -156,14 +156,20 @@ let is_lambda = function LAMBDA _ -> true | _ -> false
 let checkLFCommand pos x =
   printf "Check LF   = %s\n" (lf_canonical_to_string x);
   flush stdout;
+  let (x2,t2) = protect1 ( fun () -> Lfcheck.path_normalization !global_context pos x) in
+  printf "           = %s\n" (lf_canonical_to_string x2);
+  flush stdout;
   if not (is_lambda x) then 
     let (x',t) = protect1 ( fun () -> Lfcheck.type_synthesis !global_context x ) in
     printf "           = %s\n" (lf_canonical_to_string x');
+    flush stdout;
     let x'' = protect1 ( fun () -> Lfcheck.term_normalization !global_context x' t) in
     printf "           = %s\n" (lf_canonical_to_string x'');
     printf "           : %s\n" (lf_type_to_string t);
+    flush stdout;
     let t' = protect1 ( fun () -> Lfcheck.type_normalization !global_context t) in
-    printf "           = %s\n" (lf_type_to_string t')
+    printf "           = %s\n" (lf_type_to_string t');
+    flush stdout
 
 let checkLFtypeCommand t =
   printf "CheckLFtype: %s\n" (lf_type_to_string t);
