@@ -1,14 +1,15 @@
 (** Substitution. *) 
 
-open Typesystem
 open Error
+open Typesystem
+open Names
 
 let atomic = function
   | Phi e -> e
   | LAMBDA _ -> raise NotImplemented (* Doesn't yet handle replacing variables in the head position (hereditary substitution) *)
 
-let rec subst_list (subl : (var * canonical_term) list) es = List.map (subst' subl) es
-and subst (subl : (var * canonical_term) list) ((pos,e) as d) = 
+let rec subst_list (subl : (var * lf_expr) list) es = List.map (subst' subl) es
+and subst (subl : (var * lf_expr) list) ((pos,e) as d) = 
   match e with 
   | APPLY(V v,[]) ->(try atomic (List.assoc v subl) with Not_found -> d)
   | APPLY(label,args) -> 
@@ -22,7 +23,7 @@ and subst (subl : (var * canonical_term) list) ((pos,e) as d) =
       pos, APPLY(label,subst_list subl args)
   | TacticHole n -> d
   | EmptyHole _ -> d  
-and subst' (subl : (var * canonical_term) list) = function
+and subst' (subl : (var * lf_expr) list) = function
   | Phi e -> Phi(subst subl e)
   | LAMBDA(v, body) -> 
       if v = VarUnused
@@ -33,8 +34,8 @@ and subst' (subl : (var * canonical_term) list) = function
 	let subl = (v,var_to_lf w) :: subl in 
 	LAMBDA(w, subst' subl body)
 
-let rec subst_type_list (subl : (var * canonical_term) list) ts = List.map (subst_type subl) ts
-and subst_type (subl : (var * canonical_term) list) (pos,t) = 
+let rec subst_type_list (subl : (var * lf_expr) list) ts = List.map (subst_type subl) ts
+and subst_type (subl : (var * lf_expr) list) (pos,t) = 
   (pos,
    match t with
    | F_Pi(v,a,b) -> 
@@ -47,8 +48,8 @@ and subst_type (subl : (var * canonical_term) list) (pos,t) =
    | F_APPLY(label,args) -> F_APPLY(label, subst_list subl args)
    | F_Singleton(e,t) -> F_Singleton( subst' subl e, subst_type subl t ))
 
-let rec subst_kind_list (subl : (var * canonical_term) list) ts = List.map (subst_kind subl) ts
-and subst_kind (subl : (var * canonical_term) list) k = 
+let rec subst_kind_list (subl : (var * lf_expr) list) ts = List.map (subst_kind subl) ts
+and subst_kind (subl : (var * lf_expr) list) k = 
    match k with
    | K_type -> K_type
    | K_Pi(v,a,b) -> 

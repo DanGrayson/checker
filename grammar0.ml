@@ -1,8 +1,9 @@
 (** Parsing: auxiliary functions. *)
 
-open Typesystem
-open Helpers
 open Error
+open Typesystem
+open Names
+open Helpers
 
 let emptyUContext = UContext ([],[])
 let mergeUContext : uContext -> uContext -> uContext =

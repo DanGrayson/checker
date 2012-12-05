@@ -56,7 +56,7 @@ let chk_ueqns env ueqns = chk_var_ueqns (get_uvars env) ueqns
 
 let ubind env uvars ueqns =
   let env = List.rev_append (List.map (fun u -> ((Var u), uexp)) uvars) env in
-  let env = List.rev_append (List.map (fun (u,v) -> (newfresh (Var "ueq"), ulevel_equality (Phi u) (Phi v))) ueqns) env in
+  let env = List.rev_append (List.map (fun (u,v) -> (Names.newfresh (Var "ueq"), ulevel_equality (Phi u) (Phi v))) ueqns) env in
   chk_ueqns env ueqns;
   env
 

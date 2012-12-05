@@ -6,9 +6,10 @@
     This file is not completely implemented: some binders are ignored.
  *)
 
-open Typesystem
-open Tau
 open Error
+open Typesystem
+open Names
+open Tau
 open Printer
 
 let rec fillinlist pos env es = List.map (fillin' pos env) es

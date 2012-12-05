@@ -14,6 +14,7 @@ SRCFILES =					\
 	debugging.ml				\
 	error.ml				\
 	typesystem.ml				\
+	names.ml \
 	hash.ml					\
 	helpers.ml				\
 	template.ml				\

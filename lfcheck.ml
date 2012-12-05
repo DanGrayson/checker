@@ -11,8 +11,9 @@
 
 *)
 
-open Typesystem
 open Error
+open Typesystem
+open Names
 open Printer
 open Substitute
 open Printf
@@ -95,12 +96,12 @@ let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
 	  in nowhere 5 (repeat args t))
   | LAMBDA _ -> err env pos "LF lambda expression found, has no natural type"
 
-let apply_arg env pos (f:lf_expr) (arg:canonical_term) =
+let apply_arg env pos (f:lf_expr) (arg:lf_expr) =
   match f with
   | LAMBDA(v,body) -> subst' (v,arg) body
   | _ -> raise Internal
 
-let apply_args env pos (f:lf_expr) (args:canonical_term list) =
+let apply_args env pos (f:lf_expr) (args:lf_expr list) =
   let rec repeat f args = 
     match f with
     | LAMBDA(v,body) -> (
@@ -245,7 +246,7 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
   (* return a pair consisting of the original expression with any tactic holes filled in, 
      and the synthesized type *)
   match x with
-  | LAMBDA _ -> err env (get_pos_can x) ("function has no type: "^(lf_expr_to_string x))
+  | LAMBDA _ -> err env (get_pos_lf x) ("function has no type: "^(lf_expr_to_string x))
   | Phi e ->
       let (pos,e0) = e in
       match e0 with
@@ -266,7 +267,7 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
 		no_hole env pos m';
 		let (args'',u) = repeat ((x,a') :: env) (subst_type (x,m') a'') args' in
 		m' :: args'', u
-	    | F_APPLY _, arg :: _ -> err env (get_pos_can arg) "extra argument"
+	    | F_APPLY _, arg :: _ -> err env (get_pos_lf arg) "extra argument"
 	   )
 	  in
 	  let (args',t) = repeat env a args
@@ -315,7 +316,7 @@ and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
             | _ -> mismatch_term env xpos x ypos y
 	  in repeat t args args'
       | _ -> mismatch_term env xpos x ypos y)
-  | _  -> mismatch_term env (get_pos_can x) x (get_pos_can y) y
+  | _  -> mismatch_term env (get_pos_lf x) x (get_pos_lf y) y
 
 and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
   (* see figure 11, page 711 [EEST] *)

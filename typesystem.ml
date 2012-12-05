@@ -28,34 +28,17 @@ type uHead = | U_next | U_max
 
 let uheads = [ U_max; U_next ]
 
-let uhead_to_string = function | U_next -> "next" | U_max -> "max"
-
-(** The various labels for t-expressions of TS. *)
-
+(** Labels for t-expressions of TS. *)
 type tHead = | T_El | T_U | T_Pi | T_Sigma | T_Pt 
              | T_Coprod | T_Coprod2 | T_Empty | T_IP | T_Id
 
 let theads = [ T_El; T_U; T_Pi; T_Sigma; T_Pt; T_Coprod; T_Coprod2; T_Empty; T_IP; T_Id ]
 
-let thead_to_string = function
-  | T_El -> "El"  | T_U -> "U"  | T_Pi -> "Pi"  | T_Sigma -> "Sigma"
-  | T_Pt -> "Pt"  | T_Coprod -> "Coprod"  | T_Coprod2 -> "Coprod2"
-  | T_Empty -> "Empty"  | T_IP -> "IP"  | T_Id -> "Id"
-
-(** The various labels for o-expressions of TS. *)
+(** Labels for o-expressions of TS. *)
 type oHead =
   | O_u  | O_j  | O_ev  | O_lambda  | O_forall  | O_pair  | O_pr1  | O_pr2  | O_total
   | O_pt  | O_pt_r  | O_tt  | O_coprod  | O_ii1  | O_ii2  | O_sum  | O_empty  | O_empty_r
   | O_c  | O_ip_r  | O_ip  | O_paths  | O_refl  | O_J  | O_rr0  | O_rr1
-
-let ohead_to_string = function
-  | O_u -> "u"  | O_j -> "j"  | O_ev -> "ev"  | O_lambda -> "lambda"
-  | O_forall -> "forall"  | O_pair -> "pair"  | O_pr1 -> "pr1"
-  | O_pr2 -> "pr2"  | O_total -> "total"  | O_pt -> "pt"  | O_pt_r -> "pt_r"
-  | O_tt -> "tt"  | O_coprod -> "coprod"  | O_ii1 -> "ii1"  | O_ii2 -> "ii2"
-  | O_sum -> "sum"  | O_empty -> "empty"  | O_empty_r -> "empty_r"  | O_c -> "c"
-  | O_ip_r -> "ip_r"  | O_ip -> "ip"  | O_paths -> "paths"  | O_refl -> "refl"
-  | O_J -> "J"  | O_rr0 -> "rr0"  | O_rr1 -> "rr1"
 
 let oheads = [ O_u; O_j; O_ev; O_lambda; O_forall; O_pair; O_pr1; O_pr2;
   O_total; O_pt; O_pt_r; O_tt; O_coprod; O_ii1; O_ii2; O_sum; O_empty;
@@ -63,17 +46,11 @@ let oheads = [ O_u; O_j; O_ev; O_lambda; O_forall; O_pair; O_pr1; O_pr2;
 
 (** Variables *)
 
-type var =				(* a variable *)
+type var =
   | Var of string
   | VarGen of int * string
   | VarUnused
-  | VarDefined of string * int         (** A definition. *)
-
-let vartostring = function
-  | Var x -> x
-  | VarGen(i,x) -> x ^ "$" ^ (string_of_int i)
-  | VarUnused -> "_"
-  | VarDefined (name,aspect) -> "[" ^ name ^ "." ^ (string_of_int aspect) ^ "]"
+  | VarDefined of string * int
 
 (** Tactics *)
 
@@ -105,69 +82,36 @@ type label =
   | T of tHead			(** labels for t-expressions of TS *)
   | O of oHead			(** labels for o-expressions of TS *)
   | V of var			(** labels for variables of TS *)
-
-let labels = List.concat [
-  List.map (fun h -> U h) uheads;
-  List.map (fun h -> T h) theads;
-  List.map (fun h -> O h) oheads
-]
-
-let label_to_string = function
-  | V v -> vartostring v
-  | U h -> "[" ^ uhead_to_string h ^ "]"
-  | T h -> "[" ^ thead_to_string h ^ "]"
-  | O h -> "[" ^ ohead_to_string h ^ "]"
-
-let string_to_label = 
-  let a = List.map (fun h -> label_to_string h, h) labels in
-  let b = [
-    ("[∏]", T T_Pi);
-    ("[Σ]", T T_Sigma);
-    ("[∐]", T T_Coprod);
-    ("[λ]", O O_lambda);
-    ("[∀]", O O_forall)] in
-  List.concat [a;b]
 	
-(** Canonical terms include the atomic terms, as well as one new type of term
-    (lambda expressions), which admits no top level simplification
-    (evaluation). *)
-type canonical_term = 
-  | LAMBDA of var * canonical_term
+(** The expressions of LF are the "canonical" terms, and are of type [lf_expr].
+
+    Canonical terms include the atomic terms via [Phi], as well as one new type
+    of term (lambda expressions), which admits no top level simplification
+    (head reduction).
+ *)
+type lf_expr = 
+  | LAMBDA of var * lf_expr
 	(** Lambda expression of LF. *)
-  | Phi of atomic_term
+  | Phi of ts_expr
 	(** [Phi] is embeds TS expressions into LF expressions *)
 
-(** An atomic term is one that isn't a lambda expression.
+(** The expressions of TS are the "atomic" terms, and are of type [ts_expr].
+    The constructor [Phi] implements the embedding from TS into LF.
+    
+    An atomic term is one that isn't a lambda expression.
 
     In an atomic term, top level simplification (evaluation) may be possible;
     for example, a variable appearing as a label, with a defined value, could
-    be replaced by its value, which is then applied to the arguments, if any. *)
-and atomic_term = atomic_term' marked
-and atomic_term' =
+    be replaced by its value, which is then applied to the arguments, if any. 
+ *)
+and ts_expr = bare_ts_expr marked
+and bare_ts_expr =
   | EmptyHole of int
     (** An empty hole, to be filled in later. *)
   | TacticHole of tactic_expr
     (** An empty hole, to be filled in later by calling a tactic routine writtn in OCAML. *)
-  | APPLY of label * canonical_term list
+  | APPLY of label * lf_expr list
     (** A variable or constant applied iteratively to its arguments, if any. *)
-
-(** Expressions of LF are the canonical terms. *)
-type lf_expr = canonical_term
-
-(** Expressions of TS are the atomic terms.  The constructor Phi above
-    implements the embedding from TS into LF. *)
-type ts_expr = atomic_term
-
-let rec get_pos_can (x:canonical_term) =
-  match x with
-  | Phi x -> get_pos x
-  | LAMBDA(x,b) -> get_pos_can b
-
-(** Notation. *)
-
-let var_to_ts v = APPLY(V v,[])
-
-let var_to_lf v = Phi (nowhere 1 (var_to_ts v))
 
 (** Canonical type families of LF.
 
@@ -195,23 +139,9 @@ and bare_lf_type =
   | F_APPLY of tfHead * lf_expr list
   | F_Singleton of (lf_expr * lf_type)
 
-let tfhead_to_string = function
-  | F_uexp -> "uexp"
-  | F_texp -> "texp"
-  | F_oexp -> "oexp"
-  | F_istype -> "istype"
-  | F_hastype -> "hastype"
-  | F_ulevel_equality -> "uequal"
-  | F_type_equality -> "tequal"
-  | F_object_equality -> "oequal"
-  | F_type_uequality -> "t-uequal"
-  | F_object_uequality -> "o-uequal"
-
 let tfheads = [ 
   F_uexp; F_texp; F_oexp; F_istype; F_hastype; F_ulevel_equality ;
   F_type_uequality; F_type_equality; F_object_uequality; F_object_equality ]
-
-let tfhead_strings = List.map (fun x -> tfhead_to_string x, x) tfheads
 
 let ( ** ) f x = nowhere 3 (F_APPLY(f,x))
 
@@ -325,64 +255,9 @@ type oSubs = (var * ts_expr) list
 
 type context = (var * lf_type) list
 
-let lookup_type env v = List.assoc v env
-
-let global_context : context ref = ref []
-
 type uContext = UContext of var list * (ts_expr * ts_expr) list
 
 let empty_uContext = UContext([],[])
-
-let def_bind v (pos:position) o t (env:context) = (v, (pos,F_Singleton(o,t))) :: env
-
-(* raise an exception when a certain fresh variable is generated *)
-let genctr_trap = 0
-
-let newfresh = 
-  let genctr = ref 0 in 
-  let newgen x = (
-    incr genctr;
-    if !genctr = genctr_trap then raise DebugMe;
-    if !genctr < 0 then raise GensymCounterOverflow;
-    VarGen (!genctr, x)) in
-  fun v -> match v with 
-  | Var x | VarGen(_,x) -> newgen x
-  | VarDefined _ | VarUnused -> raise Internal
-
-let ts_bind (v,t) env = match v with
-  | VarUnused -> env
-  | v -> 
-      (newfresh (Var "h") , hastype (var_to_lf v) (Phi t)) :: 
-      (v,oexp) :: 
-      env
-
-let new_hole = 
-  let counter = ref 0 in
-  function () -> (
-    let h = EmptyHole !counter in
-    incr counter;
-    h)
-
-exception Internal_expr of lf_expr
-exception Unimplemented_expr of lf_expr
-exception TypeCheckingFailure of context * position * string
-exception TypeCheckingFailure2 of context * position * string * position * string
-exception TypeCheckingFailure3 of context * position * string * position * string * position * string
-
-let fetch_type env pos v = 
-  try List.assoc v env
-  with Not_found -> 
-    raise (TypeCheckingFailure (env, pos, ("unbound variable: "^(vartostring v))))
-
-let label_to_type env pos = function
-  | U h -> uhead_to_lf_type h
-  | T h -> thead_to_lf_type h
-  | O h -> ohead_to_lf_type h
-  | V v -> fetch_type env pos v
-
-let tactic_to_string : tactic_expr -> string = function
-  | Q_name n -> "$" ^ n
-  | Q_index n -> "$" ^ (string_of_int n)
 
 (* 
   Local Variables:

@@ -1,6 +1,7 @@
 (** Tactics. *)
 
 open Typesystem
+open Names
 
 let add_tactic name f =
   Lfcheck.tactics := (name,f) :: !Lfcheck.tactics

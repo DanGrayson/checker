@@ -2,11 +2,12 @@
 
 let debug = false
 
-let env_limit = Some 5
+let env_limit = None
 
-open Typesystem
-open Universe
 open Error
+open Typesystem
+open Names
+open Universe
 open Hash
 open Printf
 open Printer
@@ -107,10 +108,7 @@ let lexpos lexbuf =
   let _ = Tokens.command_flush lexbuf in
   p
 
-let initialize_environment () = global_context := []
-
-let add_tVars tvars = 
-  global_context := 
+let add_tVars env tvars = 
     List.rev_append 
       (List.flatten
 	 (List.map
@@ -123,34 +121,34 @@ let add_tVars tvars =
 	    tvars
 	 )
       )
-      !global_context
+      env
 
-let fix t = Fillin.fillin !global_context t
+let fix env t = Fillin.fillin env t
 
-let axiomCommand name t = 
+let axiomCommand env name t = 
   printf "Axiom %s: %s\n" name (lf_atomic_to_string t);
-  let t = protect1 ( fun () -> Lfcheck.type_check (get_pos t) !global_context (Phi t) texp) in
+  let t = protect1 ( fun () -> Lfcheck.type_check (get_pos t) env (Phi t) texp) in
   printf "        : %s\n" (lf_expr_to_string t);
   flush stdout;
   match t with
-  | Phi t -> global_context := ts_bind (Var name, t) !global_context
+  | Phi t -> ts_bind (Var name, t) env
   | LAMBDA _ -> raise Internal
 
-let ruleCommand num name t =
-  let t = protect1 ( fun () -> Lfcheck.type_validity !global_context t ) in
-  global_context := (Var name, t) :: !global_context
+let ruleCommand env num name t =
+  let t = protect1 ( fun () -> Lfcheck.type_validity env t ) in
+  (Var name, t) :: env
 
-let check0 x =
+let check0 env x =
   flush stdout;
-  let x = protect1 ( fun () -> Fillin.fillin !global_context x ) in
+  let x = protect1 ( fun () -> Fillin.fillin env x ) in
   printf "        LF : %s\n" (lf_atomic_to_string x);
   flush stdout;
-  let (x,t) = protect1 ( fun () -> Lfcheck.type_synthesis !global_context (Phi x) ) in
+  let (x,t) = protect1 ( fun () -> Lfcheck.type_synthesis env (Phi x) ) in
   printf "    LF type: %s\n" (lf_type_to_string t);
   if unmark t = unmark oexp then (
     match x with
     | Phi x ->
-	let ts = protect1 ( fun () -> Tau.tau !global_context x ) in
+	let ts = protect1 ( fun () -> Tau.tau env x ) in
 	printf "    TS type: %s ?\n" (ts_expr_to_string ts);
 	flush stdout
     | _ -> raise Internal
@@ -158,89 +156,96 @@ let check0 x =
 
 let is_lambda = function LAMBDA _ -> true | _ -> false
 
-let checkLFCommand pos x =
+let checkLFCommand env pos x =
   printf "Check LF   = %s\n" (lf_expr_to_string x);
   flush stdout;
   if not (is_lambda x) then 
-    let (x',t) = protect1 ( fun () -> Lfcheck.type_synthesis !global_context x ) in
+    let (x',t) = protect1 ( fun () -> Lfcheck.type_synthesis env x ) in
     printf "           = %s\n" (lf_expr_to_string x');
     flush stdout;
-    let x'' = protect1 ( fun () -> Lfcheck.term_normalization !global_context x' t) in
+    let x'' = protect1 ( fun () -> Lfcheck.term_normalization env x' t) in
     printf "           = %s\n" (lf_expr_to_string x'');
     printf "           : %s\n" (lf_type_to_string t);
     flush stdout;
-    let t' = protect1 ( fun () -> Lfcheck.type_normalization !global_context t) in
+    let t' = protect1 ( fun () -> Lfcheck.type_normalization env t) in
     printf "           = %s\n" (lf_type_to_string t');
     flush stdout
 
-let checkLFtypeCommand t =
+let checkLFtypeCommand env t =
   printf "CheckLFtype: %s\n" (lf_type_to_string t);
   flush stdout;
-  let t = protect1 ( fun () -> Lfcheck.type_validity !global_context t ) in
+  let t = protect1 ( fun () -> Lfcheck.type_validity env t ) in
   printf "           : %s\n" (lf_type_to_string t);
   flush stdout
 
-let checkCommand x =
+let checkCommand env x =
   printf "Check      : %s\n" (ts_expr_to_string x);
-  check0 x
+  check0 env x
 
-let alphaCommand (x,y) =
-  let x = protect fix x (fun () -> errpos x) in
-  let y = protect fix y (fun () -> nopos 13) in
+let alphaCommand env (x,y) =
+  let x = protect (fix env) x (fun () -> errpos x) in
+  let y = protect (fix env) y (fun () -> nopos 13) in
   printf "Alpha      : %s\n" (if (Alpha.UEqual.term_equiv Grammar0.emptyUContext (Phi x) (Phi y)) then "true" else "false");
   printf "           : %s\n" (ts_expr_to_string x);
   printf "           : %s\n" (ts_expr_to_string y);
   flush stdout
 
-let checkUniversesCommand pos =
+let checkUniversesCommand env pos =
   try
-    Universe.consistency !global_context;
+    Universe.consistency env;
     printf "Check Universes: okay\n"
   with Universe.Inconsistency (p,q) -> print_inconsistency p q
 
-let show_command n = 
-  ( match n with None -> print_signature stdout | _ -> () );
-  print_context n stdout !global_context
+let show_command env n = 
+  ( match n with None -> print_signature env stdout | _ -> () );
+  print_context n stdout env
 
-let addDefinition v pos o t = 
-  global_context := def_bind v pos o t !global_context
+let addDefinition env v pos o t = def_bind v pos o t env
 
-let defCommand defs = protect1 ( fun () -> 
-  List.iter
-    (fun (v, pos, tm, tp) -> 
+let defCommand env defs = protect1 ( fun () -> 
+  List.fold_left
+    (fun env (v, pos, tm, tp) -> 
       printf "Define %s = %s\n" (vartostring v) (lf_expr_to_string tm);
       printf "       %s : %s\n" (vartostring v) (lf_type_to_string tp);
       flush stdout;
-      let tp = Lfcheck.type_validity !global_context tp in
-      let tm = Lfcheck.type_check pos !global_context tm tp in
-      addDefinition v pos tm tp
+      let tp = Lfcheck.type_validity env tp in
+      let tm = Lfcheck.type_check pos env tm tp in
+      addDefinition env v pos tm tp
     ) 
+    env
     defs)
 
-let process_command lexbuf = 
+let process_command env lexbuf = 
   let c = protect (Grammar.command (Tokens.expr_tokens)) lexbuf (fun () -> lexpos lexbuf) in
   match c with (pos,c) ->
     match c with
-    | Toplevel.UVariable (uvars,eqns) -> protect1 ( fun () -> 
-	global_context := ubind !global_context uvars eqns )
-    | Toplevel.Variable tvars -> add_tVars tvars
-    | Toplevel.Rule (num,name,t) -> ruleCommand num name t
-    | Toplevel.Axiom (name,t) -> axiomCommand name t
-    | Toplevel.CheckLF x -> checkLFCommand pos x
-    | Toplevel.CheckLFtype x -> checkLFtypeCommand x
-    | Toplevel.Check x -> checkCommand x
-    | Toplevel.Alpha (x,y) -> alphaCommand (x,y)
-    | Toplevel.Definition defs -> defCommand defs
-    | Toplevel.End -> printf "%s: ending.\n" (errfmt pos) ; flush stdout; raise StopParsingFile
-    | Toplevel.Show n -> show_command n
-    | Toplevel.CheckUniverses -> checkUniversesCommand pos
+    | Toplevel.UVariable (uvars,eqns) -> protect1 ( fun () -> ubind env uvars eqns )
+    | Toplevel.Variable tvars -> add_tVars env tvars
+    | Toplevel.Rule (num,name,t) -> ruleCommand env num name t
+    | Toplevel.Axiom (name,t) -> axiomCommand env name t
+    | Toplevel.CheckLF x -> checkLFCommand env pos x; env
+    | Toplevel.CheckLFtype x -> checkLFtypeCommand env x; env
+    | Toplevel.Check x -> checkCommand env x; env
+    | Toplevel.Alpha (x,y) -> alphaCommand env (x,y); env
+    | Toplevel.Definition defs -> defCommand env defs
+    | Toplevel.Show n -> show_command env n; env
+    | Toplevel.CheckUniverses -> checkUniversesCommand env pos; env
+    | Toplevel.End -> printf "%s: ending.\n" (errfmt pos); flush stdout; raise StopParsingFile
 
-let parse_file filename =
+let parse_file env filename =
   let lexbuf = Lexing.from_channel (open_in filename) in
   lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = filename};
-  try while true do (try process_command lexbuf with Error_Handled -> ()) done
-  with StopParsingFile -> printf "done parsing file %s\n" filename; flush stdout
-  
+  let rec repeat env =
+    try 
+      repeat (process_command env lexbuf)
+    with 
+    | Error_Handled -> 
+	repeat env
+    | StopParsingFile -> 
+	printf "done parsing file %s\n" filename; flush stdout;
+	env
+  in repeat env
+
 let strname =
   let n = ref 0 in
   fun () ->
@@ -252,22 +257,26 @@ let parse_string grammar s =
     let lexbuf = Lexing.from_string s in
     lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = strname()};
     protect (grammar (Tokens.expr_tokens)) lexbuf (fun () -> lexpos lexbuf)
-let expr_from_string = parse_string Grammar.ts_exprEof
+let expr_from_string s = Phi(parse_string Grammar.ts_exprEof s)
 
 let toplevel() = 
+  let env = ref [] in
   (try
     Arg.parse 
       [
        ("--debug" , Arg.Set Debugging.debug_mode, "turn on debug mode")
      ]
-      parse_file
+      (fun filename -> env := parse_file !env filename)
       "usage: [options] filename ...";
   with FileFinished -> ());
+  let env = !env in 
   (*
-  (try checkLFCommand (expr_from_string "Pi f:T->[U](uuu0), Pi o:T, *f o" ) with Error_Handled -> ());
-  (try checkLFCommand (expr_from_string "lambda f:T->U, lambda o:T, f o") with Error_Handled -> ());
+  let env =
+    (try checkLFCommand env (no_pos 124) (expr_from_string "x0" ); env with Error_Handled -> env)
+  in 
     *)
-  flush stdout
+  flush stdout;
+  ignore env
 
 let _ = try
   toplevel()

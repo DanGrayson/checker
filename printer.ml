@@ -1,6 +1,7 @@
 (** Functions for converting expressions to strings for printing *)
 
 open Typesystem
+open Names
 open Printf
 
 let space x = " " ^ x
@@ -180,10 +181,10 @@ let print_context n file env =
     with Limit -> ();
   flush file
 
-let print_signature file =
+let print_signature env file =
   fprintf file "Signature:\n";
   fprintf file "  Type family constants:\n";
   List.iter (fun h -> fprintf file "     %s : %s\n" (tfhead_to_string h) (lf_kind_to_string (tfhead_to_kind h))) tfheads;
   fprintf file "  Object constants:\n";
-  List.iter (fun h -> fprintf file "     %s : %s\n" (label_to_string h) (lf_type_to_string (label_to_type !global_context (Error.no_pos 23) h))) labels;
+  List.iter (fun h -> fprintf file "     %s : %s\n" (label_to_string h) (lf_type_to_string (label_to_type env (Error.no_pos 23) h))) labels;
   flush file

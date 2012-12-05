@@ -1,6 +1,7 @@
 (** Helper functions for making new ts-expressions from old ts-expressions. *)
 
 open Typesystem
+open Names
 
 let lambda1 v x = LAMBDA(v,Phi x)
 let lambda2 v1 v2 x = LAMBDA(v1,LAMBDA(v2,Phi x))

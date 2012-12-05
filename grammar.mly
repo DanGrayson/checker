@@ -1,13 +1,14 @@
 %{ 
+open Error
 open Typesystem
+open Names
 open Helpers
 open Grammar0
-open Error
 %}
 %start command ts_exprEof
 %type <Toplevel.command> command
 %type <Typesystem.ts_expr> ts_exprEof ts_expr
-%type <Typesystem.atomic_term'> bare_ts_expr
+%type <Typesystem.bare_ts_expr> bare_ts_expr
 %type <Typesystem.ts_expr list> arglist
 %type <Typesystem.lf_type> lf_type
 %type <Typesystem.lf_expr> lf_expr
@@ -87,7 +88,7 @@ bare_lf_type:
 lf_type_constant:
 | l=IDENTIFIER 
     { 
-      try List.assoc l tfhead_strings 
+      try List.assoc l Names.tfhead_strings 
       with 
 	Not_found ->
 	  Printf.fprintf stderr "%s: unknown type constant %s\n" 
@@ -237,7 +238,7 @@ ts_expr:
 tsterm_head:
 | l=CONSTANT
     {
-     try List.assoc ("[" ^ l ^ "]") string_to_label 
+     try List.assoc ("[" ^ l ^ "]") Names.string_to_label 
      with Not_found -> 
        Printf.fprintf stderr "%s: unknown term constant [%s]\n" 
 	 (errfmt (Position($startpos, $endpos)))
@@ -303,7 +304,7 @@ bare_ts_expr:
 | name=CONSTANT_SEMI vars=separated_list(Wcomma,variable_or_unused) Wrbracket args=arglist
     {
      let label = 
-       try List.assoc ("[" ^ name ^ "]") string_to_label 
+       try List.assoc ("[" ^ name ^ "]") Names.string_to_label 
        with Not_found -> 
 	 Printf.fprintf stderr "%s: unknown term constant [%s]\n" 
 	   (errfmt (Position($startpos, $endpos)))
