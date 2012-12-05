@@ -4,7 +4,7 @@ open Typesystem
 
 let template = function
   | LAMBDA(x,body) -> ()
-  | CAN(pos,e) -> match e with
+  | Phi(pos,e) -> match e with
     | TacticHole _ -> ()
     | EmptyHole _ -> ()
     | APPLY(h,args) -> (
@@ -20,26 +20,26 @@ let template = function
 	    | T_U -> ()
 	    | T_Pi -> (
 		match args with
-		| [CAN t1; LAMBDA( x, CAN t2 )] -> ()
+		| [Phi t1; LAMBDA( x, Phi t2 )] -> ()
 		| _ -> raise Error.Internal)
 	    | T_Sigma -> (
 		match args with
-		| [CAN t1; LAMBDA( x, CAN t2 )] -> ()
+		| [Phi t1; LAMBDA( x, Phi t2 )] -> ()
 		| _ -> raise Error.Internal)
 	    | T_Pt -> ()
 	    | T_Coprod -> ()
 	    | T_Coprod2 -> (
 		match args with
-		| [CAN t;CAN t'; LAMBDA(x,CAN u);LAMBDA( x', CAN u'); CAN o] -> ()
+		| [Phi t;Phi t'; LAMBDA(x,Phi u);LAMBDA( x', Phi u'); Phi o] -> ()
 		| _ -> raise Error.Internal)
 	    | T_Empty -> ()
 	    | T_IP -> (
 		match args with
-		| [CAN tA;CAN a;LAMBDA(x1,CAN tB);LAMBDA(x2,LAMBDA(y2,CAN tD));LAMBDA(x3,LAMBDA(y3,LAMBDA(z3,CAN q)))] -> ()
+		| [Phi tA;Phi a;LAMBDA(x1,Phi tB);LAMBDA(x2,LAMBDA(y2,Phi tD));LAMBDA(x3,LAMBDA(y3,LAMBDA(z3,Phi q)))] -> ()
 		| _ -> raise Error.Internal)
 	    | T_Id -> (
 		match args with
-		| [CAN tX; CAN x; CAN x'] -> ()
+		| [Phi tX; Phi x; Phi x'] -> ()
 		| _ -> raise Error.Internal)
 	   )
 	| O oh -> (
@@ -48,16 +48,16 @@ let template = function
 	    | O_j -> ()
 	    | O_ev -> (
 		match args with
-		| [CAN f; CAN o;LAMBDA( x,CAN t)] -> ()
-		| [CAN f; CAN o] -> ()
+		| [Phi f; Phi o;LAMBDA( x,Phi t)] -> ()
+		| [Phi f; Phi o] -> ()
 		| _ -> raise Error.Internal)
 	    | O_lambda -> (
 		match args with
-		| [CAN t;LAMBDA( x,CAN o)] -> ()
+		| [Phi t;LAMBDA( x,Phi o)] -> ()
 		| _ -> raise Error.Internal)
 	    | O_forall -> (
 		match args with
-		| [CAN u;CAN u';CAN o;LAMBDA( x,CAN o')] -> ()
+		| [Phi u;Phi u';Phi o;LAMBDA( x,Phi o')] -> ()
 		| _ -> raise Error.Internal)
 	    | O_pair -> ()
 	    | O_pr1 -> ()

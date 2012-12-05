@@ -47,17 +47,17 @@ let tDefinition (name:string) ((ulevel_context,tvars,ts_context):(uContext * (va
   let v0 = VarDefined(name,0) in
   let v1 = VarDefined(name,1) in
 
-  let tm0 = CAN t in
+  let tm0 = Phi t in
   let tp0 = texp in
   let tm1 = match d1 with
   | Some tm1 -> tm1
-  | None -> CAN(pos, new_hole()) in
+  | None -> Phi(pos, new_hole()) in
 
-  let tp1 = istype (CAN (nowhere 7 (APPLY(V v0, List.map var_to_lf allvars)))) in
+  let tp1 = istype (Phi (nowhere 7 (APPLY(V v0, List.map var_to_lf allvars)))) in
 
   let g v t = LAMBDA(v,t) in
   let h sort v t = nowhere 8 (F_Pi(v,sort,t)) in
-  let hast (z,u,h) t = nowhere 9 (F_Pi(h,hastype (var_to_lf z) (CAN u), t)) in
+  let hast (z,u,h) t = nowhere 9 (F_Pi(h,hastype (var_to_lf z) (Phi u), t)) in
 
   let tm0 = List.fold_right g hastvars tm0 in
   let tm1 = List.fold_right g hastvars tm1 in
@@ -91,9 +91,9 @@ let oDefinition (name:string) ((ulevel_context,tc,ts_context):(uContext * (var l
 
   (* still have to wrap the lambdas around it : *)
   [
-   ( VarDefined(name, 0), get_pos o, CAN o, oexp);
-   ( VarDefined(name, 1), get_pos t, CAN t, texp);
-   ( VarDefined(name, 2), get_pos o, CAN (pos, new_hole()), hastype (CAN o) (CAN t))
+   ( VarDefined(name, 0), get_pos o, Phi o, oexp);
+   ( VarDefined(name, 1), get_pos t, Phi t, texp);
+   ( VarDefined(name, 2), get_pos o, Phi (pos, new_hole()), hastype (Phi o) (Phi t))
  ]
 
 let teqDefinition _ _ _ _ = raise (Unimplemented "teqDefinition")

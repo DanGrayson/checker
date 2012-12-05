@@ -22,6 +22,7 @@ SRCFILES =					\
 	substitute.ml				\
 	equality.ml equality.mli		\
 	lfcheck.ml				\
+	tactics.ml \
 	fillin.ml				\
 	tau.ml tau.mli				\
 	printer.ml				\

@@ -75,7 +75,6 @@ rule expr_tokens = parse
   | ':'  { COLON }
   | '~'  { Wtilde }
   | '='  { Wequal }
-  | '=' '=' { Wequalequal }
   | '>' '='  { Wgreaterequal }
   | '>' { Wgreater }
   | '<' '='  { Wlessequal }

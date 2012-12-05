@@ -4,7 +4,7 @@
 
 Rule 7 tsimeq : ∏ T:texp, ∏ U:texp,
 
-     [ T type ] ⟶ [ U type ] ⟶ [ T ~ U ] ⟶ [ T = U ].
+     [ T type ] ⟶ [ U type ] ⟶ [ T ~ U : Type ] ⟶ [ T = U ].
 
 Rule 8 teqsymm : ∏ T:texp, ∏ U:texp,
 
@@ -16,7 +16,7 @@ Rule 9 teqtrans : ∏ T:texp, ∏ U:texp, ∏ V:texp,
 
 Rule 10 osimeq : ∏ x:oexp, ∏ y:oexp, ∏ T:texp,
 
-     [ x ~ y : T ] ⟶ [ x = y : T ].
+     [ x : T ] ⟶ [ y : T ] ⟶ [ x ~ y ] ⟶ [ x = y : T ].
 
 Rule 11 oeqsymm : ∏ x:oexp, ∏ y:oexp, ∏ T:texp,
 
@@ -46,7 +46,7 @@ Rule 17 El_type : ∏ M:uexp, ∏ o:oexp,
 
      [ o : ([U] M) ] ⟶ [ ([El] o) type ].
 
-Rule 18 El_u_univ : ∏ M:uexp,
+Rule 18 El_u_reduction : ∏ M:uexp,
 
      [ ([El]([u] M)) = ([U] M) ].
 
@@ -121,12 +121,12 @@ Rule 30 El_j_reduction : ∏ M_1:uexp, ∏ M_2:uexp, ∏ o:oexp,
 
      [ o : ([U] M_1) ] ⟶ uequal ([max] M_1 M_2) M_2 ⟶ [ ([El]( [ev] ([j] M_1 M_2) o (_ ⟼ ([U] M_2)) )) = ([El] o) ].
 
-Rule 31 El_forall_reduction : ∏ M_1:uexp, ∏ M_2:uexp, ∏ o_1:oexp, ∏ o_2:oexp ⟶ oexp,
+Rule 31 forall_type : ∏ M_1:uexp, ∏ M_2:uexp, ∏ o_1:oexp, ∏ o_2:oexp ⟶ oexp,
 
      ( ∏ x:oexp, [ x : ([El] o_1) ] ⟶ [ (o_2 x) : ([U] M_2) ] ) ⟶
      [ ( [∀] M_1 M_2 o_1 o_2 ) : ([U] ( [max] M_1 M_2 )) ].
 
-Rule 32 type_El_forall : ∏ M_1 : uexp, ∏ M_2 : uexp, ∏ o_1 : oexp, ∏ o_2 : oexp ⟶ oexp,
+Rule 32 El_forall_reduction : ∏ M_1 : uexp, ∏ M_2 : uexp, ∏ o_1 : oexp, ∏ o_2 : oexp ⟶ oexp,
 
      [ o_1 : ([U] M_1) ] ⟶
      (∏ x: oexp, [ x : ([El] o_1) ] ⟶ [ (o_2 x) : ([U] M_2) ]) ⟶

@@ -5,6 +5,12 @@
     ACM Transactions on Computational Logic, Vol. 7, No. 4, October 2006, Pages 676-722.
 *)
 
+(*
+
+  We probably don't handle types such as [Pi x:A, Singleton(B)] well.
+
+*)
+
 open Typesystem
 open Error
 open Printer
@@ -40,16 +46,13 @@ let rec strip_singleton ((_,(_,t)) as u) = match t with
 (* background assumption: all types in the environment have been verified *)
 
 let no_hole env pos = function		(* for debugging *)
-  | CAN(_,TacticHole _) -> err env pos "encountered a tactic hole about to be added to the context"
-  | CAN(_,EmptyHole  _) -> err env pos "encountered an empty hole about to be added to the context"
+  | Phi(_,TacticHole _) -> err env pos "encountered a tactic hole about to be added to the context"
+  | Phi(_,EmptyHole  _) -> err env pos "encountered an empty hole about to be added to the context"
   | _ -> ()
 
 type tactic_function = context -> position -> lf_type -> lf_expr option
 
 let tactics : (string * tactic_function) list ref = ref []
-
-let add_tactic name f =
-  tactics := (name,f) :: !tactics
 
 let apply_tactic env pos t = function
   | Q_name name ->
@@ -75,7 +78,7 @@ let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
   (* assume nothing *)
   (* see figure 9 page 696 [EEST] *)
   match x with
-  | CAN (pos,x) -> (
+  | Phi (pos,x) -> (
       match x with
       | TacticHole n -> raise NotImplemented
       | EmptyHole _ -> err env pos "empty hole found"
@@ -116,7 +119,7 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
   (* may raise Not_found if there is no head reduction *)
   match x with
-  | CAN (pos,x) -> (
+  | Phi (pos,x) -> (
       match x with
       | TacticHole n -> raise NotImplemented
       | EmptyHole _ -> err env pos "empty hole found"
@@ -151,7 +154,7 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
   (* assume x is head normalized *)
   match x with
   | LAMBDA _ -> err env pos "path_normalization encountered a function"
-  | CAN y ->
+  | Phi y ->
       let (pos,y0) = y in
       match y0 with
       | TacticHole n -> raise NotImplemented
@@ -178,7 +181,7 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
 		  | [] -> (t,[])
 		  | x :: args -> err env pos "unexpected argument"))
 	    in repeat t0 args
-	  in (CAN(pos,APPLY(f,args)), t)
+	  in (Phi(pos,APPLY(f,args)), t)
 
 let rec type_normalization (env:context) (t:lf_type) : lf_type =
   (* see figure 9 page 696 [EEST] *)
@@ -243,12 +246,12 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
      and the synthesized type *)
   match x with
   | LAMBDA _ -> err env (get_pos_can x) ("function has no type: "^(lf_expr_to_string x))
-  | CAN e ->
+  | Phi e ->
       let (pos,e0) = e in
       match e0 with
       | TacticHole n -> err env pos ("tactic hole: "^(lf_atomic_to_string e))
       | EmptyHole _ -> err env pos ("empty hole: "^(lf_atomic_to_string e))
-      | APPLY(V v, []) -> x, (pos, F_Singleton(CAN e, fetch_type env pos v))
+      | APPLY(V v, []) -> x, (pos, F_Singleton(Phi e, fetch_type env pos v))
       | APPLY(label,args) -> (
 	  let a = label_to_type env pos label in
 	  let rec repeat env (a:lf_type) (args:lf_expr list) : lf_expr list * lf_type = (
@@ -267,7 +270,7 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
 	   )
 	  in
 	  let (args',t) = repeat env a args
-	  in CAN(pos,APPLY(label,args')), t
+	  in Phi(pos,APPLY(label,args')), t
 	 )
 
 and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : unit =
@@ -296,7 +299,7 @@ and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
   (* assume x and y are head reduced *)
   (* see figure 11, page 711 [EEST] *)
   match x,y with
-  | CAN (xpos,x0), CAN (ypos,y0) -> (
+  | Phi (xpos,x0), Phi (ypos,y0) -> (
       match x0,y0 with
       | APPLY(f,args), APPLY(f',args') ->
           if not (f = f') 
@@ -380,7 +383,7 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr =
       let e = type_check pos ((v,a) :: env) e (subst_type (w,var_to_lf v) b) in
       LAMBDA(v,e)
   | LAMBDA _, _ -> err env pos "did not expect a lambda expression here"
-  | CAN(pos, x), _ ->
+  | Phi(pos, x), _ ->
       match x with
       | EmptyHole _ -> 
 	  raise (TypeCheckingFailure2 (env,
@@ -397,18 +400,6 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr =
 	  let (e,s) = type_synthesis env e in 
 	  subtype env s t;
 	  e
-
-let rec assumption env pos t =
-  match env with 
-  | (v,u) :: env ->
-      if Alpha.UEqual.type_equiv empty_uContext t u
-      then Some(var_to_lf v)
-      else assumption env pos t
-  | [] -> None
-
-let _ = 
-  add_tactic "assumption" assumption;
-  add_tactic "a" assumption
 
 (* 
   Local Variables:

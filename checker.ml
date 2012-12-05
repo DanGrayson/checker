@@ -5,12 +5,16 @@ let debug = false
 let env_limit = Some 5
 
 open Typesystem
-open Template				(*otherwise unused*)
 open Universe
 open Error
 open Hash
 open Printf
 open Printer
+
+module Load = struct
+  open Template
+  open Tactics
+end
 
 exception Error_Handled
 exception FileFinished
@@ -123,15 +127,14 @@ let fix t = Fillin.fillin !global_context t
 
 let axiomCommand name t = 
   printf "Axiom %s: %s\n" name (lf_atomic_to_string t);
-  let t = protect1 ( fun () -> Lfcheck.type_check (get_pos t) !global_context (CAN t) texp) in
+  let t = protect1 ( fun () -> Lfcheck.type_check (get_pos t) !global_context (Phi t) texp) in
   printf "        : %s\n" (lf_expr_to_string t);
   flush stdout;
   match t with
-  | CAN t -> global_context := ts_bind (Var name, t) !global_context
+  | Phi t -> global_context := ts_bind (Var name, t) !global_context
   | LAMBDA _ -> raise Internal
 
 let ruleCommand num name t =
-  let t = Lfcheck.type_validity !global_context t in
   let t = protect1 ( fun () -> Lfcheck.type_validity !global_context t ) in
   global_context := (Var name, t) :: !global_context
 
@@ -140,11 +143,11 @@ let check0 x =
   let x = protect1 ( fun () -> Fillin.fillin !global_context x ) in
   printf "        LF : %s\n" (lf_atomic_to_string x);
   flush stdout;
-  let (x,t) = protect1 ( fun () -> Lfcheck.type_synthesis !global_context (CAN x) ) in
+  let (x,t) = protect1 ( fun () -> Lfcheck.type_synthesis !global_context (Phi x) ) in
   printf "    LF type: %s\n" (lf_type_to_string t);
   if unmark t = unmark oexp then (
     match x with
-    | CAN x ->
+    | Phi x ->
 	let ts = protect1 ( fun () -> Tau.tau !global_context x ) in
 	printf "    TS type: %s ?\n" (ts_expr_to_string ts);
 	flush stdout
@@ -182,7 +185,7 @@ let checkCommand x =
 let alphaCommand (x,y) =
   let x = protect fix x (fun () -> errpos x) in
   let y = protect fix y (fun () -> nopos 13) in
-  printf "Alpha      : %s\n" (if (Alpha.UEqual.term_equiv Grammar0.emptyUContext (CAN x) (CAN y)) then "true" else "false");
+  printf "Alpha      : %s\n" (if (Alpha.UEqual.term_equiv Grammar0.emptyUContext (Phi x) (Phi y)) then "true" else "false");
   printf "           : %s\n" (ts_expr_to_string x);
   printf "           : %s\n" (ts_expr_to_string y);
   flush stdout
@@ -194,7 +197,7 @@ let checkUniversesCommand pos =
   with Universe.Inconsistency (p,q) -> print_inconsistency p q
 
 let show_command n = 
-  match n with None -> print_signature stdout | _ -> () ;
+  ( match n with None -> print_signature stdout | _ -> () );
   print_context n stdout !global_context
 
 let addDefinition v pos o t = 
@@ -216,7 +219,8 @@ let process_command lexbuf =
   let c = protect (Grammar.command (Tokens.expr_tokens)) lexbuf (fun () -> lexpos lexbuf) in
   match c with (pos,c) ->
     match c with
-    | Toplevel.UVariable (uvars,eqns) -> protect1 ( fun () -> ubind uvars eqns )
+    | Toplevel.UVariable (uvars,eqns) -> protect1 ( fun () -> 
+	global_context := ubind !global_context uvars eqns )
     | Toplevel.Variable tvars -> add_tVars tvars
     | Toplevel.Rule (num,name,t) -> ruleCommand num name t
     | Toplevel.Axiom (name,t) -> axiomCommand name t
@@ -234,7 +238,7 @@ let parse_file filename =
   let lexbuf = Lexing.from_channel (open_in filename) in
   lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = filename};
   try while true do (try process_command lexbuf with Error_Handled -> ()) done
-  with StopParsingFile -> printf "parsing file %s\n" filename; flush stdout
+  with StopParsingFile -> printf "done parsing file %s\n" filename; flush stdout
   
 let strname =
   let n = ref 0 in
@@ -267,13 +271,13 @@ let toplevel() =
 let _ = try
   toplevel()
 with
-| Internal_expr      ( CAN(pos,_) as e ) 
-| Internal_expr      ( LAMBDA(_,CAN(pos,_)) as e ) 
+| Internal_expr      ( Phi(pos,_) as e ) 
+| Internal_expr      ( LAMBDA(_,Phi(pos,_)) as e ) 
     as ex ->
     fprintf stderr "%s: internal error: %s\n" (errfmt pos) (lf_expr_to_string e);
     raise ex
-| Unimplemented_expr ( CAN(pos,_) as e )
-| Unimplemented_expr ( LAMBDA(_,CAN(pos,_)) as e ) 
+| Unimplemented_expr ( Phi(pos,_) as e )
+| Unimplemented_expr ( LAMBDA(_,Phi(pos,_)) as e ) 
     as ex ->
     fprintf stderr "%s: unimplemented feature: %s\n" (errfmt pos) (lf_expr_to_string e);
     raise ex

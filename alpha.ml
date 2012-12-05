@@ -29,7 +29,7 @@ module Make(Ueq: Universe.Equivalence) : S = struct
       | LAMBDA (x,body), LAMBDA (x',body') ->
 	  let alpha = addalpha x x' alpha 
 	  in term_eq alpha body body'
-      | CAN(_,d), CAN(_,e) -> (
+      | Phi(_,d), Phi(_,e) -> (
 	  d == e || 
 	  match (d,e) with
 	  | APPLY(V t,[]), APPLY(V t',[]) -> testalpha t t' alpha

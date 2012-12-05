@@ -4,7 +4,7 @@ open Typesystem
 open Error
 
 let atomic = function
-  | CAN e -> e
+  | Phi e -> e
   | LAMBDA _ -> raise NotImplemented (* Doesn't yet handle replacing variables in the head position (hereditary substitution) *)
 
 let rec subst_list (subl : (var * canonical_term) list) es = List.map (subst' subl) es
@@ -16,14 +16,14 @@ and subst (subl : (var * canonical_term) list) ((pos,e) as d) =
        | V v -> (
 	   try 
 	     let _ = List.assoc v subl
-	     in raise (Unimplemented_expr (CAN d)) (* hereditary substitution *) 
+	     in raise (Unimplemented_expr (Phi d)) (* hereditary substitution *) 
 	   with Not_found -> ())
        | _ -> ());
       pos, APPLY(label,subst_list subl args)
   | TacticHole n -> d
   | EmptyHole _ -> d  
 and subst' (subl : (var * canonical_term) list) = function
-  | CAN e -> CAN(subst subl e)
+  | Phi e -> Phi(subst subl e)
   | LAMBDA(v, body) -> 
       if v = VarUnused
       then 

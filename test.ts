@@ -37,19 +37,19 @@ Check TS λ x:T, λ y:T, λ t:[Id](T,x,y), t.
 
 Check TS λ o:T, λ o':T, [∀;x](u1,u2,o,o').
 
-Alpha ∏ x:T, U  ==  ∏ y:T, U .
+Alpha ∏ x:T, U  =  ∏ y:T, U .
 Alpha λ g:T ⟶ U, λ x:T, g x
-  ==  λ h:T ⟶ U, λ y:T, h y  .
+   =  λ h:T ⟶ U, λ y:T, h y  .
 Alpha λ g:∏ a:T, U, λ x:T, g x
-  ==  λ h:∏ b:T, U, λ y:T, h y  .
+   =  λ h:∏ b:T, U, λ y:T, h y  .
 Alpha λ g:T ⟶ U, λ x:T, g a
-  ==  λ h:T ⟶ U, λ y:T, h y  .
+   =  λ h:T ⟶ U, λ y:T, h y  .
 Alpha λ g:T ⟶ U, λ x:T, g x
-  ==  λ h:T ⟶ U, λ y:T, h b  .
+   =  λ h:T ⟶ U, λ y:T, h b  .
 Alpha λ g:T ⟶ U, λ x:T, g h
-  ==  λ h:T ⟶ U, λ y:T, h y  .
+   =  λ h:T ⟶ U, λ y:T, h y  .
 Alpha λ g:T ⟶ U, λ x:T, g x
-  ==  λ h:T ⟶ U, λ y:T, h h  .
+   =  λ h:T ⟶ U, λ y:T, h h  .
 
 Check TS ∏ x : T, [U]([next](u0)).
 Check TS ∏ x : T, [U](u0).
@@ -116,4 +116,3 @@ Define foo (u : Ulevel) (t : [U](u)) := *t; (El_type u t h$131).
 Check LF ([foo.0] ([next] u1) ([u] u1) (u_univ u1)).
 Check LF ([foo.1] ([next] u1) ([u] u1) (u_univ u1)).
 Show.
-

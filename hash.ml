@@ -54,7 +54,7 @@ let hhash = function
 
 let rec chash = function
   | LAMBDA(_,body) -> chash body
-  | CAN e -> ahash e
+  | Phi e -> ahash e
 and clhash = function
   | [] -> 1
   | c :: r -> chash c + 2345 * (clhash r)

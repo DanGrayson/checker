@@ -17,10 +17,10 @@ open Error
 %token
 
   Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod COLON Wstar Warrow Wmapsto
-  Wequalequal Wequal COLONequal Wunderscore WRule Wgreaterequal Wgreater
-  Wlessequal Wless Wsemi KUlevel Kumax KType Ktype KPi Klambda KSigma WCheckLF
-  WCheckLFtype WDefine WShow WEnd WVariable WAlpha Weof WCheck WCheckUniverses
-  Wtilde KSingleton Axiom Wdollar
+  Wequal COLONequal Wunderscore WRule Wgreaterequal Wgreater Wlessequal Wless
+  Wsemi KUlevel Kumax KType Ktype KPi Klambda KSigma WCheckLF WCheckLFtype
+  WDefine WShow WEnd WVariable WAlpha Weof WCheck WCheckUniverses Wtilde
+  KSingleton Axiom Wdollar
 
 /* precedences, lowest first */
 %right
@@ -74,14 +74,15 @@ bare_lf_type:
     { F_APPLY(F_istype, [a]) }
 | Wlbracket a=lf_expr COLON b=lf_expr Wrbracket
     { F_APPLY(F_hastype, [a;b]) }
-| Wlbracket a=lf_expr Wtilde b=lf_expr COLON c=lf_expr Wrbracket
-    { F_APPLY(F_object_uequality, [a;b;c]) }
 | Wlbracket a=lf_expr Wequal b=lf_expr COLON c=lf_expr Wrbracket
     { F_APPLY(F_object_equality, [a;b;c]) }
-| Wlbracket a=lf_expr Wtilde b=lf_expr Wrbracket
-    { F_APPLY(F_type_uequality, [a;b]) }
 | Wlbracket a=lf_expr Wequal b=lf_expr Wrbracket
     { F_APPLY(F_type_equality, [a;b]) }
+
+| Wlbracket a=lf_expr Wtilde b=lf_expr COLON KType Wrbracket
+    { F_APPLY(F_type_uequality, [a;b]) }
+| Wlbracket a=lf_expr Wtilde b=lf_expr Wrbracket
+    { F_APPLY(F_object_uequality, [a;b]) }
 
 lf_type_constant:
 | l=IDENTIFIER 
@@ -98,7 +99,7 @@ lf_type_constant:
 
 lf_expr:
 | e=atomic_term
-    { CAN(Position($startpos, $endpos), e)  }
+    { Phi(Position($startpos, $endpos), e)  }
 | e=lf_lambda_expression
     { e }
 
@@ -166,7 +167,7 @@ command0:
     { Toplevel.Check o }
 | WCheckUniverses Wperiod
     { Toplevel.CheckUniverses }
-| WAlpha e1=ts_expr Wequalequal e2=ts_expr Wperiod
+| WAlpha e1=ts_expr Wequal e2=ts_expr Wperiod
     { Toplevel.Alpha (e1, e2) }
 
 | WRule num=NUMBER name=IDENTIFIER COLON t=lf_type Wperiod
@@ -178,9 +179,9 @@ command0:
     { Toplevel.Definition (tDefinition name (fixParmList parms) t (Some d1)) }
 | WDefine name=IDENTIFIER parms=parmList COLONequal o=ts_expr COLON t=ts_expr Wperiod 
     { Toplevel.Definition (oDefinition name (fixParmList parms) o t) }
-| WDefine name=IDENTIFIER parms=parmList COLONequal t1=ts_expr Wequalequal t2=ts_expr Wperiod 
+| WDefine name=IDENTIFIER parms=parmList COLONequal t1=ts_expr Wequal t2=ts_expr Wperiod 
     { Toplevel.Definition (teqDefinition name (fixParmList parms) t1 t2) }
-| WDefine name=IDENTIFIER parms=parmList COLONequal o1=ts_expr Wequalequal o2=ts_expr COLON t=ts_expr Wperiod 
+| WDefine name=IDENTIFIER parms=parmList COLONequal o1=ts_expr Wequal o2=ts_expr COLON t=ts_expr Wperiod 
     { Toplevel.Definition (oeqDefinition name (fixParmList parms) o1 o2 t) }
 
 | WShow Wperiod 
@@ -201,13 +202,13 @@ uEquation:
 | u=ts_expr Wequal v=ts_expr 
     { (u,v) }
 | v=ts_expr Wgreaterequal u=ts_expr 
-    { (Position($startpos, $endpos), APPLY(U U_max, [ CAN u; CAN v])), v }
+    { (Position($startpos, $endpos), APPLY(U U_max, [ Phi u; Phi v])), v }
 | u=ts_expr Wlessequal v=ts_expr 
-    { (Position($startpos, $endpos), APPLY(U U_max, [ CAN u; CAN v])), v }
+    { (Position($startpos, $endpos), APPLY(U U_max, [ Phi u; Phi v])), v }
 | v=ts_expr Wgreater u=ts_expr 
-    { (Position($startpos, $endpos), APPLY(U U_max, [ CAN (Position($startpos, $endpos), APPLY( U U_next,[CAN u])); CAN v])), v }
+    { (Position($startpos, $endpos), APPLY(U U_max, [ Phi (Position($startpos, $endpos), APPLY( U U_next,[Phi u])); Phi v])), v }
 | u=ts_expr Wless v=ts_expr 
-    { (Position($startpos, $endpos), APPLY(U U_max, [ CAN (Position($startpos, $endpos), APPLY( U U_next,[CAN u])); CAN v])), v }
+    { (Position($startpos, $endpos), APPLY(U U_max, [ Phi (Position($startpos, $endpos), APPLY( U U_next,[Phi u])); Phi v])), v }
 
 parenthesized(X): x=delimited(Wlparen,X,Wrparen) {x}
 list_of_parenthesized(X): list(parenthesized(X)) {$1}
@@ -284,7 +285,7 @@ bare_ts_expr:
     %prec Reduce_binder
     { make_TT_Sigma t1 (x,t2) }
 | Kumax Wlparen u=ts_expr Wcomma v=ts_expr Wrparen
-    { APPLY(U U_max,[CAN u;CAN v])  }
+    { APPLY(U U_max,[Phi u;Phi v])  }
 | label=tsterm_head args=arglist
     {
      match label with
@@ -325,10 +326,10 @@ bare_ts_expr:
 		      "expected " ^ (string_of_int nargs) ^ " argument" ^ (if nargs != 1 then "s" else "")));
 	 let args = List.map2 (
 	   fun indices arg ->
-	     (* example: indices = [0;1], change arg to (LAMBDA v_0, (LAMBDA v_1, CAN arg)) *)
+	     (* example: indices = [0;1], change arg to (LAMBDA v_0, (LAMBDA v_1, Phi arg)) *)
 	     List.fold_right (
 	     fun index arg -> LAMBDA( List.nth vars index, arg)
-		 ) indices (CAN arg)
+		 ) indices (Phi arg)
 	  ) varindices args
 	 in
 	 APPLY(label,args)

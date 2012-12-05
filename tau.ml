@@ -3,7 +3,7 @@ open Error
 
 let rec get_ts_type (v:var) (env:context) : ts_expr = (
   match env with
-  | (_, (pos, F_APPLY(F_hastype,[CAN(_,APPLY(V v',[])); CAN t]))) :: env 
+  | (_, (pos, F_APPLY(F_hastype,[Phi(_,APPLY(V v',[])); Phi t]))) :: env 
     -> if v = v' then t else get_ts_type v env
   | _ :: env -> get_ts_type v env
   | [] -> raise Not_found
@@ -27,23 +27,23 @@ let rec tau (pos:position) (env:context) (pos,e) : atomic_term =
 	      match oh with
 	    | O_u -> (
 		match args with 
-		| [CAN u] -> Helpers.make_TT_U (pos, (Helpers.make_UU U_next [CAN u]))
+		| [Phi u] -> Helpers.make_TT_U (pos, (Helpers.make_UU U_next [Phi u]))
 		| _ -> raise Internal)
 	    | O_j -> (
 		match args with 
-		| [CAN m1;CAN m2] -> Helpers.make_TT_Pi (with_pos_of m1 (Helpers.make_TT_U m1)) (VarUnused, (with_pos_of m2 (Helpers.make_TT_U m2)))
+		| [Phi m1;Phi m2] -> Helpers.make_TT_Pi (with_pos_of m1 (Helpers.make_TT_U m1)) (VarUnused, (with_pos_of m2 (Helpers.make_TT_U m2)))
 		| _ -> raise Internal)
 	    | O_ev -> (
 		match args with 
-		| [CAN f;CAN o;LAMBDA(x,CAN t)] -> unmark (Substitute.subst (x,CAN o) t)
+		| [Phi f;Phi o;LAMBDA(x,Phi t)] -> unmark (Substitute.subst (x,Phi o) t)
 		| _ -> raise Internal)
 	    | O_lambda -> (
 		match args with 
-		| [CAN t;LAMBDA(x,CAN o)] -> Helpers.make_TT_Pi t (x, tau pos (ts_bind (x,t) env) o)
+		| [Phi t;LAMBDA(x,Phi o)] -> Helpers.make_TT_Pi t (x, tau pos (ts_bind (x,t) env) o)
 		| _ -> raise Internal)
 	    | O_forall -> (
 		match args with 
-		| CAN u :: CAN u' :: _ -> Helpers.make_TT_U (nowhere 6 (Helpers.make_UU U_max [CAN u; CAN u']))
+		| Phi u :: Phi u' :: _ -> Helpers.make_TT_U (nowhere 6 (Helpers.make_UU U_max [Phi u; Phi u']))
 		| _ -> raise Internal)
 	    | O_pair -> raise NotImplemented
 	    | O_pr1 -> raise NotImplemented
