@@ -10,6 +10,9 @@ type position =
   | Position of Lexing.position * Lexing.position (** start, end *)
   | Nowhere of int * int
 
+let lexbuf_position lexbuf =
+    Position ( Lexing.lexeme_start_p lexbuf, Lexing.lexeme_end_p lexbuf )
+
 let errfmt = function
   | Position(p,q) 
     -> "File \"" ^ p.Lexing.pos_fname ^ "\", " 
