@@ -11,7 +11,7 @@ let concatl = concat <<- List.flatten
 
 (** Printing of LF expressions. *)
 
-let rec lf_atomic_to_string (_,e) = 
+let rec ts_expr_to_string (_,e) = 
   match e with
   | TacticHole n -> tactic_to_string n
   | EmptyHole n -> "?" ^ (string_of_int n)
@@ -19,10 +19,10 @@ let rec lf_atomic_to_string (_,e) =
   | APPLY(h,args) -> concat ["(";(label_to_string h);(concat (List.map (space <<- lf_expr_to_string) args));")"]
 and lf_expr_to_string' = function
   | LAMBDA(x,body) -> concat [vartostring x;" ⟼ " (* |-> *) ;lf_expr_to_string' body]
-  | Phi e -> lf_atomic_to_string e
+  | Phi e -> ts_expr_to_string e
 and lf_expr_to_string = function
   | LAMBDA(x,body) -> concat ["(";vartostring x;" ⟼ ";lf_expr_to_string' body;")"]
-  | Phi e -> lf_atomic_to_string e
+  | Phi e -> ts_expr_to_string e
 
 let rec lf_type_to_string' target (_,t) = match t with
   | F_Pi(v,t,u) -> 
@@ -47,7 +47,7 @@ let rec lf_kind_to_string = function
 
 (** For LF expressions that are not TS terms, print [$$] and then the expression in LF format. *)
 let lf_expr_p e = "$$" ^ (lf_expr_to_string e)
-let lf_atomic_p e = "$$" ^ (lf_atomic_to_string e)
+let lf_atomic_p e = "$$" ^ (ts_expr_to_string e)
 
 let rec args_to_string s = String.concat "," (List.map ts_can_to_string s)
 and paren_args_to_string s = String.concat "" [ "("; args_to_string s; ")" ]

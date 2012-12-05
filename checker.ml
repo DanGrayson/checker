@@ -36,10 +36,10 @@ let error_summary pos =
 
 let errpos x = errfmt (get_pos x)
 
-let print_inconsistency lhs rhs =
-  fprintf stderr "%s: universe inconsistency:\n" (errpos lhs);
-  fprintf stderr "%s:         %s\n" (errpos lhs) (ts_expr_to_string lhs);
-  fprintf stderr "%s:      != %s\n" (errpos lhs) (ts_expr_to_string rhs);
+let print_inconsistency lhs rhs = 
+  Printf.fprintf stderr "%s: universe inconsistency:\n" (errpos lhs);
+  Printf.fprintf stderr "%s:         %s\n" (errpos lhs) (ts_expr_to_string lhs);
+  Printf.fprintf stderr "%s:      != %s\n" (errpos rhs) (ts_expr_to_string rhs);
   flush stderr;
   Tokens.bump_error_count()
 
@@ -128,8 +128,8 @@ let add_tVars env tvars =
 
 let fix env t = Fillin.fillin env t
 
-let axiomCommand env name t = 
-  printf "Axiom %s: %s\n" name (lf_atomic_to_string t);
+let ts_axiomCommand env name t = 
+  printf "Axiom TS %s: %s\n" name (ts_expr_to_string t);
   let t = Lfcheck.type_check (get_pos t) env (Phi t) texp in
   printf "        : %s\n" (lf_expr_to_string t);
   flush stdout;
@@ -137,14 +137,14 @@ let axiomCommand env name t =
   | Phi t -> ts_bind (Var name, t) env
   | LAMBDA _ -> raise Internal
 
-let ruleCommand env num name t =
+let lf_axiomCommand env name t =
   let t = Lfcheck.type_validity env t in
   (Var name, t) :: env
 
 let check0 env x =
   flush stdout;
   let x = Fillin.fillin env x in
-  printf "        LF : %s\n" (lf_atomic_to_string x);
+  printf "        LF : %s\n" (ts_expr_to_string x);
   flush stdout;
   let (x,t) = Lfcheck.type_synthesis env (Phi x) in
   printf "    LF type: %s\n" (lf_type_to_string t);
@@ -226,8 +226,9 @@ let process_command env lexbuf =
     match c with
     | Toplevel.UVariable (uvars,eqns) -> ubind env uvars eqns
     | Toplevel.Variable tvars -> add_tVars env tvars
-    | Toplevel.Rule (num,name,t) -> ruleCommand env num name t
-    | Toplevel.Axiom (name,t) -> axiomCommand env name t
+    | Toplevel.Rule (num,name,t) -> lf_axiomCommand env name t
+    | Toplevel.AxiomLF (name,t) -> lf_axiomCommand env name t
+    | Toplevel.AxiomTS (name,t) -> ts_axiomCommand env name t
     | Toplevel.CheckLF x -> checkLFCommand env pos x; env
     | Toplevel.CheckLFtype x -> checkLFtypeCommand env x; env
     | Toplevel.Check x -> checkCommand env x; env

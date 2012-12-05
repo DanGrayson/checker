@@ -5,11 +5,11 @@ Define TT := T ; ist$1.
 
 Variable u0 u1 u2 : Ulevel ; [next](u0) <= u1; [next](u1) < u2.
 Variable T' U V X Y : Type.
-Axiom t0: T.
-Axiom x0 : X.
-Axiom f : T ⟶ T.
+Axiom TS t0: T.
+Axiom TS x0 : X.
+Axiom TS f : T ⟶ T.
 
-Axiom 你好 : T ⟶ T.
+Axiom TS 你好 : T ⟶ T.
 
 Check Universes.
 
@@ -116,3 +116,8 @@ Define foo (u : Ulevel) (t : [U](u)) := *t; (El_type u t h$131).
 Check LF ([foo.0] ([next] u1) ([u] u1) (u_univ u1)).
 Check LF ([foo.1] ([next] u1) ([u] u1) (u_univ u1)).
 Show.
+
+
+#   Local Variables:
+#   compile-command: "make run "
+#   End:

@@ -250,8 +250,8 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
   | Phi e ->
       let (pos,e0) = e in
       match e0 with
-      | TacticHole n -> err env pos ("tactic hole: "^(lf_atomic_to_string e))
-      | EmptyHole _ -> err env pos ("empty hole: "^(lf_atomic_to_string e))
+      | TacticHole n -> err env pos ("tactic hole: "^(ts_expr_to_string e))
+      | EmptyHole _ -> err env pos ("empty hole: "^(ts_expr_to_string e))
       | APPLY(V v, []) -> x, (pos, F_Singleton(Phi e, fetch_type env pos v))
       | APPLY(label,args) -> (
 	  let a = label_to_type env pos label in

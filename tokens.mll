@@ -36,9 +36,10 @@ let newline = [ '\n' '\012' ]
 let ident = first after*
 rule expr_tokens = parse
   | "Check" space "Universes" { WCheckUniverses }
-  | "Check" space "LF" { WCheckLF }
-  | "Check" space "TS" { WCheck }
-  | "Check" space "LF" space "type" { WCheckLFtype }
+  | "LF" { W_LF }
+  | "TS" { W_TS }
+  | "type" { Ktype }
+  | "Check" { WCheck }
   | "Axiom" { Axiom }
   | "Rule" { WRule }
   | "Alpha" { WAlpha }
@@ -59,7 +60,6 @@ rule expr_tokens = parse
   | "Sigma" { KSigma }
   | "Ulevel" { KUlevel }
   | "Type" { KType }
-  | "type" { Ktype }
   | "max" { Kumax }
   | '$'  { Wdollar }
   | '('  { Wlparen }

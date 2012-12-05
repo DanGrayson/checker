@@ -19,9 +19,8 @@ open Grammar0
 
   Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod COLON Wstar Warrow Wmapsto
   Wequal COLONequal Wunderscore WRule Wgreaterequal Wgreater Wlessequal Wless
-  Wsemi KUlevel Kumax KType Ktype KPi Klambda KSigma WCheckLF WCheckLFtype
-  WDefine WShow WEnd WVariable WAlpha Weof WCheck WCheckUniverses Wtilde
-  KSingleton Axiom Wdollar
+  Wsemi KUlevel Kumax KType Ktype KPi Klambda KSigma WCheck WDefine WShow WEnd
+  WVariable WAlpha Weof WCheckUniverses Wtilde KSingleton Axiom Wdollar W_LF W_TS
 
 /* precedences, lowest first */
 %right
@@ -158,21 +157,25 @@ command0:
     { Toplevel.Variable vars }
 | WVariable vars=nonempty_list(IDENTIFIER) COLON KUlevel eqns=preceded(Wsemi,uEquation)* Wperiod
     { Toplevel.UVariable (vars,eqns) }
-| Axiom v=IDENTIFIER COLON t=ts_expr Wperiod
-    { Toplevel.Axiom(v,t) }
-| WCheckLF e=lf_expr Wperiod
+
+| Axiom W_TS v=IDENTIFIER COLON t=ts_expr Wperiod
+    { Toplevel.AxiomTS(v,t) }
+| Axiom W_LF v=IDENTIFIER COLON t=lf_type Wperiod
+    { Toplevel.AxiomLF(v,t) }
+| WRule num=NUMBER name=IDENTIFIER COLON t=lf_type Wperiod
+    { Toplevel.Rule (num,name,t) }
+
+| WCheck W_LF e=lf_expr Wperiod
     { Toplevel.CheckLF e }
-| WCheckLFtype e=lf_type Wperiod
+| WCheck W_LF Ktype e=lf_type Wperiod
     { Toplevel.CheckLFtype e }
-| WCheck o=ts_expr Wperiod
+| WCheck W_TS o=ts_expr Wperiod
     { Toplevel.Check o }
 | WCheckUniverses Wperiod
     { Toplevel.CheckUniverses }
 | WAlpha e1=ts_expr Wequal e2=ts_expr Wperiod
     { Toplevel.Alpha (e1, e2) }
 
-| WRule num=NUMBER name=IDENTIFIER COLON t=lf_type Wperiod
-    { Toplevel.Rule (num,name,t) }
 
 | WDefine name=IDENTIFIER parms=parmList COLONequal t=ts_expr Wperiod 
     { Toplevel.Definition (tDefinition name (fixParmList parms) t  None    ) }

@@ -23,17 +23,19 @@ let rec memi' i x = function
 
 let memi x = memi' 0 x
 
+let step_size = 10
+
 let chk uv ((lhs:ts_expr),(rhs:ts_expr)) =
   let index name = memi name uv in
   let rec ev e = 
     let (pos,e0) = e 
     in match e0 with
-    | APPLY(V u,[]) -> index u
+    | APPLY(V u,[]) -> - step_size * (index u)
     | APPLY(U U_next,[Phi u]) -> (ev u) + 1
     | APPLY(U U_max,[Phi u;Phi v]) -> max (ev u) (ev v)
     | _ -> raise Error.Internal
-  in let chk lhs rhs = if (ev lhs) = (ev rhs) then raise (Inconsistency (lhs, rhs)) in
-  chk lhs rhs
+  in 
+  if (ev lhs) != (ev rhs) then raise (Inconsistency (lhs, rhs))
 
 let get_uvars =
   let rec get_uvars accu = function
