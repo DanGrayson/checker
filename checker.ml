@@ -193,9 +193,9 @@ let checkUniversesCommand pos =
     printf "Check Universes: okay\n"
   with Universe.Inconsistency (p,q) -> print_inconsistency p q
 
-let show_command () = 
-  print_signature stdout;
-  print_context None stdout !global_context
+let show_command n = 
+  match n with None -> print_signature stdout | _ -> () ;
+  print_context n stdout !global_context
 
 let addDefinition v pos o t = 
   global_context := def_bind v pos o t !global_context
@@ -226,7 +226,7 @@ let process_command lexbuf =
     | Toplevel.Alpha (x,y) -> alphaCommand (x,y)
     | Toplevel.Definition defs -> defCommand defs
     | Toplevel.End -> printf "%s: ending.\n" (errfmt pos) ; flush stdout; raise StopParsingFile
-    | Toplevel.Show -> show_command()
+    | Toplevel.Show n -> show_command n
     | Toplevel.CheckUniverses -> checkUniversesCommand pos
 
 let parse_file filename =

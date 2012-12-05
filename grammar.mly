@@ -11,7 +11,7 @@ open Error
 %type <Typesystem.ts_expr list> arglist
 %type <Typesystem.lf_type> lf_type
 %type <Typesystem.lf_expr> lf_expr
-%token <int> Nat
+%token <int> NUMBER
 %token <string> IDENTIFIER CONSTANT CONSTANT_SEMI
 %token <Typesystem.var> VARIABLE
 %token
@@ -131,7 +131,7 @@ tactic_expr:
 atomic_term:
 | Wdollar name=tactic_expr
     { TacticHole (Q_name name) }
-| Wdollar index=Nat
+| Wdollar index=NUMBER
     { TacticHole (Q_index index) }
 | bare_variable
     { APPLY(V $1,[]) }
@@ -169,7 +169,7 @@ command0:
 | WAlpha e1=ts_expr Wequalequal e2=ts_expr Wperiod
     { Toplevel.Alpha (e1, e2) }
 
-| WRule num=Nat name=IDENTIFIER COLON t=lf_type Wperiod
+| WRule num=NUMBER name=IDENTIFIER COLON t=lf_type Wperiod
     { Toplevel.Rule (num,name,t) }
 
 | WDefine name=IDENTIFIER parms=parmList COLONequal t=ts_expr Wperiod 
@@ -184,7 +184,9 @@ command0:
     { Toplevel.Definition (oeqDefinition name (fixParmList parms) o1 o2 t) }
 
 | WShow Wperiod 
-    { Toplevel.Show }
+    { Toplevel.Show None }
+| WShow n=NUMBER Wperiod 
+    { Toplevel.Show (Some n) }
 | WEnd Wperiod
     { Toplevel.End }
 

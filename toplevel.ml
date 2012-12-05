@@ -12,7 +12,7 @@ type command' =
   | Alpha of ts_expr * ts_expr
   | Definition of (var * Error.position * lf_expr * lf_type) list
   | CheckUniverses
-  | Show
+  | Show of int option
   | End
 
 type command = Error.position * command'
