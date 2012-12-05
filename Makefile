@@ -51,8 +51,8 @@ TAGS: $(SRCFILES) $(TSFILES) scripts/ts.etags Makefile
 	( scripts/etags.ocaml $(SRCFILES) && etags --regex=@scripts/ts.etags $(TSFILES) -o - ) >$@
 clean::; rm -f TAGS checker.odocl .DS_Store
 wc:; wc -l $(SRCFILES)
-run:  $(CHECKER_EXE) rules.ts test.ts ; -$(CHECKER) test.ts
-demo: $(CHECKER_EXE) rules.ts test.ts ; -$(CHECKER) demo.ts
+run:  $(CHECKER_EXE) rules.ts test.ts ; $(CHECKER) test.ts
+demo: $(CHECKER_EXE) rules.ts test.ts ; $(CHECKER) demo.ts
 debug:
 	ocamlbuild $(BFLAGS) checker.byte 
 	@ echo "enter:"

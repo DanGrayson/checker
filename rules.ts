@@ -139,3 +139,28 @@ Rule 100 teq_empty_eta : ∏ T:texp, ∏ T':texp, ∏ a:oexp,
 Rule 101 oeq_empty_eta : ∏ T:texp, ∏ x:oexp, ∏ y:oexp, ∏ a:oexp,
 
      [ a : ([Empty]) ] ⟶ [ x : T ] ⟶ [ y : T ] ⟶ [ x = y : T ].
+
+Rule 200 jMM_reduction : ∏ M_1:uexp, ∏ M_2:uexp,
+
+     uequal M_1 M_2 ⟶ 
+
+     [ ([j] M_1 M_2) = ([lambda] ([U](M_1)) (x |-> x)) : ([∏] ([U] M_1) (_ ⟼ ([U] M_2))) ].
+
+Rule 201 jj_reduction : ∏ M_1:uexp, ∏ M_2:uexp, ∏ M'_2:uexp, ∏ M_3:uexp, Pi o:oexp,
+
+     uequal M_2 M'_2 ⟶ 
+
+     [ o : ([U] M_1) ] ->
+
+     [  ([ev] ([j] M'_2 M_3) ([ev] ([j] M_1 M_2) o (_ ⟼ ([U] M_2))) (_ ⟼ ([U] M_3)))
+
+     =  ([ev] ([j] M_1 M_3) o (_ ⟼ ([U] M_3)))
+
+     : ([∏] ([U] M_1) (_ ⟼ ([U] M_3))) ].
+
+Rule 202 eta_reduction : Pi X:texp, Pi Y:oexp->texp, Pi f:oexp,
+
+     [ f : ([∏] X Y) ] ⟶ 
+
+     [ ([lambda] X (x |-> ([ev] f x Y))) = f : ([Pi] X Y) ].
+

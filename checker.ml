@@ -28,7 +28,9 @@ let error_summary pos =
   if n > 0 
   then (
     fprintf stderr "%s: %d error%s encountered, see messages above\n" pos n (if n == 1 then "" else "s");
-    flush stderr)
+    flush stderr;
+    exit 1
+   )
 
 let leave pos = 
   error_summary pos;
@@ -234,7 +236,6 @@ let process_command lexbuf =
     | Toplevel.CheckUniverses -> checkUniversesCommand pos
 
 let parse_file filename =
-  Tokens.error_count := 0;
   let lexbuf = Lexing.from_channel (open_in filename) in
   lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = filename};
   try while true do (try process_command lexbuf with Error_Handled -> ()) done
