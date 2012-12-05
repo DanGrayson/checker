@@ -156,9 +156,6 @@ let is_lambda = function LAMBDA _ -> true | _ -> false
 let checkLFCommand pos x =
   printf "Check LF   = %s\n" (lf_expr_to_string x);
   flush stdout;
-  let (x2,t2) = protect1 ( fun () -> Lfcheck.path_normalization !global_context pos x) in
-  printf "           = %s\n" (lf_expr_to_string x2);
-  flush stdout;
   if not (is_lambda x) then 
     let (x',t) = protect1 ( fun () -> Lfcheck.type_synthesis !global_context x ) in
     printf "           = %s\n" (lf_expr_to_string x');

@@ -42,7 +42,7 @@ RUN = -b
 all: TAGS run doc
 checker.byte checker.native: $(SRCFILES); ocamlbuild $(BFLAGS) $@
 doc: checker.odocl $(SRCFILES)
-	ocamlbuild $(BFLAGS) checker.docdir/index.html
+	ocamlbuild $(BFLAGS) $(CHECKER_EXE) checker.docdir/index.html
 checker.odocl: Makefile
 	for i in $(BASENAMES) ; do echo $$i ; done >$@
 clean::; ocamlbuild -clean

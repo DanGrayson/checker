@@ -126,7 +126,7 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
 
 let rec head_normalization (env:context) (x:lf_expr) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
-  try let r = head_normalization env (head_reduction env x) in r
+  try head_normalization env (head_reduction env x)
   with Not_found -> x
 
 let rec num_args t = match unmark t with 
@@ -148,6 +148,7 @@ let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
       
 and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
   (* see figure 9 page 696 [EEST] *)
+  (* assume x is head normalized *)
   match x with
   | LAMBDA _ -> err env pos "path_normalization encountered a function"
   | CAN y ->
@@ -171,10 +172,11 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
 		      let x = term_normalization env x a in
 		      let (c,args) = repeat b args in
 		      (c, x :: args))
+	      | F_Singleton _ -> raise Internal (* x was head normalized, so any definition of f should have been unfolded *)
 	      | _ -> (
 		  match args with
 		  | [] -> (t,[])
-		  | _ -> err env pos "expected a function"))
+		  | x :: args -> err env pos "unexpected argument"))
 	    in repeat t0 args
 	  in (CAN(pos,APPLY(f,args)), t)
 
