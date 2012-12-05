@@ -2,6 +2,10 @@
 
 (** Source code positions. *)
 
+let debug_mode = ref false
+
+let trap () = ()
+
 type position =
   | Position of Lexing.position * Lexing.position (** start, end *)
   | Nowhere of int * int

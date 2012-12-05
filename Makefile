@@ -11,7 +11,6 @@ BFLAGS += -use-menhir
 
 # BFLAGS += -verbose 0
 SRCFILES =					\
-	debugging.ml				\
 	error.ml				\
 	typesystem.ml				\
 	names.ml \
@@ -42,6 +41,7 @@ RUN = -b
 %.cmo: %.ml; ocamlbuild $(BFLAGS) $*.cmo
 
 all: TAGS run doc
+build: $(CHECKER_EXE)
 checker.byte checker.native: $(SRCFILES); ocamlbuild $(BFLAGS) $@
 doc: checker.odocl $(SRCFILES)
 	ocamlbuild $(BFLAGS) $(CHECKER_EXE) checker.docdir/index.html

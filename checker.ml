@@ -21,6 +21,7 @@ exception Error_Handled
 exception FileFinished
 exception StopParsingFile
 exception Debugging
+exception WithPosition of string * exn
 
 let raise_switch ex1 ex2 = raise (if debug then ex1 else ex2)
 
@@ -99,9 +100,11 @@ let handle_exception (posfun:unit->string) = function
       raise_switch ex Error_Handled
   | e -> raise e
 
+let wrap_position posfun f x = try f x with d -> WithPosition(posfun(), d)
+
 let protect f x posfun = try f x with d -> handle_exception posfun d
 
-let protect1 f = protect f () (fun () -> nopos 11)
+let protect0 f = protect f () (fun () -> nopos 11)
 
 let lexpos lexbuf = 
   let p = Tokens.lexing_pos lexbuf in
@@ -127,7 +130,7 @@ let fix env t = Fillin.fillin env t
 
 let axiomCommand env name t = 
   printf "Axiom %s: %s\n" name (lf_atomic_to_string t);
-  let t = protect1 ( fun () -> Lfcheck.type_check (get_pos t) env (Phi t) texp) in
+  let t = protect0 ( fun () -> Lfcheck.type_check (get_pos t) env (Phi t) texp) in
   printf "        : %s\n" (lf_expr_to_string t);
   flush stdout;
   match t with
@@ -135,20 +138,20 @@ let axiomCommand env name t =
   | LAMBDA _ -> raise Internal
 
 let ruleCommand env num name t =
-  let t = protect1 ( fun () -> Lfcheck.type_validity env t ) in
+  let t = protect0 ( fun () -> Lfcheck.type_validity env t ) in
   (Var name, t) :: env
 
 let check0 env x =
   flush stdout;
-  let x = protect1 ( fun () -> Fillin.fillin env x ) in
+  let x = protect0 ( fun () -> Fillin.fillin env x ) in
   printf "        LF : %s\n" (lf_atomic_to_string x);
   flush stdout;
-  let (x,t) = protect1 ( fun () -> Lfcheck.type_synthesis env (Phi x) ) in
+  let (x,t) = protect0 ( fun () -> Lfcheck.type_synthesis env (Phi x) ) in
   printf "    LF type: %s\n" (lf_type_to_string t);
   if unmark t = unmark oexp then (
     match x with
     | Phi x ->
-	let ts = protect1 ( fun () -> Tau.tau env x ) in
+	let ts = protect0 ( fun () -> Tau.tau env x ) in
 	printf "    TS type: %s ?\n" (ts_expr_to_string ts);
 	flush stdout
     | _ -> raise Internal
@@ -160,21 +163,21 @@ let checkLFCommand env pos x =
   printf "Check LF   = %s\n" (lf_expr_to_string x);
   flush stdout;
   if not (is_lambda x) then 
-    let (x',t) = protect1 ( fun () -> Lfcheck.type_synthesis env x ) in
+    let (x',t) = protect0 ( fun () -> Lfcheck.type_synthesis env x ) in
     printf "           = %s\n" (lf_expr_to_string x');
     flush stdout;
-    let x'' = protect1 ( fun () -> Lfcheck.term_normalization env x' t) in
+    let x'' = protect0 ( fun () -> Lfcheck.term_normalization env x' t) in
     printf "           = %s\n" (lf_expr_to_string x'');
     printf "           : %s\n" (lf_type_to_string t);
     flush stdout;
-    let t' = protect1 ( fun () -> Lfcheck.type_normalization env t) in
+    let t' = protect0 ( fun () -> Lfcheck.type_normalization env t) in
     printf "           = %s\n" (lf_type_to_string t');
     flush stdout
 
 let checkLFtypeCommand env t =
   printf "CheckLFtype: %s\n" (lf_type_to_string t);
   flush stdout;
-  let t = protect1 ( fun () -> Lfcheck.type_validity env t ) in
+  let t = protect0 ( fun () -> Lfcheck.type_validity env t ) in
   printf "           : %s\n" (lf_type_to_string t);
   flush stdout
 
@@ -202,7 +205,7 @@ let show_command env n =
 
 let addDefinition env v pos o t = def_bind v pos o t env
 
-let defCommand env defs = protect1 ( fun () -> 
+let defCommand env defs = protect0 ( fun () -> 
   List.fold_left
     (fun env (v, pos, tm, tp) -> 
       printf "Define %s = %s\n" (vartostring v) (lf_expr_to_string tm);
@@ -219,7 +222,7 @@ let process_command env lexbuf =
   let c = protect (Grammar.command (Tokens.expr_tokens)) lexbuf (fun () -> lexpos lexbuf) in
   match c with (pos,c) ->
     match c with
-    | Toplevel.UVariable (uvars,eqns) -> protect1 ( fun () -> ubind env uvars eqns )
+    | Toplevel.UVariable (uvars,eqns) -> protect0 ( fun () -> ubind env uvars eqns )
     | Toplevel.Variable tvars -> add_tVars env tvars
     | Toplevel.Rule (num,name,t) -> ruleCommand env num name t
     | Toplevel.Axiom (name,t) -> axiomCommand env name t
@@ -264,7 +267,7 @@ let toplevel() =
   (try
     Arg.parse 
       [
-       ("--debug" , Arg.Set Debugging.debug_mode, "turn on debug mode")
+       ("--debug" , Arg.Set debug_mode, "turn on debug mode")
      ]
       (fun filename -> env := parse_file !env filename)
       "usage: [options] filename ...";
