@@ -24,14 +24,14 @@ let mismatch_type env pos t pos' t' =
 
 let mismatch_term_t env pos x pos' x' t = 
   raise (TypeCheckingFailure3 (env,
-		    pos , "expected term\n\t"^(lf_canonical_to_string x ),
-		    pos',      "to match\n\t"^(lf_canonical_to_string x'),
+		    pos , "expected term\n\t"^(lf_expr_to_string x ),
+		    pos',      "to match\n\t"^(lf_expr_to_string x'),
 	       get_pos t,       "of type\n\t"^(lf_type_to_string t)))
 
 let mismatch_term env pos x pos' x' = 
   raise (TypeCheckingFailure2 (env,
-		    pos , "expected term\n\t"^(lf_canonical_to_string x ),
-		    pos',      "to match\n\t"^(lf_canonical_to_string x')))
+		    pos , "expected term\n\t"^(lf_expr_to_string x ),
+		    pos',      "to match\n\t"^(lf_expr_to_string x')))
 
 let rec strip_singleton ((_,(_,t)) as u) = match t with
 | F_Singleton a -> strip_singleton a
@@ -59,7 +59,10 @@ let apply_tactic env pos t = function
       in
       tactic env pos t
   | Q_index n ->
-      let (v,u) = List.nth env n in
+      let (v,u) = 
+	try List.nth env n 
+	with Failure nth -> err env pos ("index out of range: "^(string_of_int n))
+      in
       if Alpha.UEqual.type_equiv empty_uContext t u then Some(var_to_lf v)
       else mismatch_type env pos t (get_pos u) u
 
@@ -237,7 +240,7 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
   (* return a pair consisting of the original expression with any tactic holes filled in, 
      and the synthesized type *)
   match x with
-  | LAMBDA _ -> err env (get_pos_can x) ("function has no type: "^(lf_canonical_to_string x))
+  | LAMBDA _ -> err env (get_pos_can x) ("function has no type: "^(lf_expr_to_string x))
   | CAN e ->
       let (pos,e0) = e in
       match e0 with
@@ -379,7 +382,7 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr =
       match x with
       | EmptyHole _ -> 
 	  raise (TypeCheckingFailure2 (env,
-				       pos, "hole found : "^(lf_canonical_to_string e),
+				       pos, "hole found : "^(lf_expr_to_string e),
 				       pos, "   of type : "^(lf_type_to_string t)))
       | TacticHole n -> (
 	  match apply_tactic env pos t n with

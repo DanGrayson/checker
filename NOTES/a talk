@@ -62,11 +62,19 @@ LF:
 
    LF syntax:
 
-	atomic objects		 R ::=  x M_1 ... M_n  |  c M_1 ... M_n
+   				 c ::=  an object constant
 
-	canonical objects	 M ::=  R  |  lambda x, M
+   				 x ::=  an object variable
 
-        type families    	 T ::=  b o_1 ... o_n   |  Pi x: T, T'
+        object constants	 h ::=  c  |  x
+
+	atomic objects		 R ::=  h M_1 ... M_n
+
+	canonical objects	 M ::=  lambda x_0, ..., lambda x_m, h M_1 ... M_n
+
+				 b ::=  a type family constant
+
+        type families    	 T ::=  b M_1 ... M_n   |  Pi x: T, T'
 
    	kinds            	 K ::=  Pi x_1:T_1, ..., x_n:T_n, type
 
@@ -78,7 +86,7 @@ LF:
 
 embedding TS in LF:
 
-  Type family constants with their kinds:
+  Type family constants (judgments) with their kinds:
 
      uexp : type
      texp : type
@@ -88,7 +96,7 @@ embedding TS in LF:
      tequal : texp ⟶ texp ⟶ type
      oequal : oexp ⟶ oexp ⟶ texp ⟶ type
 
-  Object constants with their types:
+  Object constants (syntax of objects) with their types:
 
      [∏] : texp ⟶ (oexp ⟶ texp) ⟶ texp
 

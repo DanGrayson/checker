@@ -15,12 +15,12 @@ let rec lf_atomic_to_string (_,e) =
   | TacticHole n -> tactic_to_string n
   | EmptyHole n -> "?" ^ (string_of_int n)
   | APPLY(V v,[]) -> vartostring v
-  | APPLY(h,args) -> concat ["(";(label_to_string h);(concat (List.map (space <<- lf_canonical_to_string) args));")"]
-and lf_canonical_to_string' = function
-  | LAMBDA(x,body) -> concat [vartostring x;" ⟼ " (* |-> *) ;lf_canonical_to_string' body]
+  | APPLY(h,args) -> concat ["(";(label_to_string h);(concat (List.map (space <<- lf_expr_to_string) args));")"]
+and lf_expr_to_string' = function
+  | LAMBDA(x,body) -> concat [vartostring x;" ⟼ " (* |-> *) ;lf_expr_to_string' body]
   | CAN e -> lf_atomic_to_string e
-and lf_canonical_to_string = function
-  | LAMBDA(x,body) -> concat ["(";vartostring x;" ⟼ ";lf_canonical_to_string' body;")"]
+and lf_expr_to_string = function
+  | LAMBDA(x,body) -> concat ["(";vartostring x;" ⟼ ";lf_expr_to_string' body;")"]
   | CAN e -> lf_atomic_to_string e
 
 let rec lf_type_to_string' target (_,t) = match t with
@@ -31,9 +31,9 @@ let rec lf_type_to_string' target (_,t) = match t with
 	in if target then k else concat ["("; k; ")"]
       else
 	concat ["∏ " (* Pi *); vartostring v; ":"; lf_type_to_string' false t; ", "; lf_type_to_string u]
-  | F_Singleton(x,t) -> concat ["Singleton(";lf_canonical_to_string x;" : ";lf_type_to_string t;")"]
+  | F_Singleton(x,t) -> concat ["Singleton(";lf_expr_to_string x;" : ";lf_type_to_string t;")"]
   | F_APPLY(hd,args) -> 
-      let s = concat [tfhead_to_string hd; concat (List.map (space <<- lf_canonical_to_string) args)] in
+      let s = concat [tfhead_to_string hd; concat (List.map (space <<- lf_expr_to_string) args)] in
       if String.contains s ' ' then concat ["(";s;")"] else s
 and lf_type_to_string t = lf_type_to_string' true t
 
@@ -45,14 +45,14 @@ let rec lf_kind_to_string = function
 (** Printing of TS terms in TS format. *)
 
 (** For LF expressions that are not TS terms, print [$$] and then the expression in LF format. *)
-let lf_canonical_p e = "$$" ^ (lf_canonical_to_string e)
+let lf_expr_p e = "$$" ^ (lf_expr_to_string e)
 let lf_atomic_p e = "$$" ^ (lf_atomic_to_string e)
 
 let rec args_to_string s = String.concat "," (List.map ts_can_to_string s)
 and paren_args_to_string s = String.concat "" [ "("; args_to_string s; ")" ]
 and ts_can_to_string = function 
   | CAN e -> ts_expr_to_string e
-  | LAMBDA _ as e -> lf_canonical_p e		(* normally this branch will not be used *)
+  | LAMBDA _ as e -> lf_expr_p e		(* normally this branch will not be used *)
 and ts_expr_to_string ((_,e) as oe) = match e with 
   | TacticHole n -> tactic_to_string n
   | EmptyHole n -> "?" ^ (string_of_int n)
