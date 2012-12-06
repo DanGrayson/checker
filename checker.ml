@@ -30,7 +30,7 @@ let error_summary pos =
   let n = !Tokens.error_count in
   if n > 0 
   then (
-    fprintf stderr "%s: %d error%s encountered, see messages above\n" pos n (if n == 1 then "" else "s");
+    fprintf stderr "%s: %d error%s encountered, see messages above\n" (errfmt pos) n (if n == 1 then "" else "s");
     flush stderr;
     exit 1
    )
@@ -44,13 +44,13 @@ let print_inconsistency lhs rhs =
   flush stderr;
   Tokens.bump_error_count()
 
-let rec handle_exception pos e =
-  let pos = errfmt pos in
+let rec handle_exception pos0 e =
+  let pos = errfmt pos0 in
   match e with
   | WithPosition(pos,e) -> 
       handle_exception pos e
   | Eof -> 
-      error_summary pos;
+      error_summary pos0;
       raise StopParsingFile
   | Failure s as ex -> 
       fprintf stderr "%s: failure: %s\n" pos s;
@@ -226,7 +226,7 @@ let process_command env lexbuf =
     | Toplevel.OeqDefinition defs -> oeqDefCommand env defs
     | Toplevel.Show n -> show_command env n; env
     | Toplevel.CheckUniverses -> checkUniversesCommand env pos; env
-    | Toplevel.End -> printf "%s: ending.\n" (errfmt pos); flush stdout; raise StopParsingFile
+    | Toplevel.End -> error_summary pos; raise StopParsingFile
 
 let read_eval_command env lexbuf =
   let rec repeat env =

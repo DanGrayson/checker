@@ -32,58 +32,48 @@ let fixParmList (p:parm list) : uContext * (var list) * ((var * ts_expr) list) =
 	in (ulevel_context,tc,ts_context))
   in fix [] [] [] p
 
-let tDefinition (name:string) ((ulevel_context,tvars,ts_context):(uContext * (var list) * ((var * ts_expr) list))) (t:ts_expr) (d1:lf_expr option)
-    : (var * position * lf_expr * lf_type) list 
-    = 
+let ( @@ ) f g x = f (g x)
+
+let apply f vartypes = Phi (nowhere 7 (APPLY(V f, List.map (var_to_lf @@ fst) vartypes)))
+
+let ist x = istype (var_to_lf x)
+
+let hast x t = hastype (var_to_lf x) (Phi t)
+
+let lamb (v,t1) t2 = LAMBDA(v,t2)
+
+let pi   (v,t1) t2 = nowhere 8 (F_Pi(v,t1,t2))
+
+let augment uvars ueqns tvars o_vartypes = List.flatten (
+    List.flatten [
+    List.map (fun  x    -> [x,uexp]) uvars;
+    List.map (fun (l,r) -> [newfresh (Var "u"), ulevel_equality (Phi l) (Phi r)]) ueqns;
+    List.map (fun  x    -> [x,texp; newfresh (Var "i"), ist  x  ]) tvars;
+    List.map (fun (x,t) -> [x,oexp; newfresh (Var "h"), hast x t]) o_vartypes
+  ])
+
+let fold = List.fold_right
+
+let wrap vartypes (def,pos,tm,tp) = (def, pos, fold lamb vartypes tm, fold pi vartypes tp)
+
+let tDefinition name (ulevel_context,tvars,o_vartypes) t d1 = 
   let pos = get_pos t in
-
   let UContext (uvars,ueqns) = ulevel_context in
-  let ovars = List.map fst ts_context in
-  let hts_context = List.map (fun (z,u) -> (z,u,newfresh (Var "h"))) ts_context in
-  let hastvars = List.map (fun (z,u,hast) -> hast) hts_context in
-  let allvars = List.flatten [uvars;tvars;ovars;hastvars] in
-
-  let v0 = VarDefined(name,0) in
-  let v1 = VarDefined(name,1) in
-
+  let vartypes = augment uvars ueqns tvars o_vartypes in
+  let def_0 = VarDefined(name,0) in
+  let def_1 = VarDefined(name,1) in
   let tm0 = Phi t in
   let tp0 = texp in
   let tm1 = match d1 with
   | Some tm1 -> tm1
   | None -> Phi(pos, new_hole()) in
-
-  let tp1 = istype (Phi (nowhere 7 (APPLY(V v0, List.map var_to_lf allvars)))) in
-
-  let g v t = LAMBDA(v,t) in
-  let h sort v t = nowhere 8 (F_Pi(v,sort,t)) in
-  let hast (z,u,h) t = nowhere 9 (F_Pi(h,hastype (var_to_lf z) (Phi u), t)) in
-
-  let tm0 = List.fold_right g hastvars tm0 in
-  let tm1 = List.fold_right g hastvars tm1 in
-  let tp0 = List.fold_right hast hts_context tp0 in
-  let tp1 = List.fold_right hast hts_context tp1 in
-
-  let tm0 = List.fold_right g ovars tm0 in
-  let tm1 = List.fold_right g ovars tm1 in
-  let tp0 = List.fold_right (h oexp) ovars tp0 in
-  let tp1 = List.fold_right (h oexp) ovars tp1 in
-
-  let tm0 = List.fold_right g tvars tm0 in
-  let tm1 = List.fold_right g tvars tm1 in
-  let tp0 = List.fold_right (h texp) tvars tp0 in
-  let tp1 = List.fold_right (h texp) tvars tp1 in
-
-  let tm0 = List.fold_right g uvars tm0 in
-  let tm1 = List.fold_right g uvars tm1 in
-  let tp0 = List.fold_right (h uexp) uvars tp0 in
-  let tp1 = List.fold_right (h uexp) uvars tp1 in
-
-  [ 
-    ( v0, pos, tm0, tp0 );
-    ( v1, pos, tm1, tp1)
+  let tp1 = istype (apply def_0 vartypes) in
+  List.map (wrap vartypes) [ 
+    ( def_0, pos, tm0, tp0);
+    ( def_1, pos, tm1, tp1)
   ]
 
-let oDefinition (name:string) ((ulevel_context,tc,ts_context):(uContext * (var list) * ((var * ts_expr) list))) (o:ts_expr) (t:ts_expr)
+let oDefinition (name:string) ((ulevel_context,tc,o_vartypes):(uContext * (var list) * ((var * ts_expr) list))) (o:ts_expr) (t:ts_expr)
     : (var * position * lf_expr * lf_type) list 
     = 
   let pos = get_pos o in
@@ -108,7 +98,6 @@ let oeqDefinition _ _ _ _ _ = raise (Unimplemented "oeqDefinition")
 
 open Printf
 open Printer
-
 
 let addDefinition env v pos o t = def_bind v pos o t env
 
@@ -142,3 +131,9 @@ let teqDefCommand env (name,parms,t1,t2) =
 let oeqDefCommand env (name,parms,o1,o2,t) = 
   let defs = oeqDefinition name (fixParmList parms) o1 o2 t in
   defCommand env defs
+
+(* 
+  Local Variables:
+  compile-command: "make definitions.cmo "
+  End:
+ *)

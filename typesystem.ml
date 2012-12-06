@@ -143,7 +143,7 @@ let tfheads = [
   F_uexp; F_texp; F_oexp; F_istype; F_hastype; F_ulevel_equality ;
   F_type_uequality; F_type_equality; F_object_uequality; F_object_equality ]
 
-let ( ** ) f x = nowhere 3 (F_APPLY(f,x))
+let ( ** ) f x : lf_type = nowhere 3 (F_APPLY(f,x))
 
 let uexp = F_uexp ** []
 let texp = F_texp ** []
@@ -261,6 +261,6 @@ let empty_uContext = UContext([],[])
 
 (* 
   Local Variables:
-  compile-command: "ocamlbuild typesystem.cmo "
+  compile-command: "make typesystem.cmo "
   End:
  *)
