@@ -136,6 +136,9 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
       | EmptyHole _ -> err env pos "empty hole found"
       | APPLY(V v, args) -> let f = unfold env v in apply_args env pos f args
       | APPLY _ -> raise Not_found)
+  | PR1 (_, PAIR(_,x,_)) -> x
+  | PR2 (_, PAIR(_,_,y)) -> y
+  | PR1 _ | PR2 _
   | PAIR _ | LAMBDA _ -> raise Not_found
 
 let rec head_normalization (env:context) (x:lf_expr) : lf_expr =
@@ -154,6 +157,12 @@ let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
   | F_Pi(v,a,b) ->
       let x' = term_normalization ((v,a) :: env) (apply_arg env pos x (var_to_lf v)) b in
       LAMBDA(v,x')
+  | F_Sigma(v,a,b) ->
+      let pos = get_pos_lf x in
+      let x,y = PR1(pos,x),PR2(pos,x) in
+      PAIR(pos,
+	   term_normalization env x a,
+	   term_normalization env y (subst_type (v,x) b))
   | F_APPLY _
   | F_Singleton _ ->
       let x = head_normalization env x in
@@ -161,10 +170,22 @@ let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
       x
       
 and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
+  (* returns the normalized term x and the inferred type of x *)
   (* see figure 9 page 696 [EEST] *)
   (* assume x is head normalized *)
   match x with
   | LAMBDA _ -> err env pos "path_normalization encountered a function"
+  | PAIR _ -> err env pos "path_normalization encountered a pair"
+  | PR1(pos,p) -> (
+      let p',s = path_normalization env pos p in
+      match unmark s with 
+      | F_Sigma(v,a,b) -> PR1(pos,p'), a
+      | _ -> raise Internal)
+  | PR2(pos,p) -> (
+      let p',s = path_normalization env pos p in
+      match unmark s with 
+      | F_Sigma(v,a,b) -> PR2(pos,p'), subst_type (v,PR1(pos,p')) b
+      | _ -> raise Internal)
   | Phi y ->
       let (pos,y0) = y in
       match y0 with
@@ -265,6 +286,19 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
      and the synthesized type *)
   match x with
   | LAMBDA _ -> err env (get_pos_lf x) ("function has no type: "^(lf_expr_to_string x))
+  | PAIR(pos,x,y) ->
+      let x',t = type_synthesis env x in
+      let y',u = type_synthesis env y in PAIR(pos,x',y'), (pos,F_Sigma(VarUnused,t,u))
+  | PR1(pos,p) -> (
+      let p',s = type_synthesis env p in
+      match unmark s with 
+      | F_Sigma(v,a,b) -> PR1(pos,p'), a
+      | _ -> raise Internal)
+  | PR2(pos,p) -> (
+      let p',s = type_synthesis env p in
+      match unmark s with 
+      | F_Sigma(v,a,b) -> PR2(pos,p'), subst_type (v,PR1(pos,p')) b
+      | _ -> raise Internal)
   | Phi e ->
       let (pos,e0) = e in
       match e0 with
@@ -276,15 +310,16 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
 	  let rec repeat env (a:lf_type) (args:lf_expr list) : lf_expr list * lf_type = (
 	    let (apos,a0) = a in
 	    match a0, args with
-	    | F_APPLY _ as t, [] -> [], (pos,t)
-	    | F_Singleton(e,t), args -> repeat env t args
-	    | F_Pi(v,a,_), [] -> 
-		err env pos ("too few arguments; next argument should be of type "^(lf_type_to_string a))
 	    | F_Pi(x,a',a''), m' :: args' ->
 		let m' = type_check pos env m' a' in
 		no_hole env pos m';
 		let (args'',u) = repeat ((x,a') :: env) (subst_type (x,m') a'') args' in
 		m' :: args'', u
+	    | F_Pi(v,a,_), [] -> err env pos ("too few arguments; next argument should be of type "^(lf_type_to_string a))
+	    | F_Singleton(e,t), args -> repeat env t args
+	    | F_Sigma _ as t, [] -> [], (pos,t)
+	    | F_APPLY _ as t, [] -> [], (pos,t)
+	    | F_Sigma _,  arg :: _
 	    | F_APPLY _, arg :: _ -> err env (get_pos_lf arg) "extra argument"
 	   )
 	  in
@@ -299,6 +334,9 @@ and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (
   let (pos,t0) = t in
   match x, y, t0 with
   | _, _, F_Singleton _ -> ()
+  | x, y, F_Sigma (v,a,b) ->
+      term_equivalence xpos ypos env (PR1(xpos,x)) (PR1(ypos,y)) a;
+      term_equivalence xpos ypos env (PR2(xpos,x)) (PR2(ypos,y)) (subst_type (v,PR1(xpos,x)) b)
   | x, y, F_Pi (v,a,b) -> (
       match x,y with
       | LAMBDA(u,x), LAMBDA(v,y) ->
@@ -398,27 +436,34 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr =
   (* we modify the algorithm to return a possibly modified expression e, with holes filled in by tactics *)
   let (pos,t0) = t in 
   match e, t0 with
-  | LAMBDA(v,e), F_Pi(w,a,b) ->
+  | Phi(pos, EmptyHole _), _ ->
+      raise (TypeCheckingFailure2 (env,
+				   pos, "hole found : "^(lf_expr_to_string e),
+				   pos, "   of type : "^(lf_type_to_string t)))
+  | Phi(pos, TacticHole n), _ -> (
+      match apply_tactic env pos t n with
+      | Some e -> type_check pos env e t
+      | None ->
+	  raise (TypeCheckingFailure2 (env,
+				       pos, "tactic failed     : "^(tactic_to_string n),
+				       pos, "  in hole of type : "^(lf_type_to_string t))))
+  | LAMBDA(v,e), F_Pi(w,a,b) -> (* the published algorithm is not applicable here, since
+				   our lambda doesn't contain type information for the variable *)
       let e = type_check pos ((v,a) :: env) e (subst_type (w,var_to_lf v) b) in
       LAMBDA(v,e)
   | LAMBDA _, _ -> err env pos "did not expect a lambda expression here"
-  | Phi(pos, x), _ ->
-      match x with
-      | EmptyHole _ -> 
-	  raise (TypeCheckingFailure2 (env,
-				       pos, "hole found : "^(lf_expr_to_string e),
-				       pos, "   of type : "^(lf_type_to_string t)))
-      | TacticHole n -> (
-	  match apply_tactic env pos t n with
-	  | Some e -> type_check pos env e t
-	  | None ->
-	      raise (TypeCheckingFailure2 (env,
-					   pos, "tactic failed     : "^(tactic_to_string n),
-					   pos, "  in hole of type : "^(lf_type_to_string t))))	  
-      | APPLY _ -> 
-	  let (e,s) = type_synthesis env e in 
-	  subtype env s t;
-	  e
+
+  | p, F_Sigma(w,a,b) -> (* the published algorithm doesn't seem correct in this case, 
+			    since type synthesis will always return a product type for a pair *)
+    let pos = get_pos_lf p in
+    let x = type_check pos env (PR1(pos,p)) a in
+    let y = type_check pos env (PR2(pos,p)) (subst_type (w,x) b) in
+    PAIR(pos,x,y)
+
+  | e, _  ->
+      let (e,s) = type_synthesis env e in 
+      subtype env s t;
+      e
 
 (* 
   Local Variables:
