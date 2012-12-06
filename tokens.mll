@@ -58,6 +58,13 @@ rule expr_tokens = parse
   | "⟶" { Warrow }
   | "Σ" { KSigma }
   | "Sigma" { KSigma }
+  | "×" { Wtimes }
+  | "**" { Wtimes }
+  | "pair" { Kpair }
+  | "pi1" { Kpi1 }
+  | "π₁" { Kpi1 }
+  | "pi2" { Kpi2 }
+  | "π₂" { Kpi2 }
   | "Ulevel" { KUlevel }
   | "Type" { KType }
   | "max" { Kumax }

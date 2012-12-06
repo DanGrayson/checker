@@ -21,6 +21,7 @@ open Definitions
   Wequal COLONequal Wunderscore WRule Wgreaterequal Wgreater Wlessequal Wless
   Wsemi KUlevel Kumax KType Ktype KPi Klambda KSigma WCheck WDefine WShow WEnd
   WVariable WAlpha Weof WCheckUniverses Wtilde KSingleton Axiom Wdollar W_LF W_TS
+  Kpair Kpi1 Kpi2 Wtimes
 
 /* precedences, lowest first */
 %right
@@ -29,12 +30,18 @@ open Definitions
 
 %right
 
+  /* we want [a -> b -> c] to be [a -> (b -> c)] */
   Warrow
 
 %nonassoc
 
   /* we want  [*f x] to be [*(f x)]  and  [*x->y] to be [( *x )->y]  */
   Reduce_star
+
+%right
+
+  /* we want [a * b * c] to be [a * (b * c)], but only by analogy with [a -> b] */
+  Wtimes
 
 %nonassoc
 
@@ -69,6 +76,10 @@ bare_lf_type:
 | KSigma v=bare_variable COLON a=lf_type Wcomma b=lf_type
     %prec Reduce_binder
     { F_Sigma(v,a,b) }
+| Wlparen v=bare_variable COLON a=lf_type Wrparen Wtimes b=lf_type
+    { F_Sigma(v,a,b) }
+| a=lf_type Wtimes b=lf_type
+    { F_Sigma(VarUnused,a,b) }
 | Wlparen v=bare_variable COLON a=lf_type Wrparen Warrow b=lf_type
    { F_Pi(v,a,b) }
 | a=lf_type Warrow b=lf_type
@@ -107,6 +118,12 @@ lf_expr:
     { Phi(Position($startpos, $endpos), e)  }
 | e=lf_lambda_expression
     { e }
+| Kpair a=lf_expr b=lf_expr
+    { PAIR(Position($startpos, $endpos), a, b) }
+| Kpi1 a=lf_expr
+    { PR1(Position($startpos, $endpos), a) }
+| Kpi2 a=lf_expr
+    { PR2(Position($startpos, $endpos), a) }
 
 lf_lambda_expression:
 | Wlparen Klambda v=variable Wcomma body=lf_expr Wrparen

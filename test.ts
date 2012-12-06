@@ -37,20 +37,6 @@ Check TS λ x:T, λ y:T, λ t:[Id](T,x,y), t.
 
 Check TS λ o:T, λ o':T, [∀;x](u1,u2,o,o').
 
-Alpha ∏ x:T, U  =  ∏ y:T, U .
-Alpha λ g:T ⟶ U, λ x:T, g x
-   =  λ h:T ⟶ U, λ y:T, h y  .
-Alpha λ g:∏ a:T, U, λ x:T, g x
-   =  λ h:∏ b:T, U, λ y:T, h y  .
-Alpha λ g:T ⟶ U, λ x:T, g a
-   =  λ h:T ⟶ U, λ y:T, h y  .
-Alpha λ g:T ⟶ U, λ x:T, g x
-   =  λ h:T ⟶ U, λ y:T, h b  .
-Alpha λ g:T ⟶ U, λ x:T, g h
-   =  λ h:T ⟶ U, λ y:T, h y  .
-Alpha λ g:T ⟶ U, λ x:T, g x
-   =  λ h:T ⟶ U, λ y:T, h h  .
-
 Check TS ∏ x : T, [U]([next](u0)).
 Check TS ∏ x : T, [U](u0).
 
@@ -91,7 +77,7 @@ Check TS [Pi;x](T,T).
 Check LF type ∏ x:oexp, ∏ y:oexp, ∏ T:texp, ∏ U:texp, [ x = y : T ] ⟶ [ T = U ] ⟶ [ x = y : U ].
 Check LF (U_type u1).
 
-Define foo (u : Ulevel) (t : [U]([next](u))) := *t; (El_type ([next] u) t h$117).
+Define foo (u : Ulevel) (t : [U]([next](u))) := *t; (El_type ([next] u) t $a).
 
 Define foo (u : Ulevel) (t : [U](u)) := *t; (El_type u t $a).
 Check LF ([foo.0] ([next] u1) ([u] u1) (u_univ u1)).
@@ -99,6 +85,11 @@ Check LF ([foo.1] ([next] u1) ([u] u1) (u_univ u1)).
 
 Define C (u : Ulevel) (t : [U](u)) := *t; (El_type $2 $2 $2).
 
+Check LF type texp ** oexp .
+Check LF      pair ([U] u0) ([u] u0).
+Check LF type Sigma x: uexp, texp.
+Check LF      pair u0 ([U] u0).
+Check LF type Singleton ( pair u0 ([U] u0) :  (Sigma x: uexp, texp) ).
 # Show.
 
 

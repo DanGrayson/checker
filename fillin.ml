@@ -14,6 +14,9 @@ open Printer
 
 let rec fillinlist pos env es = List.map (fillin' pos env) es
 and fillin' pos env = function
+  | PAIR(pos,x,y) -> PAIR(pos,fillin' pos env x,fillin' pos env y)
+  | PR1(pos,x) -> PR1(pos,fillin' pos env x) 
+  | PR2(pos,x) -> PR2(pos,fillin' pos env x) 
   | LAMBDA(v,body) as l -> raise (Unimplemented_expr l)
   | Phi e -> Phi(fillin env e)
 and fillin env (pos,e) = (pos, match e with

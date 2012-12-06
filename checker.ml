@@ -14,7 +14,6 @@ open Printer
 open Definitions
 
 module Load = struct
-  open Template
   open Tactics
 end
 
@@ -134,7 +133,7 @@ let ts_axiomCommand env name t =
   flush stdout;
   match t with
   | Phi t -> ts_bind (Var name, t) env
-  | LAMBDA _ -> raise Internal
+  | _ -> raise Internal
 
 let lf_axiomCommand env name t =
   let t = Lfcheck.type_validity env t in
@@ -161,7 +160,10 @@ let checkLFtypeCommand env t =
   printf "CheckLFtype: %a\n" p_type t;
   flush stdout;
   let t = Lfcheck.type_validity env t in
-  printf "           : %a\n" p_type t;
+  printf "           : %a [after tactics]\n" p_type t;
+  flush stdout;
+  let t = Lfcheck.type_normalization env t in
+  printf "           : %a [after normalization]\n" p_type t;
   flush stdout
 
 let checkCommand env x =

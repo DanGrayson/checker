@@ -53,6 +53,9 @@ let hhash = function
   | V h -> 2
 
 let rec chash = function
+  | PAIR(_,x,y) -> 611 * chash x + 711 * chash y
+  | PR1(_,p) -> 117 * chash p
+  | PR2(_,p) -> 211 * chash p
   | LAMBDA(_,body) -> chash body
   | Phi e -> ahash e
 and clhash = function

@@ -27,7 +27,7 @@ and lf_expr_to_string = function
   | LAMBDA(x,body) -> concat ["(";vartostring x;" ⟼ ";lf_expr_to_string' body;")"]
   | PR1(_,x) -> concat ["(π₁ ";lf_expr_to_string x;")"]
   | PR2(_,x) -> concat ["(π₂ ";lf_expr_to_string x;")"]
-  | PAIR(_,x,y) -> concat ["(pair ";lf_expr_to_string x;lf_expr_to_string y;")"]
+  | PAIR(_,x,y) -> concat ["(pair ";lf_expr_to_string x;" ";lf_expr_to_string y;")"]
   | Phi e -> ts_expr_to_string e
 
 let rec lf_type_to_string' target (_,t) = match t with
