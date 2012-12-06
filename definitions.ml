@@ -56,41 +56,29 @@ let fold = List.fold_right
 
 let wrap vartypes (def,pos,tm,tp) = (def, pos, fold lamb vartypes tm, fold pi vartypes tp)
 
-let tDefinition name (ulevel_context,tvars,o_vartypes) t d1 = 
+let hole pos = Phi(pos, new_hole())
+
+let term_or_hole pos = function
+  | Some tm -> tm
+  | None -> hole pos
+
+let tDefinition name (UContext (uvars,ueqns),tvars,o_vartypes) t d1 = 
   let pos = get_pos t in
-  let UContext (uvars,ueqns) = ulevel_context in
   let vartypes = augment uvars ueqns tvars o_vartypes in
   let def_0 = VarDefined(name,0) in
-  let def_1 = VarDefined(name,1) in
-  let tm0 = Phi t in
-  let tp0 = texp in
-  let tm1 = match d1 with
-  | Some tm1 -> tm1
-  | None -> Phi(pos, new_hole()) in
-  let tp1 = istype (apply def_0 vartypes) in
-  List.map (wrap vartypes) [ 
-    ( def_0, pos, tm0, tp0);
-    ( def_1, pos, tm1, tp1)
-  ]
+  List.map (wrap vartypes) 
+    [ 
+      ( def_0, pos, Phi t, texp);
+      ( VarDefined(name,1), pos, term_or_hole pos d1, istype (apply def_0 vartypes)) ]
 
-let oDefinition (name:string) ((ulevel_context,tc,o_vartypes):(uContext * (var list) * ((var * ts_expr) list))) (o:ts_expr) (t:ts_expr)
-    : (var * position * lf_expr * lf_type) list 
-    = 
+let oDefinition name (UContext(uvars,ueqns),tvars,o_vartypes) o t d1 =
   let pos = get_pos o in
-
-  let tm0 = Phi o in
-  let tp0 = oexp in
-  let tm1 = Phi t in
-  let tp1 = texp in
-  let tm2 = Phi (pos, new_hole()) in
-  let tp2 = hastype (Phi o) (Phi t) in
-
-  (* still have to wrap the lambdas around it : *)
-  [
-   ( VarDefined(name, 0), get_pos o, tm0, tp0);
-   ( VarDefined(name, 1), get_pos t, tm1, tp1);
-   ( VarDefined(name, 2), get_pos o, tm2, tp2)
- ]
+  let vartypes = augment uvars ueqns tvars o_vartypes in
+  let def_0 = VarDefined(name,0) in
+  List.map (wrap vartypes)
+    [
+     ( def_0             , get_pos o, Phi o              , oexp );
+     ( VarDefined(name,1), get_pos t, term_or_hole pos d1, hastype (apply def_0 vartypes) (Phi t)) ]
 
 let teqDefinition _ _ _ _ = raise (Unimplemented "teqDefinition")
 
@@ -120,8 +108,8 @@ let tDefCommand env (name,parms,t,d1) =
   let defs = tDefinition name (fixParmList parms) t d1 in
   defCommand env defs
 
-let oDefCommand env (name,parms,o,t) = 
-  let defs = oDefinition name (fixParmList parms) o t in
+let oDefCommand env (name,parms,o,t,d1) = 
+  let defs = oDefinition name (fixParmList parms) o t d1 in
   defCommand env defs
 
 let teqDefCommand env (name,parms,t1,t2) = 

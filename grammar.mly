@@ -66,6 +66,8 @@ bare_lf_type:
 | KPi v=bare_variable COLON a=lf_type Wcomma b=lf_type
     %prec Reduce_binder
     { F_Pi(v,a,b) }
+| Wlparen v=bare_variable COLON a=lf_type Wrparen Warrow b=lf_type
+   { F_Pi(v,a,b) }
 | a=lf_type Warrow b=lf_type
    { F_Pi(VarUnused,a,b) }
 | KSingleton Wlparen x=lf_expr COLON t=lf_type Wrparen
@@ -178,8 +180,8 @@ command0:
 
 | WDefine name=IDENTIFIER parms=parmList COLONequal t=ts_expr d1=option(preceded(Wsemi,lf_expr)) Wperiod 
     { Toplevel.TDefinition (name, parms, t, d1) }
-| WDefine name=IDENTIFIER parms=parmList COLONequal o=ts_expr COLON t=ts_expr Wperiod 
-    { Toplevel.ODefinition (name, parms, o, t) }
+| WDefine name=IDENTIFIER parms=parmList COLONequal o=ts_expr COLON t=ts_expr d1=option(preceded(Wsemi,lf_expr)) Wperiod 
+    { Toplevel.ODefinition (name, parms, o, t, d1) }
 | WDefine name=IDENTIFIER parms=parmList COLONequal t1=ts_expr Wequal t2=ts_expr Wperiod 
     { Toplevel.TeqDefinition (name, parms, t1, t2) }
 | WDefine name=IDENTIFIER parms=parmList COLONequal o1=ts_expr Wequal o2=ts_expr COLON t=ts_expr Wperiod 
@@ -280,6 +282,8 @@ bare_ts_expr:
 | KPi x=variable COLON t1=ts_expr Wcomma t2=ts_expr
     %prec Reduce_binder
     { make_TT_Pi t1 (x,t2) }
+| Wlparen x=variable COLON t=ts_expr Wrparen Warrow u=ts_expr
+    { make_TT_Pi t (x,u) }
 | t=ts_expr Warrow u=ts_expr
     { make_TT_Pi t (VarUnused,u) }
 | KSigma x=variable COLON t1=ts_expr Wcomma t2=ts_expr

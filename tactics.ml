@@ -9,7 +9,14 @@ let add_tactic name f =
 let rec assumption env pos t =
   match env with 
   | (v,u) :: env ->
-      if Alpha.UEqual.type_equiv empty_uContext t u
+      if 
+	try
+	  Lfcheck.type_equivalence env t u;
+	  true
+	with 
+	| TypeCheckingFailure _
+	| TypeCheckingFailure2 _
+	| TypeCheckingFailure3 _ -> false
       then Some(var_to_lf v)
       else assumption env pos t
   | [] -> None

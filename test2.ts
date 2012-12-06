@@ -1,4 +1,10 @@
-Define E1 (u:Ulevel)(K:Type)(x:K) := x : K.
+Variable u0 : Ulevel.
+Define E1 (u:Ulevel)(K:Type)(x:K) := x : K; $a.
+
+# Define [E1.1] =  (u ⟼ K ⟼ i$2 ⟼ x ⟼ h$1 ⟼ $a)
+#        [E1.1] => (u ⟼ K ⟼ i$2 ⟼ x ⟼ h$1 ⟼ h$1)
+#        [E1.1] :  ∏ u:uexp, ∏ K:texp, ∏ i$2:(istype K), ∏ x:oexp, ∏ h$1:(hastype x K), (hastype ([E1.0] u K i$2 x h$1) K)
+#        [E1.1] => ∏ u:uexp, ∏ K:texp, ∏ i$2:(istype K), ∏ x:oexp, ∏ h$1:(hastype x K), (hastype ([E1.0] u K i$2 x h$1) K)		OOPS
 
 Show 100.
 End.

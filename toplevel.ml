@@ -12,7 +12,7 @@ type command' =
   | Variable of string list
   | Alpha of ts_expr * ts_expr
   | TDefinition of (string * Definitions.parm list * ts_expr * lf_expr option)
-  | ODefinition of (string * Definitions.parm list * ts_expr * ts_expr)
+  | ODefinition of (string * Definitions.parm list * ts_expr * ts_expr * lf_expr option)
   | TeqDefinition of (string * Definitions.parm list * ts_expr * ts_expr)
   | OeqDefinition of (string * Definitions.parm list * ts_expr * ts_expr * ts_expr)
   | CheckUniverses
