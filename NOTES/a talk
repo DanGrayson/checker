@@ -152,8 +152,13 @@ be added to the environment:
 
 	..., j : oequal Phi(o) Phi(o') Phi(T), ... |-
 
-Definitions ...
+Definitions via singleton types ane subtyping (Harper and Stone) and LF type
+checking
 
 Tactics ...
+
+Universe handling as a tactic admitted to the kernel
+
+Plans for TS type checking
 
 Demo ...

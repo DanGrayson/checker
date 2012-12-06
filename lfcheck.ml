@@ -386,6 +386,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
       let (y,u) = strip_singleton b in
       type_equivalence env t u;
       term_equivalence tpos upos env x y t
+  | F_Sigma(v,a,b), F_Sigma(w,c,d)
   | F_Pi(v,a,b), F_Pi(w,c,d) ->
       type_equivalence env a c;
       if v = VarUnused && w = VarUnused
@@ -428,6 +429,9 @@ and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
   | F_Pi(x,a,b) , F_Pi(y,c,d) ->
       subtype env c a;			(* contravariant *)
       subtype ((x, a) :: env) b d
+  | F_Sigma(x,a,b) , F_Sigma(y,c,d) ->
+      subtype env a c;			(* covariant *)
+      subtype ((x, a) :: env) b d
   | _ -> type_equivalence env (tpos,t0) (upos,u0)
 
 and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr = 
@@ -447,18 +451,14 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr =
 	  raise (TypeCheckingFailure2 (env,
 				       pos, "tactic failed     : "^(tactic_to_string n),
 				       pos, "  in hole of type : "^(lf_type_to_string t))))
+
   | LAMBDA(v,e), F_Pi(w,a,b) -> (* the published algorithm is not applicable here, since
-				   our lambda doesn't contain type information for the variable *)
+				   our lambda doesn't contain type information for the variable,
+				   and theirs does *)
       let e = type_check pos ((v,a) :: env) e (subst_type (w,var_to_lf v) b) in
       LAMBDA(v,e)
-  | LAMBDA _, _ -> err env pos "did not expect a lambda expression here"
 
-  | p, F_Sigma(w,a,b) -> (* the published algorithm doesn't seem correct in this case, 
-			    since type synthesis will always return a product type for a pair *)
-    let pos = get_pos_lf p in
-    let x = type_check pos env (PR1(pos,p)) a in
-    let y = type_check pos env (PR2(pos,p)) (subst_type (w,x) b) in
-    PAIR(pos,x,y)
+  | LAMBDA _, _ -> err env pos "did not expect a lambda expression here"
 
   | e, _  ->
       let (e,s) = type_synthesis env e in 
