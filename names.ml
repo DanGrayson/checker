@@ -85,7 +85,10 @@ let label_to_type env pos = function
 
 let rec get_pos_lf (x:lf_expr) =
   match x with
-  | Phi x -> get_pos x
+  | Phi(pos,_)
+  | PR1(pos,_)
+  | PR2(pos,_)
+  | PAIR(pos,_,_) -> pos
   | LAMBDA(x,b) -> get_pos_lf b
 
 let var_to_ts v = APPLY(V v,[])

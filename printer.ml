@@ -18,11 +18,16 @@ let rec ts_expr_to_string (_,e) =
   | EmptyHole n -> "?" ^ (string_of_int n)
   | APPLY(V v,[]) -> vartostring v
   | APPLY(h,args) -> concat ["(";(lf_expr_head_to_string h);(concat (List.map (space <<- lf_expr_to_string) args));")"]
+
 and lf_expr_to_string' = function
   | LAMBDA(x,body) -> concat [vartostring x;" ⟼ " (* |-> *) ;lf_expr_to_string' body]
-  | Phi e -> ts_expr_to_string e
+  | _ as e -> lf_expr_to_string e
+
 and lf_expr_to_string = function
   | LAMBDA(x,body) -> concat ["(";vartostring x;" ⟼ ";lf_expr_to_string' body;")"]
+  | PR1(_,x) -> concat ["(π₁ ";lf_expr_to_string x;")"]
+  | PR2(_,x) -> concat ["(π₂ ";lf_expr_to_string x;")"]
+  | PAIR(_,x,y) -> concat ["(pair ";lf_expr_to_string x;lf_expr_to_string y;")"]
   | Phi e -> ts_expr_to_string e
 
 let rec lf_type_to_string' target (_,t) = match t with
@@ -33,6 +38,13 @@ let rec lf_type_to_string' target (_,t) = match t with
 	in if target then k else concat ["("; k; ")"]
       else
 	concat ["∏ " (* Pi *); vartostring v; ":"; lf_type_to_string' false t; ", "; lf_type_to_string u]
+  | F_Sigma(v,t,u) -> 
+      if v == VarUnused
+      then 
+	let k = concat [lf_type_to_string' false t; " × " ; lf_type_to_string' false u]
+	in if target then k else concat ["("; k; ")"]
+      else
+	concat ["Σ " (* Sigma *); vartostring v; ":"; lf_type_to_string' false t; ", "; lf_type_to_string u]
   | F_Singleton(x,t) -> concat ["Singleton(";lf_expr_to_string x;" : ";lf_type_to_string t;")"]
   | F_APPLY(hd,args) -> 
       let s = concat [lf_type_head_to_string hd; concat (List.map (space <<- lf_expr_to_string) args)] in
@@ -54,7 +66,7 @@ let rec args_to_string s = String.concat "," (List.map ts_can_to_string s)
 and paren_args_to_string s = String.concat "" [ "("; args_to_string s; ")" ]
 and ts_can_to_string = function 
   | Phi e -> ts_expr_to_string e
-  | LAMBDA _ as e -> lf_expr_p e		(* normally this branch will not be used *)
+  | PR1 _ | PR2 _ | PAIR _ | LAMBDA _ as e -> lf_expr_p e		(* normally this branch will not be used *)
 and ts_expr_to_string ((_,e) as oe) = match e with 
   | TacticHole n -> tactic_to_string n
   | EmptyHole n -> "?" ^ (string_of_int n)

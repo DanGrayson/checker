@@ -6,7 +6,7 @@ open Names
 
 let atomic = function
   | Phi e -> e
-  | LAMBDA _ -> raise NotImplemented (* Doesn't yet handle replacing variables in the head position (hereditary substitution) *)
+  | _ -> raise NotImplemented
 
 let rec subst_list (subl : (var * lf_expr) list) es = List.map (subst' subl) es
 and subst (subl : (var * lf_expr) list) ((pos,e) as d) = 
@@ -25,6 +25,9 @@ and subst (subl : (var * lf_expr) list) ((pos,e) as d) =
   | EmptyHole _ -> d  
 and subst' (subl : (var * lf_expr) list) = function
   | Phi e -> Phi(subst subl e)
+  | PAIR(pos,x,y) -> PAIR(pos,subst' subl x,subst' subl y)
+  | PR1(pos,x) -> PR1(pos,subst' subl x)
+  | PR2(pos,x) -> PR2(pos,subst' subl x)
   | LAMBDA(v, body) -> 
       if v = VarUnused
       then 
@@ -45,6 +48,13 @@ and subst_type (subl : (var * lf_expr) list) (pos,t) =
 	 let w = newfresh v in
 	 let subl' = (v,var_to_lf w) :: subl in 
 	 F_Pi(w, subst_type subl a, subst_type subl' b)
+   | F_Sigma(v,a,b) -> 
+       if v = VarUnused then
+	 F_Sigma(v, subst_type subl a, subst_type subl b)
+       else
+	 let w = newfresh v in
+	 let subl' = (v,var_to_lf w) :: subl in 
+	 F_Sigma(w, subst_type subl a, subst_type subl' b)
    | F_APPLY(label,args) -> F_APPLY(label, subst_list subl args)
    | F_Singleton(e,t) -> F_Singleton( subst' subl e, subst_type subl t ))
 

@@ -66,6 +66,9 @@ bare_lf_type:
 | KPi v=bare_variable COLON a=lf_type Wcomma b=lf_type
     %prec Reduce_binder
     { F_Pi(v,a,b) }
+| KSigma v=bare_variable COLON a=lf_type Wcomma b=lf_type
+    %prec Reduce_binder
+    { F_Sigma(v,a,b) }
 | Wlparen v=bare_variable COLON a=lf_type Wrparen Warrow b=lf_type
    { F_Pi(v,a,b) }
 | a=lf_type Warrow b=lf_type

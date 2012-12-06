@@ -85,15 +85,16 @@ type lf_expr_head =
 	
 (** The expressions of LF are the "canonical" terms, and are of type [lf_expr].
 
-    Canonical terms include the atomic terms via [Phi], as well as one new type
-    of term (lambda expressions), which admits no top level simplification
-    (head reduction).
+    Canonical terms include the atomic terms via [Phi].
  *)
 type lf_expr = 
-  | LAMBDA of var * lf_expr
-	(** Lambda expression of LF. *)
   | Phi of ts_expr
 	(** [Phi] is embeds TS expressions into LF expressions *)
+  | LAMBDA of var * lf_expr
+	(** Lambda expression of LF. *)
+  | PAIR of position * lf_expr * lf_expr
+  | PR1 of position * lf_expr
+  | PR2 of position * lf_expr
 
 (** The expressions of TS are the "atomic" terms, and are of type [ts_expr].
     The constructor [Phi] implements the embedding from TS into LF.
@@ -136,6 +137,7 @@ type lf_type_head =
 type lf_type = bare_lf_type marked
 and bare_lf_type =
   | F_Pi of var * lf_type * lf_type
+  | F_Sigma of var * lf_type * lf_type
   | F_APPLY of lf_type_head * lf_expr list
   | F_Singleton of (lf_expr * lf_type)
 

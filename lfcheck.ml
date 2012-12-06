@@ -95,6 +95,16 @@ let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
 	    | [], t -> t
 	  in nowhere 5 (repeat args t))
   | LAMBDA _ -> err env pos "LF lambda expression found, has no natural type"
+  | PAIR _ -> err env pos "LF pair found, has no natural type"
+  | PR1(pos,xy) -> (
+      match unmark (natural_type pos env xy) with
+      | F_Sigma(v,a,b) -> a
+      | _ -> raise Internal)
+  | PR2(pos,xy) -> (
+      let (xypos,xy0) = natural_type pos env xy in
+      match xy0 with
+      | F_Sigma(v,a,b) -> subst_type (v,PR1(xypos, xy)) b
+      | _ -> raise Internal)
 
 let apply_arg env pos (f:lf_expr) (arg:lf_expr) =
   match f with
@@ -126,7 +136,7 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
       | EmptyHole _ -> err env pos "empty hole found"
       | APPLY(V v, args) -> let f = unfold env v in apply_args env pos f args
       | APPLY _ -> raise Not_found)
-  | LAMBDA _ -> raise Not_found
+  | PAIR _ | LAMBDA _ -> raise Not_found
 
 let rec head_normalization (env:context) (x:lf_expr) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
@@ -192,6 +202,10 @@ let rec type_normalization (env:context) (t:lf_type) : lf_type =
       let a' = type_normalization env a in
       let b' = type_normalization ((v,a) :: env) b in
       F_Pi(v,a',b')
+  | F_Sigma(v,a,b) -> 
+      let a' = type_normalization env a in
+      let b' = type_normalization ((v,a) :: env) b in
+      F_Sigma(v,a',b')
   | F_APPLY(head,args) ->
       let kind = tfhead_to_kind head in
       let args =
@@ -223,6 +237,10 @@ let rec type_validity (env:context) (t:lf_type) : lf_type =
 	let t = type_validity env t in
 	let u = type_validity ((v,t) :: env) u in
 	F_Pi(v,t,u)
+    | F_Sigma(v,t,u) ->
+	let t = type_validity env t in
+	let u = type_validity ((v,t) :: env) u in
+	F_Sigma(v,t,u)
     | F_APPLY(head,args) ->
 	let kind = tfhead_to_kind head in
 	let rec repeat env kind (args:lf_expr list) = 
