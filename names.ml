@@ -32,20 +32,20 @@ let vartostring = function
   | VarUnused -> "_"
   | VarDefined (name,aspect) -> "[" ^ name ^ "." ^ (string_of_int aspect) ^ "]"
 
-let label_to_string = function
+let lf_expr_head_to_string = function
   | V v -> vartostring v
   | U h -> "[" ^ uhead_to_string h ^ "]"
   | T h -> "[" ^ thead_to_string h ^ "]"
   | O h -> "[" ^ ohead_to_string h ^ "]"
 
-let labels = List.concat [
+let lf_expr_heads = List.concat [
   List.map (fun h -> U h) uheads;
   List.map (fun h -> T h) theads;
   List.map (fun h -> O h) oheads
 ]
 
 let string_to_label = 
-  let a = List.map (fun h -> label_to_string h, h) labels in
+  let a = List.map (fun h -> lf_expr_head_to_string h, h) lf_expr_heads in
   let b = [
     ("[∏]", T T_Pi);
     ("[Σ]", T T_Sigma);
@@ -54,7 +54,7 @@ let string_to_label =
     ("[∀]", O O_forall)] in
   List.concat [a;b]
 
-let tfhead_to_string = function
+let lf_type_head_to_string = function
   | F_uexp -> "uexp"
   | F_texp -> "texp"
   | F_oexp -> "oexp"
@@ -66,7 +66,7 @@ let tfhead_to_string = function
   | F_type_uequality -> "t-uequal"
   | F_object_uequality -> "o-uequal"
 
-let tfhead_strings = List.map (fun x -> tfhead_to_string x, x) tfheads
+let tfhead_strings = List.map (fun x -> lf_type_head_to_string x, x) lf_type_heads
 
 let tactic_to_string : tactic_expr -> string = function
   | Q_name n -> "$" ^ n

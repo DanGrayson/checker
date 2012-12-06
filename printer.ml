@@ -1,5 +1,6 @@
 (** Functions for converting expressions to strings for printing *)
 
+open Error
 open Typesystem
 open Names
 open Printf
@@ -16,7 +17,7 @@ let rec ts_expr_to_string (_,e) =
   | TacticHole n -> tactic_to_string n
   | EmptyHole n -> "?" ^ (string_of_int n)
   | APPLY(V v,[]) -> vartostring v
-  | APPLY(h,args) -> concat ["(";(label_to_string h);(concat (List.map (space <<- lf_expr_to_string) args));")"]
+  | APPLY(h,args) -> concat ["(";(lf_expr_head_to_string h);(concat (List.map (space <<- lf_expr_to_string) args));")"]
 and lf_expr_to_string' = function
   | LAMBDA(x,body) -> concat [vartostring x;" ⟼ " (* |-> *) ;lf_expr_to_string' body]
   | Phi e -> ts_expr_to_string e
@@ -34,7 +35,7 @@ let rec lf_type_to_string' target (_,t) = match t with
 	concat ["∏ " (* Pi *); vartostring v; ":"; lf_type_to_string' false t; ", "; lf_type_to_string u]
   | F_Singleton(x,t) -> concat ["Singleton(";lf_expr_to_string x;" : ";lf_type_to_string t;")"]
   | F_APPLY(hd,args) -> 
-      let s = concat [tfhead_to_string hd; concat (List.map (space <<- lf_expr_to_string) args)] in
+      let s = concat [lf_type_head_to_string hd; concat (List.map (space <<- lf_expr_to_string) args)] in
       if String.contains s ' ' then concat ["(";s;")"] else s
 and lf_type_to_string t = lf_type_to_string' true t
 
@@ -118,7 +119,7 @@ and ts_expr_to_string ((_,e) as oe) = match e with
 	    | _ -> lf_atomic_p oe)
 	| _ -> "[" ^ (ohead_to_string oh) ^ "]" ^ (paren_args_to_string args)
        )
-    | _ -> (label_to_string h) ^ (paren_args_to_string args)
+    | _ -> (lf_expr_head_to_string h) ^ (paren_args_to_string args)
 
 (** Printing functions for definitions, provisional. *)
 
@@ -168,23 +169,47 @@ let rec iteri i f = function
 
 let iteri f l = iteri 0 f l
 
-let print_context n file env = 
-  let n = match n with  None -> -1 | Some n -> n in
-  fprintf file "Context:\n";
-  try
-    iteri
-      (fun i (v,t) ->
-	if i = n then raise Limit;
-	fprintf file "     %s : %s\n" (vartostring v) (lf_type_to_string t);
-	flush file) 
-      env
-    with Limit -> ();
-  flush file
+let p_var file x = output_string file (vartostring x)
+
+let p_ts file x = output_string file (ts_expr_to_string x)
+
+let p_expr file x = output_string file (lf_expr_to_string x)
+
+let p_expr_head file x = output_string file (lf_expr_head_to_string x)
+
+let p_type file x = output_string file (lf_type_to_string x)
+
+let p_type_head file x = output_string file (lf_type_head_to_string x)
+
+let p_kind file x = output_string file (lf_kind_to_string x)
+
+let p_type_head file x = output_string file (lf_type_head_to_string x)
+
+let p_pos file x = output_string file (errfmt x)
+
+let p_pos_of file x = output_string file (errfmt (get_pos x))
+
+let p_fl file () = flush file
 
 let print_signature env file =
   fprintf file "Signature:\n";
   fprintf file "  Type family constants:\n";
-  List.iter (fun h -> fprintf file "     %s : %s\n" (tfhead_to_string h) (lf_kind_to_string (tfhead_to_kind h))) tfheads;
+  List.iter (fun h -> 
+    fprintf file "     %a : %a\n" p_type_head h  p_kind (tfhead_to_kind h)
+	    ) lf_type_heads;
   fprintf file "  Object constants:\n";
-  List.iter (fun h -> fprintf file "     %s : %s\n" (label_to_string h) (lf_type_to_string (label_to_type env (Error.no_pos 23) h))) labels;
+  List.iter (fun h -> 
+    fprintf file "     %a : %a\n" p_expr_head h  p_type (label_to_type env (Error.no_pos 23) h)
+	    ) lf_expr_heads;
   flush file
+
+let print_context n file env = 
+  let n = match n with None -> -1 | Some n -> n in
+  fprintf file "Context:\n";
+  try iteri
+      (fun i (v,t) ->
+	if i = n then raise Limit;
+	fprintf file "     %a : %a\n" p_var v  p_type t; flush file) 
+      env
+  with Limit -> ()
+

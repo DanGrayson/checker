@@ -169,7 +169,7 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
 		  match args with
 		  | [] -> raise (TypeCheckingFailure2 (env,
 		    pos , ("expected "^(string_of_int (num_args t))^" more arguments"),
-		    (get_pos t0), (" using:\n\t"^(label_to_string f)^" : "^(lf_type_to_string t0))))
+		    (get_pos t0), (" using:\n\t"^(lf_expr_head_to_string f)^" : "^(lf_type_to_string t0))))
 		  | x :: args ->
 		      no_hole env pos x;
 		      let b = subst_type (v,x) b in

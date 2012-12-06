@@ -30,6 +30,7 @@ let errfmt = function
 type 'a marked = position * 'a
 let unmark ((_:position), x) = x
 let get_pos ((pos:position), _) = pos
+let errpos x = errfmt (get_pos x)
 let with_pos (pos:position) e = (pos, e)
 let with_pos_of ((pos:position),_) e = (pos,e)
 let nowhere_ctr = ref 0

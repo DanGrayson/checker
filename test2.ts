@@ -1,4 +1,4 @@
-Variable u0 : Ulevel.
+# Variable u0 : Ulevel.
 Define E1 (u:Ulevel)(K:Type)(x:K) := x : K; $a.
 
 # Define [E1.1] =  (u ⟼ K ⟼ i$2 ⟼ x ⟼ h$1 ⟼ $a)

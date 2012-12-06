@@ -35,12 +35,10 @@ let error_summary pos =
     exit 1
    )
 
-let errpos x = errfmt (get_pos x)
-
 let print_inconsistency lhs rhs = 
-  Printf.fprintf stderr "%s: universe inconsistency:\n" (errpos lhs);
-  Printf.fprintf stderr "%s:         %s\n" (errpos lhs) (ts_expr_to_string lhs);
-  Printf.fprintf stderr "%s:      != %s\n" (errpos rhs) (ts_expr_to_string rhs);
+  Printf.fprintf stderr "%a: universe inconsistency:\n" p_pos_of lhs;
+  Printf.fprintf stderr "%a:         %a\n"  p_pos_of lhs  p_ts lhs;
+  Printf.fprintf stderr "%a:      != %a\n"  p_pos_of rhs  p_ts rhs;
   flush stderr;
   Tokens.bump_error_count()
 
@@ -130,9 +128,9 @@ let add_tVars env tvars =
 let fix env t = Fillin.fillin env t
 
 let ts_axiomCommand env name t = 
-  printf "Axiom TS %s: %s\n" name (ts_expr_to_string t);
+  printf "Axiom TS %s: %a\n" name  p_ts t;
   let t = Lfcheck.type_check (get_pos t) env (Phi t) texp in
-  printf "        : %s\n" (lf_expr_to_string t);
+  printf "        : %a\n" p_expr t;
   flush stdout;
   match t with
   | Phi t -> ts_bind (Var name, t) env
@@ -142,56 +140,53 @@ let lf_axiomCommand env name t =
   let t = Lfcheck.type_validity env t in
   (Var name, t) :: env
 
-let check0 env x =
+let is_lambda = function LAMBDA _ -> true | _ -> false
+
+let checkLFCommand env pos x =
+  printf "Check LF   = %a\n" p_expr x;
+  flush stdout;
+  if not (is_lambda x) then 
+    let (x',t) = Lfcheck.type_synthesis env x in
+    printf "           = %a\n" p_expr x';
+    flush stdout;
+    let x'' = Lfcheck.term_normalization env x' t in
+    printf "          => %a\n" p_expr x'';
+    printf "           : %a\n" p_type t;
+    flush stdout;
+    let t' = Lfcheck.type_normalization env t in
+    printf "          => %a\n" p_type t';
+    flush stdout
+
+let checkLFtypeCommand env t =
+  printf "CheckLFtype: %a\n" p_type t;
+  flush stdout;
+  let t = Lfcheck.type_validity env t in
+  printf "           : %a\n" p_type t;
+  flush stdout
+
+let checkCommand env x =
+  printf "Check      : %a\n" p_ts x;
   flush stdout;
   let x = Fillin.fillin env x in
-  printf "        LF : %s\n" (ts_expr_to_string x);
+  printf "        LF : %a\n" p_ts x;
   flush stdout;
   let (x,t) = Lfcheck.type_synthesis env (Phi x) in
-  printf "    LF type: %s\n" (lf_type_to_string t);
+  printf "    LF type: %a\n" p_type t;
   if unmark t = unmark oexp then (
     match x with
     | Phi x ->
 	let ts = Tau.tau env x in
-	printf "    TS type: %s ?\n" (ts_expr_to_string ts);
+	printf "    TS type: %a ?\n" p_ts ts;
 	flush stdout
     | _ -> raise Internal
    )
-
-let is_lambda = function LAMBDA _ -> true | _ -> false
-
-let checkLFCommand env pos x =
-  printf "Check LF   = %s\n" (lf_expr_to_string x);
-  flush stdout;
-  if not (is_lambda x) then 
-    let (x',t) = Lfcheck.type_synthesis env x in
-    printf "           = %s\n" (lf_expr_to_string x');
-    flush stdout;
-    let x'' = Lfcheck.term_normalization env x' t in
-    printf "          => %s\n" (lf_expr_to_string x'');
-    printf "           : %s\n" (lf_type_to_string t);
-    flush stdout;
-    let t' = Lfcheck.type_normalization env t in
-    printf "          => %s\n" (lf_type_to_string t');
-    flush stdout
-
-let checkLFtypeCommand env t =
-  printf "CheckLFtype: %s\n" (lf_type_to_string t);
-  flush stdout;
-  let t = Lfcheck.type_validity env t in
-  printf "           : %s\n" (lf_type_to_string t);
-  flush stdout
-
-let checkCommand env x =
-  printf "Check      : %s\n" (ts_expr_to_string x);
-  check0 env x
 
 let alphaCommand env (x,y) =
   let x = fix env x in
   let y = fix env y in
   printf "Alpha      : %s\n" (if (Alpha.UEqual.term_equiv Definitions.emptyUContext (Phi x) (Phi y)) then "true" else "false");
-  printf "           : %s\n" (ts_expr_to_string x);
-  printf "           : %s\n" (ts_expr_to_string y);
+  printf "           : %a\n" p_ts x;
+  printf "           : %a\n" p_ts y;
   flush stdout
 
 let checkUniversesCommand env pos =
@@ -294,11 +289,11 @@ with
 | Internal_expr      ( Phi(pos,_) as e ) 
 | Internal_expr      ( LAMBDA(_,Phi(pos,_)) as e ) 
     as ex ->
-    fprintf stderr "%s: internal error: %s\n" (errfmt pos) (lf_expr_to_string e);
+    fprintf stderr "%a: internal error: %a\n" p_pos pos  p_expr e;
     raise ex
 | Unimplemented_expr ( Phi(pos,_) as e )
 | Unimplemented_expr ( LAMBDA(_,Phi(pos,_)) as e ) 
     as ex ->
-    fprintf stderr "%s: unimplemented feature: %s\n" (errfmt pos) (lf_expr_to_string e);
+    fprintf stderr "%a: unimplemented feature: %a\n" p_pos pos  p_expr e;
     raise ex
 

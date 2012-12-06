@@ -58,7 +58,7 @@ type tactic_expr =
   | Q_name of string
   | Q_index of int
 
-    (** The type [label] accommodates the variables of LF, and the constants of
+    (** The type [lf_expr_head] accommodates the variables of LF, and the constants of
         LF, which in turn include the labels of TS, the inference rules of TS,
         and the definitions of TS (in various aspects).
 
@@ -68,7 +68,7 @@ type tactic_expr =
 
 	We implement "spine form", where applications are represented as [(f x
 	y z ...)], with [f] not being an application, thus being a constant or
-	a variable, i.e., being a "label".
+	a variable, i.e., being a "lf_expr_head".
 
 	For definitions, we envision multiple aspects.  For example, aspect 1
 	could be a t-expression T and aspect 2 could be a derivation of the
@@ -77,7 +77,7 @@ type tactic_expr =
 	judgment that t has type T.  Similarly for the other two types of
 	judgment in TS. *)
 
-type label =
+type lf_expr_head =
   | U of uHead			(** labels for u-expressions of TS *)
   | T of tHead			(** labels for t-expressions of TS *)
   | O of oHead			(** labels for o-expressions of TS *)
@@ -101,7 +101,7 @@ type lf_expr =
     An atomic term is one that isn't a lambda expression.
 
     In an atomic term, top level simplification (evaluation) may be possible;
-    for example, a variable appearing as a label, with a defined value, could
+    for example, a variable appearing as a lf_expr_head, with a defined value, could
     be replaced by its value, which is then applied to the arguments, if any. 
  *)
 and ts_expr = bare_ts_expr marked
@@ -110,7 +110,7 @@ and bare_ts_expr =
     (** An empty hole, to be filled in later. *)
   | TacticHole of tactic_expr
     (** An empty hole, to be filled in later by calling a tactic routine writtn in OCAML. *)
-  | APPLY of label * lf_expr list
+  | APPLY of lf_expr_head * lf_expr list
     (** A variable or constant applied iteratively to its arguments, if any. *)
 
 (** Canonical type families of LF.
@@ -121,7 +121,7 @@ and bare_ts_expr =
 
     Notation: constructors starting with "F_" refer to type families of
     LF. *)
-type tfHead =
+type lf_type_head =
   | F_uexp
   | F_texp
   | F_oexp
@@ -136,10 +136,10 @@ type tfHead =
 type lf_type = bare_lf_type marked
 and bare_lf_type =
   | F_Pi of var * lf_type * lf_type
-  | F_APPLY of tfHead * lf_expr list
+  | F_APPLY of lf_type_head * lf_expr list
   | F_Singleton of (lf_expr * lf_type)
 
-let tfheads = [ 
+let lf_type_heads = [ 
   F_uexp; F_texp; F_oexp; F_istype; F_hastype; F_ulevel_equality ;
   F_type_uequality; F_type_equality; F_object_uequality; F_object_equality ]
 
