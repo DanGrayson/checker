@@ -11,6 +11,7 @@ open Universe
 open Hash
 open Printf
 open Printer
+open Definitions
 
 module Load = struct
   open Template
@@ -167,11 +168,11 @@ let checkLFCommand env pos x =
     printf "           = %s\n" (lf_expr_to_string x');
     flush stdout;
     let x'' = Lfcheck.term_normalization env x' t in
-    printf "           = %s\n" (lf_expr_to_string x'');
+    printf "          => %s\n" (lf_expr_to_string x'');
     printf "           : %s\n" (lf_type_to_string t);
     flush stdout;
     let t' = Lfcheck.type_normalization env t in
-    printf "           = %s\n" (lf_type_to_string t');
+    printf "          => %s\n" (lf_type_to_string t');
     flush stdout
 
 let checkLFtypeCommand env t =
@@ -188,7 +189,7 @@ let checkCommand env x =
 let alphaCommand env (x,y) =
   let x = fix env x in
   let y = fix env y in
-  printf "Alpha      : %s\n" (if (Alpha.UEqual.term_equiv Grammar0.emptyUContext (Phi x) (Phi y)) then "true" else "false");
+  printf "Alpha      : %s\n" (if (Alpha.UEqual.term_equiv Definitions.emptyUContext (Phi x) (Phi y)) then "true" else "false");
   printf "           : %s\n" (ts_expr_to_string x);
   printf "           : %s\n" (ts_expr_to_string y);
   flush stdout
@@ -202,20 +203,6 @@ let checkUniversesCommand env pos =
 let show_command env n = 
   ( match n with None -> print_signature env stdout | _ -> () );
   print_context n stdout env
-
-let addDefinition env v pos o t = def_bind v pos o t env
-
-let defCommand env defs = 
-  List.fold_left
-    (fun env (v, pos, tm, tp) -> 
-      printf "Define %s = %s\n" (vartostring v) (lf_expr_to_string tm);
-      printf "       %s : %s\n" (vartostring v) (lf_type_to_string tp);
-      flush stdout;
-      let tp = Lfcheck.type_validity env tp in
-      let tm = Lfcheck.type_check pos env tm tp in
-      addDefinition env v pos tm tp
-    ) 
-    env defs
 
 let process_command env lexbuf = 
   let c = 
@@ -233,7 +220,10 @@ let process_command env lexbuf =
     | Toplevel.CheckLFtype x -> checkLFtypeCommand env x; env
     | Toplevel.Check x -> checkCommand env x; env
     | Toplevel.Alpha (x,y) -> alphaCommand env (x,y); env
-    | Toplevel.Definition defs -> defCommand env defs
+    | Toplevel.TDefinition defs -> tDefCommand env defs
+    | Toplevel.ODefinition defs -> oDefCommand env defs
+    | Toplevel.TeqDefinition defs -> teqDefCommand env defs
+    | Toplevel.OeqDefinition defs -> oeqDefCommand env defs
     | Toplevel.Show n -> show_command env n; env
     | Toplevel.CheckUniverses -> checkUniversesCommand env pos; env
     | Toplevel.End -> printf "%s: ending.\n" (errfmt pos); flush stdout; raise StopParsingFile

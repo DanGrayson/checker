@@ -14,7 +14,7 @@ BFLAGS += -use-menhir
 SRCFILES =					\
 	error.ml				\
 	typesystem.ml				\
-	names.ml \
+	names.ml				\
 	hash.ml					\
 	helpers.ml				\
 	template.ml				\
@@ -23,11 +23,11 @@ SRCFILES =					\
 	substitute.ml				\
 	equality.ml equality.mli		\
 	lfcheck.ml				\
-	tactics.ml \
+	tactics.ml				\
 	fillin.ml				\
 	tau.ml tau.mli				\
 	printer.ml				\
-	grammar0.ml				\
+	definitions.ml				\
 	grammar.mly				\
 	tokens.mll				\
 	toplevel.ml				\
@@ -41,7 +41,7 @@ RUN = -b
 
 %.cmo: %.ml; ocamlbuild $(BFLAGS) $*.cmo
 
-all: TAGS run doc
+all: TAGS run run2 demo doc
 build: $(CHECKER_EXE)
 checker.byte checker.native: $(SRCFILES); ocamlbuild $(BFLAGS) $@
 doc: checker.odocl $(SRCFILES)

@@ -11,7 +11,10 @@ type command' =
   | UVariable of string list * (ts_expr * ts_expr) list
   | Variable of string list
   | Alpha of ts_expr * ts_expr
-  | Definition of (var * Error.position * lf_expr * lf_type) list
+  | TDefinition of (string * Definitions.parm list * ts_expr * lf_expr option)
+  | ODefinition of (string * Definitions.parm list * ts_expr * ts_expr)
+  | TeqDefinition of (string * Definitions.parm list * ts_expr * ts_expr)
+  | OeqDefinition of (string * Definitions.parm list * ts_expr * ts_expr * ts_expr)
   | CheckUniverses
   | Show of int option
   | End

@@ -115,7 +115,10 @@ Define foo (u : Ulevel) (t : [U]([next](u))) := *t; (El_type ([next] u) t h$117)
 Define foo (u : Ulevel) (t : [U](u)) := *t; (El_type u t h$131).
 Check LF ([foo.0] ([next] u1) ([u] u1) (u_univ u1)).
 Check LF ([foo.1] ([next] u1) ([u] u1) (u_univ u1)).
-Show.
+
+Define C (u : Ulevel) (t : [U](u)) := *t; (El_type $2 $2 $2).
+
+# Show.
 
 
 #   Local Variables:

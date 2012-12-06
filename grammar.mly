@@ -3,7 +3,7 @@ open Error
 open Typesystem
 open Names
 open Helpers
-open Grammar0
+open Definitions
 %}
 %start command ts_exprEof
 %type <Toplevel.command> command
@@ -176,17 +176,14 @@ command0:
 | WAlpha e1=ts_expr Wequal e2=ts_expr Wperiod
     { Toplevel.Alpha (e1, e2) }
 
-
-| WDefine name=IDENTIFIER parms=parmList COLONequal t=ts_expr Wperiod 
-    { Toplevel.Definition (tDefinition name (fixParmList parms) t  None    ) }
-| WDefine name=IDENTIFIER parms=parmList COLONequal t=ts_expr Wsemi d1=lf_expr Wperiod 
-    { Toplevel.Definition (tDefinition name (fixParmList parms) t (Some d1)) }
+| WDefine name=IDENTIFIER parms=parmList COLONequal t=ts_expr d1=option(preceded(Wsemi,lf_expr)) Wperiod 
+    { Toplevel.TDefinition (name, parms, t, d1) }
 | WDefine name=IDENTIFIER parms=parmList COLONequal o=ts_expr COLON t=ts_expr Wperiod 
-    { Toplevel.Definition (oDefinition name (fixParmList parms) o t) }
+    { Toplevel.ODefinition (name, parms, o, t) }
 | WDefine name=IDENTIFIER parms=parmList COLONequal t1=ts_expr Wequal t2=ts_expr Wperiod 
-    { Toplevel.Definition (teqDefinition name (fixParmList parms) t1 t2) }
+    { Toplevel.TeqDefinition (name, parms, t1, t2) }
 | WDefine name=IDENTIFIER parms=parmList COLONequal o1=ts_expr Wequal o2=ts_expr COLON t=ts_expr Wperiod 
-    { Toplevel.Definition (oeqDefinition name (fixParmList parms) o1 o2 t) }
+    { Toplevel.OeqDefinition (name, parms, o1, o2, t) }
 
 | WShow Wperiod 
     { Toplevel.Show None }
