@@ -4,7 +4,7 @@ open Typesystem
 type command' = 
   | AxiomTS of string * ts_expr
   | AxiomLF of string * lf_type
-  | Rule of int * string * lf_type
+  | Rule of int list * string * lf_type
   | CheckLF of lf_expr
   | CheckLFtype of lf_type
   | Check of ts_expr

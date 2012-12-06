@@ -97,7 +97,14 @@ let var_to_lf v = Phi (nowhere 1 (var_to_ts v))
 
 let lookup_type env v = List.assoc v env
 
-let def_bind v (pos:position) o t (env:context) = (v, (pos,F_Singleton(o,t))) :: env
+let ensure_new_name env pos v =
+  try lookup_type env v;
+      raise (MarkedError (pos, "variable already defined: "^(vartostring v)))
+  with Not_found -> ()
+
+let def_bind v (pos:position) o t (env:context) = 
+  ensure_new_name env pos v;
+  (v, (pos,F_Singleton(o,t))) :: env
 
 (* raise an exception when a certain fresh variable is generated *)
 let genctr_trap = 0

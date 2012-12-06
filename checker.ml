@@ -126,18 +126,23 @@ let add_tVars env tvars =
 
 let fix env t = Fillin.fillin env t
 
-let ts_axiomCommand env name t = 
+let ts_axiomCommand env pos name t = 
   printf "Axiom TS %s: %a\n" name  p_ts t;
   let t = Lfcheck.type_check (get_pos t) env (Phi t) texp in
   printf "        : %a\n" p_expr t;
   flush stdout;
   match t with
-  | Phi t -> ts_bind (Var name, t) env
+  | Phi t -> 
+      let v = Var name in
+      ensure_new_name env pos v;
+      ts_bind (v,t) env
   | _ -> raise Internal
 
-let lf_axiomCommand env name t =
+let lf_axiomCommand env pos name t =
   let t = Lfcheck.type_validity env t in
-  (Var name, t) :: env
+  let v = Var name in
+  ensure_new_name env pos v;
+  (v,t) :: env
 
 let is_lambda = function LAMBDA _ -> true | _ -> false
 
@@ -210,9 +215,9 @@ let process_command env lexbuf =
     match c with
     | Toplevel.UVariable (uvars,eqns) -> ubind env uvars eqns
     | Toplevel.Variable tvars -> add_tVars env tvars
-    | Toplevel.Rule (num,name,t) -> lf_axiomCommand env name t
-    | Toplevel.AxiomLF (name,t) -> lf_axiomCommand env name t
-    | Toplevel.AxiomTS (name,t) -> ts_axiomCommand env name t
+    | Toplevel.Rule (num,name,t) -> lf_axiomCommand env pos name t
+    | Toplevel.AxiomLF (name,t) -> lf_axiomCommand env pos name t
+    | Toplevel.AxiomTS (name,t) -> ts_axiomCommand env pos name t
     | Toplevel.CheckLF x -> checkLFCommand env pos x; env
     | Toplevel.CheckLFtype x -> checkLFtypeCommand env x; env
     | Toplevel.Check x -> checkCommand env x; env

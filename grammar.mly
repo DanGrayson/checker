@@ -184,7 +184,7 @@ command0:
     { Toplevel.AxiomTS(v,t) }
 | Axiom W_LF v=IDENTIFIER COLON t=lf_type Wperiod
     { Toplevel.AxiomLF(v,t) }
-| WRule num=NUMBER name=IDENTIFIER COLON t=lf_type Wperiod
+| WRule num=separated_nonempty_list(Wperiod,NUMBER) name=IDENTIFIER COLON t=lf_type Wperiod
     { Toplevel.Rule (num,name,t) }
 
 | WCheck W_LF e=lf_expr Wperiod

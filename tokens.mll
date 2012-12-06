@@ -88,7 +88,7 @@ rule expr_tokens = parse
   | '_' { Wunderscore }
   | '<' { Wless }
   | ':' '='  { COLONequal }
-  | digit+ as n { NUMBER (int_of_string n) } (* eventually check for overflow and leading 0 *)
+  | nzdigit digit* as n { NUMBER (int_of_string n) } (* eventually check for overflow *)
   | ident as id { IDENTIFIER id }
   | '[' (ident as name) '.' (digit+ as aspect) ']' { VARIABLE (VarDefined(name,int_of_string aspect)) }
   | (ident as name) '$' (digit+ as gen) { VARIABLE (VarGen(int_of_string gen,name)) }
