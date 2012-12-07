@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-Define A (u : Ulevel; u=u) (t : [U](u)) := [El](t); (El_type u t h$1).
+Define A (u : Ulevel; u=u) (t : [U](u)) := [El](t); (El_type u t h$279).
 
 Define B (u : Ulevel) (t : [U](u)) := [El](t); (El_type $a $a $a).
 

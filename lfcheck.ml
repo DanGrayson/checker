@@ -199,6 +199,9 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
 	  let t0 = label_to_type env pos f in
 	  let (t,args) =
 	    let rec repeat t args : lf_type * lf_expr list = (
+	      printf "repeat t = %a\n" p_type t;
+	      List.iter (fun arg -> printf "repeat arg = %a\n" p_expr arg;) args;
+	      flush stdout;
 	      match unmark t with
 	      | F_Pi(v,a,b) -> (
 		  match args with
@@ -214,10 +217,10 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
 	      | F_Singleton _ -> raise Internal (* x was head normalized, so any definition of f should have been unfolded *)
 	      | _ -> (
 		  match args with
-		  | [] -> (t,[])
-		  | x :: args -> err env pos "unexpected argument"))
-	    in repeat t0 args
-	  in (Phi(pos,APPLY(f,args)), t)
+                  | [] -> (t,[])
+                  | x :: args -> err env pos "unexpected argument"))
+            in repeat t0 args
+          in (Phi(pos,APPLY(f,args)), t)
 
 let rec type_normalization (env:context) (t:lf_type) : lf_type =
   (* see figure 9 page 696 [EEST] *)
@@ -436,7 +439,7 @@ and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
   | F_Pi(x,a,b) , F_Pi(y,c,d) ->
       subtype env c a;			(* contravariant *)
       let w = newfresh (Var "w") in
-      subtype ((w, a) :: env) (subst_type (x,var_to_lf w) b) (subst_type (y,var_to_lf w) d)
+      subtype ((w, c) :: env) (subst_type (x,var_to_lf w) b) (subst_type (y,var_to_lf w) d)
   | F_Sigma(x,a,b) , F_Sigma(y,c,d) ->
       subtype env a c;			(* covariant *)
       let w = newfresh (Var "w") in
@@ -469,7 +472,6 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr =
 
   | LAMBDA _, _ -> err env pos "did not expect a lambda expression here"
 
-(*
   | p, F_Sigma(w,a,b) -> (* The published algorithm omits this, correctly, but we want to 
 			    give advice to tactics for filling holes in [p], so we try type-directed
 			    type checking as long as possible. *)
@@ -483,7 +485,6 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr =
       let x = type_check pos env x a in
       let y = type_check pos env y (subst_type (w,x) b) in
       PAIR(pos,x,y)
-*)
 
   | e, _  ->
       printf " e = %a\n" p_expr e; flush stdout;
