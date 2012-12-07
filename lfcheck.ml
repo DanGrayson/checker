@@ -150,12 +150,16 @@ let rec num_args t = match unmark t with
   | F_Pi(_,_,b) -> 1 + num_args b
   | _ -> 0
 
+let chk_unused = function
+  | VarUnused -> newfresh (Var "un")
+  | v -> v
+
 let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
   let (pos,t0) = t in
   match t0 with 
   | F_Pi(v,a,b) ->
-      let x' = term_normalization ((v,a) :: env) (apply_arg env pos x (var_to_lf v)) b in
+      let x' = term_normalization ((chk_unused v,a) :: env) (apply_arg env pos x (var_to_lf v)) b in
       LAMBDA(v,x')
   | F_Sigma(v,a,b) ->
       let pos = get_pos_lf x in
@@ -221,11 +225,11 @@ let rec type_normalization (env:context) (t:lf_type) : lf_type =
   let t = match t0 with
   | F_Pi(v,a,b) -> 
       let a' = type_normalization env a in
-      let b' = type_normalization ((v,a) :: env) b in
+      let b' = type_normalization ((chk_unused v,a) :: env) b in
       F_Pi(v,a',b')
   | F_Sigma(v,a,b) -> 
       let a' = type_normalization env a in
-      let b' = type_normalization ((v,a) :: env) b in
+      let b' = type_normalization ((chk_unused v,a) :: env) b in
       F_Sigma(v,a',b')
   | F_APPLY(head,args) ->
       let kind = tfhead_to_kind head in
@@ -236,7 +240,7 @@ let rec type_normalization (env:context) (t:lf_type) : lf_type =
 	  | K_type, x :: args -> err env pos "too many arguments"
 	  | K_Pi(v,a,kind'), x :: args ->
 	      term_normalization env x a ::
-	      repeat ((v,a) :: env) kind' args
+	      repeat ((chk_unused v,a) :: env) kind' args
 	  | K_Pi(_,a,_), [] -> errmissingarg env pos a
 	in repeat env kind args
       in F_APPLY(head,args)
@@ -256,11 +260,11 @@ let rec type_validity (env:context) (t:lf_type) : lf_type =
     match t with 
     | F_Pi(v,t,u) ->
 	let t = type_validity env t in
-	let u = type_validity ((v,t) :: env) u in
+	let u = type_validity ((chk_unused v,t) :: env) u in
 	F_Pi(v,t,u)
     | F_Sigma(v,t,u) ->
 	let t = type_validity env t in
-	let u = type_validity ((v,t) :: env) u in
+	let u = type_validity ((chk_unused v,t) :: env) u in
 	F_Sigma(v,t,u)
     | F_APPLY(head,args) ->
 	let kind = tfhead_to_kind head in
@@ -269,7 +273,7 @@ let rec type_validity (env:context) (t:lf_type) : lf_type =
 	  | K_type, [] -> []
 	  | K_type, x :: args -> err env pos "at least one argument too many";
 	  | K_Pi(v,a,kind'), x :: args -> 
-	      type_check pos env x a :: repeat ((v,a) :: env) kind' args
+	      type_check pos env x a :: repeat ((chk_unused v,a) :: env) kind' args
 	  | K_Pi(_,a,_), [] -> errmissingarg env pos a
 	in 
 	let args' = repeat env kind args in
@@ -313,7 +317,7 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
 	    | F_Pi(x,a',a''), m' :: args' ->
 		let m' = type_check pos env m' a' in
 		no_hole env pos m';
-		let (args'',u) = repeat ((x,a') :: env) (subst_type (x,m') a'') args' in
+		let (args'',u) = repeat env (subst_type (x,m') a'') args' in
 		m' :: args'', u
 	    | F_Pi(v,a,_), [] -> err env pos ("too few arguments; next argument should be of type "^(lf_type_to_string a))
 	    | F_Singleton(e,t), args -> repeat env t args
@@ -340,7 +344,8 @@ and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (
   | x, y, F_Pi (v,a,b) -> (
       match x,y with
       | LAMBDA(u,x), LAMBDA(v,y) ->
-	  let w = newfresh v in term_equivalence xpos ypos 
+	  let w = newfresh v in
+	  term_equivalence xpos ypos 
 	    ((w,a) :: env)
 	    (subst (u,var_to_lf w) x)	(* with deBruijn indices, this will go away *)
 	    (subst (v,var_to_lf w) y) 
@@ -389,10 +394,10 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
   | F_Sigma(v,a,b), F_Sigma(w,c,d)
   | F_Pi(v,a,b), F_Pi(w,c,d) ->
       type_equivalence env a c;
-      if v = VarUnused && w = VarUnused
+      if v = VarUnused && w = VarUnused	(* ?? bad for tactics below *)
       then type_equivalence env b d
       else
-	let x = newfresh (Var "te") in
+	let x = newfresh (Var "x") in
 	type_equivalence ((x, a) :: env)
 	  (subst_type (v, var_to_lf x) b)
 	  (subst_type (w, var_to_lf x) d)
@@ -411,6 +416,8 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
   | _ -> mismatch_type env tpos t upos u
 
 and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
+      printf "subtype:\n";
+      printf " t = %a\n" p_type t; printf " u = %a\n" p_type u; flush stdout;
   (* assume t and u have already been verified to be types *)
   (* driven by syntax *)
   (* see figure 12, page 715 [EEST] *)
@@ -428,10 +435,12 @@ and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
       type_equivalence env t u
   | F_Pi(x,a,b) , F_Pi(y,c,d) ->
       subtype env c a;			(* contravariant *)
-      subtype ((x, a) :: env) b d
+      let w = newfresh (Var "w") in
+      subtype ((w, a) :: env) (subst_type (x,var_to_lf w) b) (subst_type (y,var_to_lf w) d)
   | F_Sigma(x,a,b) , F_Sigma(y,c,d) ->
       subtype env a c;			(* covariant *)
-      subtype ((x, a) :: env) b d
+      let w = newfresh (Var "w") in
+      subtype ((w, a) :: env) (subst_type (x,var_to_lf w) b) (subst_type (y,var_to_lf w) d)
   | _ -> type_equivalence env (tpos,t0) (upos,u0)
 
 and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr = 
@@ -455,11 +464,12 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr =
   | LAMBDA(v,e), F_Pi(w,a,b) -> (* the published algorithm is not applicable here, since
 				   our lambda doesn't contain type information for the variable,
 				   and theirs does *)
-      let e = type_check pos ((v,a) :: env) e (subst_type (w,var_to_lf v) b) in
+      let e = type_check pos ((chk_unused v,a) :: env) e (subst_type (chk_unused w,var_to_lf v) b) in
       LAMBDA(v,e)
 
   | LAMBDA _, _ -> err env pos "did not expect a lambda expression here"
 
+(*
   | p, F_Sigma(w,a,b) -> (* The published algorithm omits this, correctly, but we want to 
 			    give advice to tactics for filling holes in [p], so we try type-directed
 			    type checking as long as possible. *)
@@ -473,9 +483,14 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr =
       let x = type_check pos env x a in
       let y = type_check pos env y (subst_type (w,x) b) in
       PAIR(pos,x,y)
+*)
 
   | e, _  ->
+      printf " e = %a\n" p_expr e; flush stdout;
       let (e,s) = type_synthesis env e in 
+      printf " e = %a\n" p_expr e; flush stdout;
+      printf " s = %a\n" p_type s; flush stdout;
+      printf " t = %a\n" p_type t; flush stdout;
       subtype env s t;
       e
 

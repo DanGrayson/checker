@@ -2,7 +2,7 @@
 
 let debug = false
 
-let env_limit = None
+let env_limit = Some 7
 
 open Error
 open Typesystem
@@ -147,19 +147,15 @@ let lf_axiomCommand env pos name t =
 let is_lambda = function LAMBDA _ -> true | _ -> false
 
 let checkLFCommand env pos x =
-  printf "Check LF   = %a\n" p_expr x;
-  flush stdout;
+  printf "Check LF   = %a\n" p_expr x; flush stdout;
   if not (is_lambda x) then 
     let (x',t) = Lfcheck.type_synthesis env x in
     printf "           = %a\n" p_expr x';
-    flush stdout;
-    (* let x'' = Lfcheck.term_normalization env x' t in *)
-    (* printf "          => %a\n" p_expr x''; *)
-    printf "           : %a\n" p_type t;
-    flush stdout;
-    (* let t' = Lfcheck.type_normalization env t in *)
-    (* printf "          => %a\n" p_type t'; *)
-    flush stdout
+    printf "           : %a\n" p_type t; flush stdout;
+    let x'' = Lfcheck.term_normalization env x' t in
+    printf "           = %a [normalized]\n" p_expr x''; flush stdout;
+    let t' = Lfcheck.type_normalization env t in
+    printf "           : %a [normalized]\n" p_type t'; flush stdout
 
 let checkLFtypeCommand env t =
   printf "CheckLFtype: %a\n" p_type t;
