@@ -21,14 +21,7 @@ and subst (subl : (var * lf_expr) list) : lf_expr -> lf_expr = function
             | [] -> z
             | args -> (
                 match z with 
-                | Phi(zpos,APPLY(f,brgs)) -> 
-		    let result = Phi(pos,APPLY(f, List.flatten [brgs;args])) in
-                    printf "replacing %a by %a in %a getting %a\n"
-                      p_var v
-                      p_expr z
-                      p_expr d
-		      p_expr result; flush stdout;
-		    result
+                | Phi(zpos,APPLY(f,brgs)) -> Phi(pos,APPLY(f, List.flatten [brgs;args]))
                 | LAMBDA(v,body) as f -> apply_args pos f args
                 | _ ->
                     printf "about to replace %a by %a in %a, not implemented\n"
