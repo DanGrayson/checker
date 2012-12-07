@@ -65,11 +65,11 @@ let term_or_hole pos = function
 let tDefinition name (UContext (uvars,ueqns),tvars,o_vartypes) t d1 = 
   let pos = get_pos t in
   let vartypes = augment uvars ueqns tvars o_vartypes in
-  let def_0 = VarDefined(name,0) in
+  let v = newfresh (Var name) in
   List.map (wrap vartypes) 
     [ 
-      ( def_0, pos, Phi t, texp);
-      ( VarDefined(name,1), pos, term_or_hole pos d1, istype (apply def_0 vartypes)) ]
+      ( Var name, pos, PAIR(pos, Phi t, term_or_hole pos d1), nowhere 43 (F_Sigma(v,texp,istype (var_to_lf v))) )
+      ]
 
 let oDefinition name (UContext(uvars,ueqns),tvars,o_vartypes) o t d1 =
   let pos = get_pos o in

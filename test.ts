@@ -80,6 +80,11 @@ Check LF (U_type u1).
 Define foo (u : Ulevel) (t : [U]([next](u))) := *t; (El_type ([next] u) t $a).
 
 Define A (u : Ulevel) (t : [U](u)) := *t; (El_type u t $a).
+
+Show 4.
+
+End.
+
 Check LF ([A.0] ([next] u1) ([u] u1) (u_univ u1)).
 Check LF ([A.1] ([next] u1) ([u] u1) (u_univ u1)).
 

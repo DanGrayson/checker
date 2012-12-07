@@ -108,7 +108,7 @@ let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
 
 let apply_arg env pos (f:lf_expr) (arg:lf_expr) =
   match f with
-  | LAMBDA(v,body) -> subst' (v,arg) body
+  | LAMBDA(v,body) -> subst (v,arg) body
   | _ -> raise Internal
 
 let apply_args env pos (f:lf_expr) (args:lf_expr list) =
@@ -117,7 +117,7 @@ let apply_args env pos (f:lf_expr) (args:lf_expr list) =
     | LAMBDA(v,body) -> (
 	match args with
 	| x :: args -> 
-	    repeat (subst' (v,x) body) args
+	    repeat (subst (v,x) body) args
 	| [] -> err env pos "too few arguments .")
     | x -> (
 	match args with
@@ -342,8 +342,8 @@ and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (
       | LAMBDA(u,x), LAMBDA(v,y) ->
 	  let w = newfresh v in term_equivalence xpos ypos 
 	    ((w,a) :: env)
-	    (subst' (u,var_to_lf w) x)	(* with deBruijn indices, this will go away *)
-	    (subst' (v,var_to_lf w) y) 
+	    (subst (u,var_to_lf w) x)	(* with deBruijn indices, this will go away *)
+	    (subst (v,var_to_lf w) y) 
 	    (subst_type (v,var_to_lf w) b)
       | x,y -> raise Internal)
   | x, y, F_APPLY(j,args) ->
@@ -459,6 +459,20 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr =
       LAMBDA(v,e)
 
   | LAMBDA _, _ -> err env pos "did not expect a lambda expression here"
+
+  | p, F_Sigma(w,a,b) -> (* The published algorithm omits this, correctly, but we want to 
+			    give advice to tactics for filling holes in [p], so we try type-directed
+			    type checking as long as possible. *)
+      let (x,y) = (
+	match p with 			(* save energy if it's already a pair *)
+	| PAIR(pos,x,y) -> (x,y)
+	| p -> 
+	    let pos = get_pos_lf p in
+	    PR1(pos,p), PR2(pos,p)
+       ) in
+      let x = type_check pos env x a in
+      let y = type_check pos env y (subst_type (w,x) b) in
+      PAIR(pos,x,y)
 
   | e, _  ->
       let (e,s) = type_synthesis env e in 

@@ -8,34 +8,33 @@ let atomic = function
   | Phi e -> e
   | _ -> raise NotImplemented
 
-let rec subst_list (subl : (var * lf_expr) list) es = List.map (subst' subl) es
-and subst (subl : (var * lf_expr) list) ((pos,e) as d) = 
-  match e with 
-  | APPLY(V v,[]) ->(try atomic (List.assoc v subl) with Not_found -> d)
-  | APPLY(label,args) -> 
-      (match label with 
-       | V v -> (
-	   try 
-	     let _ = List.assoc v subl
-	     in raise (Unimplemented_expr (Phi d)) (* hereditary substitution *) 
-	   with Not_found -> ())
-       | _ -> ());
-      pos, APPLY(label,subst_list subl args)
-  | TacticHole n -> d
-  | EmptyHole _ -> d  
-and subst' (subl : (var * lf_expr) list) = function
-  | Phi e -> Phi(subst subl e)
-  | PAIR(pos,x,y) -> PAIR(pos,subst' subl x,subst' subl y)
-  | PR1(pos,x) -> PR1(pos,subst' subl x)
-  | PR2(pos,x) -> PR2(pos,subst' subl x)
+let rec subst_list (subl : (var * lf_expr) list) es = List.map (subst subl) es
+and subst (subl : (var * lf_expr) list) : lf_expr -> lf_expr = function
+  | Phi (pos,e) as d -> (
+      match e with
+      | APPLY(V v,args) -> (
+	  try 
+	    let z = List.assoc v subl in
+	    match args with
+	    | [] -> z
+	    | x :: args -> 
+		(* hereditary substitution; implement it later *) 
+		raise (Unimplemented_expr d)
+	  with Not_found -> d)
+      | APPLY(label,args) -> Phi(pos, APPLY(label,subst_list subl args))
+      | TacticHole n -> raise Internal
+      | EmptyHole _ -> d)
+  | PAIR(pos,x,y) -> PAIR(pos,subst subl x,subst subl y)
+  | PR1(pos,x) -> PR1(pos,subst subl x)
+  | PR2(pos,x) -> PR2(pos,subst subl x)
   | LAMBDA(v, body) -> 
       if v = VarUnused
       then 
-	LAMBDA(v, subst' subl body)
+	LAMBDA(v, subst subl body)
       else
 	let w = newfresh v in
 	let subl = (v,var_to_lf w) :: subl in 
-	LAMBDA(w, subst' subl body)
+	LAMBDA(w, subst subl body)
 
 let rec subst_type_list (subl : (var * lf_expr) list) ts = List.map (subst_type subl) ts
 and subst_type (subl : (var * lf_expr) list) (pos,t) = 
@@ -56,7 +55,7 @@ and subst_type (subl : (var * lf_expr) list) (pos,t) =
 	 let subl' = (v,var_to_lf w) :: subl in 
 	 F_Sigma(w, subst_type subl a, subst_type subl' b)
    | F_APPLY(label,args) -> F_APPLY(label, subst_list subl args)
-   | F_Singleton(e,t) -> F_Singleton( subst' subl e, subst_type subl t ))
+   | F_Singleton(e,t) -> F_Singleton( subst subl e, subst_type subl t ))
 
 let rec subst_kind_list (subl : (var * lf_expr) list) ts = List.map (subst_kind subl) ts
 and subst_kind (subl : (var * lf_expr) list) k = 
@@ -72,7 +71,6 @@ and subst_kind (subl : (var * lf_expr) list) k =
 	 K_Pi(w, subst_type subl a, subst_kind subs' b)
 
 let subst sub e = subst [sub] e
-let subst' sub e = subst' [sub] e
 let subst_type sub e = subst_type [sub] e
 let subst_kind sub e = subst_kind [sub] e
 

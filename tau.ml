@@ -36,7 +36,7 @@ let rec tau (pos:position) (env:context) (pos,e) : ts_expr =
 		| _ -> raise Internal)
 	    | O_ev -> (
 		match args with 
-		| [Phi f;Phi o;LAMBDA(x,Phi t)] -> unmark (Substitute.subst (x,Phi o) t)
+		| [f; o; LAMBDA(x,t)] -> unmark (Substitute.atomic (Substitute.subst (x,o) t)) (* ????  any use of "atomic" is suspect *)
 		| _ -> raise Internal)
 	    | O_lambda -> (
 		match args with 

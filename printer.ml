@@ -183,6 +183,10 @@ let iteri f l = iteri 0 f l
 
 let p_var file x = output_string file (vartostring x)
 
+let phantom s = String.make (String.length s) ' '
+
+let p_var_phantom file x = output_string file (phantom (vartostring x))
+
 let p_ts file x = output_string file (ts_expr_to_string x)
 
 let p_expr file x = output_string file (lf_expr_to_string x)
@@ -215,13 +219,19 @@ let print_signature env file =
 	    ) lf_expr_heads;
   flush file
 
-let print_context n file env = 
+let print_context n file (env:context) = 
   let n = match n with None -> -1 | Some n -> n in
   fprintf file "Context:\n";
   try iteri
       (fun i (v,t) ->
 	if i = n then raise Limit;
-	fprintf file "     %a : %a\n" p_var v  p_type t; flush file) 
+	match unmark t with
+	| F_Singleton(e,t) ->
+	    fprintf file "     %a := %a\n" p_var v          p_expr e;
+	    fprintf file "     %a  : %a\n" p_var_phantom v  p_type t; flush file
+	| _ -> 
+	    fprintf file "     %a : %a\n" p_var v  p_type t; flush file
+      ) 
       env
   with Limit -> ()
 

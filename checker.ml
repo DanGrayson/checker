@@ -153,12 +153,12 @@ let checkLFCommand env pos x =
     let (x',t) = Lfcheck.type_synthesis env x in
     printf "           = %a\n" p_expr x';
     flush stdout;
-    let x'' = Lfcheck.term_normalization env x' t in
-    printf "          => %a\n" p_expr x'';
+    (* let x'' = Lfcheck.term_normalization env x' t in *)
+    (* printf "          => %a\n" p_expr x''; *)
     printf "           : %a\n" p_type t;
     flush stdout;
-    let t' = Lfcheck.type_normalization env t in
-    printf "          => %a\n" p_type t';
+    (* let t' = Lfcheck.type_normalization env t in *)
+    (* printf "          => %a\n" p_type t'; *)
     flush stdout
 
 let checkLFtypeCommand env t =
