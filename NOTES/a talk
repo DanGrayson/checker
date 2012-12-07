@@ -2,15 +2,29 @@ TS
 
   see: A universe polymorphic type system, by Vladimir Voevodsky.
 
-     universe levels		u-expressions
-     types			t-expressions
-     objects			o-expressions
-     
-  some expressions	uto	encoding as a syntax tree	explanation
+  intrinsic appeal of TS:
 
-     Pi x:A, B		t	[Pi;x](A,B)			A and B are t, x is bound in B
-     lambda x:A, b	o	[lambda;x](A,b)			A is t, b is o, x is bound in b, has type Pi x:A, B if x:A |- b:B
-     f z		o	[ev;x](f,z,B)			f z are o, B is t, x is bound in B, has type B[z/x]
+  	more definitional equalities, hence more well-formed expressions
+
+	derivation trees have to be created, so the kernel of a stand-alone
+	checker can be small and unaware of the inference rules, except
+	as data
+
+  TS features:
+
+     universe levels            u-expressions
+     types                      t-expressions
+     objects                    o-expressions
+     
+  some expressions  uto  encoding        explanation
+
+     Pi x:A, B      t    [Pi;x](A,B)       A and B are t, x is bound in B
+
+     lambda x:A, b  o    [lambda;x](A,b)   A is t, b is o, x is bound in b, 
+                                           has type Pi x:A, B if x:A |- b:B
+
+     f z            o    [ev;x](f,z,B)     f z are o, B is t, x is bound in B, 
+                                           has type B[z/x]
 
   some judgments
 
@@ -21,36 +35,36 @@ TS
 
   some inference rules (total of 38)
 
- 	  G |- o : T         G |- T = T'
- 	--------------------------------- ("cast", rule 13 in the paper UPTS)
- 		   G |- o : T'
+    G |- o : T         G |- T = T'
+  --------------------------------- ("cast", rule 13 in the paper UPTS)
+             G |- o : T'
 
 
-	  G |- a:Empty     G |- T type     G |- T' type
-	-------------------------------------------------  (eta for empty type)
-			G |- T = T'
+    G |- a:Empty     G |- T type     G |- T' type
+  -------------------------------------------------  (eta for empty type)
+                  G |- T = T'
 
 
-	G |- y : T			   G, x : T |- u : U
-	---------------------------------------------------------- (beta reduction)
-	G |- [ev;x]( [lambda;x](T,u) , y , U ) = u[y/x] : U[y/x]
+  G |- y : T                       G, x : T |- u : U
+  -------------------------------------------------------- (beta reduction)
+  G |- [ev;x]( [lambda;x](T,u) , y , U ) = u[y/x] : U[y/x]
 
   some definitions
 
-	Definition foo1 : Pi (u1 ... : Ulevel), (T1 ... : Type), (o1:A1) ... , T.
+    Definition foo1 : Pi (u1 ... : Ulevel), (T1 ... : Type), (o1:A1) ... , T.
 
-	Definition foo2 : Pi (u1 ... : Ulevel), (T1 ... : Type), (o1:A1) ... , o : T.
+    Definition foo2 : Pi (u1 ... : Ulevel), (T1 ... : Type), (o1:A1) ... , o : T.
 
   first ideas about encoding inference rules and derivations in syntax:
 
              cast :: Pi {G : MContext} {T T' : MType} {o : MObject},
-		     Pi oT :: G |- o : T,
-		     Pi TT' :: G |- T = T',
-		     G |- o : T'.
+                     Pi oT :: G |- o : T,
+                     Pi TT' :: G |- T = T',
+                     G |- o : T'.
 
         tetaempty :: Pi {G : MContext} (T T' : MType),
-		     Pi j :: G |- a : Empty,
-		     G |- T = T'.
+                     Pi j :: G |- a : Empty,
+                     G |- T = T'.
 
   but beta reduction was annoying, because of the substitution
 
@@ -58,31 +72,31 @@ LF:
 
    embed TS in LF, an ambient type system, sharing contexts and variables
 
-   	Phi : TS ---> LF
+        Phi : TS ---> LF
 
    LF syntax:
 
-   				 c ::=  an object constant
+                                 c ::=  an object constant
 
-   				 x ::=  an object variable
+                                 x ::=  an object variable
 
-        object constants	 h ::=  c  |  x
+        object constants         h ::=  c  |  x
 
-	atomic objects		 R ::=  h M_1 ... M_n
+        atomic objects           R ::=  h M_1 ... M_n
 
-	canonical objects	 M ::=  lambda x_0, ..., lambda x_m, h M_1 ... M_n
+        canonical objects        M ::=  lambda x_0, ..., lambda x_m, h M_1 ... M_n
 
-				 b ::=  a type family constant
+                                 b ::=  a type family constant
 
-        type families    	 T ::=  b M_1 ... M_n   |  Pi x: T, T'
+        type families            T ::=  b M_1 ... M_n   |  Pi x: T, T'
 
-   	kinds            	 K ::=  Pi x_1:T_1, ..., x_n:T_n, type
+        kinds                    K ::=  Pi x_1:T_1, ..., x_n:T_n, type
 
-	type families may have kinds 	T : K
+        type families may have kinds    T : K
 
-	some of them are types		T : type
+        some of them are types          T : type
 
-	objects may have types		M : T
+        objects may have types          M : T
 
 embedding TS in LF:
 
@@ -91,18 +105,14 @@ embedding TS in LF:
      uexp : type
      texp : type
      oexp : type
-     istype : texp ⟶ type
-     hastype : oexp ⟶ texp ⟶ type
-     tequal : texp ⟶ texp ⟶ type
-     oequal : oexp ⟶ oexp ⟶ texp ⟶ type
 
   Object constants (syntax of objects) with their types:
 
-     [∏] : texp ⟶ (oexp ⟶ texp) ⟶ texp
+     [Pi] : texp -> (oexp -> texp) -> texp
 
-     [ev] : oexp ⟶ oexp ⟶ (oexp ⟶ texp) ⟶ oexp
+     [ev] : oexp -> oexp -> (oexp -> texp) -> oexp
 
-     [λ] : texp ⟶ (oexp ⟶ oexp) ⟶ oexp
+     [lambda] : texp -> (oexp -> oexp) -> oexp
 
 Defining Phi:
 
@@ -111,54 +121,62 @@ Defining Phi:
      the labels by the corresponding constants, and apply them to their
      branches:
 
-     	 [∏;x](A,B)		[∏](A, x |-> B)		([∏] A (lambda x, B))
+         [Pi;x](A,B)       [Pi](A, x |-> B)      ([Pi] A (lambda x, B))
 
-	 [λ;x](A,b)		[λ](A, x |-> b)		([λ] A (lambda x, b))
+         [lambda;x](A,b)   [lambda](A, x |-> b)  ([lambda] A (lambda x, b))
 
-	 [ev;x](f,z,B)		[ev](f,z,x |-> B)		([ev] f x (lambda x, B))
+         [ev;x](f,z,B)     [ev](f,z,x |-> B)     ([ev] f x (lambda x, B))
 
-     Adequacy:    Phi(o) : oexp		iff		o is an o-expression
-     		  Phi(t) : texp		iff		t is a t-expression
-		  Phi(u) : uexp		iff		u is a u-expression
+     Adequacy:    Phi(o) : oexp         iff             o is an o-expression
+                  Phi(t) : texp         iff             t is a t-expression
+                  Phi(u) : uexp         iff             u is a u-expression
 
-Send a TS context
+		  Here the typing judgments are in LF.
 
-    	..., x : T, ... |-
+Interpret the judgments of TS as types of LF by introducing more LF type
+family constants:
+
+     istype : texp -> type
+     hastype : oexp -> texp -> type
+     tequal : texp -> texp -> type
+     oequal : oexp -> oexp -> texp -> type
+
+so that we can encode judgments this way:
+
+        |- T type                       |- _ : istype Phi(T)
+
+        |- o : T                        |- _ : hastype Phi(o) Phi(T)
+
+        |- T = T'                       |- _ : tequal Phi(T) Phi(T')
+
+        |- o = o' : T                   |- _ : oequal Phi(o) Phi(o') Phi(T)
+
+A verfication of a judgment (e.g., used as a premise in an inference rule) can
+be added to the environment.  Send a TS context
+
+        ..., x : T, ... |-
 
 to
 
-    	..., x : oexp, i : (hastype x Phi(T)), ... |-
-	
-(To handle such a pair is why I should add Sigma-types to the LF implementation.)
+        ..., x : oexp, i : (hastype x Phi(T)), ... |-
+        
+or to
 
-Interpret the judgments of TS as types of LF
-
-    	|- T type			|- _ : istype Phi(T)
-
-	|- o : T			|- _ : hastype Phi(o) Phi(T)
-
-	|- T = T'			|- _ : tequal Phi(T) Phi(T')
-
-	|- o = o' : T			|- _ : oequal Phi(o) Phi(o') Phi(T)
-
-A verfication of a judgment (e.g., used as a premise in an inference rule) can
-be added to the environment:
-
-	..., j : istype Phi(T), ... |-
-
-	..., j : hastype Phi(o) Phi(T), ... |-
-
-	..., j : tequal Phi(T) Phi(T'), ... |-
-
-	..., j : oequal Phi(o) Phi(o') Phi(T), ... |-
+        ..., x : (Sigma x:oexp) (hastype x Phi(T)), ... |-
 
 Definitions via singleton types ane subtyping (Harper and Stone) and LF type
-checking
+checking.  Just got it working.
 
 Tactics ...
 
-Universe handling as a tactic admitted to the kernel
+Universe handling in the kernel (?)
 
 Plans for TS type checking
 
-Demo ...
+On the computer:
+
+    rules.ts
+
+    typesystem.ml
+
+    Demo ...
