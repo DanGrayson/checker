@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-Define A (u : Ulevel; u=u) (t : [U](u)) := [El](t); (El_type u t h$279).
+Define A (u : Ulevel; u=u) (t : [U](u)) := [El](t); (El_type u t h$299).
 
-Define B (u : Ulevel) (t : [U](u)) := [El](t); (El_type $a $a $a).
+Define B (u : Ulevel) (t : [U](u)) := [El](t); (El_type $2 $a $a).
 
 Variable u1 : Ulevel.
 

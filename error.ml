@@ -1,14 +1,28 @@
 (** Exceptions, error message handling, and source code positions. *)
 
-(** Source code positions. *)
-
 let debug_mode = ref false
 
-let trap () = ()
+let nowhere_trap = ref 0
+
+let trap () = ()			(* set a break point here *)
+
+let notail x = x			(* insert into code to termporarily prevent tail recursion *)
+
+exception DebugMe
+exception GeneralError of string
+exception GensymCounterOverflow
+exception NotImplemented
+exception Unimplemented of string
+exception Internal
+exception VariableNotInContext
+exception NoMatchingRule
+exception Eof
 
 type position =
   | Position of Lexing.position * Lexing.position (** start, end *)
   | Nowhere of int * int
+
+exception MarkedError of position * string
 
 let lexbuf_position lexbuf =
     Position ( Lexing.lexeme_start_p lexbuf, Lexing.lexeme_end_p lexbuf )
@@ -34,18 +48,12 @@ let errpos x = errfmt (get_pos x)
 let with_pos (pos:position) e = (pos, e)
 let with_pos_of ((pos:position),_) e = (pos,e)
 let nowhere_ctr = ref 0
-let no_pos i = incr nowhere_ctr; Nowhere(i, !nowhere_ctr)
-let nowhere i x = (no_pos i,x)
-let nopos i = errfmt (no_pos i)
 let seepos pos = Printf.fprintf stderr "%s: ... debugging ...\n" (errfmt pos); flush stderr
 
-exception DebugMe
-exception GeneralError of string
-exception GensymCounterOverflow
-exception NotImplemented
-exception Unimplemented of string
-exception Internal
-exception VariableNotInContext
-exception NoMatchingRule
-exception Eof
-exception MarkedError of position * string
+let no_pos i = 
+  incr nowhere_ctr;
+  if !nowhere_ctr = !nowhere_trap then raise DebugMe;
+  Nowhere(i, !nowhere_ctr)
+let nowhere i x = (no_pos i,x)
+let nopos i = errfmt (no_pos i)
+

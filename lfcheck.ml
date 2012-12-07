@@ -73,7 +73,7 @@ let apply_tactic env pos t = function
 let unfold env v =
   match unmark( lookup_type env v ) with
   | F_Singleton a -> let (x,t) = strip_singleton a in x
-  | _ -> raise Not_found
+  | _ -> raise Not_found		(* What if the type is effectively a singleton, such as Sing(x)*Sing(y) ? *)
 
 let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
   (* assume nothing *)
@@ -136,10 +136,12 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
       | EmptyHole _ -> err env pos "empty hole found"
       | APPLY(V v, args) -> let f = unfold env v in apply_args env pos f args
       | APPLY _ -> raise Not_found)
-  | PR1 (_, PAIR(_,x,_)) -> x
-  | PR2 (_, PAIR(_,_,y)) -> y
-  | PR1 _ | PR2 _
-  | PAIR _ | LAMBDA _ -> raise Not_found
+  | PR1(pos,PAIR(_,x,_)) -> x
+  | PR2(pos,PAIR(_,_,y)) -> y
+  | PR1(pos,e) -> PR1(pos,head_reduction env e)
+  | PR2(pos,e) -> PR2(pos,head_reduction env e)
+  | PAIR _				(* What if we have a pair of singletons?  Do we need to return the simplified pair? *)
+  | LAMBDA _ -> raise Not_found
 
 let rec head_normalization (env:context) (x:lf_expr) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
@@ -196,12 +198,9 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
       | TacticHole n -> raise NotImplemented
       | EmptyHole _ -> err env pos "path_normalization encountered an empty hole"
       | APPLY(f,args) ->
-	  let t0 = label_to_type env pos f in
-	  let (t,args) =
-	    let rec repeat t args : lf_type * lf_expr list = (
-	      printf "repeat t = %a\n" p_type t;
-	      List.iter (fun arg -> printf "repeat arg = %a\n" p_expr arg;) args;
-	      flush stdout;
+          let t0 = label_to_type env pos f in
+          let (t,args) =
+            let rec repeat t args : lf_type * lf_expr list = (
 	      match unmark t with
 	      | F_Pi(v,a,b) -> (
 		  match args with
@@ -311,19 +310,19 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
       match e0 with
       | TacticHole n -> err env pos ("tactic hole: "^(ts_expr_to_string e))
       | EmptyHole _ -> err env pos ("empty hole: "^(ts_expr_to_string e))
-      | APPLY(V v, []) -> x, (pos, F_Singleton(Phi e, fetch_type env pos v))
+      (* | APPLY(V v, []) -> x, (pos, F_Singleton(Phi e, fetch_type env pos v)) *)
       | APPLY(label,args) -> (
-	  let a = label_to_type env pos label in
-	  let rec repeat env (a:lf_type) (args:lf_expr list) : lf_expr list * lf_type = (
-	    let (apos,a0) = a in
+          let a = label_to_type env pos label in
+          let rec repeat env (a:lf_type) (args:lf_expr list) : lf_expr list * lf_type = (
+            let (apos,a0) = a in
 	    match a0, args with
 	    | F_Pi(x,a',a''), m' :: args' ->
 		let m' = type_check pos env m' a' in
 		no_hole env pos m';
 		let (args'',u) = repeat env (subst_type (x,m') a'') args' in
 		m' :: args'', u
-	    | F_Pi(v,a,_), [] -> err env pos ("too few arguments; next argument should be of type "^(lf_type_to_string a))
 	    | F_Singleton(e,t), args -> repeat env t args
+	    | F_Pi _ as t, [] -> [], (pos,t) (* allow not all arguments to be present; not eta-long *)
 	    | F_Sigma _ as t, [] -> [], (pos,t)
 	    | F_APPLY _ as t, [] -> [], (pos,t)
 	    | F_Sigma _,  arg :: _
@@ -419,8 +418,6 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
   | _ -> mismatch_type env tpos t upos u
 
 and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
-      printf "subtype:\n";
-      printf " t = %a\n" p_type t; printf " u = %a\n" p_type u; flush stdout;
   (* assume t and u have already been verified to be types *)
   (* driven by syntax *)
   (* see figure 12, page 715 [EEST] *)
@@ -487,11 +484,7 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr =
       PAIR(pos,x,y)
 
   | e, _  ->
-      printf " e = %a\n" p_expr e; flush stdout;
       let (e,s) = type_synthesis env e in 
-      printf " e = %a\n" p_expr e; flush stdout;
-      printf " s = %a\n" p_type s; flush stdout;
-      printf " t = %a\n" p_type t; flush stdout;
       subtype env s t;
       e
 

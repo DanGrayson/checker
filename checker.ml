@@ -2,6 +2,8 @@
 
 let debug = false
 
+let try_normalization = false
+
 let env_limit = Some 7
 
 open Error
@@ -152,20 +154,19 @@ let checkLFCommand env pos x =
     let (x',t) = Lfcheck.type_synthesis env x in
     printf "           = %a\n" p_expr x';
     printf "           : %a\n" p_type t; flush stdout;
-    let x'' = Lfcheck.term_normalization env x' t in
-    printf "           = %a [normalized]\n" p_expr x''; flush stdout;
-    let t' = Lfcheck.type_normalization env t in
-    printf "           : %a [normalized]\n" p_type t'; flush stdout
+    if try_normalization then
+      let x'' = Lfcheck.term_normalization env x' t in
+      printf "           = %a [normalized]\n" p_expr x''; flush stdout;
+      let t' = Lfcheck.type_normalization env t in
+      printf "           : %a [normalized]\n" p_type t'; flush stdout
 
 let checkLFtypeCommand env t =
-  printf "CheckLFtype: %a\n" p_type t;
-  flush stdout;
+  printf "CheckLFtype: %a\n" p_type t; flush stdout;
   let t = Lfcheck.type_validity env t in
-  printf "           : %a [after tactics]\n" p_type t;
-  flush stdout;
-  let t = Lfcheck.type_normalization env t in
-  printf "           : %a [after normalization]\n" p_type t;
-  flush stdout
+  printf "           : %a [after tactics]\n" p_type t; flush stdout;
+  if try_normalization then
+    let t = Lfcheck.type_normalization env t in
+    printf "           : %a [after normalization]\n" p_type t; flush stdout
 
 let checkCommand env x =
   printf "Check      : %a\n" p_ts x;
