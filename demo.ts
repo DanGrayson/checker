@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+Check LF ∏_istype.
+
 Define A (u : Ulevel; u=u) (t : [U](u)) := [El](t); (El_type u t h$299).
 
 Define B (u : Ulevel) (t : [U](u)) := [El](t); (El_type $2 $a $a).
@@ -11,6 +13,11 @@ Define C := [u](u1) : [U]([next](u1)); (u_univ $a).
 Check LF (B ([next] u1) ([u] u1) (u_univ u1)).
 
 Show 7.
+
+End.
+
+Define E (u1 u2 u3:Ulevel)(K:Type) := K -> K; (∏_istype
+       $a (_ |-> $a) (_ |-> _ |-> _) _ _) .
 
 #   Local Variables:
 #   compile-command: "make demo "

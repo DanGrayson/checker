@@ -111,20 +111,6 @@ let apply_arg env pos (f:lf_expr) (arg:lf_expr) =
   | LAMBDA(v,body) -> subst (v,arg) body
   | _ -> raise Internal
 
-let apply_args env pos (f:lf_expr) (args:lf_expr list) =
-  let rec repeat f args = 
-    match f with
-    | LAMBDA(v,body) -> (
-	match args with
-	| x :: args -> 
-	    repeat (subst (v,x) body) args
-	| [] -> err env pos "too few arguments .")
-    | x -> (
-	match args with
-	| [] -> x
-	| _ -> err env pos "too many arguments")
-  in repeat f args
-
 let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
   (* assume nothing *)
   (* see figure 9 page 696 [EEST] *)
@@ -134,7 +120,7 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
       match x with
       | TacticHole n -> raise NotImplemented
       | EmptyHole _ -> err env pos "empty hole found"
-      | APPLY(V v, args) -> let f = unfold env v in apply_args env pos f args
+      | APPLY(V v, args) -> let f = unfold env v in apply_args pos f args
       | APPLY _ -> raise Not_found)
   | PR1(pos,PAIR(_,x,_)) -> x
   | PR2(pos,PAIR(_,_,y)) -> y
