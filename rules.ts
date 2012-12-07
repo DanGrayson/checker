@@ -102,11 +102,13 @@ Rule 26 ev_eq : ∏ T : texp, ∏ U : oexp ⟶ texp, ∏ f : oexp, ∏ o : oexp,
      [ o = o' : T ] ⟶ 
      [ ([ev] f o U) = ([ev] f' o' U') : (U o)].
 
-Rule 27 beta_reduction : ∏ T : texp, ∏ U : oexp ⟶ texp, ∏ x : oexp, ∏ y : oexp ⟶ oexp,
+Rule 27 beta_reduction : ∏ T : texp, ∏ U : oexp ⟶ texp, ∏ t : oexp, ∏ f : oexp ⟶ oexp,
 
-     [ x : T ] ⟶ 
-     (∏ x:oexp, [ (y x) : (U x) ]) ⟶
-     [ ([ev] ( [λ] T y ) x U) = (y x) : (U x) ].
+     [ t : T ] ⟶ 
+
+     (∏ t':oexp, [ t' : T ] -> [ (f t') : (U t') ]) ⟶
+
+     [ ([ev] ( [λ] T f ) t U) = (f t) : (U t) ].
 
 Rule 28 eta_reduction : ∏ T:texp, ∏ U:oexp ⟶ texp, ∏ f:oexp,
 
