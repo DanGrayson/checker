@@ -37,14 +37,14 @@ let rec lf_type_to_string' target (_,t) = match t with
 	let k = concat [lf_type_to_string' false t; " ⟶ " (* -> *) ; lf_type_to_string u]
 	in if target then k else concat ["("; k; ")"]
       else
-	concat ["∏ " (* Pi *); vartostring v; ":"; lf_type_to_string' false t; ", "; lf_type_to_string u]
+	concat ["(∏ " (* Pi *); vartostring v; ":"; lf_type_to_string' false t; ") "; lf_type_to_string u]
   | F_Sigma(v,t,u) -> 
       if v == VarUnused
       then 
 	let k = concat [lf_type_to_string' false t; " × " ; lf_type_to_string' false u]
 	in if target then k else concat ["("; k; ")"]
       else
-	concat ["Σ " (* Sigma *); vartostring v; ":"; lf_type_to_string' false t; ", "; lf_type_to_string u]
+	concat ["(Σ " (* Sigma *); vartostring v; ":"; lf_type_to_string' false t; ") "; lf_type_to_string u]
   | F_Singleton(x,t) -> concat ["Singleton(";lf_expr_to_string x;" : ";lf_type_to_string t;")"]
   | F_APPLY(hd,args) -> 
       let s = concat [lf_type_head_to_string hd; concat (List.map (space <<- lf_expr_to_string) args)] in

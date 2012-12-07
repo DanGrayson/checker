@@ -44,14 +44,6 @@ let lamb (v,t1) t2 = LAMBDA(v,t2)
 
 let pi   (v,t1) t2 = nowhere 8 (F_Pi(v,t1,t2))
 
-let augment uvars ueqns tvars o_vartypes = List.flatten (
-    List.flatten [
-    List.map (fun  x    -> [x,uexp]) uvars;
-    List.map (fun (l,r) -> [newfresh (Var "u"), ulevel_equality (Phi l) (Phi r)]) ueqns;
-    List.map (fun  x    -> [x,texp; newfresh (Var "i"), ist  x  ]) tvars;
-    List.map (fun (x,t) -> [x,oexp; newfresh (Var "h"), hast x t]) o_vartypes
-  ])
-
 let fold = List.fold_right
 
 let wrap vartypes (def,pos,tm,tp) = (def, pos, fold lamb vartypes tm, fold pi vartypes tp)
@@ -62,23 +54,42 @@ let term_or_hole pos = function
   | Some tm -> tm
   | None -> hole pos
 
+let sigma v t u = nowhere 43 (F_Sigma(v,t,u))
+
+let ist_2 v = [v,texp; newfresh (Var "i"), ist  v]
+
+let ist_s v = sigma v texp (ist v)
+
+let ist_1 v = [v,ist_s v]
+
+let hast_2 v t = [v,oexp; newfresh (Var "h"), hast v t]
+
+let hast_s v t = sigma v oexp (hast v t)
+
+let hast_1 v t = [v,hast_s v t]
+
+let augment uvars ueqns tvars o_vartypes = List.flatten (
+    List.flatten [
+    List.map (fun  x    -> [x,uexp]) uvars;
+    List.map (fun (l,r) -> [newfresh (Var "u"), ulevel_equality (Phi l) (Phi r)]) ueqns;
+    List.map (fun  x    -> ist_2 x) tvars;
+    List.map (fun (x,t) -> hast_2 x t) o_vartypes
+  ])
+
 let tDefinition name (UContext (uvars,ueqns),tvars,o_vartypes) t d1 = 
   let pos = get_pos t in
+  let t = Phi t in 
   let vartypes = augment uvars ueqns tvars o_vartypes in
   let v = newfresh (Var name) in
   List.map (wrap vartypes) 
-    [ 
-      ( Var name, pos, PAIR(pos, Phi t, term_or_hole pos d1), nowhere 43 (F_Sigma(v,texp,istype (var_to_lf v))) )
-      ]
+    [ ( Var name, pos, PAIR(pos, t, term_or_hole pos d1), ist_s v ) ]
 
 let oDefinition name (UContext(uvars,ueqns),tvars,o_vartypes) o t d1 =
   let pos = get_pos o in
   let vartypes = augment uvars ueqns tvars o_vartypes in
-  let def_0 = VarDefined(name,0) in
+  let v = newfresh (Var name) in
   List.map (wrap vartypes)
-    [
-     ( def_0             , get_pos o, Phi o              , oexp );
-     ( VarDefined(name,1), get_pos t, term_or_hole pos d1, hastype (apply def_0 vartypes) (Phi t)) ]
+    [ ( Var name, pos, PAIR(pos, Phi o, term_or_hole pos d1 ) , hast_s v t ) ]
 
 let teqDefinition _ _ _ _ = raise (Unimplemented "teqDefinition")
 
@@ -94,16 +105,15 @@ let defCommand env defs =
     (fun env (v, pos, tm, tp) -> 
       printf "Define %a = %a\n" p_var v  p_expr tm;
       flush stdout;
+      printf "       %a : %a\n" p_var v  p_type tp; flush stdout;
       let tp' = Lfcheck.type_validity env tp in
+      printf "       %a : %a [after tactics]\n" p_var v  p_type tp'; flush stdout;
       let tm' = Lfcheck.type_check pos env tm tp in
+      printf "       %a = %a [after tactics]\n" p_var v  p_expr tm'; flush stdout;
       let tm'' = Lfcheck.term_normalization env tm' tp' in
+      printf "       %a = %a [normalized]\n" p_var v  p_expr tm''; flush stdout;
       let tp'' = Lfcheck.type_normalization env tp' in
-      printf "       %a = %a [after tactics]\n" p_var v  p_expr tm';
-      printf "       %a = %a [normalized]\n" p_var v  p_expr tm'';
-      printf "       %a : %a\n" p_var v  p_type tp;
-      printf "       %a : %a [after tactics]\n" p_var v  p_type tp';
-      printf "       %a : %a [normalized]\n" p_var v  p_type tp'';
-      flush stdout;
+      printf "       %a : %a [normalized]\n" p_var v  p_type tp''; flush stdout;
       addDefinition env v pos tm' tp'
     ) 
     env defs
