@@ -4,8 +4,8 @@ Check LF ev_hastype.
 
 Define compose (T U V:Type) (g:U->V) (f:T->U) (t:T) := [ev;_](g,[ev;_](f,t,U),V) : V
        ; (
-       ev_hastype U (_ |-> V) g ([ev] f t (_ |->U)) $a ( 
-       ev_hastype T (_ |-> U) f t $a $a 
+       ev_hastype U >V g ([ev] f t >U) $a ( 
+       ev_hastype T >U f t $a $a 
        ))  .
 
 Check LF λ_hastype.
@@ -14,23 +14,11 @@ Define compose2 (T U V:Type) (g:U->V) (f:T->U) := [lambda;t](T,[ev;_](g,[ev;_](f
      ; (
        λ_hastype
        T
-       (_ |-> V)
-       (t |-> ([ev] g ([ev] f t (_ |-> U)) (_ |-> V)) ) 
+       >V
+       (t |-> ([ev] g ([ev] f t >U) >V) ) 
        $a 
        (t |-> t_has_type_T |-> 
-       	  ( ev_hastype U (_ |-> V) g ([ev] f t (_ |->U)) $a ( ev_hastype T (_ |-> U) f t $a $a )))).
-
-End.
-       ; (
-       ev_hastype U (_ |-> V) g ([ev] f t (_ |->U)) $a ( 
-       ev_hastype T (_ |-> U) f t $a $a 
-       )) .
-
-End.
-
-Show 3.
-
-End.
+       	  ( ev_hastype U >V g ([ev] f t >U) $a ( ev_hastype T >U f t $a $a )))).
 
 Define A (u : Ulevel; u=u) (t : [U](u)) := [El](t); (El_type u $assumption $0).
 
@@ -42,14 +30,9 @@ Define C := [u](u1) : [U]([next](u1)); (u_univ $a).
 
 Check LF (B ([next] u1) ([u] u1) (u_univ u1)).
 
-Show 7.
-
-End.
-
 Check LF ∏_istype.
 
-Define E (u1 u2 u3:Ulevel)(K:Type) := K -> K; (∏_istype
-       $a (_ |-> $a) (_ |-> _ |-> $a) _ _) .
+Define E (u1 u2 u3:Ulevel)(K:Type) := K -> K; (∏_istype $a >$a >>$a ) .
 
 #   Local Variables:
 #   compile-command: "make demo "

@@ -127,11 +127,16 @@ lf_expr:
     { CAN(Position($startpos, $endpos), PR2 a) }
 
 lf_lambda_expression:
+
+| Wgreater body=lf_expr
+    { LAMBDA(newunused(),body) }
+
 | Wlparen Klambda v=variable Wcomma body=lf_expr Wrparen
     { LAMBDA(v,body) }
-| Wlparen v=variable Wmapsto body=lf_lambda_expression_body Wrparen
-    { LAMBDA(v,body) }
 | Wlparen Klambda v=variable_unused Wcomma body=lf_expr Wrparen
+    { LAMBDA(v,body) }
+
+| Wlparen v=variable Wmapsto body=lf_lambda_expression_body Wrparen
     { LAMBDA(v,body) }
 | Wlparen v=variable_unused Wmapsto body=lf_lambda_expression_body Wrparen
     { LAMBDA(v,body) }

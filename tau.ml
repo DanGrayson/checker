@@ -17,7 +17,7 @@ let rec get_ts_type (v:var) (env:context) : atomic_expr = (
 
 let rec tau (pos:position) (env:context) (pos,e) : atomic_expr = 
   match e with
-  | TacticHole n -> raise NotImplemented
+  | PR1 _ | PR2 _ | TacticHole _ -> raise NotImplemented
   | EmptyHole _ -> raise (TypeCheckingFailure(env, pos, "empty hole, type undetermined"))
   | APPLY(V v,[]) -> (
       try get_ts_type v env
@@ -37,7 +37,10 @@ let rec tau (pos:position) (env:context) (pos,e) : atomic_expr =
 		| _ -> raise Internal)
 	    | O_j -> (
 		match args with 
-		| [CAN m1;CAN m2] -> Helpers.make_TT_Pi (with_pos_of m1 (Helpers.make_TT_U m1)) (VarUnused, (with_pos_of m2 (Helpers.make_TT_U m2)))
+		| [CAN m1;CAN m2] -> 
+		    Helpers.make_TT_Pi 
+		      (with_pos_of m1 (Helpers.make_TT_U m1))
+		      (newunused(), (with_pos_of m2 (Helpers.make_TT_U m2)))
 		| _ -> raise Internal)
 	    | O_ev -> (
 		match args with 

@@ -8,10 +8,8 @@ open Printer
 open Printf
 
 let fresh v subl =
-  if v = VarUnused then v, subl 
-  else
-    let v' = newfresh v in
-    v', (v,var_to_lf v') :: subl
+  let v' = newfresh v in
+  v', (v,var_to_lf v') :: subl
 
 let show_subs (subl : (var * lf_expr) list) =
   printf " subs =\n";
@@ -120,15 +118,7 @@ and subst_kind_fresh subl (v,t) =
   let (v,subl) = fresh v subl in
   v, subst_kind subl t  
 
-let check_not_VarUnused = function
-  | CAN (_,APPLY(V VarUnused,[])) -> raise Internal
-  | _ -> ()
-
-let preface subber (v,x) e = 
-  if v = VarUnused then e 
-  else (
-    check_not_VarUnused x;
-    subber [(v,x)] e)
+let preface subber (v,x) e = subber [(v,x)] e
 
 let subst = preface subst
 

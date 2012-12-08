@@ -277,7 +277,7 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
   | LAMBDA _ -> err env (get_pos_lf x) ("function has no type: "^(lf_expr_to_string x))
   | PAIR(pos,x,y) ->
       let x',t = type_synthesis env x in
-      let y',u = type_synthesis env y in PAIR(pos,x',y'), (pos,F_Sigma(VarUnused,t,u))
+      let y',u = type_synthesis env y in PAIR(pos,x',y'), (pos,F_Sigma(newunused(),t,u))
   | CAN e ->
       let (pos,e0) = e in
       match e0 with
@@ -379,13 +379,8 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
   | F_Sigma(v,a,b), F_Sigma(w,c,d)
   | F_Pi(v,a,b), F_Pi(w,c,d) ->
       type_equivalence env a c;
-      if v = VarUnused && w = VarUnused
-      then type_equivalence env b d
-      else
-	let x = newfresh v in
-	type_equivalence ((x, a) :: env)
-	  (subst_type (v, var_to_lf x) b)
-	  (subst_type (w, var_to_lf x) d)
+      let x = newfresh v in
+      type_equivalence ((x, a) :: env) (subst_type (v, var_to_lf x) b) (subst_type (w, var_to_lf x) d)
   | F_APPLY(h,args), F_APPLY(h',args') ->
       (* Here we augment the algorithm in the paper to handle the type families of LF. *)
       if not (h = h') then mismatch_type env tpos t upos u;

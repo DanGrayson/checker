@@ -99,12 +99,10 @@ let def_bind v (pos:position) o t (env:context) =
   ensure_new_name env pos v;
   (v, (pos,F_Singleton(o,t))) :: env
 
-let ts_bind (v,t) env = match v with
-  | VarUnused -> raise Internal
-  | v -> 
-      (newfresh (Var "h") , hastype (var_to_lf v) (CAN t)) :: 
-      (v,oexp) :: 
-      env
+let ts_bind (v,t) env = 
+  (newfresh (Var "h") , hastype (var_to_lf v) (CAN t)) :: 
+  (v,oexp) ::
+  env
 
 let new_hole = 
   let counter = ref 0 in
