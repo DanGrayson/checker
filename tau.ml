@@ -2,6 +2,10 @@ open Error
 open Typesystem
 open Names
 
+let atomic = function
+  | Phi e -> e
+  | _ -> raise NotImplemented
+
 let rec get_ts_type (v:var) (env:context) : ts_expr = (
   match env with
   | (_, (pos, F_APPLY(F_hastype,[Phi(_,APPLY(V v',[])); Phi t]))) :: env 
@@ -36,7 +40,7 @@ let rec tau (pos:position) (env:context) (pos,e) : ts_expr =
 		| _ -> raise Internal)
 	    | O_ev -> (
 		match args with 
-		| [f; o; LAMBDA(x,t)] -> unmark (Substitute.atomic (Substitute.subst (x,o) t)) (* ????  any use of "atomic" is suspect *)
+		| [f; o; LAMBDA(x,t)] -> unmark (atomic (Substitute.subst (x,o) t)) (* ????  any use of "atomic" is suspect *)
 		| _ -> raise Internal)
 	    | O_lambda -> (
 		match args with 

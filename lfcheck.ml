@@ -33,7 +33,7 @@ let mismatch_term_t env pos x pos' x' t =
   raise (TypeCheckingFailure3 (env,
 		    pos , "expected term\n\t"^(lf_expr_to_string x ),
 		    pos',      "to match\n\t"^(lf_expr_to_string x'),
-	       get_pos t,       "of type\n\t"^(lf_type_to_string t)))
+	       get_pos t,	"of type\n\t"^(lf_type_to_string t)))
 
 let mismatch_term env pos x pos' x' = 
   raise (TypeCheckingFailure2 (env,
@@ -84,9 +84,9 @@ let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
       | TacticHole n -> raise NotImplemented
       | EmptyHole _ -> err env pos "empty hole found"
       | APPLY(l,args) -> 
-          let t = label_to_type env pos l in
-          let rec repeat args t =
-            match args, unmark t with
+	  let t = label_to_type env pos l in
+	  let rec repeat args t =
+	    match args, unmark t with
 	    | x :: args, F_Pi(v,a,b) -> 
 		no_hole env pos x;
 		repeat args (subst_type (v,x) b)
@@ -105,11 +105,6 @@ let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
       match xy0 with
       | F_Sigma(v,a,b) -> subst_type (v,PR1(xypos, xy)) b
       | _ -> raise Internal)
-
-let apply_arg env pos (f:lf_expr) (arg:lf_expr) =
-  match f with
-  | LAMBDA(v,body) -> subst (v,arg) body
-  | _ -> raise Internal
 
 let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
   (* assume nothing *)
@@ -138,17 +133,17 @@ let rec num_args t = match unmark t with
   | F_Pi(_,_,b) -> 1 + num_args b
   | _ -> 0
 
-let chk_unused = function
-  | VarUnused -> newfresh (Var "un")
-  | v -> v
-
 let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
   let (pos,t0) = t in
   match t0 with 
-  | F_Pi(v,a,b) ->
-      let x' = term_normalization ((chk_unused v,a) :: env) (apply_arg env pos x (var_to_lf v)) b in
-      LAMBDA(v,x')
+  | F_Pi(v,a,b) -> (
+      match x with
+      | LAMBDA(w,body) ->
+	  let b    = subst_type (v,var_to_lf w) b in
+	  let body = term_normalization ((w,a) :: env) body b in
+	  LAMBDA(w,body)
+      | _ -> raise Internal)
   | F_Sigma(v,a,b) ->
       let pos = get_pos_lf x in
       let x,y = PR1(pos,x),PR2(pos,x) in
@@ -184,9 +179,9 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
       | TacticHole n -> raise NotImplemented
       | EmptyHole _ -> err env pos "path_normalization encountered an empty hole"
       | APPLY(f,args) ->
-          let t0 = label_to_type env pos f in
-          let (t,args) =
-            let rec repeat t args : lf_type * lf_expr list = (
+	  let t0 = label_to_type env pos f in
+	  let (t,args) =
+	    let rec repeat t args : lf_type * lf_expr list = (
 	      match unmark t with
 	      | F_Pi(v,a,b) -> (
 		  match args with
@@ -202,10 +197,10 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
 	      | F_Singleton _ -> raise Internal (* x was head normalized, so any definition of f should have been unfolded *)
 	      | _ -> (
 		  match args with
-                  | [] -> (t,[])
-                  | x :: args -> err env pos "unexpected argument"))
-            in repeat t0 args
-          in (Phi(pos,APPLY(f,args)), t)
+		  | [] -> (t,[])
+		  | x :: args -> err env pos "unexpected argument"))
+	    in repeat t0 args
+	  in (Phi(pos,APPLY(f,args)), t)
 
 let rec type_normalization (env:context) (t:lf_type) : lf_type =
   (* see figure 9 page 696 [EEST] *)
@@ -213,11 +208,11 @@ let rec type_normalization (env:context) (t:lf_type) : lf_type =
   let t = match t0 with
   | F_Pi(v,a,b) -> 
       let a' = type_normalization env a in
-      let b' = type_normalization ((chk_unused v,a) :: env) b in
+      let b' = type_normalization ((v,a) :: env) b in
       F_Pi(v,a',b')
   | F_Sigma(v,a,b) -> 
       let a' = type_normalization env a in
-      let b' = type_normalization ((chk_unused v,a) :: env) b in
+      let b' = type_normalization ((v,a) :: env) b in
       F_Sigma(v,a',b')
   | F_APPLY(head,args) ->
       let kind = tfhead_to_kind head in
@@ -228,7 +223,7 @@ let rec type_normalization (env:context) (t:lf_type) : lf_type =
 	  | K_type, x :: args -> err env pos "too many arguments"
 	  | K_Pi(v,a,kind'), x :: args ->
 	      term_normalization env x a ::
-	      repeat ((chk_unused v,a) :: env) kind' args
+	      repeat ((v,a) :: env) kind' args
 	  | K_Pi(_,a,_), [] -> errmissingarg env pos a
 	in repeat env kind args
       in F_APPLY(head,args)
@@ -248,11 +243,11 @@ let rec type_validity (env:context) (t:lf_type) : lf_type =
     match t with 
     | F_Pi(v,t,u) ->
 	let t = type_validity env t in
-	let u = type_validity ((chk_unused v,t) :: env) u in
+	let u = type_validity ((v,t) :: env) u in
 	F_Pi(v,t,u)
     | F_Sigma(v,t,u) ->
 	let t = type_validity env t in
-	let u = type_validity ((chk_unused v,t) :: env) u in
+	let u = type_validity ((v,t) :: env) u in
 	F_Sigma(v,t,u)
     | F_APPLY(head,args) ->
 	let kind = tfhead_to_kind head in
@@ -261,7 +256,7 @@ let rec type_validity (env:context) (t:lf_type) : lf_type =
 	  | K_type, [] -> []
 	  | K_type, x :: args -> err env pos "at least one argument too many";
 	  | K_Pi(v,a,kind'), x :: args -> 
-	      type_check pos env x a :: repeat ((chk_unused v,a) :: env) kind' args
+	      type_check pos env x a :: repeat ((v,a) :: env) kind' args
 	  | K_Pi(_,a,_), [] -> errmissingarg env pos a
 	in 
 	let args' = repeat env kind args in
@@ -298,9 +293,9 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
       | EmptyHole _ -> err env pos ("empty hole: "^(ts_expr_to_string e))
       (* | APPLY(V v, []) -> x, (pos, F_Singleton(Phi e, fetch_type env pos v)) *)
       | APPLY(label,args) -> (
-          let a = label_to_type env pos label in
-          let rec repeat env (a:lf_type) (args:lf_expr list) : lf_expr list * lf_type = (
-            let (apos,a0) = a in
+	  let a = label_to_type env pos label in
+	  let rec repeat env (a:lf_type) (args:lf_expr list) : lf_expr list * lf_type = (
+	    let (apos,a0) = a in
 	    match a0, args with
 	    | F_Pi(x,a',a''), m' :: args' ->
 		let m' = type_check pos env m' a' in
@@ -331,12 +326,12 @@ and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (
       term_equivalence xpos ypos env (PR2(xpos,x)) (PR2(ypos,y)) (subst_type (v,PR1(xpos,x)) b)
   | x, y, F_Pi (v,a,b) -> (
       match x,y with
-      | LAMBDA(u,x), LAMBDA(v,y) ->
-	  let w = newfresh v in
+      | LAMBDA(t,x), LAMBDA(u,y) ->
+	  let w = newfresh (Var "v") in
 	  term_equivalence xpos ypos 
 	    ((w,a) :: env)
-	    (subst (u,var_to_lf w) x)	(* with deBruijn indices, this will go away *)
-	    (subst (v,var_to_lf w) y) 
+	    (subst (t,var_to_lf w) x)	(* with deBruijn indices, this will go away *)
+	    (subst (u,var_to_lf w) y) 
 	    (subst_type (v,var_to_lf w) b)
       | x,y -> raise Internal)
   | x, y, F_APPLY(j,args) ->
@@ -352,17 +347,17 @@ and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
   | Phi (xpos,x0), Phi (ypos,y0) -> (
       match x0,y0 with
       | APPLY(f,args), APPLY(f',args') ->
-          if not (f = f') 
+	  if not (f = f') 
 	  then mismatch_term env xpos x ypos y;
-          let t = label_to_type env xpos f in
-          let rec repeat t args args' =
-            match t,args,args' with
-            | t, [], [] -> t
-            | (pos,F_Pi(v,a,b)), x :: args, y :: args' ->
-                term_equivalence xpos ypos env x y a;
+	  let t = label_to_type env xpos f in
+	  let rec repeat t args args' =
+	    match t,args,args' with
+	    | t, [], [] -> t
+	    | (pos,F_Pi(v,a,b)), x :: args, y :: args' ->
+		term_equivalence xpos ypos env x y a;
 		no_hole env pos x;
-                repeat (subst_type (v,x) b) args args'
-            | _ -> mismatch_term env xpos x ypos y
+		repeat (subst_type (v,x) b) args args'
+	    | _ -> mismatch_term env xpos x ypos y
 	  in repeat t args args'
       | _ -> mismatch_term env xpos x ypos y)
   | _  -> mismatch_term env (get_pos_lf x) x (get_pos_lf y) y
@@ -382,10 +377,10 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
   | F_Sigma(v,a,b), F_Sigma(w,c,d)
   | F_Pi(v,a,b), F_Pi(w,c,d) ->
       type_equivalence env a c;
-      if v = VarUnused && w = VarUnused	(* ?? bad for tactics below *)
+      if v = VarUnused && w = VarUnused
       then type_equivalence env b d
       else
-	let x = newfresh (Var "x") in
+	let x = newfresh v in
 	type_equivalence ((x, a) :: env)
 	  (subst_type (v, var_to_lf x) b)
 	  (subst_type (w, var_to_lf x) d)
@@ -395,10 +390,10 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
       let k = tfhead_to_kind h in
       let rec repeat (k:lf_kind) args args' : unit =
 	match k,args,args' with
-        | K_Pi(v,t,k), x :: args, x' :: args' ->
-            term_equivalence tpos upos env x x' t;
-            repeat (subst_kind (v,x) k) args args'
-        | K_type, [], [] -> ()
+	| K_Pi(v,t,k), x :: args, x' :: args' ->
+	    term_equivalence tpos upos env x x' t;
+	    repeat (subst_kind (v,x) k) args args'
+	| K_type, [], [] -> ()
 	| _ -> raise Internal
       in repeat k args args'
   | _ -> mismatch_type env tpos t upos u
@@ -450,7 +445,7 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr =
   | LAMBDA(v,e), F_Pi(w,a,b) -> (* the published algorithm is not applicable here, since
 				   our lambda doesn't contain type information for the variable,
 				   and theirs does *)
-      let e = type_check pos ((chk_unused v,a) :: env) e (subst_type (chk_unused w,var_to_lf v) b) in
+      let e = type_check pos ((v,a) :: env) e (subst_type (w,var_to_lf v) b) in
       LAMBDA(v,e)
 
   | LAMBDA _, _ -> err env pos "did not expect a lambda expression here"
@@ -459,7 +454,7 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr =
 			    give advice to tactics for filling holes in [p], so we try type-directed
 			    type checking as long as possible. *)
       let (x,y) = (
-	match p with 			(* save energy if it's already a pair *)
+	match p with			(* save energy if it's already a pair *)
 	| PAIR(pos,x,y) -> (x,y)
 	| p -> 
 	    let pos = get_pos_lf p in

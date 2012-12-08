@@ -106,9 +106,6 @@ let def_bind v (pos:position) o t (env:context) =
   ensure_new_name env pos v;
   (v, (pos,F_Singleton(o,t))) :: env
 
-(* raise an exception when a certain fresh variable is generated *)
-let genctr_trap = 0
-
 let newfresh = 
   let genctr = ref 0 in 
   let newgen x = (
@@ -117,11 +114,14 @@ let newfresh =
     if !genctr < 0 then raise GensymCounterOverflow;
     VarGen (!genctr, x)) in
   fun v -> match v with 
+  | VarDefined _ -> raise Internal
+  | VarUnused -> raise Internal
   | Var x | VarGen(_,x) -> newgen x
-  | VarDefined _ | VarUnused -> raise Internal
+
+let newunused () = newfresh (Var "_")
 
 let ts_bind (v,t) env = match v with
-  | VarUnused -> env
+  | VarUnused -> raise Internal
   | v -> 
       (newfresh (Var "h") , hastype (var_to_lf v) (Phi t)) :: 
       (v,oexp) :: 

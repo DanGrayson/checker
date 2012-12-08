@@ -77,6 +77,8 @@ Check TS [Pi;x](T,T).
 Check LF type ∏ x:oexp, ∏ y:oexp, ∏ T:texp, ∏ U:texp, [ x = y : T ] ⟶ [ T = U ] ⟶ [ x = y : U ].
 Check LF (U_type u1).
 
+Check LF El_type.
+
 Define foo (u : Ulevel) (t : [U]([next](u))) := *t; (El_type ([next] u) t $a).
 
 Define A (u : Ulevel) (t : [U](u)) := *t; (El_type u t $a).

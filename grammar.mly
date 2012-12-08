@@ -79,11 +79,11 @@ bare_lf_type:
 | Wlparen v=bare_variable COLON a=lf_type Wrparen Wtimes b=lf_type
     { F_Sigma(v,a,b) }
 | a=lf_type Wtimes b=lf_type
-    { F_Sigma(VarUnused,a,b) }
+    { F_Sigma(newunused(),a,b) }
 | Wlparen v=bare_variable COLON a=lf_type Wrparen Warrow b=lf_type
    { F_Pi(v,a,b) }
 | a=lf_type Warrow b=lf_type
-   { F_Pi(VarUnused,a,b) }
+   { F_Pi(newunused(),a,b) }
 | KSingleton Wlparen x=lf_expr COLON t=lf_type Wrparen
     { F_Singleton(x,t) }
 | Wlbracket a=lf_expr Ktype Wrbracket
@@ -145,7 +145,7 @@ lf_lambda_expression_body:
 
 variable_unused:
 | Wunderscore
-    { VarUnused }
+    { newunused() }
 
 tactic_expr:
 | c=IDENTIFIER
@@ -282,8 +282,8 @@ bare_variable:
 bare_variable_or_unused:
 | v=bare_variable
     {v}
-| Wunderscore
-    { VarUnused }
+| v=variable_unused
+    {v}
 
 bare_ts_expr:
 | bare_variable
@@ -292,7 +292,7 @@ bare_ts_expr:
     { new_hole () }
 | f=ts_expr o=ts_expr
     %prec Reduce_application
-    { make_OO_ev f o (VarUnused, (Position($startpos, $endpos), new_hole())) }
+    { make_OO_ev f o (newunused(), (Position($startpos, $endpos), new_hole())) }
 | Klambda x=variable COLON t=ts_expr Wcomma o=ts_expr
     %prec Reduce_binder
     { make_OO_lambda t (x,o) }
@@ -305,7 +305,7 @@ bare_ts_expr:
 | Wlparen x=variable COLON t=ts_expr Wrparen Warrow u=ts_expr
     { make_TT_Pi t (x,u) }
 | t=ts_expr Warrow u=ts_expr
-    { make_TT_Pi t (VarUnused,u) }
+    { make_TT_Pi t (newunused(),u) }
 | KSigma x=variable COLON t1=ts_expr Wcomma t2=ts_expr
     %prec Reduce_binder
     { make_TT_Sigma t1 (x,t2) }

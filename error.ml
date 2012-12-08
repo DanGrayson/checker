@@ -4,6 +4,9 @@ let debug_mode = ref false
 
 let nowhere_trap = ref 0
 
+(* raise an exception when a certain fresh variable is generated *)
+let genctr_trap = 0
+
 let trap () = ()			(* set a break point here *)
 
 let notail x = x			(* insert into code to termporarily prevent tail recursion *)

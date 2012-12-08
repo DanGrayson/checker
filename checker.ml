@@ -4,7 +4,7 @@ let debug = false
 
 let try_normalization = false
 
-let env_limit = Some 7
+let env_limit = Some 20
 
 open Error
 open Typesystem
@@ -126,7 +126,7 @@ let add_tVars env tvars =
       )
       env
 
-let fix env t = Fillin.fillin env t
+let fix = Fillin.fillin
 
 let ts_axiomCommand env pos name t = 
   printf "Axiom TS %s: %a\n" name  p_ts t;
@@ -171,7 +171,7 @@ let checkLFtypeCommand env t =
 let checkCommand env x =
   printf "Check      : %a\n" p_ts x;
   flush stdout;
-  let x = Fillin.fillin env x in
+  let x = fix env x in
   printf "        LF : %a\n" p_ts x;
   flush stdout;
   let (x,t) = Lfcheck.type_synthesis env (Phi x) in
