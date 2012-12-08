@@ -34,7 +34,7 @@ let rec subst_list (subl : (var * lf_expr) list) es = List.map (subst subl) es
 and subst subl e = spy p_expr subst'' subl e
 
 and subst'' subl = function
-  | Phi (pos,e) as d -> (
+  | CAN (pos,e) as d -> (
       match e with
       | APPLY(V v,args) -> (
           try 
@@ -44,7 +44,7 @@ and subst'' subl = function
             | args -> (
 		let args = subst_list subl args in 
                 match z with 
-                | Phi(zpos,APPLY(f,brgs)) -> Phi(pos,APPLY(f, List.flatten [brgs;args]))
+                | CAN(zpos,APPLY(f,brgs)) -> CAN(pos,APPLY(f, List.flatten [brgs;args]))
                 | LAMBDA _ as f -> apply_args pos f args
                 | _ ->
                     printf "about to replace %a by %a in %a, not implemented\n"
@@ -53,12 +53,12 @@ and subst'' subl = function
                       p_expr d; flush stdout;
                     raise (Unimplemented_expr d))
           with Not_found -> d)
-      | APPLY(label,args) -> Phi(pos, APPLY(label,subst_list subl args))
+      | APPLY(label,args) -> CAN(pos, APPLY(label,subst_list subl args))
+      | PR1 x -> CAN(pos, PR1(subst subl x))
+      | PR2 x -> CAN(pos, PR2(subst subl x))
       | TacticHole n -> raise Internal
       | EmptyHole _ -> d)
   | PAIR(pos,x,y) -> PAIR(pos,subst subl x,subst subl y)
-  | PR1(pos,x) -> PR1(pos,subst subl x)
-  | PR2(pos,x) -> PR2(pos,subst subl x)
   | LAMBDA(v, body) -> 
       let (v,body) = subst_fresh subl (v,body) in
       LAMBDA(v, body)
@@ -120,7 +120,7 @@ and subst_kind_fresh subl (v,t) =
   v, subst_kind subl t  
 
 let check_not_VarUnused = function
-  | Phi (_,APPLY(V VarUnused,[])) -> raise Internal
+  | CAN (_,APPLY(V VarUnused,[])) -> raise Internal
   | _ -> ()
 
 let preface subber (v,x) e = 

@@ -47,8 +47,8 @@ let rec strip_singleton ((_,(_,t)) as u) = match t with
 (* background assumption: all types in the environment have been verified *)
 
 let no_hole env pos = function		(* for debugging *)
-  | Phi(_,TacticHole _) -> err env pos "encountered a tactic hole about to be added to the context"
-  | Phi(_,EmptyHole  _) -> err env pos "encountered an empty hole about to be added to the context"
+  | CAN(_,TacticHole _) -> err env pos "encountered a tactic hole about to be added to the context"
+  | CAN(_,EmptyHole  _) -> err env pos "encountered an empty hole about to be added to the context"
   | _ -> ()
 
 type tactic_function = context -> position -> lf_type -> lf_expr option
@@ -79,7 +79,7 @@ let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
   (* assume nothing *)
   (* see figure 9 page 696 [EEST] *)
   match x with
-  | Phi (pos,x) -> (
+  | CAN (pos,x) -> (
       match x with
       | TacticHole n -> raise NotImplemented
       | EmptyHole _ -> err env pos "empty hole found"
@@ -93,36 +93,37 @@ let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
 	    | x :: args, _ -> err env pos "at least one argument too many"
 	    | [], F_Pi(v,a,b) -> errmissingarg env pos a (* we insist on eta-long format *)
 	    | [], t -> t
-	  in nowhere 5 (repeat args t))
+	  in nowhere 5 (repeat args t)
+      | PR1 xy -> (
+	  match unmark (natural_type pos env xy) with
+	  | F_Sigma(v,a,b) -> a
+	  | _ -> raise Internal)
+      | PR2 xy -> (
+	  let (xypos,xy0) = natural_type pos env xy in
+	  match xy0 with
+	  | F_Sigma(v,a,b) -> subst_type (v,CAN(xypos, PR1 xy)) b
+	  | _ -> raise Internal)
+     )
   | LAMBDA _ -> err env pos "LF lambda expression found, has no natural type"
   | PAIR _ -> err env pos "LF pair found, has no natural type"
-  | PR1(pos,xy) -> (
-      match unmark (natural_type pos env xy) with
-      | F_Sigma(v,a,b) -> a
-      | _ -> raise Internal)
-  | PR2(pos,xy) -> (
-      let (xypos,xy0) = natural_type pos env xy in
-      match xy0 with
-      | F_Sigma(v,a,b) -> subst_type (v,PR1(xypos, xy)) b
-      | _ -> raise Internal)
 
 let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
   (* assume nothing *)
   (* see figure 9 page 696 [EEST] *)
   (* may raise Not_found if there is no head reduction *)
   match x with
-  | Phi (pos,x) -> (
+  | CAN (pos,x) -> (
       match x with
+      | PR1(PAIR(_,x,_)) -> x
+      | PR2(PAIR(_,_,y)) -> y
+      | PR1 e -> CAN(pos,PR1(head_reduction env e))
+      | PR2 e -> CAN(pos,PR2(head_reduction env e))
+      | APPLY(V v, args) -> let f = unfold env v in apply_args pos f args
+      | APPLY _ -> raise Not_found
       | TacticHole n -> raise NotImplemented
       | EmptyHole _ -> err env pos "empty hole found"
-      | APPLY(V v, args) -> let f = unfold env v in apply_args pos f args
-      | APPLY _ -> raise Not_found)
-  | PR1(pos,PAIR(_,x,_)) -> x
-  | PR2(pos,PAIR(_,_,y)) -> y
-  | PR1(pos,e) -> PR1(pos,head_reduction env e)
-  | PR2(pos,e) -> PR2(pos,head_reduction env e)
-  | PAIR _				(* What if we have a pair of singletons?  Do we need to return the simplified pair? *)
-  | LAMBDA _ -> raise Not_found
+     )
+  | PAIR _ | LAMBDA _ -> raise Not_found
 
 let rec head_normalization (env:context) (x:lf_expr) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
@@ -146,7 +147,7 @@ let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
       | _ -> raise Internal)
   | F_Sigma(v,a,b) ->
       let pos = get_pos_lf x in
-      let x,y = PR1(pos,x),PR2(pos,x) in
+      let x,y = CAN(pos,PR1 x),CAN(pos,PR2 x) in
       PAIR(pos,
 	   term_normalization env x a,
 	   term_normalization env y (subst_type (v,x) b))
@@ -163,21 +164,21 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
   match x with
   | LAMBDA _ -> err env pos "path_normalization encountered a function"
   | PAIR _ -> err env pos "path_normalization encountered a pair"
-  | PR1(pos,p) -> (
-      let p',s = path_normalization env pos p in
-      match unmark s with 
-      | F_Sigma(v,a,b) -> PR1(pos,p'), a
-      | _ -> raise Internal)
-  | PR2(pos,p) -> (
-      let p',s = path_normalization env pos p in
-      match unmark s with 
-      | F_Sigma(v,a,b) -> PR2(pos,p'), subst_type (v,PR1(pos,p')) b
-      | _ -> raise Internal)
-  | Phi y ->
+  | CAN y ->
       let (pos,y0) = y in
       match y0 with
       | TacticHole n -> raise NotImplemented
       | EmptyHole _ -> err env pos "path_normalization encountered an empty hole"
+      | PR1 p -> (
+	  let p',s = path_normalization env pos p in
+	  match unmark s with 
+	  | F_Sigma(v,a,b) -> CAN(pos,PR1 p'), a
+	  | _ -> raise Internal)
+      | PR2 p -> (
+	  let p',s = path_normalization env pos p in
+	  match unmark s with 
+	  | F_Sigma(v,a,b) -> CAN(pos,PR2 p'), subst_type (v,CAN(pos,PR1 p')) b
+	  | _ -> raise Internal)
       | APPLY(f,args) ->
 	  let t0 = label_to_type env pos f in
 	  let (t,args) =
@@ -200,7 +201,7 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
 		  | [] -> (t,[])
 		  | x :: args -> err env pos "unexpected argument"))
 	    in repeat t0 args
-	  in (Phi(pos,APPLY(f,args)), t)
+	  in (CAN(pos,APPLY(f,args)), t)
 
 let rec type_normalization (env:context) (t:lf_type) : lf_type =
   (* see figure 9 page 696 [EEST] *)
@@ -276,22 +277,22 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
   | PAIR(pos,x,y) ->
       let x',t = type_synthesis env x in
       let y',u = type_synthesis env y in PAIR(pos,x',y'), (pos,F_Sigma(VarUnused,t,u))
-  | PR1(pos,p) -> (
-      let p',s = type_synthesis env p in
-      match unmark s with 
-      | F_Sigma(v,a,b) -> PR1(pos,p'), a
-      | _ -> raise Internal)
-  | PR2(pos,p) -> (
-      let p',s = type_synthesis env p in
-      match unmark s with 
-      | F_Sigma(v,a,b) -> PR2(pos,p'), subst_type (v,PR1(pos,p')) b
-      | _ -> raise Internal)
-  | Phi e ->
+  | CAN e ->
       let (pos,e0) = e in
       match e0 with
       | TacticHole n -> err env pos ("tactic hole: "^(ts_expr_to_string e))
       | EmptyHole _ -> err env pos ("empty hole: "^(ts_expr_to_string e))
-      (* | APPLY(V v, []) -> x, (pos, F_Singleton(Phi e, fetch_type env pos v)) *)
+      | PR1 p -> (
+	  let p',s = type_synthesis env p in
+	  match unmark s with 
+	  | F_Sigma(v,a,b) -> CAN(pos,PR1 p'), a
+	  | _ -> raise Internal)
+      | PR2 p -> (
+	  let p',s = type_synthesis env p in
+	  match unmark s with 
+	  | F_Sigma(v,a,b) -> CAN(pos,PR2 p'), subst_type (v,CAN(pos,PR1 p')) b
+	  | _ -> raise Internal)
+      (* | APPLY(V v, []) -> x, (pos, F_Singleton(CAN e, fetch_type env pos v)) *)
       | APPLY(label,args) -> (
 	  let a = label_to_type env pos label in
 	  let rec repeat env (a:lf_type) (args:lf_expr list) : lf_expr list * lf_type = (
@@ -311,7 +312,7 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
 	   )
 	  in
 	  let (args',t) = repeat env a args
-	  in Phi(pos,APPLY(label,args')), t
+	  in CAN(pos,APPLY(label,args')), t
 	 )
 
 and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : unit =
@@ -322,8 +323,8 @@ and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (
   match x, y, t0 with
   | _, _, F_Singleton _ -> ()
   | x, y, F_Sigma (v,a,b) ->
-      term_equivalence xpos ypos env (PR1(xpos,x)) (PR1(ypos,y)) a;
-      term_equivalence xpos ypos env (PR2(xpos,x)) (PR2(ypos,y)) (subst_type (v,PR1(xpos,x)) b)
+      term_equivalence xpos ypos env (CAN(xpos,PR1 x)) (CAN(ypos,PR1 y)) a;
+      term_equivalence xpos ypos env (CAN(xpos,PR2 x)) (CAN(ypos,PR2 y)) (subst_type (v,CAN(xpos,PR1 x)) b)
   | x, y, F_Pi (v,a,b) -> (
       match x,y with
       | LAMBDA(t,x), LAMBDA(u,y) ->
@@ -344,7 +345,7 @@ and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
   (* assume x and y are head reduced *)
   (* see figure 11, page 711 [EEST] *)
   match x,y with
-  | Phi (xpos,x0), Phi (ypos,y0) -> (
+  | CAN (xpos,x0), CAN (ypos,y0) -> (
       match x0,y0 with
       | APPLY(f,args), APPLY(f',args') ->
 	  if not (f = f') 
@@ -430,11 +431,11 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr =
   (* we modify the algorithm to return a possibly modified expression e, with holes filled in by tactics *)
   let (pos,t0) = t in 
   match e, t0 with
-  | Phi(pos, EmptyHole _), _ ->
+  | CAN(pos, EmptyHole _), _ ->
       raise (TypeCheckingFailure2 (env,
 				   pos, "hole found : "^(lf_expr_to_string e),
 				   pos, "   of type : "^(lf_type_to_string t)))
-  | Phi(pos, TacticHole n), _ -> (
+  | CAN(pos, TacticHole n), _ -> (
       match apply_tactic env pos t n with
       | Some e -> type_check pos env e t
       | None ->
@@ -458,7 +459,7 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr =
 	| PAIR(pos,x,y) -> (x,y)
 	| p -> 
 	    let pos = get_pos_lf p in
-	    PR1(pos,p), PR2(pos,p)
+	    CAN(pos,PR1 p), CAN(pos, PR2 p)
        ) in
       let x = type_check pos env x a in
       let y = type_check pos env y (subst_type (w,x) b) in

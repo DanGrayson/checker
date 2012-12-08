@@ -15,7 +15,7 @@
 
 open Typesystem
 
-exception Inconsistency of ts_expr * ts_expr
+exception Inconsistency of atomic_expr * atomic_expr
 
 let rec memi' i x = function
     [] -> raise Error.Internal
@@ -25,14 +25,14 @@ let memi x = memi' 0 x
 
 let step_size = 10
 
-let chk uv ((lhs:ts_expr),(rhs:ts_expr)) =
+let chk uv ((lhs:atomic_expr),(rhs:atomic_expr)) =
   let index name = memi name uv in
   let rec ev e = 
     let (pos,e0) = e 
     in match e0 with
     | APPLY(V u,[]) -> - step_size * (index u)
-    | APPLY(U U_next,[Phi u]) -> (ev u) + 1
-    | APPLY(U U_max,[Phi u;Phi v]) -> max (ev u) (ev v)
+    | APPLY(U U_next,[CAN u]) -> (ev u) + 1
+    | APPLY(U U_max,[CAN u;CAN v]) -> max (ev u) (ev v)
     | _ -> raise Error.Internal
   in 
   if (ev lhs) != (ev rhs) then raise (Inconsistency (lhs, rhs))
@@ -45,7 +45,7 @@ let get_uvars =
 
 let get_ueqns =
   let rec get_ueqns accu = function
-  | (_, (pos,F_APPLY(F_ulevel_equality,[Phi u; Phi u']))) :: rest -> get_ueqns ((u,u') :: accu) rest
+  | (_, (pos,F_APPLY(F_ulevel_equality,[CAN u; CAN u']))) :: rest -> get_ueqns ((u,u') :: accu) rest
   | _ :: rest -> get_ueqns accu rest 
   | [] -> List.rev accu
   in get_ueqns []
@@ -58,14 +58,14 @@ let chk_ueqns env ueqns = chk_var_ueqns (get_uvars env) ueqns
 
 let ubind env uvars ueqns =
   let env = List.rev_append (List.map (fun u -> ((Var u), uexp)) uvars) env in
-  let env = List.rev_append (List.map (fun (u,v) -> (Names.newfresh (Var "ueq"), ulevel_equality (Phi u) (Phi v))) ueqns) env in
+  let env = List.rev_append (List.map (fun (u,v) -> (Names.newfresh (Var "ueq"), ulevel_equality (CAN u) (CAN v))) ueqns) env in
   chk_ueqns env ueqns;
   env
 
 module Equal = struct
   let term_equiv ulevel_context = 			(* structural equality *)
     let rec ueq a b = match (a,b) with
-    | Phi(_,a), Phi(_,b) -> (
+    | CAN(_,a), CAN(_,b) -> (
 	a == b || 
 	match (a,b) with 
 	| APPLY(V x,[]), APPLY(V x',[]) -> x = x'

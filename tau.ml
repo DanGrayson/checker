@@ -3,18 +3,18 @@ open Typesystem
 open Names
 
 let atomic = function
-  | Phi e -> e
+  | CAN e -> e
   | _ -> raise NotImplemented
 
-let rec get_ts_type (v:var) (env:context) : ts_expr = (
+let rec get_ts_type (v:var) (env:context) : atomic_expr = (
   match env with
-  | (_, (pos, F_APPLY(F_hastype,[Phi(_,APPLY(V v',[])); Phi t]))) :: env 
+  | (_, (pos, F_APPLY(F_hastype,[CAN(_,APPLY(V v',[])); CAN t]))) :: env 
     -> if v = v' then t else get_ts_type v env
   | _ :: env -> get_ts_type v env
   | [] -> raise Not_found
  )
 
-let rec tau (pos:position) (env:context) (pos,e) : ts_expr = 
+let rec tau (pos:position) (env:context) (pos,e) : atomic_expr = 
   match e with
   | TacticHole n -> raise NotImplemented
   | EmptyHole _ -> raise (TypeCheckingFailure(env, pos, "empty hole, type undetermined"))
@@ -32,11 +32,11 @@ let rec tau (pos:position) (env:context) (pos,e) : ts_expr =
 	      match oh with
 	    | O_u -> (
 		match args with 
-		| [Phi u] -> Helpers.make_TT_U (pos, (Helpers.make_UU U_next [Phi u]))
+		| [CAN u] -> Helpers.make_TT_U (pos, (Helpers.make_UU U_next [CAN u]))
 		| _ -> raise Internal)
 	    | O_j -> (
 		match args with 
-		| [Phi m1;Phi m2] -> Helpers.make_TT_Pi (with_pos_of m1 (Helpers.make_TT_U m1)) (VarUnused, (with_pos_of m2 (Helpers.make_TT_U m2)))
+		| [CAN m1;CAN m2] -> Helpers.make_TT_Pi (with_pos_of m1 (Helpers.make_TT_U m1)) (VarUnused, (with_pos_of m2 (Helpers.make_TT_U m2)))
 		| _ -> raise Internal)
 	    | O_ev -> (
 		match args with 
@@ -44,11 +44,11 @@ let rec tau (pos:position) (env:context) (pos,e) : ts_expr =
 		| _ -> raise Internal)
 	    | O_lambda -> (
 		match args with 
-		| [Phi t;LAMBDA(x,Phi o)] -> Helpers.make_TT_Pi t (x, tau pos (ts_bind (x,t) env) o)
+		| [CAN t;LAMBDA(x,CAN o)] -> Helpers.make_TT_Pi t (x, tau pos (ts_bind (x,t) env) o)
 		| _ -> raise Internal)
 	    | O_forall -> (
 		match args with 
-		| Phi u :: Phi u' :: _ -> Helpers.make_TT_U (nowhere 6 (Helpers.make_UU U_max [Phi u; Phi u']))
+		| CAN u :: CAN u' :: _ -> Helpers.make_TT_U (nowhere 6 (Helpers.make_UU U_max [CAN u; CAN u']))
 		| _ -> raise Internal)
 	    | O_pair -> raise NotImplemented
 	    | O_pr1 -> raise NotImplemented

@@ -130,11 +130,11 @@ let fix = Fillin.fillin
 
 let ts_axiomCommand env pos name t = 
   printf "Axiom TS %s: %a\n" name  p_ts t;
-  let t = Lfcheck.type_check (get_pos t) env (Phi t) texp in
+  let t = Lfcheck.type_check (get_pos t) env (CAN t) texp in
   printf "        : %a\n" p_expr t;
   flush stdout;
   match t with
-  | Phi t -> 
+  | CAN t -> 
       let v = Var name in
       ensure_new_name env pos v;
       ts_bind (v,t) env
@@ -174,11 +174,11 @@ let checkCommand env x =
   let x = fix env x in
   printf "        LF : %a\n" p_ts x;
   flush stdout;
-  let (x,t) = Lfcheck.type_synthesis env (Phi x) in
+  let (x,t) = Lfcheck.type_synthesis env (CAN x) in
   printf "    LF type: %a\n" p_type t;
   if unmark t = unmark oexp then (
     match x with
-    | Phi x ->
+    | CAN x ->
 	let ts = Tau.tau env x in
 	printf "    TS type: %a ?\n" p_ts ts;
 	flush stdout
@@ -188,7 +188,7 @@ let checkCommand env x =
 let alphaCommand env (x,y) =
   let x = fix env x in
   let y = fix env y in
-  printf "Alpha      : %s\n" (if (Alpha.UEqual.term_equiv Definitions.emptyUContext (Phi x) (Phi y)) then "true" else "false");
+  printf "Alpha      : %s\n" (if (Alpha.UEqual.term_equiv Definitions.emptyUContext (CAN x) (CAN y)) then "true" else "false");
   printf "           : %a\n" p_ts x;
   printf "           : %a\n" p_ts y;
   flush stdout
@@ -266,7 +266,7 @@ let parse_string env grammar s =
     lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = strname()};
     read_expr env lexbuf
 
-let expr_from_string env s = Phi(parse_string env Grammar.ts_exprEof s)
+let expr_from_string env s = CAN(parse_string env Grammar.ts_exprEof s)
 
 let toplevel() = 
   let env = ref [] in
@@ -290,13 +290,13 @@ let toplevel() =
 let _ = try
   toplevel()
 with
-| Internal_expr      ( Phi(pos,_) as e ) 
-| Internal_expr      ( LAMBDA(_,Phi(pos,_)) as e ) 
+| Internal_expr      ( CAN(pos,_) as e ) 
+| Internal_expr      ( LAMBDA(_,CAN(pos,_)) as e ) 
     as ex ->
     fprintf stderr "%a: internal error: %a\n" p_pos pos  p_expr e;
     raise ex
-| Unimplemented_expr ( Phi(pos,_) as e )
-| Unimplemented_expr ( LAMBDA(_,Phi(pos,_)) as e ) 
+| Unimplemented_expr ( CAN(pos,_) as e )
+| Unimplemented_expr ( LAMBDA(_,CAN(pos,_)) as e ) 
     as ex ->
     fprintf stderr "%a: unimplemented feature: %a\n" p_pos pos  p_expr e;
     raise ex

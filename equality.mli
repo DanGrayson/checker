@@ -1,3 +1,3 @@
 (** Definitional equality. *)
 
-val equal : Typesystem.ts_expr -> Typesystem.ts_expr -> bool
+val equal : Typesystem.atomic_expr -> Typesystem.atomic_expr -> bool

@@ -10,9 +10,9 @@ let mergeUContext : uContext -> uContext -> uContext =
 type parm =
   | UParm of uContext
   | TParm of var list
-  | OParm of (var * ts_expr) list
+  | OParm of (var * atomic_expr) list
 
-let fixParmList (p:parm list) : uContext * (var list) * ((var * ts_expr) list) =
+let fixParmList (p:parm list) : uContext * (var list) * ((var * atomic_expr) list) =
   let rec fix us ts os p =
     match p with 
     | UParm u :: p -> 
@@ -34,11 +34,11 @@ let fixParmList (p:parm list) : uContext * (var list) * ((var * ts_expr) list) =
 
 let ( @@ ) f g x = f (g x)
 
-let apply f vartypes = Phi (nowhere 7 (APPLY(V f, List.map (var_to_lf @@ fst) vartypes)))
+let apply f vartypes = CAN (nowhere 7 (APPLY(V f, List.map (var_to_lf @@ fst) vartypes)))
 
 let ist x = istype (var_to_lf x)
 
-let hast x t = hastype (var_to_lf x) (Phi t)
+let hast x t = hastype (var_to_lf x) (CAN t)
 
 let lamb (v,t1) t2 = LAMBDA(v,t2)
 
@@ -48,7 +48,7 @@ let fold = List.fold_right
 
 let wrap vartypes (def,pos,tm,tp) = (def, pos, fold lamb vartypes tm, fold pi vartypes tp)
 
-let hole pos = Phi(pos, new_hole())
+let hole pos = CAN(pos, new_hole())
 
 let term_or_hole pos = function
   | Some tm -> tm
@@ -71,14 +71,14 @@ let hast_1 v t = [v,hast_s v t]
 let augment uvars ueqns tvars o_vartypes = List.flatten (
     List.flatten [
     List.map (fun  x    -> [x,uexp]) uvars;
-    List.map (fun (l,r) -> [newfresh (Var "u"), ulevel_equality (Phi l) (Phi r)]) ueqns;
+    List.map (fun (l,r) -> [newfresh (Var "u"), ulevel_equality (CAN l) (CAN r)]) ueqns;
     List.map (fun  x    -> ist_2 x) tvars;
     List.map (fun (x,t) -> hast_2 x t) o_vartypes
   ])
 
 let tDefinition name (UContext (uvars,ueqns),tvars,o_vartypes) t d1 = 
   let pos = get_pos t in
-  let t = Phi t in 
+  let t = CAN t in 
   let vartypes = augment uvars ueqns tvars o_vartypes in
   let v = newfresh (Var name) in
   List.map (wrap vartypes) 
@@ -89,7 +89,7 @@ let oDefinition name (UContext(uvars,ueqns),tvars,o_vartypes) o t d1 =
   let vartypes = augment uvars ueqns tvars o_vartypes in
   let v = newfresh (Var name) in
   List.map (wrap vartypes)
-    [ ( Var name, pos, PAIR(pos, Phi o, term_or_hole pos d1 ) , hast_s v t ) ]
+    [ ( Var name, pos, PAIR(pos, CAN o, term_or_hole pos d1 ) , hast_s v t ) ]
 
 let teqDefinition _ _ _ _ = raise (Unimplemented "teqDefinition")
 

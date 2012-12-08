@@ -54,10 +54,8 @@ let hhash = function
 
 let rec chash = function
   | PAIR(_,x,y) -> 611 * chash x + 711 * chash y
-  | PR1(_,p) -> 117 * chash p
-  | PR2(_,p) -> 211 * chash p
   | LAMBDA(_,body) -> chash body
-  | Phi e -> ahash e
+  | CAN e -> ahash e
 and clhash = function
   | [] -> 1
   | c :: r -> chash c + 2345 * (clhash r)
@@ -66,3 +64,5 @@ and ahash = function
     | TacticHole _ -> 111
     | EmptyHole n -> 123*n
     | APPLY(h,args) -> hhash h + clhash args
+    | PR1 p -> 117 * chash p
+    | PR2 p -> 211 * chash p

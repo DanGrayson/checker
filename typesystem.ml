@@ -85,34 +85,33 @@ type lf_expr_head =
 	
 (** The expressions of LF are the "canonical" terms, and are of type [lf_expr].
 
-    Canonical terms include the atomic terms via [Phi].
+    Canonical terms include the atomic (non-canonical) terms via [CAN].
  *)
 type lf_expr = 
-  | Phi of ts_expr
-	(** [Phi] is embeds TS expressions into LF expressions *)
   | LAMBDA of var * lf_expr
 	(** Lambda expression of LF. *)
   | PAIR of position * lf_expr * lf_expr
-  | PR1 of position * lf_expr
-  | PR2 of position * lf_expr
+	(** A pair of dependent type. *)
+  | CAN of atomic_expr
+	(** [CAN] is embeds TS expressions into LF expressions *)
 
-(** The expressions of TS are the "atomic" terms, and are of type [ts_expr].
-    The constructor [Phi] implements the embedding from TS into LF.
-    
-    An atomic term is one that isn't a lambda expression.
+(** The expressions of TS are the "atomic" terms, and are of type [atomic_expr].
+    The constructor [CAN] implements the embedding from TS into LF.
 
     In an atomic term, top level simplification (evaluation) may be possible;
     for example, a variable appearing as a lf_expr_head, with a defined value, could
     be replaced by its value, which is then applied to the arguments, if any. 
  *)
-and ts_expr = bare_ts_expr marked
-and bare_ts_expr =
+and atomic_expr = unmarked_atomic_expr marked
+and unmarked_atomic_expr =
   | EmptyHole of int
     (** An empty hole, to be filled in later. *)
   | TacticHole of tactic_expr
     (** An empty hole, to be filled in later by calling a tactic routine writtn in OCAML. *)
   | APPLY of lf_expr_head * lf_expr list
     (** A variable or constant applied iteratively to its arguments, if any. *)
+  | PR1 of lf_expr
+  | PR2 of lf_expr
 
 (** Canonical type families of LF.
 
@@ -251,13 +250,13 @@ let tfhead_to_kind = function
   | F_type_uequality -> texp @@-> texp @@-> K_type
   | F_object_uequality -> oexp @@-> oexp @@-> K_type
 
-type oSubs = (var * ts_expr) list
+type oSubs = (var * atomic_expr) list
 
 (** Contexts. *)
 
 type context = (var * lf_type) list
 
-type uContext = UContext of var list * (ts_expr * ts_expr) list
+type uContext = UContext of var list * (atomic_expr * atomic_expr) list
 
 let empty_uContext = UContext([],[])
 

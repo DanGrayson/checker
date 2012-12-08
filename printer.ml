@@ -18,6 +18,8 @@ let rec ts_expr_to_string (_,e) =
   | EmptyHole n -> "?" ^ (string_of_int n)
   | APPLY(V v,[]) -> vartostring v
   | APPLY(h,args) -> concat ["(";(lf_expr_head_to_string h);(concat (List.map (space <<- lf_expr_to_string) args));")"]
+  | PR1 x -> concat ["(π₁ ";lf_expr_to_string x;")"]
+  | PR2 x -> concat ["(π₂ ";lf_expr_to_string x;")"]
 
 and lf_expr_to_string' = function
   | LAMBDA(x,body) -> concat [vartostring x;" ⟼ " (* |-> *) ;lf_expr_to_string' body]
@@ -25,10 +27,8 @@ and lf_expr_to_string' = function
 
 and lf_expr_to_string = function
   | LAMBDA(x,body) -> concat ["(";vartostring x;" ⟼ ";lf_expr_to_string' body;")"]
-  | PR1(_,x) -> concat ["(π₁ ";lf_expr_to_string x;")"]
-  | PR2(_,x) -> concat ["(π₂ ";lf_expr_to_string x;")"]
   | PAIR(_,x,y) -> concat ["(pair ";lf_expr_to_string x;" ";lf_expr_to_string y;")"]
-  | Phi e -> ts_expr_to_string e
+  | CAN e -> ts_expr_to_string e
 
 let rec lf_type_to_string' target (_,t) = match t with
   | F_Pi(v,t,u) -> 
@@ -65,9 +65,11 @@ let lf_atomic_p e = "$$" ^ (ts_expr_to_string e)
 let rec args_to_string s = String.concat "," (List.map ts_can_to_string s)
 and paren_args_to_string s = String.concat "" [ "("; args_to_string s; ")" ]
 and ts_can_to_string = function 
-  | Phi e -> ts_expr_to_string e
-  | PR1 _ | PR2 _ | PAIR _ | LAMBDA _ as e -> lf_expr_p e		(* normally this branch will not be used *)
-and ts_expr_to_string ((_,e) as oe) = match e with 
+  | CAN e -> ts_expr_to_string e
+  | PAIR _ | LAMBDA _ as e -> lf_expr_p e		(* normally this branch will not be used *)
+and ts_expr_to_string ((_,e) as oe) = 
+  match e with 
+  | PR1 _ | PR2 _ -> lf_expr_p (CAN oe)		(* normally this branch will not be used *)
   | TacticHole n -> tactic_to_string n
   | EmptyHole n -> "?" ^ (string_of_int n)
   | APPLY(V v,[]) -> vartostring v
@@ -78,17 +80,17 @@ and ts_expr_to_string ((_,e) as oe) = match e with
 	match th with 
 	| T_Pi -> (
 	    match args with
-	    | [Phi t1; LAMBDA( x, Phi t2 )] -> 
+	    | [CAN t1; LAMBDA( x, CAN t2 )] -> 
 		if x = VarUnused
 		then concat ["(";ts_expr_to_string t1;" ⟶ ";ts_expr_to_string t2;")"]
 		else concat ["[∏;";vartostring x;"](";ts_expr_to_string t1;",";ts_expr_to_string t2;")"]
 	    | _ -> lf_atomic_p oe)
 	| T_Sigma -> (
-	    match args with [Phi t1; LAMBDA( x, Phi t2 )] -> "[Sigma;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string t1) ^ "," ^ (ts_expr_to_string t2) ^ ")"
+	    match args with [CAN t1; LAMBDA( x, CAN t2 )] -> "[Sigma;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string t1) ^ "," ^ (ts_expr_to_string t2) ^ ")"
 	    | _ -> lf_atomic_p oe)
 	| T_Coprod2 -> (
 	    match args with 
-	    | [Phi t; Phi t'; LAMBDA( x,Phi u); LAMBDA( x', Phi u'); Phi o] ->
+	    | [CAN t; CAN t'; LAMBDA( x,CAN u); LAMBDA( x', CAN u'); CAN o] ->
 		"[Coprod;" ^ (vartostring x) ^ "," ^ (vartostring x') ^ "](" 
 		^ (ts_expr_to_string t) ^ "," ^ (ts_expr_to_string t) ^ ","
 		^ (ts_expr_to_string u) ^ "," ^ (ts_expr_to_string u') ^ ","
@@ -97,10 +99,10 @@ and ts_expr_to_string ((_,e) as oe) = match e with
 	    | _ -> lf_atomic_p oe)
 	| T_IP -> (
 	    match args with 
-	      [Phi tA; Phi a;
-	       LAMBDA(x1,Phi tB);
-	       LAMBDA(x2,LAMBDA(y2,Phi tD));
-	       LAMBDA(x3,LAMBDA(y3,LAMBDA(z3,Phi q)))]
+	      [CAN tA; CAN a;
+	       LAMBDA(x1,CAN tB);
+	       LAMBDA(x2,LAMBDA(y2,CAN tD));
+	       LAMBDA(x3,LAMBDA(y3,LAMBDA(z3,CAN q)))]
 	      -> "[IP;" 
 		^ (vartostring x1) ^ ","
 		^ (vartostring x2) ^ "," ^ (vartostring y2) ^ "," 
@@ -114,19 +116,19 @@ and ts_expr_to_string ((_,e) as oe) = match e with
 	match oh with
 	| O_ev -> (
 	    match args with 
-	    | [Phi f;Phi o;LAMBDA(x, Phi t)] ->
+	    | [CAN f;CAN o;LAMBDA(x, CAN t)] ->
 		"[ev;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string f) ^ "," ^ (ts_expr_to_string o) ^ "," ^ (ts_expr_to_string t) ^ ")"
-	    | [Phi f;Phi o] ->
+	    | [CAN f;CAN o] ->
 		"[ev;_](" ^ (ts_expr_to_string f) ^ "," ^ (ts_expr_to_string o) ^ ")"
 	    | _ -> lf_atomic_p oe)
 	| O_lambda -> (
 	    match args with 
-	    | [Phi t;LAMBDA( x,Phi o)] ->
+	    | [CAN t;LAMBDA( x,CAN o)] ->
 		"[λ;" (* lambda *) ^ (vartostring x) ^ "](" ^ (ts_expr_to_string t) ^ "," ^ (ts_expr_to_string o) ^ ")"
 	    | _ -> lf_atomic_p oe)
 	| O_forall -> (
 	    match args with 
-	    | [Phi u;Phi u';Phi o;LAMBDA( x,Phi o')] ->
+	    | [CAN u;CAN u';CAN o;LAMBDA( x,CAN o')] ->
 		"[forall;" ^ (vartostring x) ^ "](" ^ (ts_expr_to_string u) ^ "," ^ (ts_expr_to_string u') ^ "," ^ (ts_expr_to_string o) ^ "," ^ (ts_expr_to_string o') ^ ")"
 	    | _ -> lf_atomic_p oe)
 	| _ -> "[" ^ (ohead_to_string oh) ^ "]" ^ (paren_args_to_string args)
@@ -136,7 +138,7 @@ and ts_expr_to_string ((_,e) as oe) = match e with
 (** Printing functions for definitions, provisional. *)
 
 let parmstostring = function
-  | ((UContext(uexp_parms,ueqns):uContext),(texp_parms:var list),(oexp_parms:(var * ts_expr) list)) 
+  | ((UContext(uexp_parms,ueqns):uContext),(texp_parms:var list),(oexp_parms:(var * atomic_expr) list)) 
     -> concatl [
       if List.length uexp_parms > 0 
       then ["(";

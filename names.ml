@@ -85,15 +85,13 @@ let label_to_type env pos = function
 
 let rec get_pos_lf (x:lf_expr) =
   match x with
-  | Phi(pos,_)
-  | PR1(pos,_)
-  | PR2(pos,_)
+  | CAN(pos,_)
   | PAIR(pos,_,_) -> pos
   | LAMBDA(x,b) -> get_pos_lf b
 
 let var_to_ts v = APPLY(V v,[])
 
-let var_to_lf v = Phi (nowhere 1 (var_to_ts v))
+let var_to_lf v = CAN (nowhere 1 (var_to_ts v))
 
 let lookup_type env v = List.assoc v env
 
@@ -123,7 +121,7 @@ let newunused () = newfresh (Var "_")
 let ts_bind (v,t) env = match v with
   | VarUnused -> raise Internal
   | v -> 
-      (newfresh (Var "h") , hastype (var_to_lf v) (Phi t)) :: 
+      (newfresh (Var "h") , hastype (var_to_lf v) (CAN t)) :: 
       (v,oexp) :: 
       env
 
