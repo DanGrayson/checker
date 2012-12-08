@@ -12,6 +12,7 @@
 *)
 
 open Error
+open Variables
 open Typesystem
 open Names
 open Printer

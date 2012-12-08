@@ -1,5 +1,6 @@
 (** Structural comparison of expressions, modulo alpha equivalence and source code positions. *)
 
+open Variables
 open Typesystem
 
 type alpha_eq = (var * var) list

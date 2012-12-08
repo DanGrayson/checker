@@ -1,6 +1,7 @@
 (** Names of constants, basic dictionary access, and some error handling routines. *)
 
 open Error
+open Variables
 open Typesystem
 
 exception Internal_expr of lf_expr
@@ -25,12 +26,6 @@ let ohead_to_string = function
   | O_sum -> "sum"  | O_empty -> "empty"  | O_empty_r -> "empty_r"  | O_c -> "c"
   | O_ip_r -> "ip_r"  | O_ip -> "ip"  | O_paths -> "paths"  | O_refl -> "refl"
   | O_J -> "J"  | O_rr0 -> "rr0"  | O_rr1 -> "rr1"
-
-let vartostring = function
-  | Var x -> x
-  | VarGen(i,x) -> x ^ "$" ^ (string_of_int i)
-  | VarUnused -> "_"
-  | VarDefined (name,aspect) -> "[" ^ name ^ "." ^ (string_of_int aspect) ^ "]"
 
 let lf_expr_head_to_string = function
   | V v -> vartostring v
@@ -103,20 +98,6 @@ let ensure_new_name env pos v =
 let def_bind v (pos:position) o t (env:context) = 
   ensure_new_name env pos v;
   (v, (pos,F_Singleton(o,t))) :: env
-
-let newfresh = 
-  let genctr = ref 0 in 
-  let newgen x = (
-    incr genctr;
-    if !genctr = genctr_trap then raise DebugMe;
-    if !genctr < 0 then raise GensymCounterOverflow;
-    VarGen (!genctr, x)) in
-  fun v -> match v with 
-  | VarDefined _ -> raise Internal
-  | VarUnused -> raise Internal
-  | Var x | VarGen(_,x) -> newgen x
-
-let newunused () = newfresh (Var "_")
 
 let ts_bind (v,t) env = match v with
   | VarUnused -> raise Internal

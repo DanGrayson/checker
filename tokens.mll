@@ -4,6 +4,7 @@
 
 {
  open Grammar
+ open Variables
  open Typesystem
  let error_count = ref 0
  let bump_error_count () =

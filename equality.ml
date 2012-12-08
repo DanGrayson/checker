@@ -1,4 +1,5 @@
 open Alpha
+open Variables
 open Typesystem
 
 (**

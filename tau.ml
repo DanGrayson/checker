@@ -1,4 +1,5 @@
 open Error
+open Variables
 open Typesystem
 open Names
 

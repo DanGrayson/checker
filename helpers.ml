@@ -1,5 +1,6 @@
 (** Helper functions for making new ts-expressions from old ts-expressions. *)
 
+open Variables
 open Typesystem
 open Names
 

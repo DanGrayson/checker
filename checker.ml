@@ -7,6 +7,7 @@ let try_normalization = false
 let env_limit = Some 20
 
 open Error
+open Variables
 open Typesystem
 open Names
 open Universe

@@ -1,5 +1,6 @@
 (** Tactics. *)
 
+open Variables
 open Typesystem
 open Names
 

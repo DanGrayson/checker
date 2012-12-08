@@ -1,5 +1,6 @@
 %{ 
 open Error
+open Variables
 open Typesystem
 open Names
 open Helpers
@@ -14,7 +15,7 @@ open Definitions
 %type <Typesystem.lf_expr> lf_expr
 %token <int> NUMBER
 %token <string> IDENTIFIER CONSTANT CONSTANT_SEMI
-%token <Typesystem.var> VARIABLE
+%token <Variables.var> VARIABLE
 %token
 
   Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod COLON Wstar Warrow Wmapsto

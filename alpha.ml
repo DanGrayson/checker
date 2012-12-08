@@ -1,3 +1,4 @@
+open Variables
 open Typesystem
 
 type alpha_eq = (var * var) list

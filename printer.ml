@@ -1,6 +1,7 @@
 (** Functions for converting expressions to strings for printing *)
 
 open Error
+open Variables
 open Typesystem
 open Names
 open Printf

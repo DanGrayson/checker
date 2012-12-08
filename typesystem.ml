@@ -18,6 +18,7 @@ Voevodsky, dated November 27, 2012.  We call that [LFinTS].
   *)
 
 open Error
+open Variables
 
 (** A u-level expression, [M], is constructed inductively as: [n], [v], [M+n], or
     [max(M,M')], where [v] is a universe variable and [n] is a natural number.
@@ -43,14 +44,6 @@ type oHead =
 let oheads = [ O_u; O_j; O_ev; O_lambda; O_forall; O_pair; O_pr1; O_pr2;
   O_total; O_pt; O_pt_r; O_tt; O_coprod; O_ii1; O_ii2; O_sum; O_empty;
   O_empty_r; O_c; O_ip_r; O_ip; O_paths; O_refl; O_J; O_rr0; O_rr1 ]
-
-(** Variables *)
-
-type var =
-  | Var of string
-  | VarGen of int * string
-  | VarUnused
-  | VarDefined of string * int
 
 (** Tactics *)
 
@@ -150,7 +143,7 @@ let uexp = F_uexp ** []
 let texp = F_texp ** []
 let oexp = F_oexp ** []
 
-let ( @-> ) a b = nowhere 4 (F_Pi(VarUnused, a, b))
+let ( @-> ) a b = nowhere 4 (F_Pi(newunused(), a, b))
 
 let istype t = F_istype ** [t]
 let hastype o t = F_hastype ** [o;t]
@@ -236,7 +229,7 @@ type lf_kind =
   | K_type
   | K_Pi of var * lf_type * lf_kind
 
-let ( @@-> ) a b = K_Pi(VarUnused, a, b)
+let ( @@-> ) a b = K_Pi(newunused(), a, b)
 
 let tfhead_to_kind = function
   | F_uexp -> K_type

@@ -1,6 +1,8 @@
 (** Declaration of toplevel commands. *)
 
+open Variables
 open Typesystem
+
 type command' = 
   | AxiomTS of string * atomic_expr
   | AxiomLF of string * lf_type

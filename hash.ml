@@ -1,5 +1,6 @@
 (** Hash codes, independent of variable names. *)
 
+open Variables
 open Typesystem
 
 let uhash = function
