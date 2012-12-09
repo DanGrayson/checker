@@ -30,11 +30,25 @@
 }
 let nzdigit = [ '1'-'9' ]
 let digit = [ '0'-'9' ]
-let first = [ 'A'-'Z' 'a'-'z' '\128'-'\255' ]
-let after = [ 'A'-'Z' 'a'-'z' '\128'-'\255' '0'-'9' '\'' '_' ]
 let space = [ ' ' '\r' ]*
 let newline = [ '\n' '\012' ]
+let utf8_next       = [ '\128' - '\191' ]
+let utf8_first_of_1 = [ '\001' - '\127' ]
+let utf8_first_of_2 = [ '\192' - '\223' ]
+let utf8_first_of_3 = [ '\224' - '\225' '\227' - '\239' ] (* just guessing that characters starting with \226 \159 are symbols *)
+let utf8_first_2_of_3 = '\226' [ '\128' - '\158' '\160' - '\191' ] (* just guessing that characters starting with \226 \159 are symbols *)
+let utf8_first_of_4 = [ '\240' - '\255' ]
+let utf8_1 = utf8_first_of_1
+let utf8_2 = utf8_first_of_2 utf8_next
+let utf8_3 = utf8_first_of_3 utf8_next utf8_next | utf8_first_2_of_3 utf8_next 
+let utf8_4 = utf8_first_of_4 utf8_next utf8_next utf8_next
+let utf8_char_nonascii = utf8_2 | utf8_3 | utf8_4
+let utf8_char = utf8_1 | utf8_2 | utf8_3 | utf8_4
+let utf8_word = utf8_char +
+let first = [ 'A'-'Z' 'a'-'z' ] | utf8_char_nonascii
+let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' '_' ] | utf8_char_nonascii
 let ident = first after*
+
 rule expr_tokens = parse
   | "Check" space "Universes" { WCheckUniverses }
   | "LF" { W_LF }

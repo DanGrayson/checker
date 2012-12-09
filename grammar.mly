@@ -5,6 +5,36 @@ open Typesystem
 open Names
 open Helpers
 open Definitions
+
+(*
+    Examples of the syntax:
+
+	f t			LF evaluation in LF form
+
+	f t			TS evaluation in abbreviated TS form
+
+	[ev;x](f, t, U)		TS evaluation in full TS form
+
+	([ev] f t (x⟼U))	TS evaluation in LF form
+
+	x |-> b			the LF lambda
+
+	lambda x, b		the LF lambda (we don't need both)
+
+	([lambda] f o (x⟼U))	the TS lambda, in full LF form
+
+	lambda x:T, o		the TS lambda, in abbreviated TS form
+
+        (x:T) |-> o             the TS lambda, a possibility to consider
+
+	(x:T) -> U		the LF Pi
+
+	Pi x:T, U		the LF Pi (we don't need both)
+
+	Pi x:T, U		the TS Pi
+
+*)
+
 %}
 %start command ts_exprEof
 %type <Toplevel.command> command

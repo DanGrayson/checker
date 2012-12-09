@@ -129,6 +129,8 @@ let var_chooser x subs occurs_in e =
       in repeat 0
   | _ -> x
 
+let occurs_in_list occurs_in x args = List.exists (occurs_in x) args
+
 let rec application_to_string p_hd p_arg (h,args) = 
   let r = List.map p_arg args in
   let args = concat (List.flatten (List.map (fun arg -> [" ";arg]) r)) in
@@ -228,10 +230,26 @@ let lf_expr_p e = "$$" ^ lf_expr_to_string e
 
 let lf_atomic_p e = "$$" ^ atomic_expr_to_string e
 
-let pvar2 free_vars v = if List.mem v free_vars then vartostring v else "_"
-let pvar2 free_vars v = vartostring v
-let fv = []
+let locate f x = 			(* find the index of the element of the list x for which f is true *)
+  let rec repeat i x =
+    match x with 
+    | xi :: x -> if f xi then i else repeat (i+1) x
+    | [] -> raise Not_found
+  in repeat 0 x
 
+let locations f x = 			(* find the indices of all elements of the list x for which f is true *)
+  let rec repeat i x =
+    match x with 
+    | xi :: x -> if f xi then i :: repeat (i+1) x else repeat (i+1) x
+    | [] -> []
+  in repeat 0 x
+
+let apply n f =				(* generate f 0 :: f 1 :: f 2 :: ... :: f (n-1) *)
+  let rec repeat i =
+    if i = n then []
+    else f i :: repeat (i+1)
+  in repeat 0
+    
 let rec args_to_string s = String.concat "," (List.map ts_can_to_string s)
 
 and paren_args_to_string s = String.concat "" [ "("; args_to_string s; ")" ]
@@ -241,73 +259,86 @@ and ts_can_to_string = function
   | PAIR _ | LAMBDA _ as e -> lf_expr_p e		(* normally this branch will not be used *)
 
 and ts_expr_to_string ((_,e) as oe) = 
+  (* 
+     We assume [oe] is a well typed LF expression of type uexp, texp, or oexp.
+     That ensures that the number of branches, the number of lambdas in each branch, and
+     the o-t-u identity of each branch is correct.
+   *)
   match e with 
   | PR1 _ | PR2 _ -> lf_expr_p (CAN oe)		(* normally this branch will not be used *)
   | TacticHole n -> tactic_to_string n
   | EmptyHole n -> "?" ^ string_of_int n
   | APPLY(V v,[]) -> vartostring v
-  | APPLY(h,args) -> 
-    match h with
-    | U uh -> uhead_to_string uh ^ paren_args_to_string args
-    | T th -> (
-	match th with 
-	| T_Pi -> (
-	    match args with
-	    | [CAN t1; LAMBDA( x, CAN t2 )] -> 
-		if false
-		then concat ["(";ts_expr_to_string t1;" ⟶ ";ts_expr_to_string t2;")"]
-		else concat ["[∏;";vartostring x;"](";ts_expr_to_string t1;",";ts_expr_to_string t2;")"]
-	    | _ -> lf_atomic_p oe)
-	| T_Sigma -> (
-	    match args with [CAN t1; LAMBDA( x, CAN t2 )] -> "[Sigma;" ^ pvar2 fv x ^ "](" ^ ts_expr_to_string t1 ^ "," ^ ts_expr_to_string t2 ^ ")"
-	    | _ -> lf_atomic_p oe)
-	| T_Coprod2 -> (
-	    match args with 
-	    | [CAN t; CAN t'; LAMBDA( x,CAN u); LAMBDA( x', CAN u'); CAN o] ->
-		"[Coprod;" ^ pvar2 fv x ^ "," ^ pvar2 fv x' ^ "](" 
-		^ ts_expr_to_string t ^ "," ^ ts_expr_to_string t ^ ","
-		^ ts_expr_to_string u ^ "," ^ ts_expr_to_string u' ^ ","
-		^ ts_expr_to_string o
-		^ ")"
-	    | _ -> lf_atomic_p oe)
-	| T_IP -> (
-	    match args with 
-	      [CAN tA; CAN a;
-	       LAMBDA(x1,CAN tB);
-	       LAMBDA(x2,LAMBDA(y2,CAN tD));
-	       LAMBDA(x3,LAMBDA(y3,LAMBDA(z3,CAN q)))]
-	      -> "[IP;" 
-		^ pvar2 fv x1 ^ ","
-		^ pvar2 fv x2 ^ "," ^ pvar2 fv y2 ^ "," 
-		^ pvar2 fv x3 ^ "," ^ pvar2 fv y3 ^ "," ^ pvar2 fv z3 
-		^ "]("
-		^ ts_expr_to_string tA ^ "," ^ ts_expr_to_string a ^ "," ^ ts_expr_to_string tB ^ "," ^ ts_expr_to_string tD ^ "," ^ ts_expr_to_string q ^ ")"
-	    | _ -> lf_atomic_p oe)
-	| _ -> "[" ^ thead_to_string th ^ "]" ^ paren_args_to_string args
-       )
-    | O oh -> (
-	match oh with
-	| O_ev -> (
-	    match args with 
-	    | [CAN f;CAN o;LAMBDA(x, CAN t)] ->
-		"[ev;" ^ pvar2 fv x ^ "](" ^ ts_expr_to_string f ^ "," ^ ts_expr_to_string o ^ "," ^ ts_expr_to_string t ^ ")"
-	    | [CAN f;CAN o] ->
-		"[ev;_](" ^ ts_expr_to_string f ^ "," ^ ts_expr_to_string o ^ ")"
-	    | _ -> lf_atomic_p oe)
-	| O_lambda -> (
-	    match args with 
-	    | [CAN t;LAMBDA( x,CAN o)] ->
-		"[λ;" (* lambda *) ^ pvar2 fv x ^ "](" ^ ts_expr_to_string t ^ "," ^ ts_expr_to_string o ^ ")"
-	    | _ -> lf_atomic_p oe)
-	| O_forall -> (
-	    match args with 
-	    | [CAN u;CAN u';CAN o;LAMBDA( x,CAN o')] ->
-		"[forall;" ^ pvar2 fv x ^ "](" ^ ts_expr_to_string u ^ "," ^ ts_expr_to_string u' ^ "," ^ ts_expr_to_string o ^ "," ^ ts_expr_to_string o' ^ ")"
-	    | _ -> lf_atomic_p oe)
-	| _ -> "[" ^ ohead_to_string oh ^ "]" ^ paren_args_to_string args
-       )
-    | _ -> lf_expr_head_to_string h ^ paren_args_to_string args
-
+  | APPLY(h,args) -> (
+      let hs = lf_expr_head_to_string h in
+      let vardist = head_to_vardist h in (* example: Some (3, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: []) *)
+      match vardist with
+      | Some(nvars, locs) ->
+	  let branches = apply nvars (fun i -> locations (fun x -> List.mem i x) locs) in
+	  (* example: branches = [[2;3;4];[3;4];[4]] *)
+	  ignore branches;
+	  ignore hs
+      | _ -> ());
+      match h with
+      | U uh -> uhead_to_string uh ^ paren_args_to_string args
+      | T th -> (
+	  match th with 
+	  | T_Pi -> (
+	      match args with
+	      | [CAN t1; LAMBDA( x, CAN t2 )] -> 
+		  if false
+		  then concat ["(";ts_expr_to_string t1;" ⟶ ";ts_expr_to_string t2;")"]
+		  else concat ["[∏;";vartostring x;"](";ts_expr_to_string t1;",";ts_expr_to_string t2;")"]
+	      | _ -> lf_atomic_p oe)
+	  | T_Sigma -> (
+	      match args with [CAN t1; LAMBDA( x, CAN t2 )] -> "[Sigma;" ^ vartostring x ^ "](" ^ ts_expr_to_string t1 ^ "," ^ ts_expr_to_string t2 ^ ")"
+	      | _ -> lf_atomic_p oe)
+	  | T_Coprod2 -> (
+	      match args with 
+	      | [CAN t; CAN t'; LAMBDA( x,CAN u); LAMBDA( x', CAN u'); CAN o] ->
+		  "[Coprod;" ^ vartostring x ^ "," ^ vartostring x' ^ "](" 
+		  ^ ts_expr_to_string t ^ "," ^ ts_expr_to_string t ^ ","
+		  ^ ts_expr_to_string u ^ "," ^ ts_expr_to_string u' ^ ","
+		  ^ ts_expr_to_string o
+		  ^ ")"
+	      | _ -> lf_atomic_p oe)
+	  | T_IP -> (
+	      match args with 
+		[CAN tA; CAN a;
+		 LAMBDA(x1,CAN tB);
+		 LAMBDA(x2,LAMBDA(y2,CAN tD));
+		 LAMBDA(x3,LAMBDA(y3,LAMBDA(z3,CAN q)))]
+		-> "[IP;" 
+		  ^ vartostring x1 ^ ","
+		  ^ vartostring x2 ^ "," ^ vartostring y2 ^ "," 
+		  ^ vartostring x3 ^ "," ^ vartostring y3 ^ "," ^ vartostring z3 
+		  ^ "]("
+		  ^ ts_expr_to_string tA ^ "," ^ ts_expr_to_string a ^ "," ^ ts_expr_to_string tB ^ "," ^ ts_expr_to_string tD ^ "," ^ ts_expr_to_string q ^ ")"
+	      | _ -> lf_atomic_p oe)
+	  | _ -> "[" ^ thead_to_string th ^ "]" ^ paren_args_to_string args
+	 )
+      | O oh -> (
+	  match oh with
+	  | O_ev -> (
+	      match args with 
+	      | [CAN f;CAN o;LAMBDA(x, CAN t)] ->
+		  "[ev;" ^ vartostring x ^ "](" ^ ts_expr_to_string f ^ "," ^ ts_expr_to_string o ^ "," ^ ts_expr_to_string t ^ ")"
+	      | [CAN f;CAN o] ->
+		  "[ev;_](" ^ ts_expr_to_string f ^ "," ^ ts_expr_to_string o ^ ")"
+	      | _ -> lf_atomic_p oe)
+	  | O_lambda -> (
+	      match args with 
+	      | [CAN t;LAMBDA( x,CAN o)] ->
+		  "[λ;" (* lambda *) ^ vartostring x ^ "](" ^ ts_expr_to_string t ^ "," ^ ts_expr_to_string o ^ ")"
+	      | _ -> lf_atomic_p oe)
+	  | O_forall -> (
+	      match args with 
+	      | [CAN u;CAN u';CAN o;LAMBDA( x,CAN o')] ->
+		  "[forall;" ^ vartostring x ^ "](" ^ ts_expr_to_string u ^ "," ^ ts_expr_to_string u' ^ "," ^ ts_expr_to_string o ^ "," ^ ts_expr_to_string o' ^ ")"
+	      | _ -> lf_atomic_p oe)
+	  | _ -> "[" ^ ohead_to_string oh ^ "]" ^ paren_args_to_string args
+	 )
+      | _ -> lf_expr_head_to_string h ^ paren_args_to_string args
 (** Printing functions for definitions, provisional. *)
 
 let parmstostring = function
@@ -315,7 +346,7 @@ let parmstostring = function
     -> concatl [
       if List.length uexp_parms > 0 
       then ["(";
-	    (String.concat " " (List.map (pvar2 fv) uexp_parms));
+	    (String.concat " " (List.map (vartostring) uexp_parms));
 	    ":Univ";
 	    (String.concat "" (List.map 
 				 (fun (u,v) -> concat ["; "; ts_expr_to_string u; "="; ts_expr_to_string v]) 
@@ -324,11 +355,11 @@ let parmstostring = function
       else [];
       if List.length texp_parms > 0
       then ["("; 
-	    String.concat " " (List.map (pvar2 fv) texp_parms);
+	    String.concat " " (List.map (vartostring) texp_parms);
 	    ":Type)"]
       else [];
       List.flatten (List.map 
-		      (fun (v,t) -> ["(";pvar2 fv v; ":"; ts_expr_to_string t;")"])
+		      (fun (v,t) -> ["(";vartostring v; ":"; ts_expr_to_string t;")"])
 		      oexp_parms)
     ]
 
@@ -338,7 +369,7 @@ let ulevel_context_to_string (UContext(uexp_parms,ueqns)) =
     concatl [
       if List.length uexp_parms > 0 
       then [
-	    (String.concat " " (List.map (pvar2 fv) uexp_parms));
+	    (String.concat " " (List.map (vartostring) uexp_parms));
 	    ":Univ";
 	    (String.concat "" (List.map 
 				 (fun (u,v) -> concat ["; "; ts_expr_to_string u; "="; ts_expr_to_string v]) 
