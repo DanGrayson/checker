@@ -1,4 +1,24 @@
--*- coding: utf-8 -*-
+-*- coding: utf-8; fill-column: 87; mode: text; mode: auto-fill -*-
+
+An attempt at making a toy proof checker for experimental purposes
+
+This program encodes the type system TS developed in the paper "A universe
+polymorphic type system", by Vladimir Voevodsky, the version dated October,
+2012, and attempts to make a toy prototype proof assistant based on it.
+
+Thanks to:
+
+    Vladimir Voevodsky                  for TS and Univalence
+
+    Andrej Bauer                        for advice about coding and
+				        suggesting Logical Frameworks (LF) as the
+				        way to go
+
+    Bob Harper and Dan Licata           for explaining LF in an intuitive way
+
+    Bob Harper and Christopher Stone    for the type checking algorithms used here
+
+-----------------------------------------------------------------------------
 
 Syntax, existing and proposed:
 
@@ -6,20 +26,27 @@ New operators for TS format:
 
     \		right associative		alternative LF form for LF application
 
-    \\		right associative		TS form for TS substitution, translated to LF application.
+    \\		right associative		TS form for TS substitution, translated
+    					    	to LF application. 
 
-    |->		right associative		TS arrow form for TS lambda and LF form for LF lambda.  Unicode: ↦ or ⟼
+    |->		right associative		TS arrow form for TS lambda and LF form
+                       				for LF lambda.  Unicode: ↦ or ⟼
 
-    =>		right associative		TS arrow form for LF Pi types.  Translated to LF -> .  Unicode: ⇒
+    =>		right associative		TS arrow form for LF Pi types.
+    						Translated to LF -> .  Unicode: ⇒ 
 
-    |=>		right associative		TS arrow form for LF lambda.  Translated to LF ↦ .  Unicode: ⟾
+    |=>		right associative		TS arrow form for LF lambda.
+    						Translated to LF ↦ .  Unicode: ⟾ 
 
-    :		non-associative			TS and LF form for something having a type.  But types in TS are objects in LF,
-    						whereas judgments of TS are types in LF.
+    :		non-associative			TS and LF form for something having a
+    						type.  But types in TS are objects in
+    						LF, whereas judgments of TS are types in LF.
 
-    ::		non-associative			TS format for expressing a derivation of a judgment.  Translated to LF :
+    ::		non-associative			TS format for expressing a derivation
+						of a judgment. Translated to LF colon
 
-    [ ... ] =>					TS form corresponding to two parameters in an LF Pi type.  Translated to ( ... ) -> .
+    [ ... ] =>					TS form corresponding to two parameters
+    						in an LF Pi type.  Translated to ( ... ) -> . 
 
 New syntactic class:
 
@@ -36,7 +63,8 @@ Examples:
 
     f t                     LF evaluation in LF form
 
-    f[t/x]                  LF evaluation in traditional form, not a good notation, because x should be considered bound in f
+    f[t/x]                  LF evaluation in traditional form, not a good notation,
+    			    because x should be considered bound in f 
 
     t\\f                    LF evaluation in TS form, proposed
 
@@ -56,7 +84,8 @@ Examples:
 
     lambda x:T, o           the TS lambda, in abbreviated TS form
 
-    (x:T) ↦ o               the TS lambda, in abbreviated TS form, proposed as an alternative
+    (x:T) ↦ o               the TS lambda, in abbreviated TS form, proposed as an
+    			    alternative 
 
     ([lambda] f o (x↦U))    the TS lambda, in full LF form
 
@@ -94,28 +123,31 @@ Examples:
 
     [ ⊢ T Type] ⇒ ...       proposed TS form for LF type
 
-				    (T:texp) -> (i:istype T) -> ...
+		  		(T:texp) -> (i:istype T) -> ...
 
 
     [ ⊢ b:U] ⇒ ...          proposed TS form for LF type
 
-				    (b:oexp) -> (hastype b U) -> ...
+				(b:oexp) -> (hastype b U) -> ...
 
 
     [ x:T ⊢ U Type] ⇒ ...   proposed TS form notation for LF
 
-				    (U : oexp->texp) -> ((x:oexp) -> (h:hastype x T) -> (istype (U x))) -> ...
+				(U : oexp->texp) -> ((x:oexp) -> (h:hastype x T) ->
+				(istype (U x))) -> ... 
 
 
     [ x:T ⊢ b:U ] ⇒ ...     proposed TS form notation for LF type
 
-				    (b : oexp->oexp) -> ((x:oexp) -> (hastype x T) -> (hastype (b x) (U x))) -> ...
+				 (b : oexp->oexp) -> ((x:oexp) -> (hastype x T) ->
+				 (hastype (b x) (U x))) -> ... 
 
-				 In other words, we think of b as introducing a pair of variables.  To think of
-				 it as introducing one variable, we could write this instead:
+				 In other words, we think of b as introducing a pair of
+				 variables.  To think of it as introducing one
+				 variable, we could write this instead:
 
-				    (b : Sigma b' : oexp -> oexp, (x:oexp) -> (hastype x T) -> (hastype (b' x) (U x))) -> ...
-
+				    (b : Sigma b' : oexp -> oexp, (x:oexp) -> 
+				    (hastype x T) -> (hastype (b' x) (U x))) -> ... 
 
 
 A rule in LF notation, currently parsable by the program:
@@ -155,7 +187,9 @@ The LF expression
        (_ -> V)
        (t ⟼ ([ev] g ([ev] f t (_ ->U) (_ -> V))))
        $a 
-       (t ⟼ h ⟼ ( ev_hastype U (_ -> V) g ([ev] f t (_ -> U)) $a ( ev_hastype T (_ -> U) f t $a $a ))))
+       (t ⟼ h ⟼ ( 
+        ev_hastype U (_ -> V) g 
+		  ([ev] f t (_ -> U)) $a ( ev_hastype T (_ -> U) f t $a $a ))))
 
 corresponds to this TS expression :
 
@@ -164,6 +198,7 @@ corresponds to this TS expression :
        (_ ⟾ V)
        (t ⟾ g (f t) ) 
        $a 
-       (t  ⟾  h  ⟾  ev_hastype U (_ ⟾ V) g (f t) $a ( ev_hastype T (_ ⟾ U) f t $a $a ))
+       (t  ⟾  h  ⟾  
+        ev_hastype U (_ ⟾ V) g (f t) $a ( ev_hastype T (_ ⟾ U) f t $a $a ))
 
 It would be good to have an abbreviation for (_ ⟾ V), which is used frequently.
