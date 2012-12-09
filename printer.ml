@@ -288,15 +288,17 @@ and ts_expr_to_string ((_,e) as oe) =
 	      | [CAN t1; LAMBDA( x, CAN t2 )] -> 
 		  if false
 		  then concat ["(";ts_expr_to_string t1;" ⟶ ";ts_expr_to_string t2;")"]
-		  else concat ["[∏;";vartostring x;"](";ts_expr_to_string t1;",";ts_expr_to_string t2;")"]
+		  else concat ["[" ^ lf_expr_head_to_string h ^ ";";vartostring x;"](";ts_expr_to_string t1;",";ts_expr_to_string t2;")"]
 	      | _ -> lf_atomic_p oe)
 	  | T_Sigma -> (
-	      match args with [CAN t1; LAMBDA( x, CAN t2 )] -> "[Sigma;" ^ vartostring x ^ "](" ^ ts_expr_to_string t1 ^ "," ^ ts_expr_to_string t2 ^ ")"
+	      match args with [CAN t1; LAMBDA( x, CAN t2 )] -> 
+		"[" ^ lf_expr_head_to_string h ^ ";" ^ vartostring x ^ "]" ^
+		"(" ^ ts_expr_to_string t1 ^ "," ^ ts_expr_to_string t2 ^ ")"
 	      | _ -> lf_atomic_p oe)
 	  | T_Coprod2 -> (
 	      match args with 
 	      | [CAN t; CAN t'; LAMBDA( x,CAN u); LAMBDA( x', CAN u'); CAN o] ->
-		  "[Coprod;" ^ vartostring x ^ "," ^ vartostring x' ^ "](" 
+		  "[" ^ lf_expr_head_to_string h ^ ";" ^ vartostring x ^ "," ^ vartostring x' ^ "](" 
 		  ^ ts_expr_to_string t ^ "," ^ ts_expr_to_string t ^ ","
 		  ^ ts_expr_to_string u ^ "," ^ ts_expr_to_string u' ^ ","
 		  ^ ts_expr_to_string o
@@ -308,14 +310,14 @@ and ts_expr_to_string ((_,e) as oe) =
 		 LAMBDA(x1,CAN tB);
 		 LAMBDA(x2,LAMBDA(y2,CAN tD));
 		 LAMBDA(x3,LAMBDA(y3,LAMBDA(z3,CAN q)))]
-		-> "[IP;" 
+		-> "[" ^ lf_expr_head_to_string h ^ ";" 
 		  ^ vartostring x1 ^ ","
 		  ^ vartostring x2 ^ "," ^ vartostring y2 ^ "," 
 		  ^ vartostring x3 ^ "," ^ vartostring y3 ^ "," ^ vartostring z3 
 		  ^ "]("
 		  ^ ts_expr_to_string tA ^ "," ^ ts_expr_to_string a ^ "," ^ ts_expr_to_string tB ^ "," ^ ts_expr_to_string tD ^ "," ^ ts_expr_to_string q ^ ")"
 	      | _ -> lf_atomic_p oe)
-	  | _ -> "[" ^ thead_to_string th ^ "]" ^ paren_args_to_string args
+	  | _ -> "[" ^ lf_expr_head_to_string h ^ "]" ^ paren_args_to_string args
 	 )
       | O oh -> (
 	  match oh with

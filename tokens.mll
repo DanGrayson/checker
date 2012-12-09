@@ -92,6 +92,8 @@ rule expr_tokens = parse
   | ')'  { Wrparen }
   | ']'  { Wrbracket }
   | '['  { Wlbracket }
+  | '*' '*'  { DoubleStar }		(* for Sigma types *)
+  | '*'  { Wstar }			(* for [El] *)
   | '$'  { Wdollar }
 
 (* LF-TS punctuation pairs *)
@@ -124,7 +126,6 @@ rule expr_tokens = parse
   | "Ulevel" { KUlevel }
   | "Type" { KType }
   | "max" { Kumax }
-  | '*'  { Wstar }			(* for [El] *)
 
 (* tokens of LF *)
 

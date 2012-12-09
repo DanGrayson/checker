@@ -18,22 +18,27 @@ open Definitions
 %token <Variables.var> VARIABLE
 %token
 
-  Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod Colon Wstar Arrow ArrowFromBar
-  Wequal Colonequal Wunderscore WRule Wgreaterequal Wgreater Wlessequal Wless
-  Semicolon KUlevel Kumax KType Ktype KPi Klambda KSigma WCheck WDefine WShow WEnd
-  WVariable WAlpha Weof WCheckUniverses Wtilde KSingleton Axiom Wdollar W_LF W_TS
-  Kpair Kpi1 Kpi2 Wtimes DoubleBackslash Turnstile DoubleArrow DoubleColon
-  Backslash DoubleArrowFromBar DoubleSemicolon
+  Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod Colon Wstar Arrow
+  ArrowFromBar Wequal Colonequal Wunderscore WRule Wgreaterequal Wgreater
+  Wlessequal Wless Semicolon KUlevel Kumax KType Ktype KPi Klambda KSigma
+  WCheck WDefine WShow WEnd WVariable WAlpha Weof WCheckUniverses Wtilde
+  KSingleton Axiom Wdollar W_LF W_TS Kpair Kpi1 Kpi2 Wtimes DoubleBackslash
+  Turnstile DoubleArrow DoubleColon Backslash DoubleArrowFromBar
+  DoubleSemicolon DoubleStar
+
+  ReduceFunctionType ReduceProductType
 
 /* precedences, lowest first */
+
+%nonassoc
+
+  Reduce_command
+
 %right
 
+  /* we want [lambda x, lambda y, b] to be [lambda x, (lambda y, b)] */
+  /* we want [lambda x, f b] to be [lambda x, (f b)] */
   Reduce_binder
-
-%right
-
-  /* we want [a -> b -> c] to be [a -> (b -> c)] */
-  Arrow
 
 %nonassoc
 
@@ -42,8 +47,17 @@ open Definitions
 
 %right
 
+  /* function type */
+  /* we want [a -> b -> c] to be [a -> (b -> c)] */
+  ReduceFunctionType
+  Arrow
+
+%right
+
   /* product type */
   /* we want [a * b * c] to be [a * (b * c)], by analogy with [a -> b] */
+  /* we want [a * b -> c] to be [(a * b) -> c]
+  ReduceProductType
   Wtimes
 
 %right
@@ -86,12 +100,16 @@ bare_lf_type:
     %prec Reduce_binder
     { F_Sigma(v,a,b) }
 | Wlparen v=bare_variable Colon a=lf_type Wrparen Wtimes b=lf_type
+    %prec ReduceProductType
     { F_Sigma(v,a,b) }
-| a=lf_type Wtimes b=lf_type
+| a=lf_type Wtimes b=lf_type (*??*)
+    %prec ReduceProductType
     { F_Sigma(newunused(),a,b) }
 | Wlparen v=bare_variable Colon a=lf_type Wrparen Arrow b=lf_type
+   %prec ReduceFunctionType
    { F_Pi(v,a,b) }
 | a=lf_type Arrow b=lf_type
+   %prec ReduceFunctionType
    { F_Pi(newunused(),a,b) }
 | KSingleton Wlparen x=lf_expr Colon t=lf_type Wrparen
     { F_Singleton(x,t) }
@@ -206,7 +224,7 @@ command0:
 | WCheck W_LF Ktype e=lf_type Wperiod
     { Toplevel.CheckLFtype e }
 | WCheck W_TS o=ts_expr Wperiod
-    { Toplevel.Check o }
+    { Toplevel.CheckTS o }
 | WCheckUniverses Wperiod
     { Toplevel.CheckUniverses }
 | WAlpha e1=ts_expr Wequal e2=ts_expr Wperiod
@@ -293,16 +311,8 @@ ts_expr:
     {$1}
 
 tsterm_head:
-| l=CONSTANT
-    {
-     try List.assoc l Names.lf_expr_head_strings
-     with Not_found -> 
-       Printf.fprintf stderr "%s: unknown term constant [%s]\n" 
-	 (errfmt (Position($startpos, $endpos)))
-	 l;
-       flush stderr;
-       $syntaxerror 
-   }
+| name=CONSTANT
+    { try List.assoc name Names.lf_expr_head_strings with Not_found -> V (Var name) }
 
 arglist:
 | Wlparen a=separated_list(Wcomma,ts_expr) Wrparen

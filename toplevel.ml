@@ -9,7 +9,7 @@ type command' =
   | Rule of int list * string * lf_type
   | CheckLF of lf_expr
   | CheckLFtype of lf_type
-  | Check of atomic_expr
+  | CheckTS of atomic_expr
   | UVariable of string list * (atomic_expr * atomic_expr) list
   | Variable of string list
   | Alpha of atomic_expr * atomic_expr

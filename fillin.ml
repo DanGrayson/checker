@@ -33,10 +33,15 @@ and fillin env (pos,e) = (pos, match e with
 	  | [CAN t; LAMBDA( x, CAN o)] -> 
 	      Helpers.make_OO_lambda (fillin env t)  (x, fillin (ts_bind (x,t) env) o)
 	  | _ -> raise Internal)
-      | T ( T_Pi | T_Sigma ) -> (
+      | T T_Pi -> (
 	  match branches with 
 	  | [CAN t; LAMBDA( x,CAN o)] -> 
 	      Helpers.make_TT_Pi (fillin env t)  (x, fillin (ts_bind (x,t) env) o)
+	  | _ -> raise (Internal_expr (CAN (pos, e))))
+      | T T_Sigma -> (
+	  match branches with 
+	  | [CAN t; LAMBDA( x,CAN o)] -> 
+	      Helpers.make_TT_Sigma (fillin env t)  (x, fillin (ts_bind (x,t) env) o)
 	  | _ -> raise (Internal_expr (CAN (pos, e))))
       | O O_forall -> (
 	  match branches with 

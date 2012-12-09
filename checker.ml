@@ -130,7 +130,7 @@ let add_tVars env tvars =
 let fix = Fillin.fillin
 
 let ts_axiomCommand env pos name t = 
-  printf "Axiom TS %s: %a\n" name  p_ts t;
+  printf "\nAxiom TS %s: %a\n" name  p_ts t;
   let t = Lfcheck.type_check (get_pos t) env (CAN t) texp in
   printf "        : %a\n" p_expr t;
   flush stdout;
@@ -150,7 +150,7 @@ let lf_axiomCommand env pos name t =
 let is_lambda = function LAMBDA _ -> true | _ -> false
 
 let checkLFCommand env pos x =
-  printf "Check LF   = %a\n" p_expr x; flush stdout;
+  printf "\nCheck LF   = %a\n" p_expr x; flush stdout;
   if not (is_lambda x) then 
     let (x',t) = Lfcheck.type_synthesis env x in
     printf "           = %a\n" p_expr x';
@@ -162,26 +162,26 @@ let checkLFCommand env pos x =
       printf "           : %a [normalized]\n" p_type t'; flush stdout
 
 let checkLFtypeCommand env t =
-  printf "CheckLFtype: %a\n" p_type t; flush stdout;
+  printf "\nCheckLFtype: %a\n" p_type t; flush stdout;
   let t = Lfcheck.type_validity env t in
   printf "           : %a [after tactics]\n" p_type t; flush stdout;
   if try_normalization then
     let t = Lfcheck.type_normalization env t in
     printf "           : %a [after normalization]\n" p_type t; flush stdout
 
-let checkCommand env x =
-  printf "Check      : %a\n" p_ts x;
+let checkTSCommand env x =
+  printf "\nCheck TS   : %a\n" p_ts x;
   flush stdout;
   let x = fix env x in
-  printf "        LF : %a\n" p_ts x;
+  printf "           : %a [after filling in]\n" p_ts x;
   flush stdout;
   let (x,t) = Lfcheck.type_synthesis env (CAN x) in
-  printf "    LF type: %a\n" p_type t;
+  printf "     type :: %a\n" p_type t;
   if unmark t = unmark oexp then (
     match x with
     | CAN x ->
 	let ts = Tau.tau env x in
-	printf "    TS type: %a ?\n" p_ts ts;
+	printf "      type : %a ?\n" p_ts ts;
 	flush stdout
     | _ -> raise Internal
    )
@@ -189,7 +189,7 @@ let checkCommand env x =
 let alphaCommand env (x,y) =
   let x = fix env x in
   let y = fix env y in
-  printf "Alpha      : %s\n" (if (Alpha.UEqual.term_equiv Definitions.emptyUContext (CAN x) (CAN y)) then "true" else "false");
+  printf "\nAlpha      : %s\n" (if (Alpha.UEqual.term_equiv Definitions.emptyUContext (CAN x) (CAN y)) then "true" else "false");
   printf "           : %a\n" p_ts x;
   printf "           : %a\n" p_ts y;
   flush stdout
@@ -197,7 +197,7 @@ let alphaCommand env (x,y) =
 let checkUniversesCommand env pos =
   try
     Universe.consistency env;
-    printf "Check Universes: okay\n"
+    printf "\nCheck Universes: okay\n"
   with Universe.Inconsistency (p,q) -> print_inconsistency p q
 
 let show_command env n = 
@@ -218,7 +218,7 @@ let process_command env lexbuf =
     | Toplevel.AxiomTS (name,t) -> ts_axiomCommand env pos name t
     | Toplevel.CheckLF x -> checkLFCommand env pos x; env
     | Toplevel.CheckLFtype x -> checkLFtypeCommand env x; env
-    | Toplevel.Check x -> checkCommand env x; env
+    | Toplevel.CheckTS x -> checkTSCommand env x; env
     | Toplevel.Alpha (x,y) -> alphaCommand env (x,y); env
     | Toplevel.TDefinition defs -> tDefCommand env defs
     | Toplevel.ODefinition defs -> oDefCommand env defs

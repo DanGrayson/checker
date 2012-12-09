@@ -11,6 +11,8 @@ exception TypeCheckingFailure2 of context * position * string * position * strin
 exception TypeCheckingFailure3 of context * position * string * position * string * position * string
 
 let lf_expr_head_table = [
+  T T_Pi, "∏" ; T T_Sigma, "Σ" ; T T_Coprod, "∐" ; 
+  O O_lambda, "λ" ; O O_forall, "∀" ;
   U U_next, "next" ; U U_max, "max" ;
   T T_El, "El"  ; T T_U, "U"  ; T T_Pi, "Pi"  ; T T_Sigma, "Sigma" ;
   T T_Pt, "Pt"  ; T T_Coprod, "Coprod"  ; T T_Coprod2, "Coprod2" ;
@@ -28,12 +30,7 @@ let lf_expr_heads = List.map fst lf_expr_head_table
 
 let swap (x,y) = (y,x)
 
-let lf_expr_head_strings = List.map swap (List.flatten 
-    [
-     [
-      T T_Pi, "∏" ; T T_Sigma, "Σ" ; T T_Coprod, "∐" ; 
-      O O_lambda, "λ" ; O O_forall, "∀" ];
-     lf_expr_head_table ])
+let lf_expr_head_strings = List.map swap lf_expr_head_table
 
 let uhead_to_string h = List.assoc (U h) lf_expr_head_table
 

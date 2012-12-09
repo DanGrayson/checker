@@ -27,23 +27,15 @@ open Variables
 (** Labels for u-expressions of TS. *)
 type uHead = | U_next | U_max
 
-let uheads = [ U_max; U_next ]
-
 (** Labels for t-expressions of TS. *)
 type tHead = | T_El | T_U | T_Pi | T_Sigma | T_Pt 
              | T_Coprod | T_Coprod2 | T_Empty | T_IP | T_Id
-
-let theads = [ T_El; T_U; T_Pi; T_Sigma; T_Pt; T_Coprod; T_Coprod2; T_Empty; T_IP; T_Id ]
 
 (** Labels for o-expressions of TS. *)
 type oHead =
   | O_u  | O_j  | O_ev  | O_lambda  | O_forall  | O_pair  | O_pr1  | O_pr2  | O_total
   | O_pt  | O_pt_r  | O_tt  | O_coprod  | O_ii1  | O_ii2  | O_sum  | O_empty  | O_empty_r
   | O_c  | O_ip_r  | O_ip  | O_paths  | O_refl  | O_J  | O_rr0  | O_rr1
-
-let oheads = [ O_u; O_j; O_ev; O_lambda; O_forall; O_pair; O_pr1; O_pr2;
-  O_total; O_pt; O_pt_r; O_tt; O_coprod; O_ii1; O_ii2; O_sum; O_empty;
-  O_empty_r; O_c; O_ip_r; O_ip; O_paths; O_refl; O_J; O_rr0; O_rr1 ]
 
 (** Tactics *)
 

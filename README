@@ -22,6 +22,17 @@ Thanks to:
 
 Syntax, existing and proposed:
 
+New syntactic class:
+
+      TS "judgment" expressions that represent LF types
+
+      		[ T type ]
+		[ o : T ]
+		[ T = U ]
+		[ o = o' : T ]
+
+     introduced by the Rule or Axiom command with :: (instead of : ).
+
 New operators for TS format:
 
     \		right associative		alternative LF form for LF application
@@ -33,10 +44,10 @@ New operators for TS format:
                        				for LF lambda.  Unicode: ↦ or ⟼
 
     =>		right associative		TS arrow form for LF Pi types.
-    						Translated to LF -> .  Unicode: ⇒ 
+    						Translated to LF -> .  Unicode: ⇒
 
     |=>		right associative		TS arrow form for LF lambda.
-    						Translated to LF ↦ .  Unicode: ⟾
+    						Translated to LF |-> .  Unicode: ⟾
 
     :		non-associative			TS and LF form for something having a
     						type.  But types in TS are objects in
@@ -45,19 +56,11 @@ New operators for TS format:
     ::		non-associative			TS format for expressing a derivation
 						of a judgment. Translated to LF colon
 
-    [ ... ] =>					TS form corresponding to two parameters
+    |-		non-associative			TS format for introducing the local
+    						context for a judgment.  Unicode: ⊢
+
+    [ ... |- ... ] =>				TS form corresponding to two parameters
     						in an LF Pi type.  Translated to ( ... ) -> . 
-
-New syntactic class:
-
-      TS "judgment" expressions that represent LF types
-
-      		[ T type ]
-		[ o : T ]
-		[ T = U ]
-		[ o = o' : T ]
-
-     introduced by the Rule or Axiom command with :: (instead of : ).
 
 Examples:
 
@@ -72,32 +75,32 @@ Examples:
 
     lambda x, b             the LF lambda in LF form
 
-    x ↦ b                   the LF lambda in LF form
+    x |-> b                   the LF lambda in LF form
 
-    x ⟾ b                   the LF lambda in TS form, proposed
+    x |=> b                   the LF lambda in TS form, proposed
 
 
 
     [lambda;x](f,o,U)       the TS lambda, in full TS form, to be revised
 
-    [lambda](f,o,x⇒U)       the TS lambda, in full TS form, proposed
+    [lambda](f,o,x=>U)       the TS lambda, in full TS form, proposed
 
     lambda x:T, o           the TS lambda, in abbreviated TS form
 
-    (x:T) ↦ o               the TS lambda, in abbreviated TS form, proposed as an
+    (x:T) |-> o               the TS lambda, in abbreviated TS form, proposed as an
     			    alternative 
 
-    ([lambda] f o (x↦U))    the TS lambda, in full LF form
+    ([lambda] f o (x|->U))    the TS lambda, in full LF form
 
 
 
     [ev;x](f, t, U)         TS evaluation in full TS form, to be revised
 
-    [ev](f, t, x ⟾ U)       TS evaluation in full TS form, proposed
+    [ev](f, t, x |=> U)       TS evaluation in full TS form, proposed
 
     f t                     TS evaluation in abbreviated TS form
 
-    ([ev] f t (x ↦ U))      TS evaluation in LF form
+    ([ev] f t (x |-> U))      TS evaluation in LF form
 
 
 
@@ -107,37 +110,37 @@ Examples:
 
     [Pi;x](T,U)             the TS Pi in TS full form, to be revised
 
-    [Pi](T,x ⟾ U)           the TS Pi in TS full form, proposed
+    [Pi](T,x |=> U)           the TS Pi in TS full form, proposed
 
-    ([Pi] T (x ↦ U)         the TS Pi in LF form
+    ([Pi] T (x |-> U)         the TS Pi in LF form
 
 
 
     A -> B                  LF function type in LF form
 
-    A ⇒ B                   LF function type in TS form, proposed
+    A => B                   LF function type in TS form, proposed
 
     (x:T) -> U              the LF Pi in LF form, proposed as an alternative
 
     Pi x:T, U               the LF Pi in LF form
 
-    [ ⊢ T Type] ⇒ ...       proposed TS form for LF type
+    [ |- T Type] => ...       proposed TS form for LF type
 
 		  		(T:texp) -> (i:istype T) -> ...
 
 
-    [ ⊢ b:U] ⇒ ...          proposed TS form for LF type
+    [ |- b:U] => ...          proposed TS form for LF type
 
 				(b:oexp) -> (hastype b U) -> ...
 
 
-    [ x:T ⊢ U Type] ⇒ ...   proposed TS form notation for LF
+    [ x:T |- U Type] => ...   proposed TS form notation for LF
 
 				(U : oexp->texp) -> ((x:oexp) -> (h:hastype x T) ->
 				(istype (U x))) -> ... 
 
 
-    [ x:T ⊢ b:U ] ⇒ ...     proposed TS form notation for LF type
+    [ x:T |- b:U ] => ...     proposed TS form notation for LF type
 
 				 (b : oexp->oexp) -> ((x:oexp) -> (hastype x T) ->
 				 (hastype (b x) (U x))) -> ... 
@@ -152,31 +155,31 @@ Examples:
 
 A rule in LF notation, currently parsable by the program:
 
-Rule 27 beta_reduction : ∏ T : texp, ∏ U : oexp ⟶ texp, ∏ t : oexp, ∏ f : oexp ⟶ oexp,
+Rule 27 beta_reduction : Pi T : texp, Pi U : oexp -> texp, Pi t : oexp, Pi f : oexp -> oexp,
 
-     [ t : T ] ⟶ 
+     [ t : T ] -> 
 
-     (∏ x:oexp, [ x : T ] -> [ (f x) : (U x) ]) ⟶
+     (Pi x:oexp, [ x : T ] -> [ (f x) : (U x) ]) ->
 
-     [ ([ev] ( [λ] T f ) t U) = (f t) : (U t) ].
+     [ ([ev] ( [lambda] T f ) t U) = (f t) : (U t) ].
 
 the same rule in the proposed TS notation:
 
 Rule 27 beta_reduction ::
 
-     [ ⊢ T Type ] ⇒
+     [ |- T Type ] =>
 
-     [ x : T ⊢ U Type ] ⇒
+     [ x : T |- U Type ] =>
 
-     [ ⊢ t : T ] ⇒
+     [ |- t : T ] =>
 
-     [ x : T ⊢ b : U ] ⇒
+     [ x : T |- b : U ] =>
 
      [ (lambda x:T, b) t = t\\b : t\\U ].
 
 The last line above could be expanded to 
 
-     [ [ev]( [lambda](T, x ⟾ b), t, t\\U ) = t\\b : t\\U ].
+     [ [ev]( [lambda](T, x |=> b), t, t\\U ) = t\\b : t\\U ].
 
 by the type checker, or written that way in full form.
 
@@ -187,37 +190,72 @@ be an LF definition of type
    (U:oexp->texp) -> ((x:oexp) -> U x) ->
    (t:oexp) -> (hastype t T)
    (b:oexp->oexp) -> ((x:oexp) -> hastype (b x) (U x)) -> 
-   (oqual ([ev] ( [λ] T f ) t U) (f t) (U t)).
+   (oqual ([ev] ( [lambda] T f ) t U) (f t) (U t)).
 
 ?  We'd like to call it with just 4 parameters, instead of 8:
 
    beta_reduction T x t b.
 
 So it looks like a definition call in TS format has to always multiply the number of
-parameters by 2, or use sigma types, and something in the syntax has to distinguish it
-from TS evaluation [ev] of TS expressions.
+parameters by 2, or use Sigma types, and something in the syntax has to distinguish it
+from the TS evaluation of TS expressions, represented by [ev].
 
+It'd better be returning just one thing, so we can pass the result into another 
+expression!
+
+Actually, the various judgments should be tuples containing all the information
+in extractible form.  We can say:
+
+       [ |- T Type ] => ... 
+
+       	  means
+
+       (T:texp) * (istype T) -> ...
+
+and
+
+       [ |- o : T ] => ... 
+
+       	  means
+
+       (o:oexp) * (T:texp) * (istype T) * (hastype o T) -> ...
+
+and
+
+       [ |- T = T' ] => ... 
+
+       	  means
+
+       (T:texp) * (T':texp) * (istype T) * (istype T') * (tequal T T') -> ...
+
+and 
+
+       [ |- o = o' : T ] => ... 
+
+       	   means
+
+       (o:oexp) * (o:oexp) * (T:texp) * (istype T) * (oequal o o' T)
 
 
 The LF expression
 
-      (λ_hastype
+      (lambda_hastype
        T
        (_ -> V)
-       (t ⟼ ([ev] g ([ev] f t (_ ->U) (_ -> V))))
+       (t |-> ([ev] g ([ev] f t (_ ->U) (_ -> V))))
        $a 
-       (t ⟼ h ⟼ ( 
+       (t |-> h |-> ( 
         ev_hastype U (_ -> V) g 
 		  ([ev] f t (_ -> U)) $a ( ev_hastype T (_ -> U) f t $a $a ))))
 
 might correspond to this TS expression :
 
-      λ_hastype
+      lambda_hastype
        T
-       (_ ⟾ V)
-       (t ⟾ g (f t) ) 
+       (_ |=> V)
+       (t |=> g (f t) ) 
        $a 
-       (t  ⟾  h  ⟾  
-        ev_hastype U (_ ⟾ V) g (f t) $a ( ev_hastype T (_ ⟾ U) f t $a $a ))
+       (t  |=>  h  |=>  
+        ev_hastype U (_ |=> V) g (f t) $a ( ev_hastype T (_ |=> U) f t $a $a ))
 
-It would be good to have an abbreviation for (_ ⟾ V), which is used frequently.
+It would be good to have an abbreviation for (_ |=> V), which is used frequently.
