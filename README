@@ -1,140 +1,69 @@
-an attempt at making a toy proof checker for experimental purposes
+Examples of the syntax, existing and proposed:
 
-Inline long-form notation for definitions, proofs, and derivations, relative to the context
-in effect in the term:
+    f t                     LF evaluation in LF form
+    f[t/x]                  LF evaluation in traditional form, not a good notation, because x should be considered bound in f
+    f//t                    LF evaluation in TS form, proposed
 
-   Provisional: definitions involve lazy substitution from one context into another.
-   		(we might also want lazy substitution within the same context)
-       [udef;name](u1,...; u,...; eqn1,...;R)		here u is a universe level and we add [ name :: |- u : Univ ] to the context and return R
-       [tdef;name](u1,...;T1,...;o1,...; T,R)		here T is a type and we add [ name :: |- T : Type ] to context and return R
-       [odef;name](u1,...;T1,...; o,T,R)		here o is an object of type T and we add [ name :: |- o : T ] to the context
+    x |-> b                 the LF lambda in LF form
+    lambda x, b             the LF lambda in LF form
+    x |- b                  the LF lambda in TS form, proposed
 
-				
-Definition H (T:Type) := T -> T.
+    [lambda;x](f,o,U)       the TS lambda, in full TS form, to be revised
+    [lambda](f,o,x|-U)      the TS lambda, in full TS form, proposed
+    lambda x:T, o           the TS lambda, in abbreviated TS form
+    (x:T) |-> o             the TS lambda, in abbreviated TS form, proposed as an alternative
+    ([lambda] f o (x|->U))  the TS lambda, in full LF form
 
-so [H.0] = lambda T, ([Pi] T (lambda _, T))
-         : texp -> texp
+    [ev;x](f, t, U)         TS evaluation in full TS form, to be revised
+    [ev](f, t, x |- U)      TS evaluation in full TS form, proposed
+    f t                     TS evaluation in abbreviated TS form
+    ([ev] f t (x |-> U))    TS evaluation in LF form
 
-   [H.1] = lambda T, lambda it, ?42
-         : Pi T:texp, Pi it: (isatype T), (isatype ([H.0] T))
+    T -> U                  the TS function type in TS form
+    Pi x:T, U               the TS Pi in TS form, abbreviated
+    [Pi;x](T,U)             the TS Pi in TS full form, to be revised
+    [Pi](T,x |- U)          the TS Pi in TS full form, proposed
+    ([Pi] T (x |-> U)       the TS Pi in LF form
 
-introduce a new constant
+    A -> B                  LF function type in LF form
+    A => B                  LF function type in TS form, proposed
+    (x:T) -> U              the LF Pi in LF form, proposed as an alternative
+    Pi x:T, U               the LF Pi in LF form
+    [|- T Type] => ...      proposed TS form for LF
+				    (T:texp) -> (i:istype T) -> ...
+    [|- b:U] => ...         proposed TS form for LF
+				    (b:oexp) -> (hastype b U) -> ...
+    [x:T |- U Type] => ...  proposed TS form notation for LF
+				    (U : oexp->texp) -> ((x:oexp) -> (h:hastype x T) -> (istype (U x))) -> ...
+    [ x:T |- b:U ] => ...   proposed TS form notation for LF type
+				    (b:oexp) -> ((x:oexp) -> (hastype x T) -> (hastype (f x) (U x))) -> ...
 
-    [hold]
+a rule in LF notation, currently parsable by the program:
 
-so that
+Rule 27 beta_reduction : ∏ T : texp, ∏ U : oexp ⟶ texp, ∏ t : oexp, ∏ f : oexp ⟶ oexp,
 
-    [hold] (lambda T, ([Pi] T (lambda _, T))) T
+     [ t : T ] ⟶ 
 
-will represent the delayed application of [H.0] and be a texp.  Its type
-has to be
+     (∏ x:oexp, [ x : T ] -> [ (f x) : (U x) ]) ⟶
 
-           (texp -> texp) -> texp -> texp
+     [ ([ev] ( [λ] T f ) t U) = (f t) : (U t) ].
 
-So [hold] is the polymorphic identity function of type X -> X.  We could
-even add the LF type to the constant, so we have an infinite family
-of such constants.
+the same rule in the proposed TS notation:
 
-    [hold;texp -> texp] (lambda T, ([Pi] T (lambda _, T))) T
+Rule 27 beta_reduction ::
 
-I.e., we introduce expressions like
+     [ |- T Type ] =>
 
-    [hold;t1 -> ... -> tn -> t] f x1 ... xn
+     [ x : T |- U Type ] =>
 
-and learn how to type it.  The type of [hold;X] is X->X.  Then we have
-an infinite family of delta-reduction rules that reduce
+     [ |- t : T ] =>
 
-    [hold;t1 -> ... -> tn -> t] f x1 ... xn
+     [ x : T |- b : U ] =>
 
-to
+     [ (lambda x:T, b) t = b//t : U//t ].
 
-    f x1 ... xn
+The last line above could be expanded to 
 
-For printing purposes, we should add the name "H" somewhere:
+     [ [ev]( [lambda](T,x|-b), t, U//t ) = b//t : U//t ].
 
-    [hold;H,texp -> texp] (lambda T, ([Pi] T (lambda _, T))) T
-
-=============================================================================
-
-	Pi T:texp, istype T
-
-Here "istype" is an atomic type family of kind texp -> type,
-so that istype T is a type, and we can form the type 
-Pi T:texp, istype T.  Now suppose we don't have type families,
-but we do have singleton types and as many basetypes as we like.
-
-We could write
-
-   	Pi T:texp, .... S(T) ....
-
-e.g.,
-
-   	Pi T:texp, S(T)
-
-   	Pi T:texp, Pi a:S(T), S(T).
-
-   	Pi T:texp, Sigma a:S(T), S(T).
-
-
------------------------------------------------------------------------------
-
-Suppose we add singleton types to LF.  Then we make a definition, say
-
-	Define foo ( T:Type ) := T -> T.
-
-This leads to
-
-       foo.0 = lambda T, ([Pi] T (lambda _, T))
-       	     : Pi T:texp, texp
-
-       foo.1 = lambda T, ??
-       	     : Pi T:texp, isatype T
-
-Having made that definition, we add new variables to the context:
-
-       foo.0 : Singleton ( lambda T, ([Pi] T (lambda _, T)) ; Pi T:texp, texp )
-       	     < Pi T:texp, texp
-
-
-       foo.1 : Singleton ( lambda T, ?? ; Pi T:texp, isatype T )
-       	     < Pi T:texp, isatype T
-
-Now how does type checking go without unfolding?
-
-Let's derive
-
-	(hastype   ( [lambda] T (lambda x, x) )   ( foo.0 T )  )
-
-First observe that
-
-      	foo.0 : Pi T:texp, texp
-
-so
-
-	foo.0 T : texp
-
-and just 
-
-
-    	(hastype   ( [lambda] T (lambda x, x) )   ( foo.0 T )  ) : texp
-
-(Is the idea that there is no unfolding during LF-type-checking?
-
-We have both 
-
-
-   	     		   foo.0 : Singleton ( lambda T, ([Pi] T (lambda _, T)) ; Pi T:texp, texp )
-
-lambda T, ([Pi] T (lambda _, T)) : Singleton ( lambda T, ([Pi] T (lambda _, T)) ; Pi T:texp, texp )
-
-so by (42) we have
-
-   foo.0 = lambda T, ([Pi] T (lambda _, T))  :  Singleton ( lambda T, ([Pi] T (lambda _, T)) ; Pi T:texp, texp )
-
-and thus
-
-   foo.0 = lambda T, ([Pi] T (lambda _, T))  :  Pi T:texp, texp
-
-So LF type checking can unfold if necessary.  When is it necessary?
-
-
+by the type checker, or written that way in full form.
