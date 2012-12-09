@@ -16,11 +16,10 @@ open Printer
 let rec fillinlist pos env es = List.map (fillin' pos env) es
 and fillin' pos env = function
   | PAIR(pos,x,y) -> PAIR(pos,fillin' pos env x,fillin' pos env y)
-  | LAMBDA(v,body) as l -> raise (Unimplemented_expr l)
+  | LAMBDA(v,body) -> raise (Unimplemented "type-directed filling in for LF lambda expressions")
   | CAN e -> CAN(fillin env e)
 and fillin env (pos,e) = (pos, match e with
-  | TacticHole n -> raise NotImplemented
-  | EmptyHole _ -> raise (TypeCheckingFailure(env,pos,"empty hole, no method for filling"))
+  | TacticHole _ | EmptyHole _ -> e	(* holes will be filled while type-checking -- in fact, merge this code with that *)
   | PR1 x -> PR1(fillin' pos env x) 
   | PR2 x -> PR2(fillin' pos env x) 
   | APPLY(V _,[]) as v -> v

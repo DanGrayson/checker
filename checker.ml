@@ -127,11 +127,9 @@ let add_tVars env tvars =
       )
       env
 
-let fix = Fillin.fillin
-
 let ts_axiomCommand env pos name t = 
   printf "\nAxiom TS %s: %a\n" name  p_ts t;
-  let t = Lfcheck.type_check (get_pos t) env (CAN t) texp in
+  let t = Lfcheck.type_check None (get_pos t) env (CAN t) texp in
   printf "        : %a\n" p_expr t;
   flush stdout;
   match t with
@@ -147,11 +145,11 @@ let lf_axiomCommand env pos name t =
   ensure_new_name env pos v;
   (v,t) :: env
 
-let is_lambda = function LAMBDA _ -> true | _ -> false
+let is_can = function CAN _ -> true | _ -> false
 
 let checkLFCommand env pos x =
   printf "\nCheck LF   = %a\n" p_expr x; flush stdout;
-  if not (is_lambda x) then 
+  if is_can x then 
     let (x',t) = Lfcheck.type_synthesis env x in
     printf "           = %a\n" p_expr x';
     printf "           : %a\n" p_type t; flush stdout;
@@ -172,7 +170,7 @@ let checkLFtypeCommand env t =
 let checkTSCommand env x =
   printf "\nCheck TS   : %a\n" p_ts x;
   flush stdout;
-  let x = fix env x in
+  let x = Fillin.fillin env x in
   printf "           : %a [after filling in]\n" p_ts x;
   flush stdout;
   let (x,t) = Lfcheck.type_synthesis env (CAN x) in
@@ -187,8 +185,8 @@ let checkTSCommand env x =
    )
 
 let alphaCommand env (x,y) =
-  let x = fix env x in
-  let y = fix env y in
+  let x = Fillin.fillin env x in
+  let y = Fillin.fillin env y in
   printf "\nAlpha      : %s\n" (if (Alpha.UEqual.term_equiv Definitions.emptyUContext (CAN x) (CAN y)) then "true" else "false");
   printf "           : %a\n" p_ts x;
   printf "           : %a\n" p_ts y;

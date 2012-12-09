@@ -23,10 +23,10 @@ SRCFILES =					\
 	alpha.ml alpha.mli			\
 	substitute.ml				\
 	equality.ml equality.mli		\
+	tau.ml tau.mli				\
 	lfcheck.ml				\
 	tactics.ml				\
 	fillin.ml				\
-	tau.ml tau.mli				\
 	printer.ml				\
 	definitions.ml				\
 	grammar.mly				\

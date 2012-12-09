@@ -10,7 +10,7 @@ open Definitions
 %type <Toplevel.command> command
 %type <Typesystem.atomic_expr> ts_exprEof ts_expr
 %type <Typesystem.unmarked_atomic_expr> unmarked_ts_expr
-%type <Typesystem.atomic_expr list> arglist
+%type <Typesystem.lf_expr list> arglist
 %type <Typesystem.lf_type> lf_type
 %type <Typesystem.lf_expr> lf_expr lf_expr_from_ts_syntax
 %token <int> NUMBER
@@ -132,12 +132,12 @@ lf_type_constant:
     { 
       try List.assoc l Names.string_to_type_constant
       with 
-	Not_found ->
-	  Printf.fprintf stderr "%s: unknown type constant %s\n" 
-	    (errfmt (Position($startpos, $endpos)))
-	    l;
-	  flush stderr;
-	  $syntaxerror
+        Not_found ->
+          Printf.fprintf stderr "%s: unknown type constant %s\n" 
+            (errfmt (Position($startpos, $endpos)))
+            l;
+          flush stderr;
+          $syntaxerror
     }
 
 lf_expr:
@@ -297,9 +297,9 @@ variable_or_unused:
 lf_expr_from_ts_syntax:
 | e = ts_expr
     { CAN e }
-| v=variable ArrowFromBar body=lf_expr_from_ts_syntax
+| v=variable DoubleArrowFromBar body=lf_expr_from_ts_syntax
     { LAMBDA(v,body) }
-| v=variable_unused ArrowFromBar body=lf_expr_from_ts_syntax
+| v=variable_unused DoubleArrowFromBar body=lf_expr_from_ts_syntax
     { LAMBDA(v,body) }
 | o=lf_expr_from_ts_syntax DoubleBackslash f=lf_expr_from_ts_syntax
     { Substitute.apply_args (Position($startpos, $endpos)) f [o] }
@@ -315,7 +315,7 @@ tsterm_head:
     { try List.assoc name Names.lf_expr_head_strings with Not_found -> V (Var name) }
 
 arglist:
-| Wlparen a=separated_list(Wcomma,ts_expr) Wrparen
+| Wlparen a=separated_list(Wcomma,lf_expr_from_ts_syntax) Wrparen
     {a}
 
 bare_variable:
@@ -337,7 +337,7 @@ unmarked_ts_expr:
     { new_hole () }
 | f=ts_expr o=ts_expr
     %prec Reduce_application
-    { make_OO_ev f o (newunused(), (Position($startpos, $endpos), new_hole())) }
+    { make_OO_ev f o (newunused(), (Position($startpos, $endpos), TacticHole (Q_name "ev3"))) }
 | Klambda x=variable Colon t=ts_expr Wcomma o=ts_expr
     %prec Reduce_binder
     { make_OO_lambda t (x,o) }
@@ -359,49 +359,49 @@ unmarked_ts_expr:
 | label=tsterm_head args=arglist
     {
      match label with
-     | V _ -> APPLY(label,to_canonical args)
+     | V _ -> APPLY(label,args)
      | _ -> (
-	 match head_to_vardist label with
-	 | None -> APPLY(label,to_canonical args)
-	 | Some (n,_) ->
-	     if n = 0 then APPLY(label,to_canonical args)
-	     else
-	       raise (MarkedError
-			( Position($startpos, $endpos),
-			  "expected " ^ string_of_int n ^ " variable" ^ if n != 1 then "s" else "")))
+         match head_to_vardist label with
+         | None -> APPLY(label,args)
+         | Some (n,_) ->
+             if n = 0 then APPLY(label,args)
+             else
+               raise (MarkedError
+                        ( Position($startpos, $endpos),
+                          "expected " ^ string_of_int n ^ " variable" ^ if n != 1 then "s" else "")))
    }
 | name=CONSTANT_SEMI vars=separated_list(Wcomma,variable_or_unused) Wrbracket args=arglist
     {
      let label = 
        try List.assoc name Names.lf_expr_head_strings
        with Not_found -> 
-	 Printf.fprintf stderr "%s: unknown term constant [%s]\n" 
-	   (errfmt (Position($startpos, $endpos)))
-	   name;
-	 flush stderr;
-	 $syntaxerror
+         Printf.fprintf stderr "%s: unknown term constant [%s]\n" 
+           (errfmt (Position($startpos, $endpos)))
+           name;
+         flush stderr;
+         $syntaxerror
      in
      match head_to_vardist label with
      | None -> raise (MarkedError (Position($startpos, $endpos), "expected no variables"))
      | Some (nvars,varindices) ->
-	 if nvars != List.length vars then
-	   raise (MarkedError
-		    ( Position($startpos, $endpos),
-		      "expected " ^ string_of_int nvars ^ " variable" ^ if nvars != 1 then "s" else ""));
-	 let nargs = List.length varindices
-	 in
-	 if List.length args != nargs then
-	   raise (MarkedError
-		    ( Position($startpos, $endpos),
-		      "expected " ^ string_of_int nargs ^ " argument" ^ if nargs != 1 then "s" else ""));
-	 let args = List.map2 (
-	   fun indices arg ->
-	     (* example: indices = [0;1], change arg to (LAMBDA v_0, (LAMBDA v_1, CAN arg)) *)
-	     List.fold_right (
-	     fun index arg -> LAMBDA( List.nth vars index, arg)
-		 ) indices (CAN arg)
-	  ) varindices args
-	 in
-	 APPLY(label,args)
+         if nvars != List.length vars then
+           raise (MarkedError
+                    ( Position($startpos, $endpos),
+                      "expected " ^ string_of_int nvars ^ " variable" ^ if nvars != 1 then "s" else ""));
+         let nargs = List.length varindices
+         in
+         if List.length args != nargs then
+           raise (MarkedError
+                    ( Position($startpos, $endpos),
+                      "expected " ^ string_of_int nargs ^ " argument" ^ if nargs != 1 then "s" else ""));
+         let args = List.map2 (
+           fun indices arg ->
+             (* example: indices = [0;1], change arg to (LAMBDA v_0, (LAMBDA v_1, arg)) *)
+             List.fold_right (
+             fun index arg -> LAMBDA( List.nth vars index, arg)
+                 ) indices arg
+          ) varindices args
+         in
+         APPLY(label,args)
    }
  

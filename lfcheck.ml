@@ -18,6 +18,7 @@ open Names
 open Printer
 open Substitute
 open Printf
+open Tau
 
 let try_alpha = false (* turning this on could slow things down a lot before we implement hash codes *)
 
@@ -52,17 +53,24 @@ let no_hole env pos = function		(* for debugging *)
   | CAN(_,EmptyHole  _) -> err env pos "encountered an empty hole about to be added to the context"
   | _ -> ()
 
-type tactic_function = context -> position -> lf_type -> lf_expr option
+type surrounding = (unmarked_atomic_expr * int) option
+
+type tactic_function =
+       surrounding         (* the ambient APPLY(...), if any, and the index among its head and arguments of the hole *)        
+    -> context							      (* the active context *)
+    -> position							      (* the source code position of the tactic hole *)
+    -> lf_type							      (* the type of the hole, e.g., [texp] *)
+ -> lf_expr option									 (* the proffered expression *)
 
 let tactics : (string * tactic_function) list ref = ref []
 
-let apply_tactic env pos t = function
+let apply_tactic surr env pos t = function
   | Q_name name ->
       let tactic = 
 	try List.assoc name !tactics
 	with Not_found -> err env pos ("unknown tactic: "^name)
       in
-      tactic env pos t
+      tactic surr env pos t
   | Q_index n ->
       let (v,u) = 
 	try List.nth env n 
@@ -258,14 +266,14 @@ let rec type_validity (env:context) (t:lf_type) : lf_type =
 	  | K_type, [] -> []
 	  | K_type, x :: args -> err env pos "at least one argument too many";
 	  | K_Pi(v,a,kind'), x :: args -> 
-	      type_check pos env x a :: repeat ((v,a) :: env) kind' args
+	      type_check None pos env x a :: repeat ((v,a) :: env) kind' args
 	  | K_Pi(_,a,_), [] -> errmissingarg env pos a
 	in 
 	let args' = repeat env kind args in
 	F_APPLY(head,args')
     | F_Singleton(x,t) -> 
 	let t = type_validity env t in
-	let x = type_check pos env x t in		(* rule 46 *)
+	let x = type_check None pos env x t in		(* rule 46 *)
 	F_Singleton(x,t))
 
 and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
@@ -296,15 +304,16 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
       (* | APPLY(V v, []) -> x, (pos, F_Singleton(CAN e, fetch_type env pos v)) *)
       | APPLY(label,args) -> (
 	  let a = label_to_type env pos label in
-	  let rec repeat env (a:lf_type) (args:lf_expr list) : lf_expr list * lf_type = (
+	  let rec repeat i env (a:lf_type) (args:lf_expr list) : lf_expr list * lf_type = (
 	    let (apos,a0) = a in
 	    match a0, args with
 	    | F_Pi(x,a',a''), m' :: args' ->
-		let m' = type_check pos env m' a' in
+		let surr = Some(e0,i) in 
+		let m' = type_check surr pos env m' a' in
 		no_hole env pos m';
-		let (args'',u) = repeat env (subst_type (x,m') a'') args' in
+		let (args'',u) = repeat (i+1) env (subst_type (x,m') a'') args' in
 		m' :: args'', u
-	    | F_Singleton(e,t), args -> repeat env t args
+	    | F_Singleton(e,t), args -> repeat i env t args
 	    | F_Pi _ as t, [] -> [], (pos,t) (* allow not all arguments to be present; not eta-long *)
 	    | F_Sigma _ as t, [] -> [], (pos,t)
 	    | F_APPLY _ as t, [] -> [], (pos,t)
@@ -312,7 +321,7 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
 	    | F_APPLY _, arg :: _ -> err env (get_pos_lf arg) "extra argument"
 	   )
 	  in
-	  let (args',t) = repeat env a args
+	  let (args',t) = repeat 0 env a args
 	  in CAN(pos,APPLY(label,args')), t
 	 )
 
@@ -421,10 +430,12 @@ and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
       subtype ((w, a) :: env) (subst_type (x,var_to_lf w) b) (subst_type (y,var_to_lf w) d)
   | _ -> type_equivalence env (tpos,t0) (upos,u0)
 
-and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr = 
+and type_check (surr:surrounding) (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr = 
   (* assume t has been verified to be a type *)
   (* see figure 13, page 716 [EEST] *)
   (* we modify the algorithm to return a possibly modified expression e, with holes filled in by tactics *)
+  (* We hard code one tactic:
+       Fill in holes of the form [ ([ev] f o _) ] by using [tau] to compute the type that ought to go there. *)
   let (pos,t0) = t in 
   match e, t0 with
   | CAN(pos, EmptyHole _), _ ->
@@ -432,8 +443,8 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr =
 				   pos, "hole found : "^lf_expr_to_string e,
 				   pos, "   of type : "^lf_type_to_string t))
   | CAN(pos, TacticHole n), _ -> (
-      match apply_tactic env pos t n with
-      | Some e -> type_check pos env e t
+      match apply_tactic surr env pos t n with
+      | Some e -> type_check surr pos env e t
       | None ->
 	  raise (TypeCheckingFailure2 (env,
 				       pos, "tactic failed     : "^tactic_to_string n,
@@ -442,7 +453,7 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr =
   | LAMBDA(v,e), F_Pi(w,a,b) -> (* the published algorithm is not applicable here, since
 				   our lambda doesn't contain type information for the variable,
 				   and theirs does *)
-      let e = type_check pos ((v,a) :: env) e (subst_type (w,var_to_lf v) b) in
+      let e = type_check None pos ((v,a) :: env) e (subst_type (w,var_to_lf v) b) in
       LAMBDA(v,e)
 
   | LAMBDA _, _ -> err env pos "did not expect a lambda expression here"
@@ -457,8 +468,8 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr =
 	    let pos = get_pos_lf p in
 	    CAN(pos,PR1 p), CAN(pos, PR2 p)
        ) in
-      let x = type_check pos env x a in
-      let y = type_check pos env y (subst_type (w,x) b) in
+      let x = type_check None pos env x a in
+      let y = type_check None pos env y (subst_type (w,x) b) in
       PAIR(pos,x,y)
 
   | e, _  ->

@@ -7,7 +7,11 @@ Check LF λ_hastype.
 Define compose2 (T U V:Type) (g:U⟶V) (f:T⟶U) := [lambda;t](T,[ev;_](g,[ev;_](f,t,U),V)) : T ⟶ V ;
       # improved TS syntax
       [λ_hastype]
-(T, V, _, _, _, _ ).
+      (T, 
+          _ ⟾ V,
+	  t ⟾ 
+	      g (f t),
+      _, _, _ ).
 
 
 #      λ_hastype
