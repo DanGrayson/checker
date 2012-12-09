@@ -5,13 +5,16 @@ open Error
 type var =
   | Var of string
   | VarGen of int * string
-  | VarUnused
   | VarDefined of string * int
+
+let basename = function
+  | Var x -> x
+  | VarGen(i,x) -> x
+  | VarDefined (x,_) -> raise Internal	(* intended to be used only for bound variables *)
 
 let vartostring = function
   | Var x -> x
   | VarGen(i,x) -> x ^ "$" ^ (string_of_int i)
-  | VarUnused -> "_"
   | VarDefined (name,aspect) -> "[" ^ name ^ "." ^ (string_of_int aspect) ^ "]"
 
 let newfresh = 
@@ -23,7 +26,6 @@ let newfresh =
     VarGen (!genctr, x)) in
   fun v -> match v with 
   | VarDefined _ -> raise Internal
-  | VarUnused -> raise Internal
   | Var x | VarGen(_,x) -> newgen x
 
 let newunused () = newfresh (Var "_")

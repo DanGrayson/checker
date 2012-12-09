@@ -22,87 +22,6 @@ let join a b = List.flatten [a;b]
 
 let pvar free_vars v = if List.mem v free_vars then vartostring v else "_"
 
-(** Printing of LF and TS expressions. 
-
-    In the names of the following routines, "fvs" refers to "free variables and strings".
-*)
-
-let rec head_and_args_to_fvs fv p_hd p_arg (h,args) = 
-  let r = List.map p_arg args in
-  let fv = join (List.flatten (List.map fst r)) fv in
-  let args = concat (List.flatten (List.map (fun (_,arg) -> [" ";arg]) r)) in
-  let s = concat [p_hd h; args] in
-  let s = if String.contains s ' ' then concat ["(";s;")"] else s in
-  fv, s
-
-let rec atomic_expr_to_fvs (_,e) : var list * string = 
-  match e with
-  | TacticHole n -> [], tactic_to_string n
-  | EmptyHole n -> [], "?" ^ (string_of_int n)
-  | APPLY(V v,[]) -> [v], vartostring v
-  | APPLY(h,args) -> 
-      let fv = match h with V v -> [v] | _ -> [] in
-      head_and_args_to_fvs fv lf_expr_head_to_string lf_expr_to_fvs (h,args)
-  | PR1 x -> 
-      let (fv,s) = lf_expr_to_fvs x in
-      fv, concat ["(π₁ ";s;")"]
-  | PR2 x -> 
-      let (fv,s) = lf_expr_to_fvs x in
-      fv, concat ["(π₂ ";s;")"]
-
-and lf_expr_to_fvs' = function
-  | LAMBDA(x,body) -> 
-      let (fv,s) = lf_expr_to_fvs' body in
-      remove x fv, concat [pvar fv x;" ⟼ ";s]
-  | _ as e -> lf_expr_to_fvs e
-
-and lf_expr_to_fvs = function
-  | LAMBDA(x,body) -> 
-      let (fv,s) = lf_expr_to_fvs' body in
-      remove x fv, concat ["(";pvar fv x;" ⟼ ";s;")"]
-  | PAIR(_,x,y) -> 
-      let (fx,x) = lf_expr_to_fvs x in
-      let (fy,y) = lf_expr_to_fvs y in
-      join fx fy, concat ["(pair ";x;" ";y;")"]
-  | CAN e -> atomic_expr_to_fvs e
-
-let rec dependent_fvs prefix infix target (v,t,u) =
-  let (vu,u) = lf_type_to_fvs' true u in
-  let used = List.mem v vu in
-  let (vt,t) = lf_type_to_fvs' used t in
-  let fv = join vt (remove v vu) in
-  if used then 
-    let k = concat ["("; vartostring v; ":"; t; ")"; infix ; u] in
-    fv, if target then k else concat ["("; k; ")"]
-  else
-    let k = concat [t; infix ; u] in
-    fv, if target then k else concat ["("; k; ")"]
-
-and lf_type_to_fvs' target (_,t) = match t with
-  | F_Pi   (v,t,u) -> dependent_fvs "∏ " " ⟶ " target (v,t,u)
-  | F_Sigma(v,t,u) -> dependent_fvs "Σ " " × " target (v,t,u)
-  | F_Singleton(x,t) -> 
-      let (fx,x) = lf_expr_to_fvs x in
-      let (ft,t) = lf_type_to_fvs t in
-      join fx ft, concat ["Singleton(";x;" : ";t;")"]
-  | F_APPLY(hd,args) -> 
-      head_and_args_to_fvs [] lf_type_head_to_string lf_expr_to_fvs (hd,args)
-
-and lf_type_to_fvs t = lf_type_to_fvs' true t
-
-let rec lf_kind_to_fvs = function
-  | K_type -> [], "type"
-  | K_Pi(v,t,k) -> 
-      let prefix = "∏ " in
-      let infix = " ⟶ " in
-      let (vt,t) = lf_type_to_fvs' false t in
-      let (vk,k) = lf_kind_to_fvs k in
-      let fv = join vt (remove v vk) in
-      if List.mem v vk then 
-	fv, concat ["(";prefix; vartostring v; ":"; t; ") "; k]
-      else
-	fv, concat [t; infix; k]
-
 (** Lists of free variables. *)
 
 let rec vars_args fv p_arg args = 
@@ -137,23 +56,177 @@ let rec lf_kind_to_vars = function
   | K_type -> []
   | K_Pi(v,t,k) -> join (lf_type_to_vars t) (remove v (lf_kind_to_vars k))
 
-let lf_expr_to_string = snd <<- lf_expr_to_fvs
+(** Whether [x] occurs as a free variable in an expression. *)
 
-let atomic_expr_to_string = snd <<- atomic_expr_to_fvs
+let rec occurs_in_atomic_expr w (_,e) = 
+  match e with
+  | TacticHole _ | EmptyHole _ -> false
+  | APPLY(V v,args) -> w = v || List.exists (occurs_in_expr w) args
+  | APPLY(h,  args) ->          List.exists (occurs_in_expr w) args
+  | PR1 e | PR2 e -> occurs_in_expr w e
 
-let lf_type_to_string = snd <<- lf_type_to_fvs
+and occurs_in_expr w = function
+  | LAMBDA(v,body) -> w <> v && occurs_in_expr w body
+  | PAIR(_,x,y) -> occurs_in_expr w x || occurs_in_expr w y
+  | CAN e -> occurs_in_atomic_expr w e
 
-let lf_type_to_string' target = snd <<- (lf_type_to_fvs' target)
+and occurs_in_type w (_,t) = match t with
+  | F_Pi   (v,t,u)
+  | F_Sigma(v,t,u) -> occurs_in_type w t || w <> v && occurs_in_type w u
+  | F_Singleton(e,t) -> occurs_in_expr w e || occurs_in_type w t
+  | F_APPLY(hd,args) -> List.exists (occurs_in_expr w) args
 
-let lf_kind_to_string = snd <<- lf_kind_to_fvs
+let rec occurs_in_kind w = function
+  | K_type -> false
+  | K_Pi(v,t,k) -> occurs_in_type w t || w <> v && occurs_in_kind w k
+
+(** Printing of LF and TS expressions. 
+
+    In the names of the following routines, "fvs" refers to "free variables and strings".
+*)
+
+(*
+  Example of pretty printing:
+
+  x$111 |-> ... x$111 ... x$222 ... x2 ...
+
+  Can't make it pretty in one pass
+
+  Maintain a list of variable substitutions, e.g., x$222 => x, x$333 => x0, ...
+
+  Refer to the list whenever printing a variable
+
+  Replace x$111 by x555 where 555 is the smallest number (or empty) so that x555 is not in the target of the list
+  and also not free in the body
+
+  Then  
+
+      x$222 |-> x$111 |-> ... x$111 ... x$222 ... x2 ...
+
+  will print as
+
+      x |-> x1 |-> ... x1 ... x ... x2 ...
+
+ *)
+
+let var_sub subs v = try List.assoc v subs with Not_found -> v
+
+let var_tester w subs occurs_in e =
+  not( List.exists (fun (_,v) -> v = w) subs )
+    &&
+  not( occurs_in w e )
+
+let var_chooser x subs occurs_in e =
+  match x with
+  | VarGen(i,name) as v -> 
+      if not (occurs_in v e) then Var "_" else
+      let w = Var name in
+      if var_tester w subs occurs_in e then w
+      else let rec repeat i =
+	let w = Var (name ^ string_of_int i) in
+	if var_tester w subs occurs_in e then w
+	else repeat (i+1)
+      in repeat 0
+  | _ -> x
+
+let rec application_to_string p_hd p_arg (h,args) = 
+  let r = List.map p_arg args in
+  let args = concat (List.flatten (List.map (fun arg -> [" ";arg]) r)) in
+  let s = concat [p_hd h; args] in
+  if String.contains s ' ' then concat ["(";s;")"] else s
+
+let rec atomic_expr_to_string_with_subs subs (_,e) = 
+  match e with
+  | TacticHole n -> tactic_to_string n
+  | EmptyHole n -> "?" ^ string_of_int n
+  | APPLY(V v,[]) -> vartostring (var_sub subs v)
+  | APPLY(h,args) -> 
+      let h = match h with V v -> V (var_sub subs v) | _ -> h in
+      application_to_string lf_expr_head_to_string (lf_expr_to_string_with_subs subs) (h,args)
+  | PR1 x -> 
+      let s = lf_expr_to_string_with_subs subs x in
+      concat ["(π₁ ";s;")"]
+  | PR2 x -> 
+      let s = lf_expr_to_string_with_subs subs x in
+      concat ["(π₂ ";s;")"]
+
+and lf_expr_to_string_with_subs' subs = function (* would be better to implement parsing precedences *)
+  | LAMBDA(x,body) -> 
+      let w = var_chooser x subs occurs_in_expr body in
+      let subs = (x,w) :: subs in
+      let s = lf_expr_to_string_with_subs' subs body in
+      concat [vartostring w;" ⟼ ";s]
+  | _ as e -> lf_expr_to_string_with_subs subs e
+
+and lf_expr_to_string_with_subs subs = function
+  | LAMBDA(x,body) -> 
+      let w = var_chooser x subs occurs_in_expr body in
+      let subs = (x,w) :: subs in
+      let s = lf_expr_to_string_with_subs' subs body in
+      concat ["(";vartostring (var_sub subs x);" ⟼ ";s;")"]
+  | PAIR(_,x,y) -> 
+      let x = lf_expr_to_string_with_subs subs x in
+      let y = lf_expr_to_string_with_subs subs y in
+      concat ["(pair ";x;" ";y;")"]
+  | CAN e -> atomic_expr_to_string_with_subs subs e
+
+let rec dependent_sub subs prefix infix target (v,t,u) =
+  let used = occurs_in_type v u in
+  let w = var_chooser v subs occurs_in_type u in
+  let subs = (v,w) :: subs in
+  let u = lf_type_to_string_with_subs' true subs u in
+  let t = lf_type_to_string_with_subs' used subs t in
+  if used then 
+    let k = concat ["("; vartostring w; ":"; t; ")"; infix ; u] in
+    if target then k else concat ["("; k; ")"]
+  else
+    let k = concat [t; infix ; u] in
+    if target then k else concat ["("; k; ")"]
+
+and lf_type_to_string_with_subs' target subs (_,t) = match t with
+  | F_Pi   (v,t,u) -> dependent_sub subs "∏ " " ⟶ " target (v,t,u)
+  | F_Sigma(v,t,u) -> dependent_sub subs "Σ " " × " target (v,t,u)
+  | F_Singleton(x,t) -> 
+      let x = lf_expr_to_string_with_subs subs x in
+      let t = lf_type_to_string_with_subs subs t in
+      concat ["Singleton(";x;" : ";t;")"]
+  | F_APPLY(hd,args) -> 
+      application_to_string lf_type_head_to_string (lf_expr_to_string_with_subs subs) (hd,args)
+
+and lf_type_to_string_with_subs subs t = lf_type_to_string_with_subs' true subs t
+
+let rec lf_kind_to_string_with_subs subs = function
+  | K_type -> "type"
+  | K_Pi(v,t,k) -> 
+      let used = occurs_in_kind v k in
+      let w = var_chooser v subs occurs_in_kind k in
+      let subs = (v,w) :: subs in
+      let prefix = "∏ " in
+      let infix = " ⟶ " in
+      let t = lf_type_to_string_with_subs' false subs t in
+      let k = lf_kind_to_string_with_subs subs k in
+      if used then
+	concat ["(";prefix; vartostring v; ":"; t; ") "; k]
+      else
+	concat [t; infix; k]
+
+let lf_expr_to_string = lf_expr_to_string_with_subs []
+
+let atomic_expr_to_string = atomic_expr_to_string_with_subs []
+
+let lf_type_to_string = lf_type_to_string_with_subs []
+
+let lf_type_to_string' target = lf_type_to_string_with_subs' target []
+
+let lf_kind_to_string = lf_kind_to_string_with_subs []
 
 (** Printing of TS terms in TS format. *)
 
 (** For LF expressions that are not TS terms, print [$$] and then the expression in LF format. *)
 
-let lf_expr_p e = "$$" ^ (lf_expr_to_string e)
+let lf_expr_p e = "$$" ^ lf_expr_to_string e
 
-let lf_atomic_p e = "$$" ^ (atomic_expr_to_string e)
+let lf_atomic_p e = "$$" ^ atomic_expr_to_string e
 
 let pvar2 free_vars v = if List.mem v free_vars then vartostring v else "_"
 let pvar2 free_vars v = vartostring v
@@ -171,11 +244,11 @@ and ts_expr_to_string ((_,e) as oe) =
   match e with 
   | PR1 _ | PR2 _ -> lf_expr_p (CAN oe)		(* normally this branch will not be used *)
   | TacticHole n -> tactic_to_string n
-  | EmptyHole n -> "?" ^ (string_of_int n)
+  | EmptyHole n -> "?" ^ string_of_int n
   | APPLY(V v,[]) -> vartostring v
   | APPLY(h,args) -> 
     match h with
-    | U uh -> (uhead_to_string uh) ^ (paren_args_to_string args)
+    | U uh -> uhead_to_string uh ^ paren_args_to_string args
     | T th -> (
 	match th with 
 	| T_Pi -> (
@@ -186,15 +259,15 @@ and ts_expr_to_string ((_,e) as oe) =
 		else concat ["[∏;";vartostring x;"](";ts_expr_to_string t1;",";ts_expr_to_string t2;")"]
 	    | _ -> lf_atomic_p oe)
 	| T_Sigma -> (
-	    match args with [CAN t1; LAMBDA( x, CAN t2 )] -> "[Sigma;" ^ (pvar2 fv x) ^ "](" ^ (ts_expr_to_string t1) ^ "," ^ (ts_expr_to_string t2) ^ ")"
+	    match args with [CAN t1; LAMBDA( x, CAN t2 )] -> "[Sigma;" ^ pvar2 fv x ^ "](" ^ ts_expr_to_string t1 ^ "," ^ ts_expr_to_string t2 ^ ")"
 	    | _ -> lf_atomic_p oe)
 	| T_Coprod2 -> (
 	    match args with 
 	    | [CAN t; CAN t'; LAMBDA( x,CAN u); LAMBDA( x', CAN u'); CAN o] ->
-		"[Coprod;" ^ (pvar2 fv x) ^ "," ^ (pvar2 fv x') ^ "](" 
-		^ (ts_expr_to_string t) ^ "," ^ (ts_expr_to_string t) ^ ","
-		^ (ts_expr_to_string u) ^ "," ^ (ts_expr_to_string u') ^ ","
-		^ (ts_expr_to_string o)
+		"[Coprod;" ^ pvar2 fv x ^ "," ^ pvar2 fv x' ^ "](" 
+		^ ts_expr_to_string t ^ "," ^ ts_expr_to_string t ^ ","
+		^ ts_expr_to_string u ^ "," ^ ts_expr_to_string u' ^ ","
+		^ ts_expr_to_string o
 		^ ")"
 	    | _ -> lf_atomic_p oe)
 	| T_IP -> (
@@ -204,36 +277,36 @@ and ts_expr_to_string ((_,e) as oe) =
 	       LAMBDA(x2,LAMBDA(y2,CAN tD));
 	       LAMBDA(x3,LAMBDA(y3,LAMBDA(z3,CAN q)))]
 	      -> "[IP;" 
-		^ (pvar2 fv x1) ^ ","
-		^ (pvar2 fv x2) ^ "," ^ (pvar2 fv y2) ^ "," 
-		^ (pvar2 fv x3) ^ "," ^ (pvar2 fv y3) ^ "," ^ (pvar2 fv z3) 
+		^ pvar2 fv x1 ^ ","
+		^ pvar2 fv x2 ^ "," ^ pvar2 fv y2 ^ "," 
+		^ pvar2 fv x3 ^ "," ^ pvar2 fv y3 ^ "," ^ pvar2 fv z3 
 		^ "]("
-		^ (ts_expr_to_string tA) ^ "," ^ (ts_expr_to_string a) ^ "," ^ (ts_expr_to_string tB) ^ "," ^ (ts_expr_to_string tD) ^ "," ^ (ts_expr_to_string q) ^ ")"
+		^ ts_expr_to_string tA ^ "," ^ ts_expr_to_string a ^ "," ^ ts_expr_to_string tB ^ "," ^ ts_expr_to_string tD ^ "," ^ ts_expr_to_string q ^ ")"
 	    | _ -> lf_atomic_p oe)
-	| _ -> "[" ^ (thead_to_string th) ^ "]" ^ (paren_args_to_string args)
+	| _ -> "[" ^ thead_to_string th ^ "]" ^ paren_args_to_string args
        )
     | O oh -> (
 	match oh with
 	| O_ev -> (
 	    match args with 
 	    | [CAN f;CAN o;LAMBDA(x, CAN t)] ->
-		"[ev;" ^ (pvar2 fv x) ^ "](" ^ (ts_expr_to_string f) ^ "," ^ (ts_expr_to_string o) ^ "," ^ (ts_expr_to_string t) ^ ")"
+		"[ev;" ^ pvar2 fv x ^ "](" ^ ts_expr_to_string f ^ "," ^ ts_expr_to_string o ^ "," ^ ts_expr_to_string t ^ ")"
 	    | [CAN f;CAN o] ->
-		"[ev;_](" ^ (ts_expr_to_string f) ^ "," ^ (ts_expr_to_string o) ^ ")"
+		"[ev;_](" ^ ts_expr_to_string f ^ "," ^ ts_expr_to_string o ^ ")"
 	    | _ -> lf_atomic_p oe)
 	| O_lambda -> (
 	    match args with 
 	    | [CAN t;LAMBDA( x,CAN o)] ->
-		"[λ;" (* lambda *) ^ (pvar2 fv x) ^ "](" ^ (ts_expr_to_string t) ^ "," ^ (ts_expr_to_string o) ^ ")"
+		"[λ;" (* lambda *) ^ pvar2 fv x ^ "](" ^ ts_expr_to_string t ^ "," ^ ts_expr_to_string o ^ ")"
 	    | _ -> lf_atomic_p oe)
 	| O_forall -> (
 	    match args with 
 	    | [CAN u;CAN u';CAN o;LAMBDA( x,CAN o')] ->
-		"[forall;" ^ (pvar2 fv x) ^ "](" ^ (ts_expr_to_string u) ^ "," ^ (ts_expr_to_string u') ^ "," ^ (ts_expr_to_string o) ^ "," ^ (ts_expr_to_string o') ^ ")"
+		"[forall;" ^ pvar2 fv x ^ "](" ^ ts_expr_to_string u ^ "," ^ ts_expr_to_string u' ^ "," ^ ts_expr_to_string o ^ "," ^ ts_expr_to_string o' ^ ")"
 	    | _ -> lf_atomic_p oe)
-	| _ -> "[" ^ (ohead_to_string oh) ^ "]" ^ (paren_args_to_string args)
+	| _ -> "[" ^ ohead_to_string oh ^ "]" ^ paren_args_to_string args
        )
-    | _ -> (lf_expr_head_to_string h) ^ (paren_args_to_string args)
+    | _ -> lf_expr_head_to_string h ^ paren_args_to_string args
 
 (** Printing functions for definitions, provisional. *)
 

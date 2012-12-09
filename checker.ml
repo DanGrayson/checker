@@ -253,7 +253,7 @@ let parse_file env filename =
 let strname =
   let n = ref 0 in
   fun () ->
-    let p = "string_" ^ (string_of_int !n) in
+    let p = "string_" ^ string_of_int !n in
     incr n;
     p
 

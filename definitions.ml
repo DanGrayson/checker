@@ -81,14 +81,14 @@ let tDefinition name (UContext (uvars,ueqns),tvars,o_vartypes) t d1 =
   let pos = get_pos t in
   let t = CAN t in 
   let vartypes = augment uvars ueqns tvars o_vartypes in
-  let v = newfresh (Var name) in
+  let v = newfresh (Var "T") in
   List.map (wrap vartypes) 
     [ ( Var name, pos, PAIR(pos, t, term_or_hole pos d1), ist_s v ) ]
 
 let oDefinition name (UContext(uvars,ueqns),tvars,o_vartypes) o t d1 =
   let pos = get_pos o in
   let vartypes = augment uvars ueqns tvars o_vartypes in
-  let v = newfresh (Var name) in
+  let v = newfresh (Var "o") in
   List.map (wrap vartypes)
     [ ( Var name, pos, PAIR(pos, CAN o, term_or_hole pos d1 ) , hast_s v t ) ]
 

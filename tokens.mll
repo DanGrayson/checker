@@ -17,7 +17,7 @@
  let lexing_pos lexbuf = 
    let p = Lexing.lexeme_start_p lexbuf in
    p.Lexing.pos_fname ^ ":" ^
-   (string_of_int p.Lexing.pos_lnum) ^ ":" ^
+   string_of_int p.Lexing.pos_lnum ^ ":" ^
    (string_of_int (p.Lexing.pos_cnum-p.Lexing.pos_bol+1))
  let tab lexbuf =
    let p = lexbuf.Lexing.lex_curr_p in

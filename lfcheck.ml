@@ -23,23 +23,23 @@ let try_alpha = false (* turning this on could slow things down a lot before we 
 
 let err env pos msg = raise (TypeCheckingFailure (env, pos, msg))
 
-let errmissingarg env pos a = err env pos ("missing next argument, of type "^(lf_type_to_string a))
+let errmissingarg env pos a = err env pos ("missing next argument, of type "^lf_type_to_string a)
 
 let mismatch_type env pos t pos' t' = 
   raise (TypeCheckingFailure2 (env,
-	 pos , "expected type "^(lf_type_to_string t ),
-	 pos', "to match      "^(lf_type_to_string t')))
+	 pos , "expected type "^lf_type_to_string t ,
+	 pos', "to match      "^lf_type_to_string t'))
 
 let mismatch_term_t env pos x pos' x' t = 
   raise (TypeCheckingFailure3 (env,
-		    pos , "expected term\n\t"^(lf_expr_to_string x ),
-		    pos',      "to match\n\t"^(lf_expr_to_string x'),
-	       get_pos t,	"of type\n\t"^(lf_type_to_string t)))
+		    pos , "expected term\n\t"^lf_expr_to_string x ,
+		    pos',      "to match\n\t"^lf_expr_to_string x',
+	       get_pos t,	"of type\n\t"^lf_type_to_string t))
 
 let mismatch_term env pos x pos' x' = 
   raise (TypeCheckingFailure2 (env,
-		    pos , "expected term\n\t"^(lf_expr_to_string x ),
-		    pos',      "to match\n\t"^(lf_expr_to_string x')))
+		    pos , "expected term\n\t"^lf_expr_to_string x ,
+		    pos',      "to match\n\t"^lf_expr_to_string x'))
 
 let rec strip_singleton ((_,(_,t)) as u) = match t with
 | F_Singleton a -> strip_singleton a
@@ -66,7 +66,7 @@ let apply_tactic env pos t = function
   | Q_index n ->
       let (v,u) = 
 	try List.nth env n 
-	with Failure nth -> err env pos ("index out of range: "^(string_of_int n))
+	with Failure nth -> err env pos ("index out of range: "^string_of_int n)
       in
       if Alpha.UEqual.type_equiv empty_uContext t u then Some(var_to_lf v)
       else mismatch_type env pos t (get_pos u) u
@@ -188,8 +188,8 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
 	      | F_Pi(v,a,b) -> (
 		  match args with
 		  | [] -> raise (TypeCheckingFailure2 (env,
-		    pos , ("expected "^(string_of_int (num_args t))^" more arguments"),
-		    (get_pos t0), (" using:\n\t"^(lf_expr_head_to_string f)^" : "^(lf_type_to_string t0))))
+		    pos , ("expected "^string_of_int (num_args t)^" more arguments"),
+		    (get_pos t0), (" using:\n\t"^lf_expr_head_to_string f^" : "^lf_type_to_string t0)))
 		  | x :: args ->
 		      no_hole env pos x;
 		      let b = subst_type (v,x) b in
@@ -274,15 +274,15 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
   (* return a pair consisting of the original expression with any tactic holes filled in, 
      and the synthesized type *)
   match x with
-  | LAMBDA _ -> err env (get_pos_lf x) ("function has no type: "^(lf_expr_to_string x))
+  | LAMBDA _ -> err env (get_pos_lf x) ("function has no type: "^lf_expr_to_string x)
   | PAIR(pos,x,y) ->
       let x',t = type_synthesis env x in
       let y',u = type_synthesis env y in PAIR(pos,x',y'), (pos,F_Sigma(newunused(),t,u))
   | CAN e ->
       let (pos,e0) = e in
       match e0 with
-      | TacticHole n -> err env pos ("tactic hole: "^(ts_expr_to_string e))
-      | EmptyHole _ -> err env pos ("empty hole: "^(ts_expr_to_string e))
+      | TacticHole n -> err env pos ("tactic hole: "^ts_expr_to_string e)
+      | EmptyHole _ -> err env pos ("empty hole: "^ts_expr_to_string e)
       | PR1 p -> (
 	  let p',s = type_synthesis env p in
 	  match unmark s with 
@@ -429,15 +429,15 @@ and type_check (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr =
   match e, t0 with
   | CAN(pos, EmptyHole _), _ ->
       raise (TypeCheckingFailure2 (env,
-				   pos, "hole found : "^(lf_expr_to_string e),
-				   pos, "   of type : "^(lf_type_to_string t)))
+				   pos, "hole found : "^lf_expr_to_string e,
+				   pos, "   of type : "^lf_type_to_string t))
   | CAN(pos, TacticHole n), _ -> (
       match apply_tactic env pos t n with
       | Some e -> type_check pos env e t
       | None ->
 	  raise (TypeCheckingFailure2 (env,
-				       pos, "tactic failed     : "^(tactic_to_string n),
-				       pos, "  in hole of type : "^(lf_type_to_string t))))
+				       pos, "tactic failed     : "^tactic_to_string n,
+				       pos, "  in hole of type : "^lf_type_to_string t)))
 
   | LAMBDA(v,e), F_Pi(w,a,b) -> (* the published algorithm is not applicable here, since
 				   our lambda doesn't contain type information for the variable,

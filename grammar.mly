@@ -329,7 +329,7 @@ unmarked_atomic_expr:
 	     else
 	       raise (MarkedError
 			( Position($startpos, $endpos),
-			  "expected " ^ (string_of_int n) ^ " variable" ^ (if n != 1 then "s" else ""))))
+			  "expected " ^ string_of_int n ^ " variable" ^ if n != 1 then "s" else "")))
    }
 | name=CONSTANT_SEMI vars=separated_list(Wcomma,variable_or_unused) Wrbracket args=arglist
     {
@@ -348,13 +348,13 @@ unmarked_atomic_expr:
 	 if nvars != List.length vars then
 	   raise (MarkedError
 		    ( Position($startpos, $endpos),
-		      "expected " ^ (string_of_int nvars) ^ " variable" ^ (if nvars != 1 then "s" else "")));
+		      "expected " ^ string_of_int nvars ^ " variable" ^ if nvars != 1 then "s" else ""));
 	 let nargs = List.length varindices
 	 in
 	 if List.length args != nargs then
 	   raise (MarkedError
 		    ( Position($startpos, $endpos),
-		      "expected " ^ (string_of_int nargs) ^ " argument" ^ (if nargs != 1 then "s" else "")));
+		      "expected " ^ string_of_int nargs ^ " argument" ^ if nargs != 1 then "s" else ""));
 	 let args = List.map2 (
 	   fun indices arg ->
 	     (* example: indices = [0;1], change arg to (LAMBDA v_0, (LAMBDA v_1, CAN arg)) *)

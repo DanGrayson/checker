@@ -34,15 +34,15 @@ let errfmt = function
   | Position(p,q) 
     -> "File \"" ^ p.Lexing.pos_fname ^ "\", " 
       ^ (if p.Lexing.pos_lnum = q.Lexing.pos_lnum
-	 then "line " ^ (string_of_int p.Lexing.pos_lnum) 
-	 else "lines " ^ (string_of_int p.Lexing.pos_lnum) ^ "-" ^ (string_of_int q.Lexing.pos_lnum))
+	 then "line " ^ string_of_int p.Lexing.pos_lnum 
+	 else "lines " ^ string_of_int p.Lexing.pos_lnum ^ "-" ^ string_of_int q.Lexing.pos_lnum)
       ^ ", " 
       ^ (let i = p.Lexing.pos_cnum-p.Lexing.pos_bol+1
          and j = q.Lexing.pos_cnum-q.Lexing.pos_bol in
          if i = j
-	 then "character " ^ (string_of_int i)
-         else "characters " ^ (string_of_int i) ^ "-" ^ (string_of_int j))
-  | Nowhere(i,j) -> "nowhere:"^(string_of_int i)^":"^(string_of_int j)
+	 then "character " ^ string_of_int i
+         else "characters " ^ string_of_int i ^ "-" ^ string_of_int j)
+  | Nowhere(i,j) -> "nowhere:" ^ string_of_int i ^ ":" ^ string_of_int j
 
 type 'a marked = position * 'a
 let unmark ((_:position), x) = x

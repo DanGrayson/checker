@@ -21,7 +21,7 @@ let rec tau (pos:position) (env:context) (pos,e) : atomic_expr =
   | EmptyHole _ -> raise (TypeCheckingFailure(env, pos, "empty hole, type undetermined"))
   | APPLY(V v,[]) -> (
       try get_ts_type v env
-      with Not_found -> raise (TypeCheckingFailure(env,pos, "unbound variable, not in TS context: " ^ (vartostring v))))
+      with Not_found -> raise (TypeCheckingFailure(env,pos, "unbound variable, not in TS context: " ^ vartostring v)))
   | APPLY(h,args) -> with_pos pos (
       match h with
       | V v -> 

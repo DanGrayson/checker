@@ -65,12 +65,12 @@ let tfhead_strings = List.map (fun x -> lf_type_head_to_string x, x) lf_type_hea
 
 let tactic_to_string : tactic_expr -> string = function
   | Q_name n -> "$" ^ n
-  | Q_index n -> "$" ^ (string_of_int n)
+  | Q_index n -> "$" ^ string_of_int n
 
 let fetch_type env pos v = 
   try List.assoc v env
   with Not_found -> 
-    raise (TypeCheckingFailure (env, pos, ("unbound variable: "^(vartostring v))))
+    raise (TypeCheckingFailure (env, pos, ("unbound variable: "^vartostring v)))
 
 let label_to_type env pos = function
   | U h -> uhead_to_lf_type h
@@ -92,7 +92,7 @@ let lookup_type env v = List.assoc v env
 
 let ensure_new_name env pos v =
   try lookup_type env v;
-      raise (MarkedError (pos, "variable already defined: "^(vartostring v)))
+      raise (MarkedError (pos, "variable already defined: "^vartostring v))
   with Not_found -> ()
 
 let def_bind v (pos:position) o t (env:context) = 
