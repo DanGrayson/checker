@@ -11,7 +11,7 @@ Define compose (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := [ev;_](g,[ev;_](f,t,U),
 Check LF λ_hastype.
 
 Define compose2 (T U V:Type) (g:U⟶V) (f:T⟶U) := [lambda;t](T,[ev;_](g,[ev;_](f,t,U),V)) : T ⟶ V
-     ; (
+     ; ( 
        λ_hastype
        T
        >V

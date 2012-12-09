@@ -50,6 +50,9 @@ let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' '_' ] | utf8_char_nonascii
 let ident = first after*
 
 rule expr_tokens = parse
+
+(* command tokens *)
+
   | "Check" space "Universes" { WCheckUniverses }
   | "LF" { W_LF }
   | "TS" { W_TS }
@@ -62,15 +65,69 @@ rule expr_tokens = parse
   | "Define" { WDefine }
   | "End" { WEnd }
   | "Show" { WShow }
-  | '[' (ident as id) ']' { CONSTANT id }
-  | '[' (ident as id) ';' { CONSTANT_SEMI id }
+
+(* white space, comments *)
+
+  | '\t' { tab lexbuf; expr_tokens lexbuf }
+  | space { expr_tokens lexbuf }
+  | '#' [ ^ '\n' ]* { expr_tokens lexbuf }
+  | newline { Lexing.new_line lexbuf; expr_tokens lexbuf }
+  | eof { Weof }
+
+(* punctuation *)
+
+  | ';'  { Wsemi }
+  | ','  { Wcomma }
+  | '~'  { Wtilde }
+  | '='  { Wequal }
+  | '>' '='  { Wgreaterequal }
+  | '>' { Wgreater }
+  | '<' '='  { Wlessequal }
+  | '_' { Wunderscore }
+  | '<' { Wless }
+  | ':' '='  { Colonequal }
+  | '.'  { Wperiod }
+  | '('  { Wlparen }
+  | ')'  { Wrparen }
+  | ']'  { Wrbracket }
+  | '['  { Wlbracket }
+  | '$'  { Wdollar }
+
+(* LF-TS punctuation pairs *)
+
+  | (     '-' '>' | "⟶" ) { Arrow        }
+  | (     '=' '>' | "⇒" ) { DoubleArrow }
+
+  | ( '|' '-' '>' | "↦" | "⟼" ) { ArrowFromBar }
+  | ( '|' '=' '>' | "⟾"       ) { DoubleArrowFromBar }
+
+  | '\\'       { Backslash }
+  | '\\' '\\'  { DoubleBackslash }
+
+  | ':'     { Colon } 
+  | ':' ':' { DoubleColon }
+
+(* TS punctuation *)
+
+  | ( '|' '-' | "⊢" ) { Turnstile }
+
+(* tokens common to LF and TS *)
+
   | "Pi" { KPi }
-  | "Singleton" { KSingleton }
   | "lambda" { Klambda }
   | "∏" { KPi }
   | "λ" { Klambda }
-  | "⟼" { Wmapsto }
-  | "⟶" { Warrow }
+
+(* tokens of TS *)
+
+  | "Ulevel" { KUlevel }
+  | "Type" { KType }
+  | "max" { Kumax }
+  | '*'  { Wstar }			(* for [El] *)
+
+(* tokens of LF *)
+
+  | "Singleton" { KSingleton }
   | "Σ" { KSigma }
   | "Sigma" { KSigma }
   | "×" { Wtimes }
@@ -80,42 +137,24 @@ rule expr_tokens = parse
   | "π₁" { Kpi1 }
   | "pi2" { Kpi2 }
   | "π₂" { Kpi2 }
-  | "Ulevel" { KUlevel }
-  | "Type" { KType }
-  | "max" { Kumax }
-  | '$'  { Wdollar }
-  | '('  { Wlparen }
-  | ')'  { Wrparen }
-  | ']'  { Wrbracket }
-  | '['  { Wlbracket }
-  | '-' '>'  { Warrow }
-  | '|' '-' '>'  { Wmapsto }
-  | '*'  { Wstar }
-  | ';'  { Wsemi }
-  | '.'  { Wperiod }
-  | ','  { Wcomma }
-  | ':'  { COLON }
-  | '~'  { Wtilde }
-  | '='  { Wequal }
-  | '>' '='  { Wgreaterequal }
-  | '>' { Wgreater }
-  | '<' '='  { Wlessequal }
-  | '_' { Wunderscore }
-  | '<' { Wless }
-  | ':' '='  { COLONequal }
+
+(* variable names *)
+
+  | '[' (ident as id) ']' { CONSTANT id }
+  | '[' (ident as id) ';' { CONSTANT_SEMI id }
   | ( nzdigit digit* | '0' ) as n { NUMBER (int_of_string n) } (* eventually check for overflow *)
   | ident as id { IDENTIFIER id }
   | '[' (ident as name) '.' (digit+ as aspect) ']' { VARIABLE (VarDefined(name,int_of_string aspect)) }
   | (ident as name) '$' (digit+ as gen) { VARIABLE (VarGen(int_of_string gen,name)) }
-  | '\t' { tab lexbuf; expr_tokens lexbuf }
-  | space { expr_tokens lexbuf }
-  | '#' [ ^ '\n' ]* { expr_tokens lexbuf }
-  | newline { Lexing.new_line lexbuf; expr_tokens lexbuf }
+
+(* invalid characters *)
+
   | _ as c { Printf.fprintf stderr "%s: invalid character: '%c'\n" (lexing_pos lexbuf) c; 
 	     flush stderr ;
 	     bump_error_count();
 	     expr_tokens lexbuf }
-  | eof { Weof }
+
+
 and command_flush = parse
   | eof { Weof }
   | '#' [ ^ '\n' ]* { expr_tokens lexbuf }

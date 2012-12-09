@@ -5,36 +5,6 @@ open Typesystem
 open Names
 open Helpers
 open Definitions
-
-(*
-    Examples of the syntax:
-
-	f t			LF evaluation in LF form
-
-	f t			TS evaluation in abbreviated TS form
-
-	[ev;x](f, t, U)		TS evaluation in full TS form
-
-	([ev] f t (x⟼U))	TS evaluation in LF form
-
-	x |-> b			the LF lambda
-
-	lambda x, b		the LF lambda (we don't need both)
-
-	([lambda] f o (x⟼U))	the TS lambda, in full LF form
-
-	lambda x:T, o		the TS lambda, in abbreviated TS form
-
-        (x:T) |-> o             the TS lambda, a possibility to consider
-
-	(x:T) -> U		the LF Pi
-
-	Pi x:T, U		the LF Pi (we don't need both)
-
-	Pi x:T, U		the TS Pi
-
-*)
-
 %}
 %start command ts_exprEof
 %type <Toplevel.command> command
@@ -48,11 +18,12 @@ open Definitions
 %token <Variables.var> VARIABLE
 %token
 
-  Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod COLON Wstar Warrow Wmapsto
-  Wequal COLONequal Wunderscore WRule Wgreaterequal Wgreater Wlessequal Wless
+  Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod Colon Wstar Arrow ArrowFromBar
+  Wequal Colonequal Wunderscore WRule Wgreaterequal Wgreater Wlessequal Wless
   Wsemi KUlevel Kumax KType Ktype KPi Klambda KSigma WCheck WDefine WShow WEnd
   WVariable WAlpha Weof WCheckUniverses Wtilde KSingleton Axiom Wdollar W_LF W_TS
-  Kpair Kpi1 Kpi2 Wtimes
+  Kpair Kpi1 Kpi2 Wtimes DoubleBackslash Turnstile DoubleArrow DoubleColon
+  Backslash DoubleArrowFromBar
 
 /* precedences, lowest first */
 %right
@@ -62,7 +33,7 @@ open Definitions
 %right
 
   /* we want [a -> b -> c] to be [a -> (b -> c)] */
-  Warrow
+  Arrow
 
 %nonassoc
 
@@ -101,32 +72,32 @@ lf_type:
 bare_lf_type:
 | f=lf_type_constant args=list(lf_expr)
     { F_APPLY(f,args) }
-| KPi v=bare_variable COLON a=lf_type Wcomma b=lf_type
+| KPi v=bare_variable Colon a=lf_type Wcomma b=lf_type
     %prec Reduce_binder
     { F_Pi(v,a,b) }
-| KSigma v=bare_variable COLON a=lf_type Wcomma b=lf_type
+| KSigma v=bare_variable Colon a=lf_type Wcomma b=lf_type
     %prec Reduce_binder
     { F_Sigma(v,a,b) }
-| Wlparen v=bare_variable COLON a=lf_type Wrparen Wtimes b=lf_type
+| Wlparen v=bare_variable Colon a=lf_type Wrparen Wtimes b=lf_type
     { F_Sigma(v,a,b) }
 | a=lf_type Wtimes b=lf_type
     { F_Sigma(newunused(),a,b) }
-| Wlparen v=bare_variable COLON a=lf_type Wrparen Warrow b=lf_type
+| Wlparen v=bare_variable Colon a=lf_type Wrparen Arrow b=lf_type
    { F_Pi(v,a,b) }
-| a=lf_type Warrow b=lf_type
+| a=lf_type Arrow b=lf_type
    { F_Pi(newunused(),a,b) }
-| KSingleton Wlparen x=lf_expr COLON t=lf_type Wrparen
+| KSingleton Wlparen x=lf_expr Colon t=lf_type Wrparen
     { F_Singleton(x,t) }
 | Wlbracket a=lf_expr Ktype Wrbracket
     { F_APPLY(F_istype, [a]) }
-| Wlbracket a=lf_expr COLON b=lf_expr Wrbracket
+| Wlbracket a=lf_expr Colon b=lf_expr Wrbracket
     { F_APPLY(F_hastype, [a;b]) }
-| Wlbracket a=lf_expr Wequal b=lf_expr COLON c=lf_expr Wrbracket
+| Wlbracket a=lf_expr Wequal b=lf_expr Colon c=lf_expr Wrbracket
     { F_APPLY(F_object_equality, [a;b;c]) }
 | Wlbracket a=lf_expr Wequal b=lf_expr Wrbracket
     { F_APPLY(F_type_equality, [a;b]) }
 
-| Wlbracket a=lf_expr Wtilde b=lf_expr COLON KType Wrbracket
+| Wlbracket a=lf_expr Wtilde b=lf_expr Colon KType Wrbracket
     { F_APPLY(F_type_uequality, [a;b]) }
 | Wlbracket a=lf_expr Wtilde b=lf_expr Wrbracket
     { F_APPLY(F_object_uequality, [a;b]) }
@@ -166,17 +137,17 @@ lf_lambda_expression:
 | Wlparen Klambda v=variable_unused Wcomma body=lf_expr Wrparen
     { LAMBDA(v,body) }
 
-| Wlparen v=variable Wmapsto body=lf_lambda_expression_body Wrparen
+| Wlparen v=variable ArrowFromBar body=lf_lambda_expression_body Wrparen
     { LAMBDA(v,body) }
-| Wlparen v=variable_unused Wmapsto body=lf_lambda_expression_body Wrparen
+| Wlparen v=variable_unused ArrowFromBar body=lf_lambda_expression_body Wrparen
     { LAMBDA(v,body) }
 
 lf_lambda_expression_body:
 | e=lf_expr
     { e }
-| v=variable Wmapsto body=lf_lambda_expression_body
+| v=variable ArrowFromBar body=lf_lambda_expression_body
     { LAMBDA(v,body) }
-| v=variable_unused Wmapsto body=lf_lambda_expression_body
+| v=variable_unused ArrowFromBar body=lf_lambda_expression_body
     { LAMBDA(v,body) }
 
 variable_unused:
@@ -211,16 +182,16 @@ command: c=command0
 command0:
 | Weof
     { raise Eof }
-| WVariable vars=nonempty_list(IDENTIFIER) COLON KType Wperiod
+| WVariable vars=nonempty_list(IDENTIFIER) Colon KType Wperiod
     { Toplevel.Variable vars }
-| WVariable vars=nonempty_list(IDENTIFIER) COLON KUlevel eqns=preceded(Wsemi,uEquation)* Wperiod
+| WVariable vars=nonempty_list(IDENTIFIER) Colon KUlevel eqns=preceded(Wsemi,uEquation)* Wperiod
     { Toplevel.UVariable (vars,eqns) }
 
-| Axiom W_TS v=IDENTIFIER COLON t=atomic_expr Wperiod
+| Axiom W_TS v=IDENTIFIER Colon t=atomic_expr Wperiod
     { Toplevel.AxiomTS(v,t) }
-| Axiom W_LF v=IDENTIFIER COLON t=lf_type Wperiod
+| Axiom W_LF v=IDENTIFIER Colon t=lf_type Wperiod
     { Toplevel.AxiomLF(v,t) }
-| WRule num=separated_nonempty_list(Wperiod,NUMBER) name=IDENTIFIER COLON t=lf_type Wperiod
+| WRule num=separated_nonempty_list(Wperiod,NUMBER) name=IDENTIFIER Colon t=lf_type Wperiod
     { Toplevel.Rule (num,name,t) }
 
 | WCheck W_LF e=lf_expr Wperiod
@@ -234,13 +205,13 @@ command0:
 | WAlpha e1=atomic_expr Wequal e2=atomic_expr Wperiod
     { Toplevel.Alpha (e1, e2) }
 
-| WDefine name=IDENTIFIER parms=parmList COLONequal t=atomic_expr d1=option(preceded(Wsemi,lf_expr)) Wperiod 
+| WDefine name=IDENTIFIER parms=parmList Colonequal t=atomic_expr d1=option(preceded(Wsemi,lf_expr)) Wperiod 
     { Toplevel.TDefinition (name, parms, t, d1) }
-| WDefine name=IDENTIFIER parms=parmList COLONequal o=atomic_expr COLON t=atomic_expr d1=option(preceded(Wsemi,lf_expr)) Wperiod 
+| WDefine name=IDENTIFIER parms=parmList Colonequal o=atomic_expr Colon t=atomic_expr d1=option(preceded(Wsemi,lf_expr)) Wperiod 
     { Toplevel.ODefinition (name, parms, o, t, d1) }
-| WDefine name=IDENTIFIER parms=parmList COLONequal t1=atomic_expr Wequal t2=atomic_expr Wperiod 
+| WDefine name=IDENTIFIER parms=parmList Colonequal t1=atomic_expr Wequal t2=atomic_expr Wperiod 
     { Toplevel.TeqDefinition (name, parms, t1, t2) }
-| WDefine name=IDENTIFIER parms=parmList COLONequal o1=atomic_expr Wequal o2=atomic_expr COLON t=atomic_expr Wperiod 
+| WDefine name=IDENTIFIER parms=parmList Colonequal o1=atomic_expr Wequal o2=atomic_expr Colon t=atomic_expr Wperiod 
     { Toplevel.OeqDefinition (name, parms, o1, o2, t) }
 
 | WShow Wperiod 
@@ -250,11 +221,11 @@ command0:
 | WEnd Wperiod
     { Toplevel.End }
 
-uParm: vars=nonempty_list(IDENTIFIER) COLON KUlevel eqns=preceded(Wsemi,uEquation)*
+uParm: vars=nonempty_list(IDENTIFIER) Colon KUlevel eqns=preceded(Wsemi,uEquation)*
     { UParm (UContext ((List.map make_Var vars),eqns)) }
-tParm: vars=nonempty_list(IDENTIFIER) COLON KType 
+tParm: vars=nonempty_list(IDENTIFIER) Colon KType 
     { TParm (List.map make_Var vars) }
-oParm: vars=nonempty_list(IDENTIFIER) COLON t=atomic_expr 
+oParm: vars=nonempty_list(IDENTIFIER) Colon t=atomic_expr 
     { OParm (List.map (fun s -> (Var s,t)) vars) }
 
 uEquation:
@@ -329,20 +300,20 @@ unmarked_atomic_expr:
 | f=atomic_expr o=atomic_expr
     %prec Reduce_application
     { make_OO_ev f o (newunused(), (Position($startpos, $endpos), new_hole())) }
-| Klambda x=variable COLON t=atomic_expr Wcomma o=atomic_expr
+| Klambda x=variable Colon t=atomic_expr Wcomma o=atomic_expr
     %prec Reduce_binder
     { make_OO_lambda t (x,o) }
 | Wstar o=atomic_expr
     %prec Reduce_star
     { make_TT_El o }
-| KPi x=variable COLON t1=atomic_expr Wcomma t2=atomic_expr
+| KPi x=variable Colon t1=atomic_expr Wcomma t2=atomic_expr
     %prec Reduce_binder
     { make_TT_Pi t1 (x,t2) }
-| Wlparen x=variable COLON t=atomic_expr Wrparen Warrow u=atomic_expr
+| Wlparen x=variable Colon t=atomic_expr Wrparen Arrow u=atomic_expr
     { make_TT_Pi t (x,u) }
-| t=atomic_expr Warrow u=atomic_expr
+| t=atomic_expr Arrow u=atomic_expr
     { make_TT_Pi t (newunused(),u) }
-| KSigma x=variable COLON t1=atomic_expr Wcomma t2=atomic_expr
+| KSigma x=variable Colon t1=atomic_expr Wcomma t2=atomic_expr
     %prec Reduce_binder
     { make_TT_Sigma t1 (x,t2) }
 | Kumax Wlparen u=atomic_expr Wcomma v=atomic_expr Wrparen

@@ -112,7 +112,10 @@ Rule 27 beta_reduction : ∏ T : texp, ∏ U : oexp ⟶ texp, ∏ t : oexp, ∏ 
 
 Rule 28 eta_reduction : ∏ T:texp, ∏ U:oexp ⟶ texp, ∏ f:oexp,
 
-     [ f : ([∏] T U) ] ⟶ [ ([λ] T (x ⟼ ([ev] f x U))) = f : ([∏] T U) ].
+     [ f : (
+[∏] T U) ] ⟶ [ (
+[λ] T (x ⟼ ([ev] f x U))) = f : (
+[∏] T U) ].
 
 Rule 29 j_type : ∏ M_1:uexp, ∏ M_2:uexp, 
 
