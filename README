@@ -1,8 +1,24 @@
-Examples of the syntax, existing and proposed:
+Syntax, existing and proposed:
+
+New operators for TS format:
+
+    \\		right associative		TS form for LF application, same as TS substitution
+
+    |-		right associative		TS arrow form for LF lambda and for parameter introduction
+
+    =>		right associative		TS arrow form for LF Pi
+
+    ::		non-associative			TS form for LF :
+
+    [ ... ]					TS form corresponding to two parameters in an LF Pi type
+
+    |->		right associative		TS arrow form for TS lambda
+
+Examples:
 
     f t                     LF evaluation in LF form
     f[t/x]                  LF evaluation in traditional form, not a good notation, because x should be considered bound in f
-    f//t                    LF evaluation in TS form, proposed
+    t\\f                    LF evaluation in TS form, proposed
 
     x |-> b                 the LF lambda in LF form
     lambda x, b             the LF lambda in LF form
@@ -60,10 +76,10 @@ Rule 27 beta_reduction ::
 
      [ x : T |- b : U ] =>
 
-     [ (lambda x:T, b) t = b//t : U//t ].
+     [ (lambda x:T, b) t = t\\b : t\\U ].
 
 The last line above could be expanded to 
 
-     [ [ev]( [lambda](T,x|-b), t, U//t ) = b//t : U//t ].
+     [ [ev]( [lambda](T,x|-b), t, t\\U ) = t\\b : t\\U ].
 
 by the type checker, or written that way in full form.
