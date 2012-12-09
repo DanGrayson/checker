@@ -106,6 +106,11 @@ and unmarked_atomic_expr =
   | PR1 of lf_expr
   | PR2 of lf_expr
 
+(** Force an expression to be atomic. *)
+let uncan = function
+  | CAN e -> e
+  | _ -> raise NotImplemented
+
 (** Canonical type families of LF.
 
     The following type family constants for LF type families segregate TS

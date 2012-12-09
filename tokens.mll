@@ -76,7 +76,8 @@ rule expr_tokens = parse
 
 (* punctuation *)
 
-  | ';'  { Wsemi }
+  | ';' ';'  { DoubleSemicolon }
+  | ';'  { Semicolon }
   | ','  { Wcomma }
   | '~'  { Wtilde }
   | '='  { Wequal }

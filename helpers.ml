@@ -8,7 +8,7 @@ let lambda1 v x = LAMBDA(v,CAN x)
 let lambda2 v1 v2 x = LAMBDA(v1,LAMBDA(v2,CAN x))
 let lambda3 v1 v2 v3 x = LAMBDA(v1,LAMBDA(v2,LAMBDA(v3,CAN x)))
 
-let to_atomic e = List.map (fun x -> CAN x) e
+let to_canonical e = List.map (fun x -> CAN x) e
 
 let make_Var c = Var c
 

@@ -42,7 +42,7 @@ RUN = -b
 
 %.cmo: %.ml; ocamlbuild $(BFLAGS) $*.cmo
 
-all: TAGS run run2 demo doc
+all: TAGS run run2 doc demo
 build: $(CHECKER_EXE)
 checker.byte checker.native: $(SRCFILES); ocamlbuild $(BFLAGS) $@
 doc: checker.odocl $(SRCFILES)

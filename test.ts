@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 Variable T : Type.
-Define TT := T ; $a.
+Define TT := T ;; $a.
 
 Variable u0 u1 u2 : Ulevel ; [next](u0) <= u1; [next](u1) < u2.
 Variable T' U V X Y : Type.
@@ -79,9 +79,9 @@ Check LF (U_type u1).
 
 Check LF El_type.
 
-Define foo (u : Ulevel) (t : [U]([next](u))) := *t; (El_type ([next] u) t $a).
+Define foo (u : Ulevel) (t : [U]([next](u))) := *t;; (El_type ([next] u) t $a).
 
-Define A (u : Ulevel) (t : [U](u)) := *t; (El_type u t $a).
+Define A (u : Ulevel) (t : [U](u)) := *t;; (El_type u t $a).
 
 Show 4.
 
@@ -90,7 +90,7 @@ End.
 Check LF ([A.0] ([next] u1) ([u] u1) (u_univ u1)).
 Check LF ([A.1] ([next] u1) ([u] u1) (u_univ u1)).
 
-Define C (u : Ulevel) (t : [U](u)) := *t; (El_type $2 $2 $2).
+Define C (u : Ulevel) (t : [U](u)) := *t;; (El_type $2 $2 $2).
 
 Check LF type texp ** oexp .
 Check LF      pair ([U] u0) ([u] u0).

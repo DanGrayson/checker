@@ -8,11 +8,11 @@ open Definitions
 %}
 %start command ts_exprEof
 %type <Toplevel.command> command
-%type <Typesystem.atomic_expr> ts_exprEof atomic_expr
-%type <Typesystem.unmarked_atomic_expr> unmarked_atomic_expr
+%type <Typesystem.atomic_expr> ts_exprEof ts_expr
+%type <Typesystem.unmarked_atomic_expr> unmarked_ts_expr
 %type <Typesystem.atomic_expr list> arglist
 %type <Typesystem.lf_type> lf_type
-%type <Typesystem.lf_expr> lf_expr
+%type <Typesystem.lf_expr> lf_expr lf_expr_from_ts_syntax
 %token <int> NUMBER
 %token <string> IDENTIFIER CONSTANT CONSTANT_SEMI
 %token <Variables.var> VARIABLE
@@ -20,10 +20,10 @@ open Definitions
 
   Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod Colon Wstar Arrow ArrowFromBar
   Wequal Colonequal Wunderscore WRule Wgreaterequal Wgreater Wlessequal Wless
-  Wsemi KUlevel Kumax KType Ktype KPi Klambda KSigma WCheck WDefine WShow WEnd
+  Semicolon KUlevel Kumax KType Ktype KPi Klambda KSigma WCheck WDefine WShow WEnd
   WVariable WAlpha Weof WCheckUniverses Wtilde KSingleton Axiom Wdollar W_LF W_TS
   Kpair Kpi1 Kpi2 Wtimes DoubleBackslash Turnstile DoubleArrow DoubleColon
-  Backslash DoubleArrowFromBar
+  Backslash DoubleArrowFromBar DoubleSemicolon
 
 /* precedences, lowest first */
 %right
@@ -42,8 +42,15 @@ open Definitions
 
 %right
 
-  /* we want [a * b * c] to be [a * (b * c)], but only by analogy with [a -> b] */
+  /* product type */
+  /* we want [a * b * c] to be [a * (b * c)], by analogy with [a -> b] */
   Wtimes
+
+%right
+
+  /* substitution */
+  /* we want [x\\y\\f] to be [x\\(y\\f)] */
+  DoubleBackslash
 
 %nonassoc
 
@@ -184,10 +191,10 @@ command0:
     { raise Eof }
 | WVariable vars=nonempty_list(IDENTIFIER) Colon KType Wperiod
     { Toplevel.Variable vars }
-| WVariable vars=nonempty_list(IDENTIFIER) Colon KUlevel eqns=preceded(Wsemi,uEquation)* Wperiod
+| WVariable vars=nonempty_list(IDENTIFIER) Colon KUlevel eqns=preceded(Semicolon,uEquation)* Wperiod
     { Toplevel.UVariable (vars,eqns) }
 
-| Axiom W_TS v=IDENTIFIER Colon t=atomic_expr Wperiod
+| Axiom W_TS v=IDENTIFIER Colon t=ts_expr Wperiod
     { Toplevel.AxiomTS(v,t) }
 | Axiom W_LF v=IDENTIFIER Colon t=lf_type Wperiod
     { Toplevel.AxiomLF(v,t) }
@@ -198,20 +205,31 @@ command0:
     { Toplevel.CheckLF e }
 | WCheck W_LF Ktype e=lf_type Wperiod
     { Toplevel.CheckLFtype e }
-| WCheck W_TS o=atomic_expr Wperiod
+| WCheck W_TS o=ts_expr Wperiod
     { Toplevel.Check o }
 | WCheckUniverses Wperiod
     { Toplevel.CheckUniverses }
-| WAlpha e1=atomic_expr Wequal e2=atomic_expr Wperiod
+| WAlpha e1=ts_expr Wequal e2=ts_expr Wperiod
     { Toplevel.Alpha (e1, e2) }
 
-| WDefine name=IDENTIFIER parms=parmList Colonequal t=atomic_expr d1=option(preceded(Wsemi,lf_expr)) Wperiod 
-    { Toplevel.TDefinition (name, parms, t, d1) }
-| WDefine name=IDENTIFIER parms=parmList Colonequal o=atomic_expr Colon t=atomic_expr d1=option(preceded(Wsemi,lf_expr)) Wperiod 
-    { Toplevel.ODefinition (name, parms, o, t, d1) }
-| WDefine name=IDENTIFIER parms=parmList Colonequal t1=atomic_expr Wequal t2=atomic_expr Wperiod 
+| WDefine name=IDENTIFIER parms=parmList Colonequal o=ts_expr Colon t=ts_expr DoubleSemicolon d1=lf_expr Wperiod 
+    { Toplevel.ODefinition (name, parms, o, t, Some d1) }
+| WDefine name=IDENTIFIER parms=parmList Colonequal o=ts_expr Colon t=ts_expr Semicolon d1=ts_expr Wperiod 
+    { Toplevel.ODefinition (name, parms, o, t, Some (CAN d1)) }
+| WDefine name=IDENTIFIER parms=parmList Colonequal o=ts_expr Colon t=ts_expr Wperiod 
+    { Toplevel.ODefinition (name, parms, o, t, None) }
+
+| WDefine name=IDENTIFIER parms=parmList Colonequal t=ts_expr DoubleSemicolon d1=lf_expr Wperiod 
+    { Toplevel.TDefinition (name, parms, t, Some d1) }
+| WDefine name=IDENTIFIER parms=parmList Colonequal t=ts_expr Semicolon d1=ts_expr Wperiod 
+    { Toplevel.TDefinition (name, parms, t, Some (CAN d1)) }
+| WDefine name=IDENTIFIER parms=parmList Colonequal t=ts_expr Wperiod 
+    { Toplevel.TDefinition (name, parms, t, None) }
+
+| WDefine name=IDENTIFIER parms=parmList Colonequal t1=ts_expr Wequal t2=ts_expr Wperiod 
     { Toplevel.TeqDefinition (name, parms, t1, t2) }
-| WDefine name=IDENTIFIER parms=parmList Colonequal o1=atomic_expr Wequal o2=atomic_expr Colon t=atomic_expr Wperiod 
+
+| WDefine name=IDENTIFIER parms=parmList Colonequal o1=ts_expr Wequal o2=ts_expr Colon t=ts_expr Wperiod 
     { Toplevel.OeqDefinition (name, parms, o1, o2, t) }
 
 | WShow Wperiod 
@@ -221,23 +239,23 @@ command0:
 | WEnd Wperiod
     { Toplevel.End }
 
-uParm: vars=nonempty_list(IDENTIFIER) Colon KUlevel eqns=preceded(Wsemi,uEquation)*
+uParm: vars=nonempty_list(IDENTIFIER) Colon KUlevel eqns=preceded(Semicolon,uEquation)*
     { UParm (UContext ((List.map make_Var vars),eqns)) }
 tParm: vars=nonempty_list(IDENTIFIER) Colon KType 
     { TParm (List.map make_Var vars) }
-oParm: vars=nonempty_list(IDENTIFIER) Colon t=atomic_expr 
+oParm: vars=nonempty_list(IDENTIFIER) Colon t=ts_expr 
     { OParm (List.map (fun s -> (Var s,t)) vars) }
 
 uEquation:
-| u=atomic_expr Wequal v=atomic_expr 
+| u=ts_expr Wequal v=ts_expr 
     { (u,v) }
-| v=atomic_expr Wgreaterequal u=atomic_expr 
+| v=ts_expr Wgreaterequal u=ts_expr 
     { (Position($startpos, $endpos), APPLY(U U_max, [ CAN u; CAN v])), v }
-| u=atomic_expr Wlessequal v=atomic_expr 
+| u=ts_expr Wlessequal v=ts_expr 
     { (Position($startpos, $endpos), APPLY(U U_max, [ CAN u; CAN v])), v }
-| v=atomic_expr Wgreater u=atomic_expr 
+| v=ts_expr Wgreater u=ts_expr 
     { (Position($startpos, $endpos), APPLY(U U_max, [ CAN (Position($startpos, $endpos), APPLY( U U_next,[CAN u])); CAN v])), v }
-| u=atomic_expr Wless v=atomic_expr 
+| u=ts_expr Wless v=ts_expr 
     { (Position($startpos, $endpos), APPLY(U U_max, [ CAN (Position($startpos, $endpos), APPLY( U U_next,[CAN u])); CAN v])), v }
 
 parenthesized(X): x=delimited(Wlparen,X,Wrparen) {x}
@@ -248,7 +266,7 @@ parm:
 | tParm { $1 }
 | oParm { $1 } 
 
-ts_exprEof: a=atomic_expr Weof {a}
+ts_exprEof: a=ts_expr Weof {a}
 
 variable:
 | bare_variable
@@ -258,10 +276,20 @@ variable_or_unused:
 | bare_variable_or_unused
     { $1 }
 
-atomic_expr:
-| unmarked_atomic_expr
+lf_expr_from_ts_syntax:
+| e = ts_expr
+    { CAN e }
+| v=variable ArrowFromBar body=lf_expr_from_ts_syntax
+    { LAMBDA(v,body) }
+| v=variable_unused ArrowFromBar body=lf_expr_from_ts_syntax
+    { LAMBDA(v,body) }
+| o=lf_expr_from_ts_syntax DoubleBackslash f=lf_expr_from_ts_syntax
+    { Substitute.apply_args (Position($startpos, $endpos)) f [o] }
+
+ts_expr:
+| unmarked_ts_expr
     { (Position($startpos, $endpos), $1) }
-| parenthesized(atomic_expr) 
+| parenthesized(ts_expr) 
     {$1}
 
 tsterm_head:
@@ -277,7 +305,7 @@ tsterm_head:
    }
 
 arglist:
-| Wlparen a=separated_list(Wcomma,atomic_expr) Wrparen
+| Wlparen a=separated_list(Wcomma,ts_expr) Wrparen
     {a}
 
 bare_variable:
@@ -292,41 +320,41 @@ bare_variable_or_unused:
 | v=variable_unused
     {v}
 
-unmarked_atomic_expr:
+unmarked_ts_expr:
 | bare_variable
     { APPLY(V $1,[]) }
 | Wunderscore
     { new_hole () }
-| f=atomic_expr o=atomic_expr
+| f=ts_expr o=ts_expr
     %prec Reduce_application
     { make_OO_ev f o (newunused(), (Position($startpos, $endpos), new_hole())) }
-| Klambda x=variable Colon t=atomic_expr Wcomma o=atomic_expr
+| Klambda x=variable Colon t=ts_expr Wcomma o=ts_expr
     %prec Reduce_binder
     { make_OO_lambda t (x,o) }
-| Wstar o=atomic_expr
+| Wstar o=ts_expr
     %prec Reduce_star
     { make_TT_El o }
-| KPi x=variable Colon t1=atomic_expr Wcomma t2=atomic_expr
+| KPi x=variable Colon t1=ts_expr Wcomma t2=ts_expr
     %prec Reduce_binder
     { make_TT_Pi t1 (x,t2) }
-| Wlparen x=variable Colon t=atomic_expr Wrparen Arrow u=atomic_expr
+| Wlparen x=variable Colon t=ts_expr Wrparen Arrow u=ts_expr
     { make_TT_Pi t (x,u) }
-| t=atomic_expr Arrow u=atomic_expr
+| t=ts_expr Arrow u=ts_expr
     { make_TT_Pi t (newunused(),u) }
-| KSigma x=variable Colon t1=atomic_expr Wcomma t2=atomic_expr
+| KSigma x=variable Colon t1=ts_expr Wcomma t2=ts_expr
     %prec Reduce_binder
     { make_TT_Sigma t1 (x,t2) }
-| Kumax Wlparen u=atomic_expr Wcomma v=atomic_expr Wrparen
+| Kumax Wlparen u=ts_expr Wcomma v=ts_expr Wrparen
     { APPLY(U U_max,[CAN u;CAN v])  }
 | label=tsterm_head args=arglist
     {
      match label with
-     | V _ -> APPLY(label,to_atomic args)
+     | V _ -> APPLY(label,to_canonical args)
      | _ -> (
 	 match head_to_vardist label with
-	 | None -> APPLY(label,to_atomic args)
+	 | None -> APPLY(label,to_canonical args)
 	 | Some (n,_) ->
-	     if n = 0 then APPLY(label,to_atomic args)
+	     if n = 0 then APPLY(label,to_canonical args)
 	     else
 	       raise (MarkedError
 			( Position($startpos, $endpos),

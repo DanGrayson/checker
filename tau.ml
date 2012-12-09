@@ -3,10 +3,6 @@ open Variables
 open Typesystem
 open Names
 
-let atomic = function
-  | CAN e -> e
-  | _ -> raise NotImplemented
-
 let rec get_ts_type (v:var) (env:context) : atomic_expr = (
   match env with
   | (_, (pos, F_APPLY(F_hastype,[CAN(_,APPLY(V v',[])); CAN t]))) :: env 
@@ -44,7 +40,7 @@ let rec tau (pos:position) (env:context) (pos,e) : atomic_expr =
 		| _ -> raise Internal)
 	    | O_ev -> (
 		match args with 
-		| [f; o; LAMBDA(x,t)] -> unmark (atomic (Substitute.subst (x,o) t)) (* ????  any use of "atomic" is suspect *)
+		| [f; o; LAMBDA(x,t)] -> unmark (uncan (Substitute.subst (x,o) t)) (* ????  any use of "uncan" is suspect *)
 		| _ -> raise Internal)
 	    | O_lambda -> (
 		match args with 

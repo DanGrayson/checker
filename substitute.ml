@@ -69,6 +69,7 @@ and subst_fresh subl (v,e) =
 and apply_args pos (f:lf_expr) (args:lf_expr list) =
   let rec repeat f args = 
     match f with
+    | CAN(pos,APPLY(f,brgs)) -> CAN(pos,APPLY(f, List.flatten [brgs;args]))
     | LAMBDA(v,body) -> (
 	match args with
 	| x :: args -> 
