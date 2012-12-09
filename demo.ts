@@ -2,10 +2,9 @@
 
 Check LF ev_hastype.
 
-Define compose (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := [ev;_](g,[ev;_](f,t,U),V) : V
-       ; (
-       ev_hastype U (_ ⟾ V) g ([ev] f t (_ ⟾ U)) $a ( 
-       ev_hastype T (_ ⟾ U) f t $a $a 
+Define compose (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := [ev;_](g,[ev;_](f,t,U),V) : V ;; (
+       ev_hastype U (_ ⟼ V) g ([ev] f t (_ ⟼ U)) $a ( 
+       ev_hastype T (_ ⟼ U) f t $a $a 
        ))  .
 
 Check LF λ_hastype.

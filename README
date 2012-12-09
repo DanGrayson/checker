@@ -36,7 +36,7 @@ New operators for TS format:
     						Translated to LF -> .  Unicode: ⇒ 
 
     |=>		right associative		TS arrow form for LF lambda.
-    						Translated to LF ↦ .  Unicode: ⟾ 
+    						Translated to LF ↦ .  Unicode: ⟾
 
     :		non-associative			TS and LF form for something having a
     						type.  But types in TS are objects in
@@ -180,6 +180,25 @@ The last line above could be expanded to
 
 by the type checker, or written that way in full form.
 
+In TS format code, how would we call beta_reduction, given that it would
+be an LF definition of type
+
+   (T:texp) -> (istype T) ->
+   (U:oexp->texp) -> ((x:oexp) -> U x) ->
+   (t:oexp) -> (hastype t T)
+   (b:oexp->oexp) -> ((x:oexp) -> hastype (b x) (U x)) -> 
+   (oqual ([ev] ( [λ] T f ) t U) (f t) (U t)).
+
+?  We'd like to call it with just 4 parameters, instead of 8:
+
+   beta_reduction T x t b.
+
+So it looks like a definition call in TS format has to always multiply the number of
+parameters by 2, or use sigma types, and something in the syntax has to distinguish it
+from TS evaluation [ev] of TS expressions.
+
+
+
 The LF expression
 
       (λ_hastype
@@ -191,7 +210,7 @@ The LF expression
         ev_hastype U (_ -> V) g 
 		  ([ev] f t (_ -> U)) $a ( ev_hastype T (_ -> U) f t $a $a ))))
 
-corresponds to this TS expression :
+might correspond to this TS expression :
 
       λ_hastype
        T

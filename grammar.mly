@@ -112,7 +112,7 @@ bare_lf_type:
 lf_type_constant:
 | l=IDENTIFIER 
     { 
-      try List.assoc l Names.tfhead_strings 
+      try List.assoc l Names.string_to_type_constant
       with 
 	Not_found ->
 	  Printf.fprintf stderr "%s: unknown type constant %s\n" 
@@ -295,7 +295,7 @@ ts_expr:
 tsterm_head:
 | l=CONSTANT
     {
-     try List.assoc ("[" ^ l ^ "]") Names.string_to_label 
+     try List.assoc l Names.lf_expr_head_strings
      with Not_found -> 
        Printf.fprintf stderr "%s: unknown term constant [%s]\n" 
 	 (errfmt (Position($startpos, $endpos)))
@@ -363,7 +363,7 @@ unmarked_ts_expr:
 | name=CONSTANT_SEMI vars=separated_list(Wcomma,variable_or_unused) Wrbracket args=arglist
     {
      let label = 
-       try List.assoc ("[" ^ name ^ "]") Names.string_to_label 
+       try List.assoc name Names.lf_expr_head_strings
        with Not_found -> 
 	 Printf.fprintf stderr "%s: unknown term constant [%s]\n" 
 	   (errfmt (Position($startpos, $endpos)))

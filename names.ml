@@ -10,58 +10,59 @@ exception TypeCheckingFailure of context * position * string
 exception TypeCheckingFailure2 of context * position * string * position * string
 exception TypeCheckingFailure3 of context * position * string * position * string * position * string
 
-let uhead_to_string = function
-  | U_next -> "next" | U_max -> "max"
+let lf_expr_head_table = [
+  U U_next, "next" ; U U_max, "max" ;
+  T T_El, "El"  ; T T_U, "U"  ; T T_Pi, "Pi"  ; T T_Sigma, "Sigma" ;
+  T T_Pt, "Pt"  ; T T_Coprod, "Coprod"  ; T T_Coprod2, "Coprod2" ;
+  T T_Empty, "Empty"  ; T T_IP, "IP"  ; T T_Id, "Id" ;
+  O O_u, "u"  ; O O_j, "j"  ; O O_ev, "ev"  ; O O_lambda, "lambda" ;
+  O O_forall, "forall"  ; O O_pair, "pair"  ; O O_pr1, "pr1" ;
+  O O_pr2, "pr2"  ; O O_total, "total"  ; O O_pt, "pt"  ; O O_pt_r, "pt_r" ;
+  O O_tt, "tt"  ; O O_coprod, "coprod"  ; O O_ii1, "ii1"  ; O O_ii2, "ii2" ;
+  O O_sum, "sum"  ; O O_empty, "empty"  ; O O_empty_r, "empty_r"  ; O O_c, "c" ;
+  O O_ip_r, "ip_r"  ; O O_ip, "ip"  ; O O_paths, "paths"  ; O O_refl, "refl" ;
+  O O_J, "J"  ; O O_rr0, "rr0"  ; O O_rr1, "rr1" 
+]
 
-let thead_to_string = function
-  | T_El -> "El"  | T_U -> "U"  | T_Pi -> "Pi"  | T_Sigma -> "Sigma"
-  | T_Pt -> "Pt"  | T_Coprod -> "Coprod"  | T_Coprod2 -> "Coprod2"
-  | T_Empty -> "Empty"  | T_IP -> "IP"  | T_Id -> "Id"
+let lf_expr_heads = List.map fst lf_expr_head_table
 
-let ohead_to_string = function
-  | O_u -> "u"  | O_j -> "j"  | O_ev -> "ev"  | O_lambda -> "lambda"
-  | O_forall -> "forall"  | O_pair -> "pair"  | O_pr1 -> "pr1"
-  | O_pr2 -> "pr2"  | O_total -> "total"  | O_pt -> "pt"  | O_pt_r -> "pt_r"
-  | O_tt -> "tt"  | O_coprod -> "coprod"  | O_ii1 -> "ii1"  | O_ii2 -> "ii2"
-  | O_sum -> "sum"  | O_empty -> "empty"  | O_empty_r -> "empty_r"  | O_c -> "c"
-  | O_ip_r -> "ip_r"  | O_ip -> "ip"  | O_paths -> "paths"  | O_refl -> "refl"
-  | O_J -> "J"  | O_rr0 -> "rr0"  | O_rr1 -> "rr1"
+let swap (x,y) = (y,x)
+
+let lf_expr_head_strings = List.map swap (List.flatten 
+    [
+     [
+      T T_Pi, "∏" ; T T_Sigma, "Σ" ; T T_Coprod, "∐" ; 
+      O O_lambda, "λ" ; O O_forall, "∀" ];
+     lf_expr_head_table ])
+
+let uhead_to_string h = List.assoc (U h) lf_expr_head_table
+
+let thead_to_string h = List.assoc (T h) lf_expr_head_table
+
+let ohead_to_string h = List.assoc (O h) lf_expr_head_table
 
 let lf_expr_head_to_string = function
   | V v -> vartostring v
-  | U h -> "[" ^ uhead_to_string h ^ "]"
-  | T h -> "[" ^ thead_to_string h ^ "]"
-  | O h -> "[" ^ ohead_to_string h ^ "]"
+  | h -> "[" ^ List.assoc h lf_expr_head_table ^ "]"
 
-let lf_expr_heads = List.concat [
-  List.map (fun h -> U h) uheads;
-  List.map (fun h -> T h) theads;
-  List.map (fun h -> O h) oheads
+let lf_type_constant_table = [
+  F_uexp, "uexp" ;
+  F_texp, "texp" ;
+  F_oexp, "oexp" ;
+  F_istype, "istype" ;
+  F_hastype, "hastype" ;
+  F_ulevel_equality, "uequal" ;
+  F_type_equality, "tequal" ;
+  F_object_equality, "oequal" ;
+  F_type_uequality, "t-uequal" ;
+  F_object_uequality, "o-uequal"
 ]
 
-let string_to_label = 
-  let a = List.map (fun h -> lf_expr_head_to_string h, h) lf_expr_heads in
-  let b = [
-    ("[∏]", T T_Pi);
-    ("[Σ]", T T_Sigma);
-    ("[∐]", T T_Coprod);
-    ("[λ]", O O_lambda);
-    ("[∀]", O O_forall)] in
-  List.concat [a;b]
+let lf_type_head_to_string h = List.assoc h lf_type_constant_table
 
-let lf_type_head_to_string = function
-  | F_uexp -> "uexp"
-  | F_texp -> "texp"
-  | F_oexp -> "oexp"
-  | F_istype -> "istype"
-  | F_hastype -> "hastype"
-  | F_ulevel_equality -> "uequal"
-  | F_type_equality -> "tequal"
-  | F_object_equality -> "oequal"
-  | F_type_uequality -> "t-uequal"
-  | F_object_uequality -> "o-uequal"
+let lf_type_heads = List.map fst lf_type_constant_table
 
-let tfhead_strings = List.map (fun x -> lf_type_head_to_string x, x) lf_type_heads
+let string_to_type_constant = List.map swap lf_type_constant_table
 
 let tactic_to_string : tactic_expr -> string = function
   | Q_name n -> "$" ^ n

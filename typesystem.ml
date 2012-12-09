@@ -138,10 +138,6 @@ and bare_lf_type =
   | F_APPLY of lf_type_head * lf_expr list
   | F_Singleton of (lf_expr * lf_type)
 
-let lf_type_heads = [ 
-  F_uexp; F_texp; F_oexp; F_istype; F_hastype; F_ulevel_equality ;
-  F_type_uequality; F_type_equality; F_object_uequality; F_object_equality ]
-
 let ( ** ) f x : lf_type = nowhere 3 (F_APPLY(f,x))
 
 let uexp = F_uexp ** []
