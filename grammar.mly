@@ -179,15 +179,19 @@ variable_unused:
 | Wunderscore
     { newunused() }
 
-tactic_expr:
+tactic_descriptor:
 | c=IDENTIFIER
   { c }
 
-atomic_term:
-| Wdollar name=tactic_expr
+tactic_expr:
+| Wdollar name=tactic_descriptor
     { TacticHole (Q_name name) }
 | Wdollar index=NUMBER
     { TacticHole (Q_index index) }
+
+atomic_term:
+| tac= tactic_expr
+    {tac}
 | bare_variable
     { APPLY(V $1,[]) }
 | Wunderscore
@@ -295,6 +299,8 @@ variable_or_unused:
     { $1 }
 
 lf_expr_from_ts_syntax:
+| tac= tactic_expr
+    { CAN (Position($startpos, $endpos), tac) }
 | e = ts_expr
     { CAN e }
 | v=variable DoubleArrowFromBar body=lf_expr_from_ts_syntax
