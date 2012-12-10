@@ -60,7 +60,7 @@ Rule 20 El_eq_reflect :: ∏ M:uexp, ∏ x:oexp, ∏ y:oexp,
 
      [ ([El] x) = ([El] y) ] ⟶ [ x = y : ([U] M) ].
 
-Rule 21 ∏_isType :: ∏ T:texp, ∏ U : oexp ⟶ texp,
+Rule 21 ∏_istype :: ∏ T:texp, ∏ U : oexp ⟶ texp,
 
      (∏ x:oexp, [ x : T ] ⟶ [ (U x) Type ]) ⟶ [ ([∏] T U) Type ].
 
@@ -72,7 +72,7 @@ Rule 22 ∏_eq :: ∏ T:texp, ∏ T':texp, ∏ U : oexp ⟶ texp, ∏ U' : oexp 
 
      ⟶ [ ([∏] T U) = ([∏] T' U')  ].
 
-Rule 23 λ_hasType :: ∏ T:texp, ∏ U:oexp ⟶ texp, ∏ o:oexp ⟶ oexp,
+Rule 23 λ_hastype :: ∏ T:texp, ∏ U:oexp ⟶ texp, ∏ o:oexp ⟶ oexp,
 
      [ T Type ] ⟶
 
@@ -88,7 +88,7 @@ Rule 24 λ_equality :: ∏ T:texp, ∏ T':texp, ∏ U:oexp ⟶ texp, ∏ o:oexp 
 
      [ ([λ] T o) = ([λ] T o') : ([∏] T U) ].
 
-Rule 25 ev_hasType :: ∏ T : texp, ∏ U : oexp ⟶ texp, ∏ f : oexp, ∏ o : oexp,
+Rule 25 ev_hastype :: ∏ T : texp, ∏ U : oexp ⟶ texp, ∏ f : oexp, ∏ o : oexp,
 
      [ f : ([∏] T U) ] ⟶ 
      [ o : T ] ⟶ 

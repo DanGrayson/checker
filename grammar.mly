@@ -316,15 +316,15 @@ bare_lf_type_from_ts_syntax:
     Turnstile v= variable KType Wrbracket
     DoubleArrow u= lf_type_from_ts_syntax
     { let pos = Position($startpos, $endpos) in
-      let t = newfresh (Var "T") in
+      let t = newfresh v in
       F_Pi(v, (pos, F_Sigma(t, texp, istype (var_to_lf t))), u) }
 | Wlbracket 
     separated_list(Wcomma,separated_pair(variable,Colon,lf_expr_from_ts_syntax))
     Turnstile v= variable Colon t= lf_expr_from_ts_syntax Wrbracket
     DoubleArrow u= lf_type_from_ts_syntax
     { let pos = Position($startpos, $endpos) in
-      let o = newfresh (Var "o") in
-      F_Pi(v, (pos, F_Sigma(o, oexp, hastype (var_to_lf o) t)), u) }
+      let o = newfresh v in
+      F_Pi(v, (pos, F_Sigma(o, oexp, hastype (var_to_lf o) (CAN(pos,PR1 t)))), u) }
 
 lf_expr_from_ts_syntax:
 | arg= lf_expr_from_ts_syntax Backslash f= lf_expr_from_ts_syntax

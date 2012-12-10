@@ -160,7 +160,7 @@ let checkLFCommand env pos x =
       printf "           : %a [normalized]\n" p_type t'; flush stdout
 
 let checkLFtypeCommand env t =
-  printf "\nCheckLFtype: %a\n" p_type t; flush stdout;
+  printf "\nCheck      : %a\n" p_type t; flush stdout;
   let t = Lfcheck.type_validity env t in
   printf "           : %a [after tactics]\n" p_type t; flush stdout;
   if try_normalization then
