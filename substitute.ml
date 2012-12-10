@@ -55,7 +55,7 @@ and subst'' subl = function
       | APPLY(label,args) -> CAN(pos, APPLY(label,subst_list subl args))
       | PR1 x -> CAN(pos, PR1(subst subl x))
       | PR2 x -> CAN(pos, PR2(subst subl x))
-      | TacticHole n -> raise Internal
+      | TacticHole _ -> raise Internal
       | EmptyHole _ -> d)
   | PAIR(pos,x,y) -> PAIR(pos,subst subl x,subst subl y)
   | LAMBDA(v, body) -> 

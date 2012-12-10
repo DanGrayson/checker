@@ -30,7 +30,7 @@ let rec vars_args fv p_arg args =
 
 let rec atomic_expr_to_free_vars (_,e) = 
   match e with
-  | TacticHole n -> []
+  | TacticHole tac -> []
   | EmptyHole n -> []
   | APPLY(V v,[]) -> [v]
   | APPLY(h,args) -> 
@@ -139,7 +139,7 @@ let rec application_to_string p_hd p_arg (h,args) =
 
 let rec atomic_expr_to_string_with_subs subs (_,e) = 
   match e with
-  | TacticHole n -> tactic_to_string n
+  | TacticHole tac -> tactic_to_string tac
   | EmptyHole n -> "?" ^ string_of_int n
   | APPLY(V v,[]) -> vartostring (var_sub subs v)
   | APPLY(h,args) -> 
@@ -266,7 +266,7 @@ and ts_expr_to_string ((_,e) as oe) =
    *)
   match e with 
   | PR1 _ | PR2 _ -> lf_expr_p (CAN oe)		(* normally this branch will not be used *)
-  | TacticHole n -> tactic_to_string n
+  | TacticHole tac -> tactic_to_string tac
   | EmptyHole n -> "?" ^ string_of_int n
   | APPLY(V v,[]) -> vartostring v
   | APPLY(h,args) -> (

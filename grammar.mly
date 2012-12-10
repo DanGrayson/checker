@@ -337,7 +337,7 @@ unmarked_ts_expr:
     { new_hole () }
 | f=ts_expr o=ts_expr
     %prec Reduce_application
-    { make_OO_ev f o (newunused(), (Position($startpos, $endpos), TacticHole (Q_name "ev3"))) }
+    { APPLY(O O_ev, [CAN f; CAN o; CAN(Position($startpos, $endpos), (TacticHole (Q_name "ev3")))]) }
 | Klambda x=variable Colon t=ts_expr Wcomma o=ts_expr
     %prec Reduce_binder
     { make_OO_lambda t (x,o) }

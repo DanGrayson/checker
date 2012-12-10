@@ -16,6 +16,7 @@ SRCFILES =					\
 	variables.ml \
 	typesystem.ml				\
 	names.ml				\
+	printer.ml				\
 	hash.ml					\
 	helpers.ml				\
 	template.ml				\
@@ -26,8 +27,6 @@ SRCFILES =					\
 	tau.ml tau.mli				\
 	lfcheck.ml				\
 	tactics.ml				\
-	fillin.ml				\
-	printer.ml				\
 	definitions.ml				\
 	grammar.mly				\
 	tokens.mll				\

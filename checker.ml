@@ -170,8 +170,6 @@ let checkLFtypeCommand env t =
 let checkTSCommand env x =
   printf "\nCheck TS   : %a\n" p_ts x;
   flush stdout;
-  let x = Fillin.fillin env x in
-  printf "           : %a [after filling in]\n" p_ts x;
   flush stdout;
   let (x,t) = Lfcheck.type_synthesis env (CAN x) in
   printf "     type :: %a\n" p_type t;
@@ -185,8 +183,6 @@ let checkTSCommand env x =
    )
 
 let alphaCommand env (x,y) =
-  let x = Fillin.fillin env x in
-  let y = Fillin.fillin env y in
   printf "\nAlpha      : %s\n" (if (Alpha.UEqual.term_equiv Definitions.emptyUContext (CAN x) (CAN y)) then "true" else "false");
   printf "           : %a\n" p_ts x;
   printf "           : %a\n" p_ts y;

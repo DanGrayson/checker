@@ -18,7 +18,28 @@ open Names
 open Printer
 open Substitute
 open Printf
+open Helpers
 open Tau
+
+let abstraction1 (env:context) = function
+  | [CAN t; LAMBDA(x, _)] -> ts_bind (x,t) env
+  | _ -> raise Internal
+
+let abstraction2 (env:context) = function
+  | [_; _; CAN n; LAMBDA(x,_)] -> ts_bind (x,(get_pos n, make_TT_El n)) env
+  | _ -> raise Internal
+
+let abstraction3 (env:context) = function
+  | [_; CAN p; LAMBDA(x, _)] -> ts_bind (x,tau env p) env
+  | _ -> raise Internal
+
+let ts_binders = [
+  (O O_lambda, 1, abstraction1);
+  (T T_Pi, 1, abstraction1);
+  (T T_Sigma, 1, abstraction1);
+  (O O_forall, 3, abstraction2);
+  (O O_ev, 2, abstraction3)
+]
 
 let try_alpha = false (* turning this on could slow things down a lot before we implement hash codes *)
 
@@ -53,7 +74,7 @@ let no_hole env pos = function		(* for debugging *)
   | CAN(_,EmptyHole  _) -> err env pos "encountered an empty hole about to be added to the context"
   | _ -> ()
 
-type surrounding = (unmarked_atomic_expr * int) option
+type surrounding = (int * atomic_expr) option
 
 type tactic_function =
        surrounding         (* the ambient APPLY(...), if any, and the index among its head and arguments of the hole *)        
@@ -90,7 +111,7 @@ let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
   match x with
   | CAN (pos,x) -> (
       match x with
-      | TacticHole n -> raise NotImplemented
+      | TacticHole _ -> raise NotImplemented
       | EmptyHole _ -> err env pos "empty hole found"
       | APPLY(l,args) -> 
 	  let t = label_to_type env pos l in
@@ -129,7 +150,7 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
       | PR2 e -> CAN(pos,PR2(head_reduction env e))
       | APPLY(V v, args) -> let f = unfold env v in apply_args pos f args
       | APPLY _ -> raise Not_found
-      | TacticHole n -> raise NotImplemented
+      | TacticHole _ -> raise NotImplemented
       | EmptyHole _ -> err env pos "empty hole found"
      )
   | PAIR _ | LAMBDA _ -> raise Not_found
@@ -176,7 +197,7 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
   | CAN y ->
       let (pos,y0) = y in
       match y0 with
-      | TacticHole n -> raise NotImplemented
+      | TacticHole _ -> raise NotImplemented
       | EmptyHole _ -> err env pos "path_normalization encountered an empty hole"
       | PR1 p -> (
 	  let p',s = path_normalization env pos p in
@@ -289,7 +310,7 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
   | CAN e ->
       let (pos,e0) = e in
       match e0 with
-      | TacticHole n -> err env pos ("tactic hole: "^ts_expr_to_string e)
+      | TacticHole _ -> err env pos ("tactic hole: "^ts_expr_to_string e)
       | EmptyHole _ -> err env pos ("empty hole: "^ts_expr_to_string e)
       | PR1 p -> (
 	  let p',s = type_synthesis env p in
@@ -308,7 +329,7 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
 	    let (apos,a0) = a in
 	    match a0, args with
 	    | F_Pi(x,a',a''), m' :: args' ->
-		let surr = Some(e0,i) in 
+		let surr = Some(i,e) in 
 		let m' = type_check surr pos env m' a' in
 		no_hole env pos m';
 		let (args'',u) = repeat (i+1) env (subst_type (x,m') a'') args' in
@@ -442,12 +463,12 @@ and type_check (surr:surrounding) (pos:position) (env:context) (e:lf_expr) (t:lf
       raise (TypeCheckingFailure2 (env,
 				   pos, "hole found : "^lf_expr_to_string e,
 				   pos, "   of type : "^lf_type_to_string t))
-  | CAN(pos, TacticHole n), _ -> (
-      match apply_tactic surr env pos t n with
+  | CAN(pos, TacticHole tac), _ -> (
+      match apply_tactic surr env pos t tac with
       | Some e -> type_check surr pos env e t
       | None ->
 	  raise (TypeCheckingFailure2 (env,
-				       pos, "tactic failed     : "^tactic_to_string n,
+				       pos, "tactic failed     : "^tactic_to_string tac,
 				       pos, "  in hole of type : "^lf_type_to_string t)))
 
   | LAMBDA(v,e), F_Pi(w,a,b) -> (* the published algorithm is not applicable here, since

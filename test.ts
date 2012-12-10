@@ -8,6 +8,7 @@ Variable T' U V X Y : Type.
 Axiom TS t0: T.
 Axiom TS x0 : X.
 Axiom TS f : T⟶T.
+Check TS f t0.
 
 Axiom TS 你好 : T⟶T.
 
@@ -49,7 +50,7 @@ Check TS λ e:U, λ x : T, e.
 # ought to give a type checking error, and explain it well:
 # Check TS λ f:T⟶T, f f.
 
-Check TS λ g:T⟶[U](u1), λ f:∏ t:T, *g t, λ o:T, f o.
+Check TS lambda g:T⟶[U](u1), lambda f:∏ t:T, *g t, lambda o:T, f o.
 
 # ought to give a type checking error, and explain it well
 # Check TS λ g:T⟶*[u](u1), λ f:∏ t:T, *g t, λ o:T, f f.
