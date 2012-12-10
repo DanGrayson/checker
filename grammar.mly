@@ -5,13 +5,21 @@ open Typesystem
 open Names
 open Helpers
 open Definitions
+
+let add_sigma pos v t t' u =
+  let v' = newfresh v in
+  if disable_sigma then 
+    F_Pi(v, t, (pos, F_Pi(v', new_pos pos (t' (var_to_lf v)), u)))
+  else
+    F_Pi(v, (pos, F_Sigma(v', t, t' (var_to_lf v'))), u)
+
 %}
 %start command ts_exprEof
 %type <Toplevel.command> command
 %type <Typesystem.lf_type> lf_type lf_type_from_ts_syntax
 %type <Typesystem.lf_expr> lf_expr lf_expr_from_ts_syntax
 
-(* for parsing a sigle expression *)
+(* for parsing a single expression *)
 %type <Typesystem.atomic_expr> ts_exprEof ts_expr
 
 %token <int> NUMBER
@@ -363,16 +371,12 @@ bare_lf_type_from_ts_syntax:
     separated_list(Wcomma,separated_pair(variable,Colon,lf_expr_from_ts_syntax))
     Turnstile v= variable Type Wrbracket
     DoubleArrow u= lf_type_from_ts_syntax
-    { let pos = Position($startpos, $endpos) in
-      let t = newfresh v in
-      F_Pi(v, (pos, F_Sigma(t, texp, istype (var_to_lf t))), u) }
+    { add_sigma (Position($startpos, $endpos)) v texp istype u }
 | Wlbracket 
     separated_list(Wcomma,separated_pair(variable,Colon,lf_expr_from_ts_syntax))
     Turnstile v= variable Colon t= lf_expr_from_ts_syntax Wrbracket
     DoubleArrow u= lf_type_from_ts_syntax
-    { let pos = Position($startpos, $endpos) in
-      let o = newfresh v in
-      F_Pi(v, (pos, F_Sigma(o, oexp, hastype (var_to_lf o) (CAN(pos,PR1 t)))), u) }
+    { add_sigma (Position($startpos, $endpos)) v oexp (fun o -> hastype o t) u }
 
 lf_expr_from_ts_syntax:
 | arg= lf_expr_from_ts_syntax Backslash f= lf_expr_from_ts_syntax

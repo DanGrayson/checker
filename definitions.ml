@@ -81,16 +81,36 @@ let tDefinition name (UContext (uvars,ueqns),tvars,o_vartypes) t d1 =
   let pos = get_pos t in
   let t = CAN t in 
   let vartypes = augment uvars ueqns tvars o_vartypes in
-  let v = newfresh (Var "T") in
+  let name0 = Var name in
+  let name1 = VarDefined(name,1) in
+  let j = term_or_hole pos d1 in
   List.map (wrap vartypes) 
-    [ ( Var name, pos, PAIR(pos, t, term_or_hole pos d1), ist_s v ) ]
+    (
+     if disable_sigma 
+     then
+       [ (name0, pos, t, texp); (name1, pos, j, istype (apply name0 vartypes)) ]
+     else 
+       let tj = PAIR(pos, t, j) in 
+       let v = newfresh (Var "T") in
+       [ ( name0, pos, tj, ist_s v ) ]
+    )
 
-let oDefinition name (UContext(uvars,ueqns),tvars,o_vartypes) o t d1 =
+let oDefinition name (UContext(uvars,ueqns),tvars,o_vartypes) o (t:atomic_expr) d1 =
   let pos = get_pos o in
   let vartypes = augment uvars ueqns tvars o_vartypes in
-  let v = newfresh (Var "o") in
-  List.map (wrap vartypes)
-    [ ( Var name, pos, PAIR(pos, CAN o, term_or_hole pos d1 ) , hast_s v t ) ]
+  let name0 = Var name in
+  let name1 = VarDefined(name,1) in
+  let j = term_or_hole pos d1 in
+  List.map (wrap vartypes) 
+    (
+     if disable_sigma
+     then
+       [ (name0, pos, CAN o, oexp); (name1, pos, j, hastype (apply name0 vartypes) (CAN t)) ]
+     else
+       let oj = PAIR(pos, CAN o, j ) in
+       let v = newfresh (Var "o") in
+       [ ( name0, pos, oj , hast_s v t ) ]
+    )
 
 let teqDefinition _ _ _ _ = raise (Unimplemented "teqDefinition")
 

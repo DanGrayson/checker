@@ -159,3 +159,7 @@ Rule 201 jj_reduction :: ∏ M_1:uexp, ∏ M_2:uexp, ∏ M'_2:uexp, ∏ M_3:uexp
 
      : ([∏] ([U] M_1) (_ ⟼ ([U] M_3))) ].
 
+
+#   Local Variables:
+#   compile-command: "make rules "
+#   End:

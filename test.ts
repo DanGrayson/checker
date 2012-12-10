@@ -2,7 +2,6 @@
 
 Variable T : Type.
 Define TT := T ;; $a.
-
 Variable u0 u1 u2 : Ulevel ; [next](u0) <= u1; [next](u1) < u2.
 Variable T' U V X Y : Type.
 Axiom t0: T.

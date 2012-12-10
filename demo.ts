@@ -12,9 +12,6 @@ Check LFtype oexp -> oexp.
 
 Axiom t : T.
 
-# the next 4 examples show how the new TS syntax for derivations is 24% smaller than the corresponding LF syntax
-# it's designed to replace
-
 Define compose1 (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := [ev;_](g,[ev;_](f,t,U),V) : V ;; (
        # LF syntax
        ev_hastype U (_ ⟼ V) g ([ev] f t (_ ⟼ U)) $a (ev_hastype T (_ ⟼ U) f t $a $a)).
@@ -50,9 +47,9 @@ Define E (u1 u2 u3:Ulevel)(K:Type) := K⟶K;; (∏_istype $a (_ ⟼ $a) (_ ⟼ _
 
 Define E'(u1 u2 u3:Ulevel)(K:Type) := K⟶K; [∏_istype]($a, _ ⟾ $a, _ ⟾ _ ⟾ $a).
 
-Check LF beta_reduction.
-
 End.
+
+Check LF beta_reduction.
 
 Check LFtypeTS
 
@@ -68,32 +65,40 @@ Check LFtypeTS
 
 End.
 
-Check : 
-	(T:(T0:texp) × (istype T0)) ⟶ 
-	(U:(U0:texp) × (istype U0)) ⟶ 
-	(t:(t0:oexp) × (hastype t0 (π₁ T))) ⟶ 
-	(b:(b0:oexp) × (hastype b0 (π₁ U))) ⟶ 
+Check :  (with sigma on)
+
+	(T:(T0:texp) * (istype T0)) -> 
+	(U:(U0:texp) * (istype U0)) -> 
+	(t:(t0:oexp) * (hastype t0 (pi1 T))) -> 
+	(b:(b0:oexp) * (hastype b0 (pi1 U))) -> 
 	(oequal ([ev] ([λ] T (x ⟼ b)) t $ev3) (b t) (U t))
-			      
+
+Check : (with sigma off)
+	
+	(T:texp) ⟶ (istype T) ⟶ 
+	(U:texp) ⟶ (istype U) ⟶ 
+	(t:oexp) ⟶ (hastype t T) ⟶ 
+	(b:oexp) ⟶ (hastype b U) ⟶ 
+	(oequal ([ev] ([λ] T (x ⟼ b)) t $ev3) (b t) (U t))
 
 should be
 
-	(T:(T0:texp) × (istype T0)) ⟶ 
-	(U:(U0:oexp -> texp) × (istype U0)) ⟶ 
-	(t:(t0:oexp) × (hastype t0 (π₁ T))) ⟶ 
-	(b:(b0:oexp -> oexp) × ((t':(t0:oexp) × (hastype t0 (π₁ T))) => (hastype ((π₁ b0) t') ((π₁ U) t')))) ⟶ 
-	(oequal ([ev] ([λ] (π₁ T) (π₁ b)) (π₁ t) $ev3) ((π₁ b) (π₁ t)) ((π₁ U) (π₁ t)))
+	(T:(T0:texp) * (istype T0)) -> 
+	(U:(U0:oexp -> texp) * (istype U0)) -> 
+	(t:(t0:oexp) * (hastype t0 (pi1 T))) -> 
+	(b:(b0:oexp -> oexp) * ((t':(t0:oexp) * (hastype t0 (pi1 T))) => (hastype ((pi1 b0) t') ((pi1 U) t')))) -> 
+	(oequal ([ev] ([λ] (pi1 T) (pi1 b)) (pi1 t) $ev3) ((pi1 b) (pi1 t)) ((pi1 U) (pi1 t)))
 
 compare to
 
     beta_reduction : 
 
-    	(T:texp) ⟶ 
-	(U:oexp ⟶ texp) ⟶ 
-	(t:oexp) ⟶ 
-	(f:oexp ⟶ oexp) ⟶ 
-	(hastype t T) ⟶ 
-	((t':oexp) ⟶ (hastype t' T) ⟶ (hastype (f t') (U t'))) ⟶ 
+    	(T:texp) -> 
+	(U:oexp -> texp) -> 
+	(t:oexp) -> 
+	(f:oexp -> oexp) -> 
+	(hastype t T) -> 
+	((t':oexp) -> (hastype t' T) -> (hastype (f t') (U t'))) -> 
 	(oequal ([ev] ([λ] T f) t U) (f t) (U t))
 
 End.

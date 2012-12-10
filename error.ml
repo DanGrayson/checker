@@ -4,6 +4,8 @@ let debug_mode = ref false
 
 let nowhere_trap = ref 0
 
+let disable_sigma = true
+
 (* raise an exception when a certain fresh variable is generated *)
 let genctr_trap = 0
 
@@ -13,7 +15,6 @@ let notail x = x			(* insert into code to termporarily prevent tail recursion *)
 
 exception DebugMe
 exception GeneralError of string
-exception GensymCounterOverflow
 exception NotImplemented
 exception Unimplemented of string
 exception Internal
@@ -49,6 +50,7 @@ let unmark ((_:position), x) = x
 let get_pos ((pos:position), _) = pos
 let errpos x = errfmt (get_pos x)
 let with_pos (pos:position) e = (pos, e)
+let new_pos (pos:position) ((_:position),e) = (pos, e)
 let with_pos_of ((pos:position),_) e = (pos,e)
 let nowhere_ctr = ref 0
 let seepos pos = Printf.fprintf stderr "%s: ... debugging ...\n" (errfmt pos); flush stderr

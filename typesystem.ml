@@ -98,6 +98,14 @@ and unmarked_atomic_expr =
   | PR1 of lf_expr
   | PR2 of lf_expr
 
+(*
+and spine =
+  | ARG of lf_expr * spine
+  | FST of spine
+  | SND of spine
+  | EMPTY
+*)
+
 (** Force an expression to be atomic. *)
 let uncan = function
   | CAN e -> e

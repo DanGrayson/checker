@@ -202,14 +202,13 @@ from the TS evaluation of TS expressions, represented by [ev].
 It'd better be returning just one thing, so we can pass the result into another 
 expression!
 
-Actually, the various judgments should be tuples containing all the information
-in extractible form.  We can say:
+We can say:
 
        [ |- T Type ] => ... 
 
        	  means
 
-       (T:texp) * (istype T) -> ...
+       (T:texp) -> (istype T) -> ...
 
 and
 
@@ -217,7 +216,7 @@ and
 
        	  means
 
-       (o:oexp) * (T:texp) * (istype T) * (hastype o T) -> ...
+       (o:oexp) -> (T:texp) -> (istype T) -> (hastype o T) -> ...
 
 and
 
@@ -225,7 +224,7 @@ and
 
        	  means
 
-       (T:texp) * (T':texp) * (istype T) * (istype T') * (tequal T T') -> ...
+       (T:texp) -> (T':texp) -> (istype T) -> (istype T') -> (tequal T T') -> ...
 
 and 
 
@@ -233,29 +232,5 @@ and
 
        	   means
 
-       (o:oexp) * (o:oexp) * (T:texp) * (istype T) * (oequal o o' T)
-
-
-The LF expression
-
-      (lambda_hastype
-       T
-       (_ -> V)
-       (t |-> ([ev] g ([ev] f t (_ ->U) (_ -> V))))
-       $a 
-       (t |-> h |-> ( 
-        ev_hastype U (_ -> V) g 
-		  ([ev] f t (_ -> U)) $a ( ev_hastype T (_ -> U) f t $a $a ))))
-
-might correspond to this TS expression :
-
-      lambda_hastype
-       T
-       (_ |=> V)
-       (t |=> g (f t) ) 
-       $a 
-       (t  |=>  h  |=>  
-        ev_hastype U (_ |=> V) g (f t) $a ( ev_hastype T (_ |=> U) f t $a $a ))
-
-It would be good to have an abbreviation for (_ |=> V), which is used frequently.
+       (o:oexp) -> (o:oexp) -> (T:texp) -> (istype T) -> (oequal o o' T) -> ...
 

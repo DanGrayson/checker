@@ -41,6 +41,9 @@ RUN = -b
 %.cmo: %.ml; ocamlbuild $(BFLAGS) $*.cmo
 %.cmo: %.mll; ocamlbuild $(BFLAGS) $*.cmo
 %.cmo: %.mly; ocamlbuild $(BFLAGS) $*.cmo
+%.cmx: %.ml; ocamlbuild $(BFLAGS) $*.cmx
+%.cmx: %.mll; ocamlbuild $(BFLAGS) $*.cmx
+%.cmx: %.mly; ocamlbuild $(BFLAGS) $*.cmx
 
 all: TAGS run run2 doc demo
 build: $(CHECKER_EXE)
@@ -54,6 +57,7 @@ TAGS: $(SRCFILES) $(TSFILES) scripts/ts.etags Makefile
 	( scripts/etags.ocaml $(SRCFILES) && etags --regex=@scripts/ts.etags $(TSFILES) -o - ) >$@
 clean::; rm -f TAGS checker.odocl .DS_Store
 lc:; wc -l $(SRCFILES) rules.ts
+rules:$(CHECKER_EXE) rules.ts ; $(CHECKER)
 run:  $(CHECKER_EXE) rules.ts test.ts ; $(CHECKER) test.ts
 run2: $(CHECKER_EXE) test2.ts ; $(BARE_CHECKER) test2.ts
 demo: $(CHECKER_EXE) rules.ts test.ts ; $(CHECKER) demo.ts

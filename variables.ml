@@ -10,12 +10,14 @@ type var =
 let basename = function
   | Var x -> x
   | VarGen(i,x) -> x
-  | VarDefined (x,_) -> raise Internal	(* intended to be used only for bound variables *)
+  | VarDefined (x,_) -> x
 
 let vartostring = function
   | Var x -> x
   | VarGen(i,x) -> x ^ "$" ^ (string_of_int i)
   | VarDefined (name,aspect) -> "[" ^ name ^ "." ^ (string_of_int aspect) ^ "]"
+
+exception GensymCounterOverflow
 
 let newfresh = 
   let genctr = ref 0 in 
