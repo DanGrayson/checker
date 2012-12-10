@@ -39,6 +39,8 @@ RUN = -b
 # RUN = -b,p
 
 %.cmo: %.ml; ocamlbuild $(BFLAGS) $*.cmo
+%.cmo: %.mll; ocamlbuild $(BFLAGS) $*.cmo
+%.cmo: %.mly; ocamlbuild $(BFLAGS) $*.cmo
 
 all: TAGS run run2 doc demo
 build: $(CHECKER_EXE)

@@ -319,12 +319,12 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
 	  let p',s = type_synthesis env p in
 	  match unmark s with 
 	  | F_Sigma(v,a,b) -> CAN(pos,PR1 p'), a
-	  | _ -> raise Internal)
+	  | _ -> err env pos "argument of pi1 not of sigma type")
       | PR2 p -> (
 	  let p',s = type_synthesis env p in
 	  match unmark s with 
 	  | F_Sigma(v,a,b) -> CAN(pos,PR2 p'), subst_type (v,CAN(pos,PR1 p')) b
-	  | _ -> raise Internal)
+	  | _ -> err env pos "argument of pi2 not of sigma type")
       (* | APPLY(V v, []) -> x, (pos, F_Singleton(CAN e, fetch_type env pos v)) *)
       | APPLY(label,args) -> (
 	  let a = label_to_type env pos label in

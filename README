@@ -258,3 +258,4 @@ might correspond to this TS expression :
         ev_hastype U (_ |=> V) g (f t) $a ( ev_hastype T (_ |=> U) f t $a $a ))
 
 It would be good to have an abbreviation for (_ |=> V), which is used frequently.
+

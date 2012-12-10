@@ -54,8 +54,10 @@ rule expr_tokens = parse
 (* command tokens *)
 
   | "Check" space "Universes" { WCheckUniverses }
-  | "LF" { W_LF }
-  | "TS" { W_TS }
+  | "LF" { LF }
+  | "LFtype" { LFtype }
+  | "LFtypeTS" { LFtypeTS }
+  | "TS" { TS }
   | "Check" { WCheck }
   | "Axiom" { Axiom }
   | "Rule" { WRule }
@@ -107,7 +109,6 @@ rule expr_tokens = parse
 
   | ':'     { Colon } 
   | ':' ':' { DoubleColon }
-  | ':' ':' ':' { TripleColon }
 
 (* TS punctuation *)
 
@@ -123,21 +124,38 @@ rule expr_tokens = parse
 (* tokens of TS *)
 
   | "Ulevel" { KUlevel }
-  | "Type" { KType }
+  | "Type" { Type }
   | "max" { Kumax }
 
 (* tokens of LF *)
 
-  | "Singleton" { KSingleton }
+  | "Singleton" { Singleton }
   | "Σ" { KSigma }
   | "Sigma" { KSigma }
   | "×" { Wtimes }
   | "**" { Wtimes }
+
   | "pair" { Kpair }
+
   | "pi1" { Kpi1 }
+  | "pi12" { Kpi12 }
+  | "pi122" { Kpi122 }
+  | "pi1222" { Kpi1222 }
+
   | "π₁" { Kpi1 }
+  | "π₁₂" { Kpi12 }
+  | "π₁₂₂" { Kpi122 }
+  | "π₁₂₂₂" { Kpi1222 }
+
   | "pi2" { Kpi2 }
+  | "pi22" { Kpi22 }
+  | "pi222" { Kpi222 }
+  | "pi2222" { Kpi2222 }
+
   | "π₂" { Kpi2 }
+  | "π₂₂" { Kpi22 }
+  | "π₂₂₂" { Kpi222 }
+  | "π₂₂₂₂" { Kpi2222 }
 
 (* variable names *)
 

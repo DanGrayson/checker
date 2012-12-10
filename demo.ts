@@ -1,5 +1,16 @@
 # -*- coding: utf-8 -*-
 
+# idea:
+# Axiom LF car : Notation( (x |-> (pi1 x)) ).
+
+
+Variable T : Type.
+
+Check LFtype (T:texp) × (istype T) .
+Axiom LF o : oexp.
+Check LFtype oexp -> oexp.
+
+Axiom t : T.
 
 # the next 4 examples show how the new TS syntax for derivations is 24% smaller than the corresponding LF syntax
 # it's designed to replace
@@ -41,7 +52,9 @@ Define E'(u1 u2 u3:Ulevel)(K:Type) := K⟶K; [∏_istype]($a, _ ⟾ $a, _ ⟾ _ 
 
 Check LF beta_reduction.
 
-Check :
+End.
+
+Check LFtypeTS
 
      [ |- T Type ] =>
 
@@ -51,7 +64,7 @@ Check :
 
      [ x : T |- b : U ] =>
 
-     [ (lambda x:T, b) t = t\\b : t\\U ].
+     [ (lambda x:T, b) t = t\\b : t\\U ].   # here's where the error is
 
 End.
 
@@ -84,6 +97,7 @@ compare to
 	(oequal ([ev] ([λ] T f) t U) (f t) (U t))
 
 End.
+
 
 #   Local Variables:
 #   compile-command: "make demo "

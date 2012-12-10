@@ -8,11 +8,12 @@ open Definitions
 %}
 %start command ts_exprEof
 %type <Toplevel.command> command
-%type <Typesystem.atomic_expr> ts_exprEof ts_expr
-%type <Typesystem.unmarked_atomic_expr> unmarked_ts_expr
-%type <Typesystem.lf_expr list> arglist
 %type <Typesystem.lf_type> lf_type lf_type_from_ts_syntax
 %type <Typesystem.lf_expr> lf_expr lf_expr_from_ts_syntax
+
+(* for parsing a sigle expression *)
+%type <Typesystem.atomic_expr> ts_exprEof ts_expr
+
 %token <int> NUMBER
 %token <string> IDENTIFIER CONSTANT CONSTANT_SEMI
 %token <Variables.var> VARIABLE
@@ -22,11 +23,11 @@ open Definitions
 
   Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod Colon Wstar Arrow
   ArrowFromBar Wequal Colonequal Wunderscore WRule Wgreaterequal Wgreater
-  Wlessequal Wless Semicolon KUlevel Kumax KType KPi Klambda KSigma
-  WCheck WDefine WShow WEnd WVariable WAlpha Weof WCheckUniverses Wtilde
-  KSingleton Axiom Wdollar W_LF W_TS Kpair Kpi1 Kpi2 Wtimes DoubleBackslash
-  Turnstile DoubleArrow DoubleColon Backslash DoubleArrowFromBar TripleColon
-  DoubleSemicolon
+  Wlessequal Wless Semicolon KUlevel Kumax Type KPi Klambda KSigma WCheck
+  WDefine WShow WEnd WVariable WAlpha Weof WCheckUniverses Wtilde Singleton
+  Axiom Wdollar LF LFtype LFtypeTS TS Kpair Kpi1 Kpi12 Kpi122 Kpi1222 Kpi2
+  Kpi22 Kpi222 Kpi2222 Wtimes DoubleBackslash Turnstile DoubleArrow DoubleColon
+  Backslash DoubleArrowFromBar DoubleSemicolon
 
 (* precedences, lowest first *)
 
@@ -111,9 +112,9 @@ bare_lf_type:
    { F_Pi(v,a,b) }
 | a=lf_type Arrow b=lf_type
    { F_Pi(newunused(),a,b) }
-| KSingleton Wlparen x=lf_expr Colon t=lf_type Wrparen
+| Singleton Wlparen x=lf_expr Colon t=lf_type Wrparen
     { F_Singleton(x,t) }
-| Wlbracket a=lf_expr KType Wrbracket
+| Wlbracket a=lf_expr Type Wrbracket
     { F_APPLY(F_istype, [a]) }
 | Wlbracket a=lf_expr Colon b=lf_expr Wrbracket
     { F_APPLY(F_hastype, [a;b]) }
@@ -122,7 +123,7 @@ bare_lf_type:
 | Wlbracket a=lf_expr Wequal b=lf_expr Wrbracket
     { F_APPLY(F_type_equality, [a;b]) }
 
-| Wlbracket a=lf_expr Wtilde b=lf_expr Colon KType Wrbracket
+| Wlbracket a=lf_expr Wtilde b=lf_expr Colon Type Wrbracket
     { F_APPLY(F_type_uequality, [a;b]) }
 | Wlbracket a=lf_expr Wtilde b=lf_expr Wrbracket
     { F_APPLY(F_object_uequality, [a;b]) }
@@ -145,12 +146,51 @@ lf_expr:
     { CAN(Position($startpos, $endpos), e)  }
 | e=lf_lambda_expression
     { e }
-| Kpair a=lf_expr b=lf_expr
+| Wlparen Kpair a=lf_expr b=lf_expr Wrparen
     { PAIR(Position($startpos, $endpos), a, b) }
-| Kpi1 a=lf_expr
-    { CAN(Position($startpos, $endpos), PR1 a) }
-| Kpi2 a=lf_expr
-    { CAN(Position($startpos, $endpos), PR2 a) }
+
+| Wlparen Kpi1 x=lf_expr Wrparen
+    { let pos = Position($startpos, $endpos) in
+      let pi1 x = CAN(pos, PR1 x) in
+      pi1 x }
+
+| Wlparen Kpi12 x=lf_expr Wrparen
+    { let pos = Position($startpos, $endpos) in
+      let pi1 x = CAN(pos, PR1 x) in
+      let pi2 x = CAN(pos, PR2 x) in
+      pi1 (pi2 x) }
+
+| Wlparen Kpi122 x=lf_expr Wrparen
+    { let pos = Position($startpos, $endpos) in
+      let pi1 x = CAN(pos, PR1 x) in
+      let pi2 x = CAN(pos, PR2 x) in
+      pi1 (pi2 (pi2 x)) }
+
+| Wlparen Kpi1222 x=lf_expr Wrparen
+    { let pos = Position($startpos, $endpos) in
+      let pi1 x = CAN(pos, PR1 x) in
+      let pi2 x = CAN(pos, PR2 x) in
+      pi1 (pi2 (pi2 (pi2 x))) }
+
+| Wlparen Kpi2 x=lf_expr Wrparen
+    { let pos = Position($startpos, $endpos) in
+      let pi2 x = CAN(pos, PR2 x) in
+      pi2 x }
+
+| Wlparen Kpi22 x=lf_expr Wrparen
+    { let pos = Position($startpos, $endpos) in
+      let pi2 x = CAN(pos, PR2 x) in
+      pi2 (pi2 x) }
+
+| Wlparen Kpi222 x=lf_expr Wrparen
+    { let pos = Position($startpos, $endpos) in
+      let pi2 x = CAN(pos, PR2 x) in
+      pi2 (pi2 (pi2 x)) }
+
+| Wlparen Kpi2222 x=lf_expr Wrparen
+    { let pos = Position($startpos, $endpos) in
+      let pi2 x = CAN(pos, PR2 x) in
+      pi2 (pi2 (pi2 (pi2 x))) }
 
 lf_lambda_expression:
 | Wlparen Klambda v=variable Wcomma body=lf_expr Wrparen
@@ -206,33 +246,41 @@ command: c=command0
 command0:
 | Weof
     { raise Eof }
-| WVariable vars=nonempty_list(IDENTIFIER) Colon KType Wperiod
+| WVariable vars=nonempty_list(IDENTIFIER) Colon Type Wperiod
     { Toplevel.Variable vars }
 | WVariable vars=nonempty_list(IDENTIFIER) Colon KUlevel eqns=preceded(Semicolon,uEquation)* Wperiod
     { Toplevel.UVariable (vars,eqns) }
 
-| Axiom v=IDENTIFIER Colon t=ts_expr Wperiod
-    { Toplevel.AxiomTS(v,t) }
-| Axiom v=IDENTIFIER DoubleColon t=lf_type_from_ts_syntax Wperiod
-    { Toplevel.AxiomLF(v,t) }
-| Axiom v=IDENTIFIER TripleColon t=lf_type Wperiod
-    { Toplevel.AxiomLF(v,t) }
-
 | WRule num=separated_nonempty_list(Wperiod,NUMBER) name=IDENTIFIER DoubleColon t=lf_type Wperiod
     { Toplevel.Rule (num,name,t) }
+
 | WRule num=separated_nonempty_list(Wperiod,NUMBER) name=IDENTIFIER Colon t=lf_type_from_ts_syntax Wperiod
     { Toplevel.Rule (num,name,t) }
 
-| WCheck W_LF e=lf_expr Wperiod
-    { Toplevel.CheckLF e }
-| WCheck Colon e= lf_type_from_ts_syntax Wperiod
-    { Toplevel.CheckLFtype e }
-| WCheck DoubleColon e=lf_type Wperiod
-    { Toplevel.CheckLFtype e }
-| WCheck W_TS o=ts_expr Wperiod
+| Axiom v=IDENTIFIER Colon t=ts_expr Wperiod
+    { Toplevel.AxiomTS(v,t) }
+
+| Axiom LF v=IDENTIFIER Colon t=lf_type Wperiod
+    { Toplevel.AxiomLF(v,t) }
+
+| Axiom LFtypeTS v=IDENTIFIER Colon t=lf_type_from_ts_syntax Wperiod
+    { Toplevel.AxiomLF(v,t) }
+
+| WCheck TS o=ts_expr Wperiod
     { Toplevel.CheckTS o }
+
+| WCheck LF e=lf_expr Wperiod
+    { Toplevel.CheckLF e }
+
+| WCheck LFtype e=lf_type Wperiod
+    { Toplevel.CheckLFtype e }
+
+| WCheck LFtypeTS e= lf_type_from_ts_syntax Wperiod
+    { Toplevel.CheckLFtype e }
+
 | WCheckUniverses Wperiod
     { Toplevel.CheckUniverses }
+
 | WAlpha e1=ts_expr Wequal e2=ts_expr Wperiod
     { Toplevel.Alpha (e1, e2) }
 
@@ -265,7 +313,7 @@ command0:
 
 uParm: vars=nonempty_list(IDENTIFIER) Colon KUlevel eqns=preceded(Semicolon,uEquation)*
     { UParm (UContext ((List.map make_Var vars),eqns)) }
-tParm: vars=nonempty_list(IDENTIFIER) Colon KType 
+tParm: vars=nonempty_list(IDENTIFIER) Colon Type 
     { TParm (List.map make_Var vars) }
 oParm: vars=nonempty_list(IDENTIFIER) Colon t=ts_expr 
     { OParm (List.map (fun s -> (Var s,t)) vars) }
@@ -313,7 +361,7 @@ bare_lf_type_from_ts_syntax:
 (* introduction of parameters *)
 | Wlbracket 
     separated_list(Wcomma,separated_pair(variable,Colon,lf_expr_from_ts_syntax))
-    Turnstile v= variable KType Wrbracket
+    Turnstile v= variable Type Wrbracket
     DoubleArrow u= lf_type_from_ts_syntax
     { let pos = Position($startpos, $endpos) in
       let t = newfresh v in
@@ -441,3 +489,9 @@ unmarked_ts_expr:
          APPLY(label,args)
    }
  
+(* 
+  Local Variables:
+  compile-command: "make grammar.cmx "
+  End:
+ *)
+

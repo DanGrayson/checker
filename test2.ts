@@ -1,10 +1,10 @@
 Variable u0 : Ulevel.
-Show 100.
-End.
+Variable T : Type.
 
-# stuff below here doesn't work yet
 
-Define E1 (u:Ulevel)(K:Type)(x:K) := x : K; $a.
+
+Define E1 (u:Ulevel)(K:Type)(x:K) := x : K;; $a.
+End. # stuff below here doesn't work yet
 Define E3 (u1 u2 u3 : Ulevel)(K:Type)(x1: K ⟶ [U](u1))(x2: [U]([next](u0))) := [U](u2) .
 Define E5 (u1 u2 u3 : Ulevel; max (u1, u2) = max (u2, u3); u1 >= [next](u2) )(K:Type)(x1: K ⟶ [U](u1))(x2: [U]([next](u0))) := [j](x1, x2) : [U](u2) .
 Define E7 (T U:Type)(t:T)(u:U)(f:T ⟶ U) := f t : _.

@@ -4,7 +4,7 @@ let debug = false
 
 let try_normalization = false
 
-let env_limit = Some 20
+let env_limit = Some 6
 
 open Error
 open Variables
