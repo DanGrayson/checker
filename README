@@ -124,12 +124,11 @@ Examples:
 
     Pi x:T, U               the LF Pi in LF form
 
-    [ |- T Type] => ...       proposed TS form for LF type
+    [ T Type ] => ...       proposed TS form for the LF type that corresponds to
 
-		  		(T:texp) -> (i:istype T) -> ...
+		  		(T:texp) * (istype T) -> ...
 
-
-    [ |- b:U] => ...          proposed TS form for LF type
+    [ b:U ] => ...          proposed TS form for LF type
 
 				(b:oexp) -> (hastype b U) -> ...
 
@@ -155,7 +154,7 @@ Examples:
 
 A rule in LF notation, currently parsable by the program:
 
-Rule 27 beta_reduction : Pi T : texp, Pi U : oexp -> texp, Pi t : oexp, Pi f : oexp -> oexp,
+Rule 27 beta_reduction :: Pi T : texp, Pi U : oexp -> texp, Pi t : oexp, Pi f : oexp -> oexp,
 
      [ t : T ] -> 
 
@@ -165,7 +164,7 @@ Rule 27 beta_reduction : Pi T : texp, Pi U : oexp -> texp, Pi t : oexp, Pi f : o
 
 the same rule in the proposed TS notation:
 
-Rule 27 beta_reduction ::
+Rule 27 beta_reduction :
 
      [ |- T Type ] =>
 

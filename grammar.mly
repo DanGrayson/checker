@@ -11,74 +11,74 @@ open Definitions
 %type <Typesystem.atomic_expr> ts_exprEof ts_expr
 %type <Typesystem.unmarked_atomic_expr> unmarked_ts_expr
 %type <Typesystem.lf_expr list> arglist
-%type <Typesystem.lf_type> lf_type
+%type <Typesystem.lf_type> lf_type lf_type_from_ts_syntax
 %type <Typesystem.lf_expr> lf_expr lf_expr_from_ts_syntax
 %token <int> NUMBER
 %token <string> IDENTIFIER CONSTANT CONSTANT_SEMI
 %token <Variables.var> VARIABLE
 %token
 
+  (* tokens *)
+
   Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod Colon Wstar Arrow
   ArrowFromBar Wequal Colonequal Wunderscore WRule Wgreaterequal Wgreater
-  Wlessequal Wless Semicolon KUlevel Kumax KType Ktype KPi Klambda KSigma
+  Wlessequal Wless Semicolon KUlevel Kumax KType KPi Klambda KSigma
   WCheck WDefine WShow WEnd WVariable WAlpha Weof WCheckUniverses Wtilde
   KSingleton Axiom Wdollar W_LF W_TS Kpair Kpi1 Kpi2 Wtimes DoubleBackslash
   Turnstile DoubleArrow DoubleColon Backslash DoubleArrowFromBar
-  DoubleSemicolon DoubleStar
+  DoubleSemicolon
 
-  ReduceFunctionType ReduceProductType
-
-/* precedences, lowest first */
-
-%nonassoc
-
-  Reduce_command
+(* precedences, lowest first *)
 
 %right
 
-  /* we want [lambda x, lambda y, b] to be [lambda x, (lambda y, b)] */
-  /* we want [lambda x, f b] to be [lambda x, (f b)] */
+  (* we want [lambda x, lambda y, b] to be [lambda x, (lambda y, b)] *)
+  (* we want [lambda x, f b] to be [lambda x, (f b)] *)
   Reduce_binder
 
 %nonassoc
 
-  /* we want  [*f x] to be [*(f x)]  and  [*x->y] to be [( *x )->y]  */
+  (* we want  [*f x] to be [*(f x)]  and  [*x->y] to be [( *x )->y]  *)
   Reduce_star
 
 %right
 
-  /* function type */
-  /* we want [a -> b -> c] to be [a -> (b -> c)] */
-  ReduceFunctionType
+  (* function type *)
+  (* we want [a -> b -> c] to be [a -> (b -> c)] *)
+
+  DoubleArrowFromBar
+  DoubleArrow
   Arrow
 
 %right
 
-  /* product type */
-  /* we want [a * b * c] to be [a * (b * c)], by analogy with [a -> b] */
-  /* we want [a * b -> c] to be [(a * b) -> c]
-  ReduceProductType
+  (* product type *)
+  (* we want [a * b * c] to be [a * (b * c)], by analogy with [a -> b] *)
+  (* we want [a * b -> c] to be [(a * b) -> c] *)
+
   Wtimes
+  Wstar
 
 %right
 
-  /* substitution */
-  /* we want [x\\y\\f] to be [x\\(y\\f)] */
+  (* substitution *)
+  (* we want [x\\y\\f] to be [x\\(y\\f)] *)
+  (* we want [x\y\f] to be [x\(y\f)] *)
+
   DoubleBackslash
+  Backslash
 
 %nonassoc
 
-  /* We want [f x IDENTIFIER] to reduce to [(f x) IDENTIFIER], so
-     the precedence of IDENTIFIER is lower than Reduce_application. */
+  (* These are the tokens that can begin a TS-expression, and
+     thus might be involved in the decision about reducing an application: *)
 
-  IDENTIFIER
+  IDENTIFIER Wunderscore Wlparen Kumax CONSTANT_SEMI CONSTANT Klambda
+  KSigma KPi VARIABLE
 
-  /* These are the other tokens that can begin a TS-expression : ditto. */
+%nonassoc
 
-  Wunderscore Wlparen Kumax CONSTANT_SEMI CONSTANT Wstar
-  Klambda KSigma KPi VARIABLE
-
-%left
+  (* We want [f x y] to reduce to [(f x) y] *)
 
   Reduce_application
 
@@ -93,27 +93,27 @@ lf_type:
 bare_lf_type:
 | f=lf_type_constant args=list(lf_expr)
     { F_APPLY(f,args) }
-| KPi v=bare_variable Colon a=lf_type Wcomma b=lf_type
+| KPi v=variable Colon a=lf_type Wcomma b=lf_type
     %prec Reduce_binder
     { F_Pi(v,a,b) }
-| KSigma v=bare_variable Colon a=lf_type Wcomma b=lf_type
+| KSigma v=variable Colon a=lf_type Wcomma b=lf_type
     %prec Reduce_binder
     { F_Sigma(v,a,b) }
-| Wlparen v=bare_variable Colon a=lf_type Wrparen Wtimes b=lf_type
-    %prec ReduceProductType
+| Wlparen v=variable Colon a=lf_type Wrparen Wtimes b=lf_type
     { F_Sigma(v,a,b) }
-| a=lf_type Wtimes b=lf_type (*??*)
-    %prec ReduceProductType
+| a=lf_type Wtimes b=lf_type
     { F_Sigma(newunused(),a,b) }
-| Wlparen v=bare_variable Colon a=lf_type Wrparen Arrow b=lf_type
-   %prec ReduceFunctionType
+| Wlparen v=variable Colon a=lf_type Wrparen Wstar b=lf_type
+    { F_Sigma(v,a,b) }
+| a=lf_type Wstar b=lf_type
+    { F_Sigma(newunused(),a,b) }
+| Wlparen v=variable Colon a=lf_type Wrparen Arrow b=lf_type
    { F_Pi(v,a,b) }
 | a=lf_type Arrow b=lf_type
-   %prec ReduceFunctionType
    { F_Pi(newunused(),a,b) }
 | KSingleton Wlparen x=lf_expr Colon t=lf_type Wrparen
     { F_Singleton(x,t) }
-| Wlbracket a=lf_expr Ktype Wrbracket
+| Wlbracket a=lf_expr KType Wrbracket
     { F_APPLY(F_istype, [a]) }
 | Wlbracket a=lf_expr Colon b=lf_expr Wrbracket
     { F_APPLY(F_hastype, [a;b]) }
@@ -187,7 +187,7 @@ tactic_expr:
 atomic_term:
 | tac= tactic_expr
     {tac}
-| bare_variable
+| variable
     { APPLY(V $1,[]) }
 | Wunderscore
     { new_hole () }
@@ -197,7 +197,7 @@ atomic_term:
 lf_expr_head:
 | tsterm_head
     { $1 }
-| bare_variable
+| variable
     { V $1 }
 
 command: c=command0 
@@ -211,16 +211,21 @@ command0:
 | WVariable vars=nonempty_list(IDENTIFIER) Colon KUlevel eqns=preceded(Semicolon,uEquation)* Wperiod
     { Toplevel.UVariable (vars,eqns) }
 
-| Axiom W_TS v=IDENTIFIER Colon t=ts_expr Wperiod
+| Axiom v=IDENTIFIER Colon t=ts_expr Wperiod
     { Toplevel.AxiomTS(v,t) }
-| Axiom W_LF v=IDENTIFIER Colon t=lf_type Wperiod
+| Axiom v=IDENTIFIER DoubleColon t=lf_type Wperiod
     { Toplevel.AxiomLF(v,t) }
-| WRule num=separated_nonempty_list(Wperiod,NUMBER) name=IDENTIFIER Colon t=lf_type Wperiod
+
+| WRule num=separated_nonempty_list(Wperiod,NUMBER) name=IDENTIFIER DoubleColon t=lf_type Wperiod
+    { Toplevel.Rule (num,name,t) }
+| WRule num=separated_nonempty_list(Wperiod,NUMBER) name=IDENTIFIER Colon t=lf_type_from_ts_syntax Wperiod
     { Toplevel.Rule (num,name,t) }
 
 | WCheck W_LF e=lf_expr Wperiod
     { Toplevel.CheckLF e }
-| WCheck W_LF Ktype e=lf_type Wperiod
+| WCheck Colon e= lf_type_from_ts_syntax Wperiod
+    { Toplevel.CheckLFtype e }
+| WCheck DoubleColon e=lf_type Wperiod
     { Toplevel.CheckLFtype e }
 | WCheck W_TS o=ts_expr Wperiod
     { Toplevel.CheckTS o }
@@ -285,15 +290,27 @@ parm:
 
 ts_exprEof: a=ts_expr Weof {a}
 
-variable:
-| bare_variable
-    { $1 }
+lf_type_from_ts_syntax:
+| Wlparen t= lf_type_from_ts_syntax Wrparen 
+    { t }
+| bare_lf_type_from_ts_syntax
+    { Position($startpos, $endpos), $1 }
 
-variable_or_unused:
-| bare_variable_or_unused
-    { $1 }
+bare_lf_type_from_ts_syntax:
+| f=lf_type_constant
+    { F_APPLY(f,[]) }
+| Wlparen v=variable Colon a= lf_type_from_ts_syntax Wrparen DoubleArrow b= lf_type_from_ts_syntax
+   { F_Pi(v,a,b) }
+| a= lf_type_from_ts_syntax DoubleArrow b= lf_type_from_ts_syntax
+   { F_Pi(newunused(),a,b) }
+| Wlbracket Turnstile v= variable KType Wrbracket DoubleArrow u= lf_type_from_ts_syntax
+    { let pos = Position($startpos, $endpos) in
+      let t = newfresh (Var "T") in
+      F_Pi(v, (pos, F_Sigma(t, texp, istype (var_to_lf t))), u) }
 
 lf_expr_from_ts_syntax:
+| arg= lf_expr_from_ts_syntax Backslash f= lf_expr_from_ts_syntax
+    { Substitute.apply_args (Position($startpos, $endpos)) f [arg] }
 | tac= tactic_expr
     { CAN (Position($startpos, $endpos), tac) }
 | e = ts_expr
@@ -319,20 +336,20 @@ arglist:
 | Wlparen a=separated_list(Wcomma,lf_expr_from_ts_syntax) Wrparen
     {a}
 
-bare_variable:
+variable:
 | IDENTIFIER
     { Var $1 }
 | v=VARIABLE
     { v }
 
-bare_variable_or_unused:
-| v=bare_variable
+variable_or_unused:
+| v=variable
     {v}
 | v=variable_unused
     {v}
 
 unmarked_ts_expr:
-| bare_variable
+| variable
     { APPLY(V $1,[]) }
 | Wunderscore
     { new_hole () }

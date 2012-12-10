@@ -4,7 +4,7 @@ CHECKER_EXE = checker.byte
 BARE_CHECKER = OCAMLRUNPARAM=$(RUN) ./$(CHECKER_EXE)
 CHECKER = $(BARE_CHECKER) rules.ts
 
-BFLAGS = -cflags -g,-annot -lflags -g -yaccflag -v
+BFLAGS = -cflags -g,-annot -lflags -g -yaccflag -v -menhir 'menhir --explain'
 BFLAGS += -use-menhir
 
 # add -yaccflag --trace to ocamlbuild command line to get the menhir parser to display a trace
@@ -19,7 +19,6 @@ SRCFILES =					\
 	printer.ml				\
 	hash.ml					\
 	helpers.ml				\
-	template.ml				\
 	universe.ml				\
 	alpha.ml alpha.mli			\
 	substitute.ml				\

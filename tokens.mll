@@ -56,7 +56,6 @@ rule expr_tokens = parse
   | "Check" space "Universes" { WCheckUniverses }
   | "LF" { W_LF }
   | "TS" { W_TS }
-  | "type" { Ktype }
   | "Check" { WCheck }
   | "Axiom" { Axiom }
   | "Rule" { WRule }
@@ -92,7 +91,6 @@ rule expr_tokens = parse
   | ')'  { Wrparen }
   | ']'  { Wrbracket }
   | '['  { Wlbracket }
-  | '*' '*'  { DoubleStar }		(* for Sigma types *)
   | '*'  { Wstar }			(* for [El] *)
   | '$'  { Wdollar }
 

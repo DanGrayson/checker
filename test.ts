@@ -5,12 +5,12 @@ Define TT := T ;; $a.
 
 Variable u0 u1 u2 : Ulevel ; [next](u0) <= u1; [next](u1) < u2.
 Variable T' U V X Y : Type.
-Axiom TS t0: T.
-Axiom TS x0 : X.
-Axiom TS f : T⟶T.
+Axiom t0: T.
+Axiom x0 : X.
+Axiom f : T⟶T.
 Check TS f t0.
 
-Axiom TS 你好 : T⟶T.
+Axiom 你好 : T⟶T.
 
 Check Universes.
 
@@ -75,7 +75,7 @@ Check TS λ f:X⟶T, λ y:X, f y.
 Check TS U_type.
 Check TS [Pi;x](T,T).
 
-Check LF type ∏ x:oexp, ∏ y:oexp, ∏ T:texp, ∏ U:texp, [ x = y : T ]⟶[ T = U ]⟶[ x = y : U ].
+Check :: ∏ x:oexp, ∏ y:oexp, ∏ T:texp, ∏ U:texp, [ x = y : T ]⟶[ T = U ]⟶[ x = y : U ].
 Check LF (U_type u1).
 
 Check LF El_type.
