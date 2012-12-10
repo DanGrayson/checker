@@ -2,7 +2,7 @@
 
 Check : [ |- T Type ] => texp.
 
-Rule 27 beta_reduction :
+Check :
 
      [ |- T Type ] =>
 

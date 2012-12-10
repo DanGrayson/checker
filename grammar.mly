@@ -25,7 +25,7 @@ open Definitions
   Wlessequal Wless Semicolon KUlevel Kumax KType KPi Klambda KSigma
   WCheck WDefine WShow WEnd WVariable WAlpha Weof WCheckUniverses Wtilde
   KSingleton Axiom Wdollar W_LF W_TS Kpair Kpi1 Kpi2 Wtimes DoubleBackslash
-  Turnstile DoubleArrow DoubleColon Backslash DoubleArrowFromBar
+  Turnstile DoubleArrow DoubleColon Backslash DoubleArrowFromBar TripleColon
   DoubleSemicolon
 
 (* precedences, lowest first *)
@@ -213,7 +213,9 @@ command0:
 
 | Axiom v=IDENTIFIER Colon t=ts_expr Wperiod
     { Toplevel.AxiomTS(v,t) }
-| Axiom v=IDENTIFIER DoubleColon t=lf_type Wperiod
+| Axiom v=IDENTIFIER DoubleColon t=lf_type_from_ts_syntax Wperiod
+    { Toplevel.AxiomLF(v,t) }
+| Axiom v=IDENTIFIER TripleColon t=lf_type Wperiod
     { Toplevel.AxiomLF(v,t) }
 
 | WRule num=separated_nonempty_list(Wperiod,NUMBER) name=IDENTIFIER DoubleColon t=lf_type Wperiod
@@ -303,10 +305,26 @@ bare_lf_type_from_ts_syntax:
    { F_Pi(v,a,b) }
 | a= lf_type_from_ts_syntax DoubleArrow b= lf_type_from_ts_syntax
    { F_Pi(newunused(),a,b) }
-| Wlbracket Turnstile v= variable KType Wrbracket DoubleArrow u= lf_type_from_ts_syntax
+
+(* judgments *)
+| Wlbracket x= lf_expr_from_ts_syntax Wequal y= lf_expr_from_ts_syntax Colon t= lf_expr_from_ts_syntax Wrbracket
+    { unmark (object_equality x y t) }
+
+(* introduction of parameters *)
+| Wlbracket 
+    separated_list(Wcomma,separated_pair(variable,Colon,lf_expr_from_ts_syntax))
+    Turnstile v= variable KType Wrbracket
+    DoubleArrow u= lf_type_from_ts_syntax
     { let pos = Position($startpos, $endpos) in
       let t = newfresh (Var "T") in
       F_Pi(v, (pos, F_Sigma(t, texp, istype (var_to_lf t))), u) }
+| Wlbracket 
+    separated_list(Wcomma,separated_pair(variable,Colon,lf_expr_from_ts_syntax))
+    Turnstile v= variable Colon t= lf_expr_from_ts_syntax Wrbracket
+    DoubleArrow u= lf_type_from_ts_syntax
+    { let pos = Position($startpos, $endpos) in
+      let o = newfresh (Var "o") in
+      F_Pi(v, (pos, F_Sigma(o, oexp, hastype (var_to_lf o) t)), u) }
 
 lf_expr_from_ts_syntax:
 | arg= lf_expr_from_ts_syntax Backslash f= lf_expr_from_ts_syntax

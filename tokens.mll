@@ -107,6 +107,7 @@ rule expr_tokens = parse
 
   | ':'     { Colon } 
   | ':' ':' { DoubleColon }
+  | ':' ':' ':' { TripleColon }
 
 (* TS punctuation *)
 

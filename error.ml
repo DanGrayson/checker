@@ -42,7 +42,7 @@ let errfmt = function
          if i = j
 	 then "character " ^ string_of_int i
          else "characters " ^ string_of_int i ^ "-" ^ string_of_int j)
-  | Nowhere(i,j) -> "nowhere:" ^ string_of_int i ^ ":" ^ string_of_int j
+  | Nowhere(i,j) -> "internal:" ^ string_of_int i ^ ":" ^ string_of_int j
 
 type 'a marked = position * 'a
 let unmark ((_:position), x) = x
