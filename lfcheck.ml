@@ -23,23 +23,29 @@ open Tau
 
 let abstraction1 (env:context) = function
   | [CAN t; LAMBDA(x, _)] -> ts_bind (x,t) env
-  | _ -> raise Internal
+  | _ -> env
 
 let abstraction2 (env:context) = function
   | [_; _; CAN n; LAMBDA(x,_)] -> ts_bind (x,(get_pos n, make_TT_El n)) env
-  | _ -> raise Internal
+  | _ -> env
 
 let abstraction3 (env:context) = function
   | [_; CAN p; LAMBDA(x, _)] -> ts_bind (x,tau env p) env
-  | _ -> raise Internal
+  | _ -> env
 
 let ts_binders = [
-  (O O_lambda, 1, abstraction1);
-  (T T_Pi, 1, abstraction1);
-  (T T_Sigma, 1, abstraction1);
-  (O O_forall, 3, abstraction2);
-  (O O_ev, 2, abstraction3)
+  ((O O_lambda, 1), abstraction1);
+  ((T T_Pi, 1), abstraction1);
+  ((T T_Sigma, 1), abstraction1);
+  ((O O_forall, 3), abstraction2);
+  ((O O_ev, 2), abstraction3)
 ]
+
+let apply_ts_binder env i = function
+  | APPLY(h,args) -> (
+      try (List.assoc (h,i) ts_binders) env args
+      with Not_found -> env)
+  | _ -> raise Internal
 
 let try_alpha = false (* turning this on could slow things down a lot before we implement hash codes *)
 
@@ -68,11 +74,6 @@ let rec strip_singleton ((_,(_,t)) as u) = match t with
 | _ -> u
 
 (* background assumption: all types in the environment have been verified *)
-
-let no_hole env pos = function		(* for debugging *)
-  | CAN(_,TacticHole _) -> err env pos "encountered a tactic hole about to be added to the context"
-  | CAN(_,EmptyHole  _) -> err env pos "encountered an empty hole about to be added to the context"
-  | _ -> ()
 
 type surrounding = (int * atomic_expr) option
 
@@ -115,15 +116,14 @@ let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
       | EmptyHole _ -> err env pos "empty hole found"
       | APPLY(l,args) -> 
 	  let t = label_to_type env pos l in
-	  let rec repeat args t =
+	  let rec repeat i args t =
 	    match args, unmark t with
 	    | x :: args, F_Pi(v,a,b) -> 
-		no_hole env pos x;
-		repeat args (subst_type (v,x) b)
+		repeat (i+1) args (subst_type (v,x) b)
 	    | x :: args, _ -> err env pos "at least one argument too many"
 	    | [], F_Pi(v,a,b) -> errmissingarg env pos a (* we insist on eta-long format *)
 	    | [], t -> t
-	  in nowhere 5 (repeat args t)
+	  in nowhere 5 (repeat 0 args t)
       | PR1 xy -> (
 	  match unmark (natural_type pos env xy) with
 	  | F_Sigma(v,a,b) -> a
@@ -220,7 +220,6 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
 		    pos , ("expected "^string_of_int (num_args t)^" more arguments"),
 		    (get_pos t0), (" using:\n\t"^lf_expr_head_to_string f^" : "^lf_type_to_string t0)))
 		  | x :: args ->
-		      no_hole env pos x;
 		      let b = subst_type (v,x) b in
 		      let x = term_normalization env x a in
 		      let (c,args) = repeat b args in
@@ -330,8 +329,8 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
 	    match a0, args with
 	    | F_Pi(x,a',a''), m' :: args' ->
 		let surr = Some(i,e) in 
+		let env = apply_ts_binder env i e0 in
 		let m' = type_check surr pos env m' a' in
-		no_hole env pos m';
 		let (args'',u) = repeat (i+1) env (subst_type (x,m') a'') args' in
 		m' :: args'', u
 	    | F_Singleton(e,t), args -> repeat i env t args
@@ -387,7 +386,6 @@ and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
 	    | t, [], [] -> t
 	    | (pos,F_Pi(v,a,b)), x :: args, y :: args' ->
 		term_equivalence xpos ypos env x y a;
-		no_hole env pos x;
 		repeat (subst_type (v,x) b) args args'
 	    | _ -> mismatch_term env xpos x ypos y
 	  in repeat t args args'

@@ -35,7 +35,7 @@ let ev3 surr env pos t =
   | Some(_, (pos,APPLY( O O_ev, [CAN f;_;_] ))) -> (
       let tf = tau env f in
       match unmark tf with
-      | APPLY(T T_Pi, [_;t]) -> Some t; raise Internal
+      | APPLY(T T_Pi, [_;t]) -> Some t
       | _ -> raise (TypeCheckingFailure(
 		    env,
 		    get_pos f,
