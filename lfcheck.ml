@@ -30,7 +30,11 @@ let abstraction2 (env:context) = function
   | _ -> env
 
 let abstraction3 (env:context) = function
-  | [_; CAN p; LAMBDA(x, _)] -> ts_bind (x,tau env p) env
+  | [CAN f; _; LAMBDA(x, _)] -> 
+      let tf = tau env f in (
+      match unmark tf with
+      | APPLY(T T_Pi, [_; LAMBDA(x, CAN t)]) -> ts_bind (x,t) env
+      | _ -> env)
   | _ -> env
 
 let ts_binders = [
