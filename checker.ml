@@ -38,9 +38,9 @@ let error_summary pos =
    )
 
 let print_inconsistency lhs rhs = 
-  Printf.fprintf stderr "%a: universe inconsistency:\n" p_pos_of lhs;
-  Printf.fprintf stderr "%a:         %a\n"  p_pos_of lhs  p_ts lhs;
-  Printf.fprintf stderr "%a:      != %a\n"  p_pos_of rhs  p_ts rhs;
+  Printf.fprintf stderr "%a: universe inconsistency:\n" _pos_of lhs;
+  Printf.fprintf stderr "%a:         %a\n"  _pos_of lhs  _ts lhs;
+  Printf.fprintf stderr "%a:      != %a\n"  _pos_of rhs  _ts rhs;
   flush stderr;
   Tokens.bump_error_count()
 
@@ -128,15 +128,15 @@ let add_tVars env tvars =
       env
 
 let ts_axiomCommand env pos name t = 
-  printf "\nAxiom TS %s: %a\n" name  p_ts t;
+  printf "\nAxiom TS %s: %a\n" name  _ts t; flush stdout;
   let t = Lfcheck.type_check None (get_pos t) env t texp in
-  printf "        : %a\n" p_expr t;
-  flush stdout;
+  printf "        : %a\n" _e t; flush stdout;
   let v = Var name in
   ensure_new_name env pos v;
   ts_bind (v,t) env
 
 let lf_axiomCommand env pos name t =
+  printf "\nAxiom LF %s: %a\n" name  _t t; flush stdout;
   let t = Lfcheck.type_validity env t in
   let v = Var name in
   ensure_new_name env pos v;
@@ -145,44 +145,44 @@ let lf_axiomCommand env pos name t =
 let is_can x = (function (APPLY _) -> true | _ -> false) (unmark x)
 
 let checkLFCommand env pos x =
-  printf "\nCheck LF   = %a\n" p_expr x; flush stdout;
+  printf "\nCheck LF   = %a\n" _e x; flush stdout;
   if is_can x then 
     let (x',t) = Lfcheck.type_synthesis env x in
-    printf "           = %a\n" p_expr x';
-    printf "           : %a\n" p_type t; flush stdout;
+    printf "           = %a\n" _e x';
+    printf "           : %a\n" _t t; flush stdout;
     if try_normalization then
       let x'' = Lfcheck.term_normalization env x' t in
-      printf "           = %a [normalized]\n" p_expr x''; flush stdout;
+      printf "           = %a [normalized]\n" _e x''; flush stdout;
       let t' = Lfcheck.type_normalization env t in
-      printf "           : %a [normalized]\n" p_type t'; flush stdout
+      printf "           : %a [normalized]\n" _t t'; flush stdout
 
 let checkLFtypeCommand env t =
-  printf "\nCheck      : %a\n" p_type t; flush stdout;
+  printf "\nCheck      : %a\n" _t t; flush stdout;
   let t = Lfcheck.type_validity env t in
-  printf "           : %a [after tactics]\n" p_type t; flush stdout;
+  printf "           : %a [after tactics]\n" _t t; flush stdout;
   if try_normalization then
     let t = Lfcheck.type_normalization env t in
-    printf "           : %a [after normalization]\n" p_type t; flush stdout
+    printf "           : %a [after normalization]\n" _t t; flush stdout
 
 let checkTSCommand env x =
-  printf "\nCheck TS   : %a\n" p_ts x;
+  printf "\nCheck TS   : %a\n" _ts x;
   flush stdout;
   flush stdout;
   let (x,t) = Lfcheck.type_synthesis env x in
-  printf "     type :: %a\n" p_type t;
+  printf "     type :: %a\n" _t t;
   if unmark t = unmark oexp then (
     match unmark x with
     | LAMBDA _ ->
 	let ts = Tau.tau env x in
-	printf "      type : %a ?\n" p_ts ts;
+	printf "      type : %a ?\n" _ts ts;
 	flush stdout
     | _ -> ()
    )
 
 let alphaCommand env (x,y) =
   printf "\nAlpha      : %s\n" (if (Alpha.UEqual.term_equiv Definitions.emptyUContext x y) then "true" else "false");
-  printf "           : %a\n" p_ts x;
-  printf "           : %a\n" p_ts y;
+  printf "           : %a\n" _ts x;
+  printf "           : %a\n" _ts y;
   flush stdout
 
 let checkUniversesCommand env pos =
@@ -283,9 +283,9 @@ let _ = try
   toplevel()
 with
 | Internal_expr e as ex ->
-    fprintf stderr "%a: internal error: %a\n" p_pos_of e  p_expr e; flush stderr;
+    fprintf stderr "%a: internal error: %a\n" _pos_of e  _e e; flush stderr;
     raise ex
 | Unimplemented_expr e as ex ->
-    fprintf stderr "%a: unimplemented feature: %a\n" p_pos_of e  p_expr e; flush stderr;
+    fprintf stderr "%a: unimplemented feature: %a\n" _pos_of e  _e e; flush stderr;
     raise ex
 

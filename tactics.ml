@@ -41,10 +41,10 @@ let ev3 surr env pos t args =
 		    "expected a TS function:\n    " ^ ts_expr_to_string f ^
 		    "\n  : "^ts_expr_to_string tf)))
   | Some(i,e) ->
-      printf "ev3 ( %d , %a ) ?\n" i p_expr (e); flush stdout;
+      printf "ev3 ( %d , %a ) ?\n" i _e (e); flush stdout;
       raise Internal
   | None -> 
-      printf "%a: ev3 ?\n" p_pos pos;
+      printf "%a: ev3 ?\n" _pos pos;
       raise Internal
 
 (** a tactic that tells the type checker to defer further type checking until

@@ -1,5 +1,13 @@
 # -*- coding: utf-8 -*-
 
+
+Define compose1 (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := [ev;_](g,[ev;_](f,t,U),V) : V ;; (
+       # LF syntax
+       ev_hastype U (_ ⟼ V) g ([ev] f t (_ ⟼ U)) $a (ev_hastype T (_ ⟼ U) f t $a $a)).
+
+End.
+
+
 # idea:
 # Axiom LF car : Notation( (x |-> (pi1 x)) ).
 
@@ -14,7 +22,7 @@ Axiom t : T.
 
 Define compose1 (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := [ev;_](g,[ev;_](f,t,U),V) : V ;; (
        # LF syntax
-       ev_hastype U (_ ⟼ V) g ([ev] f t (_ ⟼ U)) ($a) (ev_hastype T (_ ⟼ U) f t ($a) ($a))).
+       ev_hastype U (_ ⟼ V) g ([ev] f t (_ ⟼ U)) $a (ev_hastype T (_ ⟼ U) f t $a $a)).
 
 Define compose1' (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := [ev;_](g,[ev;_](f,t,U),V) : V ;
        # new TS syntax
@@ -22,7 +30,7 @@ Define compose1' (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := [ev;_](g,[ev;_](f,t,U
 
 Define compose2 (T U V:Type) (g:U⟶V) (f:T⟶U) := [lambda;t](T,[ev;_](g,[ev;_](f,t,U),V)) : T ⟶ V ;;
       # LF syntax
-      (λ_hastype T (_ ⟼ V) (t ⟼ ([ev] g ([ev] f t (_ ⟼ U)) (_ ⟼ V)) ) ($a) (t ⟼ _ ⟼ (ev_hastype U (_ ⟼ V) g ([ev] f t (_ ⟼ U)) ($a) (ev_hastype T (_ ⟼ U) f t ($a) ($a) )))).
+      (λ_hastype T (_ ⟼ V) (t ⟼ ([ev] g ([ev] f t (_ ⟼ U)) (_ ⟼ V)) ) $a (t ⟼ _ ⟼ (ev_hastype U (_ ⟼ V) g ([ev] f t (_ ⟼ U)) $a (ev_hastype T (_ ⟼ U) f t $a $a )))).
 
 Define compose2' (T U V:Type) (g:U⟶V) (f:T⟶U) := [lambda;t](T,[ev;_](g,[ev;_](f,t,U),V)) : T ⟶ V ;
       # new TS syntax
@@ -43,7 +51,7 @@ Check LF (B ([next] u1) ([u] u1) (u_univ u1)).
 
 Check LF ∏_istype.
 
-Define E (u1 u2 u3:Ulevel)(K:Type) := K⟶K;; (∏_istype ($a) (_ ⟼ ($a)) (_ ⟼ _ ⟼ ($a)) ).
+Define E (u1 u2 u3:Ulevel)(K:Type) := K⟶K;; (∏_istype $a (_ ⟼ $a) (_ ⟼ _ ⟼ $a) ).
 
 Define E'(u1 u2 u3:Ulevel)(K:Type) := K⟶K; [∏_istype]($a, _ ⟾ $a, _ ⟾ _ ⟾ $a).
 

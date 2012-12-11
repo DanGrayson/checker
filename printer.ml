@@ -98,7 +98,12 @@ let rec occurs_in_kind w = function
 
  *)
 
-let var_sub subs v = try List.assoc v subs with Not_found -> v
+let enable_variable_prettification = true
+
+let var_sub subs v = 
+  if enable_variable_prettification && (not !debug_mode)
+  then (try List.assoc v subs with Not_found -> v) 
+  else v
 
 let var_tester w subs occurs_in e =
   not( List.exists (fun (_,v) -> v = w) subs )
@@ -157,7 +162,9 @@ and lf_expr_to_string_with_subs subs e =
   | APPLY(V v,NIL) -> vartostring (var_sub subs v)
   | APPLY(h,args) -> 
       let h = match h with V v -> V (var_sub subs v) | _ -> h in
-      spine_application_to_string lf_expr_head_to_string (lf_expr_to_string_with_subs subs) (h,args)
+      "(" ^ (spine_application_to_string lf_expr_head_to_string (lf_expr_to_string_with_subs subs) (h,args)) ^ ")"
+
+let target_paren target k = if target || (not (String.contains k ' ')) then k else "(" ^ k ^ ")"
 
 let rec dependent_sub subs prefix infix target (v,t,u) =
   let used = occurs_in_type v u in
@@ -165,12 +172,12 @@ let rec dependent_sub subs prefix infix target (v,t,u) =
   let subs = (v,w) :: subs in
   let u = lf_type_to_string_with_subs' true subs u in
   let t = lf_type_to_string_with_subs' used subs t in
-  if used then 
-    let k = concat ["("; vartostring w; ":"; t; ")"; infix ; u] in
-    if target then k else concat ["("; k; ")"]
-  else
-    let k = concat [t; infix ; u] in
-    if target then k else concat ["("; k; ")"]
+  let k = (
+    if used then 
+      concat ["("; vartostring w; ":"; t; ")"; infix ; u]
+    else
+      concat [t; infix ; u]) in
+  target_paren target k
 
 and lf_type_to_string_with_subs' target subs (_,t) = match t with
   | F_Pi   (v,t,u) -> dependent_sub subs "∏ " " ⟶ " target (v,t,u)
@@ -180,7 +187,8 @@ and lf_type_to_string_with_subs' target subs (_,t) = match t with
       let t = lf_type_to_string_with_subs subs t in
       concat ["Singleton(";x;" : ";t;")"]
   | F_APPLY(hd,args) -> 
-      list_application_to_string lf_type_head_to_string (lf_expr_to_string_with_subs subs) (hd,args)
+      let k = list_application_to_string lf_type_head_to_string (lf_expr_to_string_with_subs subs) (hd,args) in
+      target_paren target k
 
 and lf_type_to_string_with_subs subs t = lf_type_to_string_with_subs' true subs t
 
@@ -336,43 +344,41 @@ let rec iteri i f = function
 
 let iteri f l = iteri 0 f l
 
-(** The following routines can be used with [printf "%a"]. *)
-
-let p_var file x = output_string file (vartostring x)
-
 let phantom s = String.make (String.length s) ' '
 
-let p_var_phantom file x = output_string file (phantom (vartostring x))
+(** The following routines can be used with [printf "%a"]. *)
 
-let p_ts file x = output_string file (ts_expr_to_string x)
+let _v file x = output_string file (vartostring x)
 
-let p_expr file x = output_string file (lf_expr_to_string x)
+let _v_phantom file x = output_string file (phantom (vartostring x))
 
-let p_expr_head file x = output_string file (lf_expr_head_to_string x)
+let _ts file x = output_string file (ts_expr_to_string x)
 
-let p_type file x = output_string file (lf_type_to_string x)
+let _e file x = output_string file (lf_expr_to_string x)
 
-let p_type_head file x = output_string file (lf_type_head_to_string x)
+let _eh file x = output_string file (lf_expr_head_to_string x)
 
-let p_kind file x = output_string file (lf_kind_to_string x)
+let _t file x = output_string file (lf_type_to_string x)
 
-let p_type_head file x = output_string file (lf_type_head_to_string x)
+let _th file x = output_string file (lf_type_head_to_string x)
 
-let p_pos file x = output_string file (errfmt x)
+let _k file x = output_string file (lf_kind_to_string x)
 
-let p_pos_of file x = output_string file (errfmt (get_pos x))
+let _th file x = output_string file (lf_type_head_to_string x)
 
-let p_fl file () = flush file
+let _pos file x = output_string file (errfmt x)
+
+let _pos_of file x = output_string file (errfmt (get_pos x))
 
 let print_signature env file =
   fprintf file "Signature:\n";
   fprintf file "  Type family constants:\n";
   List.iter (fun h -> 
-    fprintf file "     %a : %a\n" p_type_head h  p_kind (tfhead_to_kind h)
+    fprintf file "     %a : %a\n" _th h  _k (tfhead_to_kind h)
 	   ) lf_type_heads;
   fprintf file "  Object constants:\n";
   List.iter (fun h -> 
-    fprintf file "     %a : %a\n" p_expr_head h  p_type (label_to_type env (Error.no_pos 23) h)
+    fprintf file "     %a : %a\n" _eh h  _t (label_to_type env (Error.no_pos 23) h)
 	   ) lf_expr_heads;
   flush file
 
@@ -384,10 +390,10 @@ let print_context n file (env:context) =
 	if i = n then raise Limit;
 	match unmark t with
 	| F_Singleton(e,t) ->
-	    fprintf file "     %a := %a\n" p_var v          p_expr e;
-	    fprintf file "     %a  : %a\n" p_var_phantom v  p_type t; flush file
+	    fprintf file "     %a := %a\n" _v v          _e e;
+	    fprintf file "     %a  : %a\n" _v_phantom v  _t t; flush file
 	| _ -> 
-	    fprintf file "     %a : %a\n" p_var v  p_type t; flush file
+	    fprintf file "     %a : %a\n" _v v  _t t; flush file
      ) 
       env
   with Limit -> ()

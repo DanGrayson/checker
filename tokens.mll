@@ -101,8 +101,8 @@ rule expr_tokens = parse
   | (     '-' '>' | "⟶" ) { Arrow        }
   | (     '=' '>' | "⇒" ) { DoubleArrow }
 
-  | ( '|' '-' '>' | "↦" | "⟼" ) { ArrowFromBar }
-  | ( '|' '=' '>' | "⟾"       ) { DoubleArrowFromBar }
+  | ( '|' '-' '>' | "⟼" ) { ArrowFromBar }
+  | ( '|' '=' '>' | "⟾" ) { DoubleArrowFromBar }
 
   | '\\'       { Backslash }
   | '\\' '\\'  { DoubleBackslash }

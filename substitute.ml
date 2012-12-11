@@ -14,7 +14,7 @@ let fresh v subl =
 
 let show_subs (subl : (var * lf_expr) list) =
   printf " subs =\n";
-  List.iter (fun (v,e) -> printf "   %a => %a\n" p_var v p_expr e) subl
+  List.iter (fun (v,e) -> printf "   %a => %a\n" _v v _e e) subl
 
 let spy_counter = ref 0
 
@@ -37,7 +37,7 @@ and subst_spine subl = function
   | SND a -> SND(subst_spine subl a)
   | NIL -> NIL
 
-and subst subl e = spy p_expr subst'' subl e
+and subst subl e = spy _e subst'' subl e
 
 and subst'' subl e = 
   let pos = get_pos e in
@@ -52,13 +52,11 @@ and subst'' subl e =
             match z with 
             | (zpos,APPLY(f,brgs)) -> (pos,APPLY(f, join_args brgs args))
             | pos, LAMBDA _ as f -> apply_args pos f args
-            | _ ->
-                printf "about to replace %a by %a in %a, not implemented\n"
-                  p_var v
-                  p_expr z
-                  p_expr e; flush stdout;
-                raise (Unimplemented_expr e))
-      with Not_found -> e)
+            | _ -> 
+		printf "about to replace %a by %a in %a, not implemented\n" _v v _e z _e e; flush stdout; 
+		raise (Unimplemented_expr e)
+	   )
+      with Not_found -> pos, APPLY(V v,subst_spine subl args))
   | APPLY(label,args) -> (pos, APPLY(label,subst_spine subl args))
   | PAIR(x,y) -> pos, PAIR(subst subl x,subst subl y)
   | LAMBDA(v, body) -> 
@@ -66,8 +64,9 @@ and subst'' subl e =
       pos, LAMBDA(v, body)
 
 and subst_fresh subl (v,e) =
-  let (v,subl) = fresh v subl in
-  v, subst subl e  
+  let (v',subl) = fresh v subl in
+  let e' = subst subl e in
+  v', e'
 
 and apply_args pos (f:lf_expr) args =
   let rec repeat f args = 
@@ -88,7 +87,7 @@ and apply_args pos (f:lf_expr) args =
 
 let rec subst_type_list (subl : (var * lf_expr) list) ts = List.map (subst_type subl) ts
 
-and subst_type subl t = spy p_type subst_type'' subl t
+and subst_type subl t = spy _t subst_type'' subl t
 
 and subst_type'' (subl : (var * lf_expr) list) (pos,t) = 
   (pos,
@@ -111,7 +110,7 @@ and subst_type_fresh subl (v,t) =
 
 let rec subst_kind_list (subl : (var * lf_expr) list) ts = List.map (subst_kind subl) ts
 
-and subst_kind subl k = spy p_kind subst_kind'' subl k
+and subst_kind subl k = spy _k subst_kind'' subl k
 
 and subst_kind'' (subl : (var * lf_expr) list) k = 
    match k with
@@ -131,6 +130,8 @@ let subst = preface subst
 let subst_type = preface subst_type
 
 let subst_kind = preface subst_kind
+
+let subst_fresh (v,e) = subst_fresh [] (v,e)
 
 (* 
   Local Variables:

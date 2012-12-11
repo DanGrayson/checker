@@ -181,15 +181,15 @@ unmarked_lf_expr:
 
 lf_lambda_expression:
 | Wlparen Klambda v= variable_or_unused Wcomma body=lf_expr Wrparen
-    { LAMBDA(v,body) }
+    { let (v,body) = Substitute.subst_fresh (v,body) in LAMBDA(v,body) }
 | Wlparen v= variable_or_unused ArrowFromBar body=lf_lambda_expression_body Wrparen
-    { LAMBDA(v,body) }
+    { let (v,body) = Substitute.subst_fresh (v,body) in LAMBDA(v,body) }
 
 lf_lambda_expression_body:
 | e=lf_expr
     { e }
 | v= variable_or_unused ArrowFromBar body=lf_lambda_expression_body
-    { Position($startpos, $endpos), LAMBDA(v,body) }
+    { Position($startpos, $endpos), let (v,body) = Substitute.subst_fresh (v,body) in LAMBDA(v,body) }
 
 unmarked_atomic_term:
 | variable
@@ -352,7 +352,7 @@ lf_expr_from_ts_syntax:
 | e = ts_expr
     { e }
 | v= variable_or_unused DoubleArrowFromBar body=lf_expr_from_ts_syntax
-    { Position($startpos, $endpos), LAMBDA(v,body) }
+    { Position($startpos, $endpos), let (v,body) = Substitute.subst_fresh (v,body) in LAMBDA(v,body) }
 | o=lf_expr_from_ts_syntax DoubleBackslash f=lf_expr_from_ts_syntax
     { Substitute.apply_args (Position($startpos, $endpos)) f (o ** NIL) }
 
@@ -451,8 +451,11 @@ unmarked_ts_expr:
            fun indices arg ->
              (* example: indices = [0;1], change arg to (LAMBDA v_0, (LAMBDA v_1, arg)) *)
              List.fold_right (
-             fun index arg -> with_pos (get_pos arg) (LAMBDA( List.nth vars index, arg))
-                 ) indices arg
+             fun index arg -> with_pos (get_pos arg) (
+	       let v = List.nth vars index in
+	       let (v,arg) = Substitute.subst_fresh (v,arg) in 
+	       LAMBDA(v,arg))
+            ) indices arg
           ) varindices args
          in
          APPLY(label,list_to_spine args)
@@ -460,7 +463,7 @@ unmarked_ts_expr:
  
 (* 
   Local Variables:
-  compile-command: "make grammar.cmx "
+  compile-command: "make grammar.cmo "
   End:
  *)
 

@@ -121,17 +121,17 @@ let addDefinition env v pos o t = def_bind v pos o t env
 let defCommand env defs = 
   List.fold_left
     (fun env (v, pos, tm, tp) -> 
-      printf "Define %a = %a\n" p_var v  p_expr tm;
+      printf "Define %a = %a\n" _v v  _e tm;
       flush stdout;
-      printf "       %a : %a\n" p_var v  p_type tp; flush stdout;
+      printf "       %a : %a\n" _v v  _t tp; flush stdout;
       let tp' = Lfcheck.type_validity env tp in
-      printf "       %a : %a [after tactics]\n" p_var v  p_type tp'; flush stdout;
+      printf "       %a : %a [after tactics]\n" _v v  _t tp'; flush stdout;
       let tm' = Lfcheck.type_check None pos env tm tp in
-      printf "       %a = %a [after tactics]\n" p_var v  p_expr tm'; flush stdout;
+      printf "       %a = %a [after tactics]\n" _v v  _e tm'; flush stdout;
       let tm'' = Lfcheck.term_normalization env tm' tp' in
-      printf "       %a = %a [normalized]\n" p_var v  p_expr tm''; flush stdout;
+      printf "       %a = %a [normalized]\n" _v v  _e tm''; flush stdout;
       let tp'' = Lfcheck.type_normalization env tp' in
-      printf "       %a : %a [normalized]\n" p_var v  p_type tp''; flush stdout;
+      printf "       %a : %a [normalized]\n" _v v  _t tp''; flush stdout;
       addDefinition env v pos tm' tp'
     ) 
     env defs
