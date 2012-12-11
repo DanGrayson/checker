@@ -51,10 +51,12 @@ let args_fold f pi1 pi2 accu args = (* it's fold_left, which is the only directi
 
 let pi1 = function
   | CAN(pos,APPLY(h,args)) -> CAN(pos,APPLY(h,join_args args (FST NIL)))
+  | PAIR(pos,x,_) -> x
   | _ -> raise Internal
 
 let pi2 = function
   | CAN(pos,APPLY(h,args)) -> CAN(pos,APPLY(h,join_args args (SND NIL)))
+  | PAIR(pos,_,x) -> x
   | _ -> raise Internal
 
 (** Force an expression to be atomic. *)

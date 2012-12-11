@@ -171,7 +171,13 @@ let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
 	  LAMBDA(w,body)
       | _ -> raise Internal)
   | F_Sigma(v,a,b) ->
-      raise NotImplemented
+      let pos = get_pos_lf x in
+      let p = x in
+      let x = pi1 p in
+      let y = pi2 p in
+      PAIR(pos,
+	   term_normalization env x a,
+	   term_normalization env y (subst_type (v,x) b))
   | F_APPLY _
   | F_Singleton _ ->
       let x = head_normalization env x in
@@ -456,6 +462,15 @@ and type_check (surr:surrounding) (pos:position) (env:context) (e:lf_expr) (t:lf
       LAMBDA(v,e)
 
   | LAMBDA _, _ -> err env pos "did not expect a lambda expression here"
+ 
+  | p, F_Sigma(w,a,b) -> (* The published algorithm omits this, correctly, but we want to 
+			    give advice to tactics for filling holes in [p], so we try type-directed
+			    type checking as long as possible. *)
+      let x = pi1 p in
+      let y = pi2 p in
+      let x = type_check None pos env x a in
+      let y = type_check None pos env y (subst_type (w,x) b) in
+      PAIR(pos,x,y)
 
   | e, _  ->
       let (e,s) = type_synthesis env e in 
