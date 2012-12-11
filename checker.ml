@@ -129,15 +129,12 @@ let add_tVars env tvars =
 
 let ts_axiomCommand env pos name t = 
   printf "\nAxiom TS %s: %a\n" name  p_ts t;
-  let t = Lfcheck.type_check None (get_pos t) env (CAN t) texp in
+  let t = Lfcheck.type_check None (get_pos t) env t texp in
   printf "        : %a\n" p_expr t;
   flush stdout;
-  match t with
-  | CAN t -> 
-      let v = Var name in
-      ensure_new_name env pos v;
-      ts_bind (v,t) env
-  | _ -> raise Internal
+  let v = Var name in
+  ensure_new_name env pos v;
+  ts_bind (v,t) env
 
 let lf_axiomCommand env pos name t =
   let t = Lfcheck.type_validity env t in
@@ -145,7 +142,7 @@ let lf_axiomCommand env pos name t =
   ensure_new_name env pos v;
   (v,t) :: env
 
-let is_can = function CAN _ -> true | _ -> false
+let is_can x = (function (APPLY _) -> true | _ -> false) (unmark x)
 
 let checkLFCommand env pos x =
   printf "\nCheck LF   = %a\n" p_expr x; flush stdout;
@@ -171,19 +168,19 @@ let checkTSCommand env x =
   printf "\nCheck TS   : %a\n" p_ts x;
   flush stdout;
   flush stdout;
-  let (x,t) = Lfcheck.type_synthesis env (CAN x) in
+  let (x,t) = Lfcheck.type_synthesis env x in
   printf "     type :: %a\n" p_type t;
   if unmark t = unmark oexp then (
-    match x with
-    | CAN x ->
+    match unmark x with
+    | LAMBDA _ ->
 	let ts = Tau.tau env x in
 	printf "      type : %a ?\n" p_ts ts;
 	flush stdout
-    | _ -> raise Internal
+    | _ -> ()
    )
 
 let alphaCommand env (x,y) =
-  printf "\nAlpha      : %s\n" (if (Alpha.UEqual.term_equiv Definitions.emptyUContext (CAN x) (CAN y)) then "true" else "false");
+  printf "\nAlpha      : %s\n" (if (Alpha.UEqual.term_equiv Definitions.emptyUContext x y) then "true" else "false");
   printf "           : %a\n" p_ts x;
   printf "           : %a\n" p_ts y;
   flush stdout
@@ -261,7 +258,7 @@ let parse_string env grammar s =
     lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = strname()};
     read_expr env lexbuf
 
-let expr_from_string env s = CAN(parse_string env Grammar.ts_exprEof s)
+let expr_from_string env s = parse_string env Grammar.ts_exprEof s
 
 let toplevel() = 
   let env = ref [] in
@@ -285,14 +282,10 @@ let toplevel() =
 let _ = try
   toplevel()
 with
-| Internal_expr      ( CAN(pos,_) as e ) 
-| Internal_expr      ( LAMBDA(_,CAN(pos,_)) as e ) 
-    as ex ->
-    fprintf stderr "%a: internal error: %a\n" p_pos pos  p_expr e;
+| Internal_expr e as ex ->
+    fprintf stderr "%a: internal error: %a\n" p_pos_of e  p_expr e; flush stderr;
     raise ex
-| Unimplemented_expr ( CAN(pos,_) as e )
-| Unimplemented_expr ( LAMBDA(_,CAN(pos,_)) as e ) 
-    as ex ->
-    fprintf stderr "%a: unimplemented feature: %a\n" p_pos pos  p_expr e;
+| Unimplemented_expr e as ex ->
+    fprintf stderr "%a: unimplemented feature: %a\n" p_pos_of e  p_expr e; flush stderr;
     raise ex
 

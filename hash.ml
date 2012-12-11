@@ -35,13 +35,11 @@ let hhash = function
   | V h -> 2
 
 let rec chash = function
-  | PAIR(_,x,y) -> 611 * chash x + 711 * chash y
-  | LAMBDA(_,body) -> chash body
-  | CAN e -> ahash e
+  | (_,PAIR(x,y)) -> 611 * chash x + 711 * chash y
+  | (_,LAMBDA(_,body)) -> chash body
+  | (_,APPLY(h,args)) -> hhash h + spine_hash args
 and spine_hash = function
   | NIL -> 1
   | FST r -> 123 + spine_hash r
   | SND r -> 13 + spine_hash r
   | ARG(c,r) -> chash c + 2345 * (spine_hash r)
-and ahash = function
-  | (pos,APPLY(h,args)) -> hhash h + spine_hash args

@@ -31,17 +31,13 @@ let rec vars_args p_arg args =
   | FST args | SND args -> vars_args p_arg args
   | NIL -> []
 
-let rec atomic_expr_to_free_vars (_,e) = 
-  match e with
+let rec lf_expr_to_vars (pos,e) = match e with
+  | LAMBDA(x,body) -> remove x (lf_expr_to_vars body)
+  | PAIR(x,y) -> lf_expr_to_vars x @ lf_expr_to_vars y
   | APPLY(V v,NIL) -> [v]
   | APPLY(h,args) -> 
       let fv = match h with V v -> [v] | _ -> [] in
       fv @ vars_args lf_expr_to_vars args
-
-and lf_expr_to_vars = function
-  | LAMBDA(x,body) -> remove x (lf_expr_to_vars body)
-  | PAIR(_,x,y) -> lf_expr_to_vars x @ lf_expr_to_vars y
-  | CAN e -> atomic_expr_to_free_vars e
 
 let rec dependent_vars (v,t,u) = lf_type_to_vars t @ remove v (lf_type_to_vars u)
 
@@ -57,15 +53,11 @@ let rec lf_kind_to_vars = function
 
 (** Whether [x] occurs as a free variable in an expression. *)
 
-let rec occurs_in_atomic_expr w (_,e) = 
-  match e with
+let rec occurs_in_expr w e = match unmark e with 
+  | LAMBDA(v,body) -> w <> v && occurs_in_expr w body
+  | PAIR(x,y) -> occurs_in_expr w x || occurs_in_expr w y
   | APPLY(V v,args) -> w = v || arg_exists (occurs_in_expr w) args
   | APPLY(h,  args) ->          arg_exists (occurs_in_expr w) args
-
-and occurs_in_expr w = function
-  | LAMBDA(v,body) -> w <> v && occurs_in_expr w body
-  | PAIR(_,x,y) -> occurs_in_expr w x || occurs_in_expr w y
-  | CAN e -> occurs_in_atomic_expr w e
 
 and occurs_in_type w (_,t) = match t with
   | F_Pi   (v,t,u)
@@ -142,32 +134,30 @@ let rec list_application_to_string p_hd p_arg (h,args) =
     (p_hd h)
     args
 
-let rec atomic_expr_to_string_with_subs subs (_,e) = 
-  match e with
-  | APPLY(V v,NIL) -> vartostring (var_sub subs v)
-  | APPLY(h,args) -> 
-      let h = match h with V v -> V (var_sub subs v) | _ -> h in
-      spine_application_to_string lf_expr_head_to_string (lf_expr_to_string_with_subs subs) (h,args)
-
-and lf_expr_to_string_with_subs' subs = function (* would be better to implement parsing precedences *)
+let rec lf_expr_to_string_with_subs' subs e =   (* would be better to implement parsing precedences *)
+  match unmark e with
   | LAMBDA(x,body) -> 
       let w = var_chooser x subs occurs_in_expr body in
       let subs = (x,w) :: subs in
       let s = lf_expr_to_string_with_subs' subs body in
       concat [vartostring w;" ⟼ ";s]
-  | _ as e -> lf_expr_to_string_with_subs subs e
+  | _  -> lf_expr_to_string_with_subs subs e
 
-and lf_expr_to_string_with_subs subs = function
+and lf_expr_to_string_with_subs subs e = 
+  match unmark e with
   | LAMBDA(x,body) -> 
       let w = var_chooser x subs occurs_in_expr body in
       let subs = (x,w) :: subs in
       let s = lf_expr_to_string_with_subs' subs body in
       concat ["(";vartostring (var_sub subs x);" ⟼ ";s;")"]
-  | PAIR(_,x,y) -> 
+  | PAIR(x,y) -> 
       let x = lf_expr_to_string_with_subs subs x in
       let y = lf_expr_to_string_with_subs subs y in
       concat ["(pair ";x;" ";y;")"]
-  | CAN e -> atomic_expr_to_string_with_subs subs e
+  | APPLY(V v,NIL) -> vartostring (var_sub subs v)
+  | APPLY(h,args) -> 
+      let h = match h with V v -> V (var_sub subs v) | _ -> h in
+      spine_application_to_string lf_expr_head_to_string (lf_expr_to_string_with_subs subs) (h,args)
 
 let rec dependent_sub subs prefix infix target (v,t,u) =
   let used = occurs_in_type v u in
@@ -211,8 +201,6 @@ let rec lf_kind_to_string_with_subs subs = function
 
 let lf_expr_to_string = lf_expr_to_string_with_subs []
 
-let atomic_expr_to_string = atomic_expr_to_string_with_subs []
-
 let lf_type_to_string = lf_type_to_string_with_subs []
 
 let lf_type_to_string' target = lf_type_to_string_with_subs' target []
@@ -225,7 +213,7 @@ let lf_kind_to_string = lf_kind_to_string_with_subs []
 
 let lf_expr_p e = "$$" ^ lf_expr_to_string e
 
-let lf_atomic_p e = "$$" ^ atomic_expr_to_string e
+let lf_atomic_p e = "$$" ^ lf_expr_to_string e
 
 let locate f x = 			(* find the index of the element of the list x for which f is true *)
   let rec repeat i x =
@@ -252,63 +240,60 @@ let ends_in_paren s = s.[String.length s - 1] = '('
 let rec paren_args_to_string hd args = (
   args_fold
     (fun accu arg -> 
-      (if (ends_in_paren accu) then accu else accu ^ ",") ^ ts_can_to_string arg)
+      (if (ends_in_paren accu) then accu else accu ^ ",") ^ ts_expr_to_string arg)
     (fun accu -> "[π₁](" ^ accu ^ ")")
     (fun accu -> "[π₂](" ^ accu ^ ")")
     (hd ^ "(")
     args) ^ ")"
 
-and ts_can_to_string = function 
-  | CAN e -> ts_expr_to_string e
-  | PAIR _ | LAMBDA _ as e -> lf_expr_p e		(* normally this branch will not be used *)
-
-and ts_expr_to_string ((_,e) as oe) = 
+and ts_expr_to_string e = 
   (* 
      We assume [oe] is a well typed LF expression of type uexp, texp, or oexp.
      That ensures that the number of branches, the number of lambdas in each branch, and
      the o-t-u identity of each branch is correct.
    *)
-  match e with 
+  match unmark e with 
+  | PAIR _ | LAMBDA _ -> lf_expr_p e		(* normally this branch will not be used *)
   | APPLY(V v,NIL) -> vartostring v
   | APPLY(h,args) -> 
       match h with
       | T T_Pi -> (
 	  match args with
-	  | ARG(CAN t1,ARG(LAMBDA(x, CAN t2),NIL)) -> 
+	  | ARG(t1,ARG((_,LAMBDA(x, t2)),NIL)) -> 
 	      if false
 	      then concat ["(";ts_expr_to_string t1;" ⟶ ";ts_expr_to_string t2;")"]
 	      else concat ["[" ^ lf_expr_head_to_string h ^ ";";vartostring x;"](";ts_expr_to_string t1;",";ts_expr_to_string t2;")"]
-	  | _ -> lf_atomic_p oe)
+	  | _ -> lf_atomic_p e)
       | T T_Sigma -> (
-	  match args with ARG(CAN t1,ARG(LAMBDA(x, CAN t2),NIL)) -> 
+	  match args with ARG(t1,ARG((_,LAMBDA(x, t2)),NIL)) -> 
 	    "[" ^ lf_expr_head_to_string h ^ ";" ^ vartostring x ^ "]" ^
 	    "(" ^ ts_expr_to_string t1 ^ "," ^ ts_expr_to_string t2 ^ ")"
-	  | _ -> lf_atomic_p oe)
+	  | _ -> lf_atomic_p e)
       | O O_ev -> (
 	  match args with 
-	  | ARG(CAN f,ARG(CAN o,ARG(LAMBDA(x, CAN t),NIL))) ->
+	  | ARG(f,ARG(o,ARG((_,LAMBDA(x, t)),NIL))) ->
 	      "[ev;" ^ vartostring x ^ "](" ^ ts_expr_to_string f ^ "," ^ ts_expr_to_string o ^ "," ^ ts_expr_to_string t ^ ")"
-	  | ARG(CAN f,ARG(CAN o,NIL)) ->
+	  | ARG(f,ARG(o,NIL)) ->
 	      "[ev;_](" ^ ts_expr_to_string f ^ "," ^ ts_expr_to_string o ^ ")"
-	  | _ -> lf_atomic_p oe)
+	  | _ -> lf_atomic_p e)
       | O O_lambda -> (
 	  match args with 
-	  | ARG(CAN t,ARG(LAMBDA(x,CAN o),NIL)) ->
+	  | ARG(t,ARG((_,LAMBDA(x,o)),NIL)) ->
 	      "[λ;" (* lambda *) ^ vartostring x ^ "](" ^ ts_expr_to_string t ^ "," ^ ts_expr_to_string o ^ ")"
-	  | _ -> lf_atomic_p oe)
+	  | _ -> lf_atomic_p e)
       | O O_forall -> (
 	  match args with 
-	  | ARG(CAN u,ARG(CAN u',ARG(CAN o,ARG(LAMBDA(x,CAN o'),NIL)))) ->
+	  | ARG(u,ARG(u',ARG(o,ARG((_,LAMBDA(x,o')),NIL)))) ->
 	      "[forall;" ^ vartostring x ^ "](" ^ 
 	      ts_expr_to_string u ^ "," ^ ts_expr_to_string u' ^ "," ^ 
 	      ts_expr_to_string o ^ "," ^ ts_expr_to_string o' ^ ")"
-	  | _ -> lf_atomic_p oe)
+	  | _ -> lf_atomic_p e)
       | _ -> paren_args_to_string (lf_expr_head_to_string h) args
 
 (** Printing functions for definitions, provisional. *)
 
 let parmstostring = function
-  | ((UContext(uexp_parms,ueqns):uContext),(texp_parms:var list),(oexp_parms:(var * atomic_expr) list)) 
+  | ((UContext(uexp_parms,ueqns):uContext),(texp_parms:var list),(oexp_parms:(var * lf_expr) list)) 
     -> concatl [
       if List.length uexp_parms > 0 
       then ["(";

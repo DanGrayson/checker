@@ -29,13 +29,13 @@ Define compose2' (T U V:Type) (g:U⟶V) (f:T⟶U) := [lambda;t](T,[ev;_](g,[ev;_
       [λ_hastype](T, _ ⟾ V, t ⟾ g (f t), $a, t ⟾ _ ⟾ [ev_hastype](U, _ ⟾ V, g, f t, $a, [ev_hastype](T, _ ⟾ U, f, t, $a, $a))).
 
 
-Define A (u : Ulevel; u=u) (t : [U](u)) := [El](t);; (El_type u ($a) ($0)).
+Define A (u : Ulevel; u=u) (t : [U](u)) := [El](t);; (El_type u $a $0).
 
 Define A'(u : Ulevel; u=u) (t : [U](u)) := [El](t); [El_type](u, $a, $0).
 
 Variable u1 : Ulevel.
 
-Define C := [u](u1) : [U]([next](u1));; (u_univ ($a)).
+Define C := [u](u1) : [U]([next](u1));; (u_univ $a).
 
 Define B (u : Ulevel) (t : [U](u)) := [El](t);; (El_type u $a $0).
 

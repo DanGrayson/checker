@@ -20,7 +20,7 @@ let add_sigma pos v t t' u =
 %type <Typesystem.lf_expr> lf_expr lf_expr_from_ts_syntax
 
 (* for parsing a single expression *)
-%type <Typesystem.atomic_expr> ts_exprEof ts_expr
+%type <Typesystem.lf_expr> ts_exprEof ts_expr
 
 %token <int> NUMBER
 %token <string> IDENTIFIER CONSTANT CONSTANT_SEMI
@@ -94,12 +94,12 @@ let add_sigma pos v t t' u =
 %%
 
 lf_type:
-| t=bare_lf_type
+| t=unmarked_lf_type
     { Position($startpos, $endpos), t}
 | Wlparen t=lf_type Wrparen 
     { t }
 
-bare_lf_type:
+unmarked_lf_type:
 | f=lf_type_constant args=list(lf_expr)
     { F_APPLY(f,args) }
 | KPi v=variable Colon a=lf_type Wcomma b=lf_type
@@ -150,12 +150,8 @@ lf_type_constant:
     }
 
 lf_expr:
-| e=unmarked_atomic_term
-    { CAN(Position($startpos, $endpos), e)  }
-| e=lf_lambda_expression
-    { e }
-| Wlparen Kpair a=lf_expr b=lf_expr Wrparen
-    { PAIR(Position($startpos, $endpos), a, b) }
+| e=unmarked_lf_expr 
+    {(Position($startpos, $endpos), e)}
 
 | Wlparen Kpi1 x=lf_expr Wrparen
     { pi1 x }
@@ -175,6 +171,14 @@ lf_expr:
 | Wlparen Kpi2222 x=lf_expr Wrparen
     { pi2 (pi2 (pi2 (pi2 x))) }
 
+unmarked_lf_expr:
+| e=unmarked_atomic_term
+    { e  }
+| e=lf_lambda_expression
+    { e }
+| Wlparen Kpair a=lf_expr b=lf_expr Wrparen
+    { PAIR(a, b) }
+
 lf_lambda_expression:
 | Wlparen Klambda v= variable_or_unused Wcomma body=lf_expr Wrparen
     { LAMBDA(v,body) }
@@ -185,7 +189,7 @@ lf_lambda_expression_body:
 | e=lf_expr
     { e }
 | v= variable_or_unused ArrowFromBar body=lf_lambda_expression_body
-    { LAMBDA(v,body) }
+    { Position($startpos, $endpos), LAMBDA(v,body) }
 
 unmarked_atomic_term:
 | variable
@@ -257,14 +261,14 @@ command0:
 | WDefine name=IDENTIFIER parms=parmList Colonequal o=ts_expr Colon t=ts_expr DoubleSemicolon d1=lf_expr Wperiod 
     { Toplevel.ODefinition (name, parms, o, t, Some d1) }
 | WDefine name=IDENTIFIER parms=parmList Colonequal o=ts_expr Colon t=ts_expr Semicolon d1=ts_expr Wperiod 
-    { Toplevel.ODefinition (name, parms, o, t, Some (CAN d1)) }
+    { Toplevel.ODefinition (name, parms, o, t, Some d1) }
 | WDefine name=IDENTIFIER parms=parmList Colonequal o=ts_expr Colon t=ts_expr Wperiod 
     { Toplevel.ODefinition (name, parms, o, t, None) }
 
 | WDefine name=IDENTIFIER parms=parmList Colonequal t=ts_expr DoubleSemicolon d1=lf_expr Wperiod 
     { Toplevel.TDefinition (name, parms, t, Some d1) }
 | WDefine name=IDENTIFIER parms=parmList Colonequal t=ts_expr Semicolon d1=ts_expr Wperiod 
-    { Toplevel.TDefinition (name, parms, t, Some (CAN d1)) }
+    { Toplevel.TDefinition (name, parms, t, Some d1) }
 | WDefine name=IDENTIFIER parms=parmList Colonequal t=ts_expr Wperiod 
     { Toplevel.TDefinition (name, parms, t, None) }
 
@@ -313,10 +317,10 @@ ts_exprEof: a=ts_expr Weof {a}
 lf_type_from_ts_syntax:
 | Wlparen t= lf_type_from_ts_syntax Wrparen 
     { t }
-| bare_lf_type_from_ts_syntax
+| unmarked_lf_type_from_ts_syntax
     { Position($startpos, $endpos), $1 }
 
-bare_lf_type_from_ts_syntax:
+unmarked_lf_type_from_ts_syntax:
 | f=lf_type_constant
     { F_APPLY(f,[]) }
 | Wlparen v=variable Colon a= lf_type_from_ts_syntax Wrparen DoubleArrow b= lf_type_from_ts_syntax
@@ -344,11 +348,11 @@ lf_expr_from_ts_syntax:
 | arg= lf_expr_from_ts_syntax Backslash f= lf_expr_from_ts_syntax
     { Substitute.apply_args (Position($startpos, $endpos)) f (arg ** NIL) }
 | tac= tactic_expr
-    { CAN (Position($startpos, $endpos), cite_tactic tac NIL) }
+    { (Position($startpos, $endpos), cite_tactic tac NIL) }
 | e = ts_expr
-    { CAN e }
+    { e }
 | v= variable_or_unused DoubleArrowFromBar body=lf_expr_from_ts_syntax
-    { LAMBDA(v,body) }
+    { Position($startpos, $endpos), LAMBDA(v,body) }
 | o=lf_expr_from_ts_syntax DoubleBackslash f=lf_expr_from_ts_syntax
     { Substitute.apply_args (Position($startpos, $endpos)) f (o ** NIL) }
 
@@ -385,7 +389,7 @@ unmarked_ts_expr:
 | f=ts_expr o=ts_expr
     %prec Reduce_application
     { let pos = Position($startpos, $endpos) in 
-      APPLY(O O_ev, f *** o *** (pos, cite_tactic (Tactic_name "ev3") NIL) *** NIL) }
+      APPLY(O O_ev, f ** o ** (pos, cite_tactic (Tactic_name "ev3") NIL) ** NIL) }
 | Klambda x=variable Colon t=ts_expr Wcomma o=ts_expr
     %prec Reduce_binder
     { make_O_lambda t (x,o) }
@@ -403,7 +407,7 @@ unmarked_ts_expr:
     %prec Reduce_binder
     { make_T_Sigma t1 (x,t2) }
 | Kumax Wlparen u=ts_expr Wcomma v=ts_expr Wrparen
-    { APPLY(U U_max,ARG(CAN u,ARG(CAN v,NIL)))  }
+    { APPLY(U U_max, u**v**NIL)  }
 | label=tsterm_head args=arglist
     {
      let args = list_to_spine args in
@@ -447,7 +451,7 @@ unmarked_ts_expr:
            fun indices arg ->
              (* example: indices = [0;1], change arg to (LAMBDA v_0, (LAMBDA v_1, arg)) *)
              List.fold_right (
-             fun index arg -> LAMBDA( List.nth vars index, arg)
+             fun index arg -> with_pos (get_pos arg) (LAMBDA( List.nth vars index, arg))
                  ) indices arg
           ) varindices args
          in

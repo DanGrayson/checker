@@ -39,32 +39,31 @@ and subst_spine subl = function
 
 and subst subl e = spy p_expr subst'' subl e
 
-and subst'' subl = function
-  | CAN (pos,e) as d -> (
-      match e with
-      | APPLY(V v,args) -> (
-          try 
-            let z = List.assoc v subl in
-            match args with
-            | NIL -> z
-            | args -> (
-		let args = subst_spine subl args in 
-                match z with 
-                | CAN(zpos,APPLY(f,brgs)) -> CAN(pos,APPLY(f, join_args brgs args))
-                | LAMBDA _ as f -> apply_args pos f args
-                | _ ->
-                    printf "about to replace %a by %a in %a, not implemented\n"
-                      p_var v
-                      p_expr z
-                      p_expr d; flush stdout;
-                    raise (Unimplemented_expr d))
-          with Not_found -> d)
-      | APPLY(label,args) -> CAN(pos, APPLY(label,subst_spine subl args))
-     )
-  | PAIR(pos,x,y) -> PAIR(pos,subst subl x,subst subl y)
+and subst'' subl e = 
+  let pos = get_pos e in
+  match unmark e with 
+  | APPLY(V v,args) -> (
+      try 
+        let z = List.assoc v subl in
+        match args with
+        | NIL -> z
+        | args -> (
+	    let args = subst_spine subl args in 
+            match z with 
+            | (zpos,APPLY(f,brgs)) -> (pos,APPLY(f, join_args brgs args))
+            | pos, LAMBDA _ as f -> apply_args pos f args
+            | _ ->
+                printf "about to replace %a by %a in %a, not implemented\n"
+                  p_var v
+                  p_expr z
+                  p_expr e; flush stdout;
+                raise (Unimplemented_expr e))
+      with Not_found -> e)
+  | APPLY(label,args) -> (pos, APPLY(label,subst_spine subl args))
+  | PAIR(x,y) -> pos, PAIR(subst subl x,subst subl y)
   | LAMBDA(v, body) -> 
       let (v,body) = subst_fresh subl (v,body) in
-      LAMBDA(v, body)
+      pos, LAMBDA(v, body)
 
 and subst_fresh subl (v,e) =
   let (v,subl) = fresh v subl in
@@ -72,8 +71,9 @@ and subst_fresh subl (v,e) =
 
 and apply_args pos (f:lf_expr) args =
   let rec repeat f args = 
-    match f with
-    | CAN(pos,APPLY(f,brgs)) -> CAN(pos,APPLY(f, join_args brgs args))
+    let pos = get_pos f in
+    match unmark f with
+    | APPLY(f,brgs) -> (pos,APPLY(f, join_args brgs args))
     | LAMBDA(v,body) -> (
         match args with
         | ARG(x,args) -> repeat (subst [(v,x)] body) args
@@ -82,7 +82,7 @@ and apply_args pos (f:lf_expr) args =
         | NIL -> raise (GeneralError "too few arguments"))
     | x -> (
         match args with
-        | NIL -> x
+        | NIL -> pos,x
         | _ -> raise (GeneralError "too few arguments"))
   in repeat f args
 

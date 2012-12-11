@@ -11,9 +11,9 @@ let mergeUContext : uContext -> uContext -> uContext =
 type parm =
   | UParm of uContext
   | TParm of var list
-  | OParm of (var * atomic_expr) list
+  | OParm of (var * lf_expr) list
 
-let fixParmList (p:parm list) : uContext * (var list) * ((var * atomic_expr) list) =
+let fixParmList (p:parm list) : uContext * (var list) * ((var * lf_expr) list) =
   let rec fix us ts os p =
     match p with 
     | UParm u :: p -> 
@@ -35,13 +35,13 @@ let fixParmList (p:parm list) : uContext * (var list) * ((var * atomic_expr) lis
 
 let ( @@ ) f g x = f (g x)
 
-let apply f vartypes = CAN (nowhere 7 (APPLY(V f, list_to_spine(List.map (var_to_lf @@ fst) vartypes))))
+let apply f vartypes = (nowhere 7 (APPLY(V f, list_to_spine(List.map (var_to_lf @@ fst) vartypes))))
 
 let ist x = istype (var_to_lf x)
 
-let hast x t = hastype (var_to_lf x) (CAN t)
+let hast x t = hastype (var_to_lf x) t
 
-let lamb (v,t1) t2 = LAMBDA(v,t2)
+let lamb (v,t1) t2 = nowhere 99 (LAMBDA(v,t2))
 
 let pi   (v,t1) t2 = nowhere 8 (F_Pi(v,t1,t2))
 
@@ -70,14 +70,13 @@ let hast_1 v t = [v,hast_s v t]
 let augment uvars ueqns tvars o_vartypes = List.flatten (
     List.flatten [
     List.map (fun  x    -> [x,uexp]) uvars;
-    List.map (fun (l,r) -> [newfresh (Var "u"), ulevel_equality (CAN l) (CAN r)]) ueqns;
+    List.map (fun (l,r) -> [newfresh (Var "u"), ulevel_equality l r]) ueqns;
     List.map (fun  x    -> ist_2 x) tvars;
     List.map (fun (x,t) -> hast_2 x t) o_vartypes
   ])
 
 let tDefinition name (UContext (uvars,ueqns),tvars,o_vartypes) t d1 = 
   let pos = get_pos t in
-  let t = CAN t in 
   let vartypes = augment uvars ueqns tvars o_vartypes in
   let name0 = Var name in
   let name1 = VarDefined(name,1) in
@@ -88,12 +87,12 @@ let tDefinition name (UContext (uvars,ueqns),tvars,o_vartypes) t d1 =
      then
        [ (name0, pos, t, texp); (name1, pos, j, istype (apply name0 vartypes)) ]
      else 
-       let tj = PAIR(pos, t, j) in 
+       let tj = pos,PAIR(t,j) in 
        let v = newfresh (Var "T") in
        [ ( name0, pos, tj, ist_s v ) ]
     )
 
-let oDefinition name (UContext(uvars,ueqns),tvars,o_vartypes) o (t:atomic_expr) d1 =
+let oDefinition name (UContext(uvars,ueqns),tvars,o_vartypes) o (t:lf_expr) d1 =
   let pos = get_pos o in
   let vartypes = augment uvars ueqns tvars o_vartypes in
   let name0 = Var name in
@@ -103,9 +102,9 @@ let oDefinition name (UContext(uvars,ueqns),tvars,o_vartypes) o (t:atomic_expr) 
     (
      if disable_sigma
      then
-       [ (name0, pos, CAN o, oexp); (name1, pos, j, hastype (apply name0 vartypes) (CAN t)) ]
+       [ (name0, pos, o, oexp); (name1, pos, j, hastype (apply name0 vartypes) t) ]
      else
-       let oj = PAIR(pos, CAN o, j ) in
+       let oj = pos, PAIR(o, j ) in
        let v = newfresh (Var "o") in
        [ ( name0, pos, oj , hast_s v t ) ]
     )

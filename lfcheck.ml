@@ -22,18 +22,18 @@ open Helpers
 open Tau
 
 let abstraction1 (env:context) = function
-  | ARG(CAN t,ARG(LAMBDA(x, _),_)) -> ts_bind (x,t) env
+  | ARG(t,ARG((_,LAMBDA(x, _)),_)) -> ts_bind (x,t) env
   | _ -> env
 
 let abstraction2 (env:context) = function
-  | ARG(_,ARG(_,ARG(CAN n,ARG(LAMBDA(x,_),_)))) -> ts_bind (x,(get_pos n, make_T_El n)) env
+  | ARG(_,ARG(_,ARG(n,ARG((_,LAMBDA(x,_)),_)))) -> ts_bind (x,(get_pos n, make_T_El n)) env
   | _ -> env
 
 let abstraction3 (env:context) = function
-  | ARG(CAN f,ARG(_,ARG(LAMBDA(x, _),_))) -> 
+  | ARG(f,ARG(_,ARG((_,LAMBDA(x, _)),_))) -> 
       let tf = tau env f in (
       match unmark tf with
-      | APPLY(T T_Pi, ARG(CAN t, _)) -> ts_bind (x,t) env
+      | APPLY(T T_Pi, ARG(t, _)) -> ts_bind (x,t) env
       | _ -> env)
   | _ -> env
 
@@ -45,9 +45,14 @@ let ts_binders = [
   ((O O_ev, 2), abstraction3)
 ]
 
-let apply_ts_binder env i (APPLY(h,args)) =
-  try (List.assoc (h,i) ts_binders) env args
-  with Not_found -> env
+let apply_ts_binder env i e =
+  match unmark e with
+  | APPLY(h,args) -> (
+      try
+	(List.assoc (h,i) ts_binders) env args
+      with
+	Not_found -> env)
+  | _ -> raise Internal
 
 let try_alpha = false (* turning this on could slow things down a lot before we implement hash codes *)
 
@@ -102,24 +107,21 @@ let unfold env v =
 let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
   (* assume nothing *)
   (* see figure 9 page 696 [EEST] *)
-  match x with
-  | CAN (pos,x) -> (
-      match x with
-      | APPLY(l,args) -> 
-	  let t = label_to_type env pos l in
-	  let rec repeat i args t =
-	    match args, unmark t with
-	    | ARG(x,args), F_Pi(v,a,b) -> 
-		repeat (i+1) args (subst_type (v,x) b)
-	    | ARG _, _ -> err env pos "at least one argument too many"
-	    | FST args, F_Sigma(v,a,b) -> repeat (i+1) args a
-	    | FST _, _ -> err env pos "pi1 expected an object of sigma type"
-	    | SND args, F_Sigma(v,a,b) -> repeat (i+1) args b
-	    | SND _, _ -> err env pos "pi2 expected an object of sigma type"
-	    | NIL, F_Pi(v,a,b) -> errmissingarg env pos a (* we insist on eta-long format *)
-	    | NIL, t -> t
-	  in nowhere 5 (repeat 0 args t)
-     )
+  let pos = get_pos x in 
+  match unmark x with
+  | APPLY(l,args) -> 
+      let t = label_to_type env pos l in
+      let rec repeat i args t =
+	match args, unmark t with
+	| ARG(x,args), F_Pi(v,a,b) -> repeat (i+1) args (subst_type (v,x) b)
+	| ARG _, _ -> err env pos "at least one argument too many"
+	| FST args, F_Sigma(v,a,b) -> repeat (i+1) args a
+	| FST _, _ -> err env pos "pi1 expected an object of sigma type"
+	| SND args, F_Sigma(v,a,b) -> repeat (i+1) args b
+	| SND _, _ -> err env pos "pi2 expected an object of sigma type"
+	| NIL, F_Pi(v,a,b) -> errmissingarg env pos a (* we insist on eta-long format *)
+	| NIL, t -> t
+      in nowhere 5 (repeat 0 args t)
   | LAMBDA _ -> err env pos "LF lambda expression found, has no natural type"
   | PAIR _ -> err env pos "LF pair found, has no natural type"
 
@@ -128,7 +130,7 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
   (* may raise Not_found if there is no head reduction *)
   match x with
-  | CAN(pos,APPLY(V v, args)) -> let f = unfold env v in apply_args pos f args
+  | (pos,APPLY(V v, args)) -> let f = unfold env v in apply_args pos f args
   | _ -> raise Not_found
 
 let rec head_normalization (env:context) (x:lf_expr) : lf_expr =
@@ -145,18 +147,18 @@ let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
   let (pos,t0) = t in
   match t0 with 
   | F_Pi(v,a,b) -> (
-      match x with
+      match unmark x with
       | LAMBDA(w,body) ->
 	  let b    = subst_type (v,var_to_lf w) b in
 	  let body = term_normalization ((w,a) :: env) body b in
-	  LAMBDA(w,body)
+	  pos, LAMBDA(w,body)
       | _ -> raise Internal)
   | F_Sigma(v,a,b) ->
-      let pos = get_pos_lf x in
+      let pos = get_pos x in
       let p = x in
       let x = pi1 p in
       let y = pi2 p in
-      PAIR(pos,
+      pos, PAIR(
 	   term_normalization env x a,
 	   term_normalization env y (subst_type (v,x) b))
   | F_APPLY _
@@ -169,44 +171,42 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
   (* returns the normalized term x and the inferred type of x *)
   (* see figure 9 page 696 [EEST] *)
   (* assume x is head normalized *)
-  match x with
+  let pos = get_pos x in
+  match unmark x with
   | LAMBDA _ -> err env pos "path_normalization encountered a function"
   | PAIR _ -> err env pos "path_normalization encountered a pair"
-  | CAN y ->
-      let (pos,y0) = y in
-      match y0 with
-      | APPLY(f,args) ->
-	  let t0 = label_to_type env pos f in
-	  let (t,args) =
-	    let rec repeat t args : lf_type * spine = (
-	      match unmark t with
-	      | F_Pi(v,a,b) -> (
-		  match args with
-		  | NIL -> raise (TypeCheckingFailure2 (env,
-		    pos , "expected "^string_of_int (num_args t)^" more arguments",
-		    (get_pos t0), (" using:\n\t"^lf_expr_head_to_string f^" : "^lf_type_to_string t0)))
-		  | FST args -> err env pos "pi1 expected an object of sigma type"
-		  | SND args -> err env pos "pi2 expected an object of sigma type"
-		  | ARG(x, args) ->
-		      let b = subst_type (v,x) b in
-		      let x = term_normalization env x a in
-		      let (c,args) = repeat b args in
-		      (c, ARG(x,args)))
-	      | F_Singleton _ -> raise Internal (* x was head normalized, so any definition of f should have been unfolded *)
-	      | F_Sigma(v,a,b) -> (
-		  match args with 
-		  | NIL -> (t,NIL)
-		  | FST args -> repeat a args
-		  | SND args -> repeat b args
-		  | ARG(x,_) -> err env (get_pos_lf x) "unexpected argument")
-	      | F_APPLY _ -> (
-		  match args with
-		  | NIL -> (t,NIL)
-		  | FST args -> err env pos "pi1 expected an object of sigma type"
-		  | SND args -> err env pos "pi2 expected an object of sigma type"
-		  | ARG(x,args) -> err env (get_pos_lf x) "unexpected argument"))
-	    in repeat t0 args
-	  in (CAN(pos,APPLY(f,args)), t)
+  | APPLY(f,args) ->
+      let t0 = label_to_type env pos f in
+      let (t,args) =
+	let rec repeat t args : lf_type * spine = (
+	  match unmark t with
+	  | F_Pi(v,a,b) -> (
+	      match args with
+	      | NIL -> raise (TypeCheckingFailure2 (env,
+						    pos , "expected "^string_of_int (num_args t)^" more arguments",
+						    (get_pos t0), (" using:\n\t"^lf_expr_head_to_string f^" : "^lf_type_to_string t0)))
+	      | FST args -> err env pos "pi1 expected an object of sigma type"
+	      | SND args -> err env pos "pi2 expected an object of sigma type"
+	      | ARG(x, args) ->
+		  let b = subst_type (v,x) b in
+		  let x = term_normalization env x a in
+		  let (c,args) = repeat b args in
+		  (c, ARG(x,args)))
+	  | F_Singleton _ -> raise Internal (* x was head normalized, so any definition of f should have been unfolded *)
+	  | F_Sigma(v,a,b) -> (
+	      match args with 
+	      | NIL -> (t,NIL)
+	      | FST args -> repeat a args
+	      | SND args -> repeat b args
+	      | ARG(x,_) -> err env (get_pos x) "unexpected argument")
+	  | F_APPLY _ -> (
+	      match args with
+	      | NIL -> (t,NIL)
+	      | FST args -> err env pos "pi1 expected an object of sigma type"
+	      | SND args -> err env pos "pi2 expected an object of sigma type"
+	      | ARG(x,args) -> err env (get_pos x) "unexpected argument"))
+	in repeat t0 args
+      in ((pos,APPLY(f,args)), t)
 
 let rec type_normalization (env:context) (t:lf_type) : lf_type =
   (* see figure 9 page 696 [EEST] *)
@@ -277,51 +277,47 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
   (* see figure 13, page 716 [EEST] *)
   (* return a pair consisting of the original expression with any tactic holes filled in, 
      and the synthesized type *)
-  match x with
-  | LAMBDA _ -> err env (get_pos_lf x) ("function has no type: "^lf_expr_to_string x)
-  | PAIR(pos,x,y) ->
+  let pos = get_pos x in
+  match unmark x with
+  | LAMBDA _ -> err env pos ("function has no type: "^lf_expr_to_string x)
+  | PAIR(x,y) ->
       let x',t = type_synthesis env x in
-      let y',u = type_synthesis env y in PAIR(pos,x',y'), (pos,F_Sigma(newunused(),t,u))
-  | CAN e ->
-      let (pos,e0) = e in
-      match e0 with
-      | APPLY(label,args) -> (
-	  let a = label_to_type env pos label in
-	  let rec repeat i env a args = (
-	    let (apos,a0) = a in
-	    match a0, args with
-	    | F_Pi(x,a',a''), ARG(m',args') ->
-		let surr = Some(i,e) in 
-		let env = apply_ts_binder env i e0 in
-		let m' = type_check surr pos env m' a' in
-		let (args'',u) = repeat (i+1) env (subst_type (x,m') a'') args' in
-		ARG(m',args''), u
-	    | F_Singleton(e,t), args -> repeat i env t args
-	    | F_Sigma(v,a,b), FST args -> 
-		let (x,t) = repeat (i+1) env a args in (FST x, t)
-	    | F_Sigma(v,a,b), SND args -> 
-		let (x,t) = repeat (i+1) env b args in (SND x, t)
-	    | t, NIL -> NIL, (pos,t)
-	    | _, ARG(arg,_) -> err env (get_pos_lf arg) "extra argument"
-	    | _, FST _ -> err env pos "pi1 expected an object of sigma type"
-	    | _, SND _ -> err env pos "pi2 expected an object of sigma type"
-	   )
-	  in
-	  let (args',t) = repeat 0 env a args
-	  in CAN(pos,APPLY(label,args')), t
-	 )
+      let y',u = type_synthesis env y in (pos,PAIR(x',y')), (pos,F_Sigma(newunused(),t,u))
+  | APPLY(label,args) -> (
+      let a = label_to_type env pos label in
+      let rec repeat i env a args = (
+	let (apos,a0) = a in
+	match a0, args with
+	| F_Pi(v,a',a''), ARG(m',args') ->
+	    let surr = Some(i,x) in 
+	    let env = apply_ts_binder env i x in
+	    let m' = type_check surr pos env m' a' in
+	    let (args'',u) = repeat (i+1) env (subst_type (v,m') a'') args' in
+	    ARG(m',args''), u
+	| F_Singleton(e,t), args -> repeat i env t args
+	| F_Sigma(v,a,b), FST args -> 
+	    let (x,t) = repeat (i+1) env a args in (FST x, t)
+	| F_Sigma(v,a,b), SND args -> 
+	    let (x,t) = repeat (i+1) env b args in (SND x, t)
+	| t, NIL -> NIL, (pos,t)
+	| _, ARG(arg,_) -> err env (get_pos arg) "extra argument"
+	| _, FST _ -> err env pos "pi1 expected an object of sigma type"
+	| _, SND _ -> err env pos "pi2 expected an object of sigma type"
+       )
+      in
+      let (args',t) = repeat 0 env a args
+      in (pos,APPLY(label,args')), t
+     )
 
 and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : unit =
   (* assume x and y have already been verified to be of type t *)
   (* see figure 11, page 711 [EEST] *)
   if try_alpha && Alpha.UEqual.term_equiv empty_uContext x y then () else
-  let (pos,t0) = t in
-  match x, y, t0 with
-  | _, _, F_Singleton _ -> ()
-  | x, y, F_Sigma (v,a,b) ->
-      raise NotImplemented
-  | x, y, F_Pi (v,a,b) -> (
-      match x,y with
+  match unmark t with
+  | F_Singleton _ -> ()
+  | F_Sigma (v,a,b) -> raise NotImplemented
+  | F_Pi (v,a,b) -> (
+      match unmark x, unmark y with
       | LAMBDA(t,x), LAMBDA(u,y) ->
 	  let w = newfresh (Var "v") in
 	  term_equivalence xpos ypos 
@@ -329,8 +325,8 @@ and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (
 	    (subst (t,var_to_lf w) x)	(* with deBruijn indices, this will go away *)
 	    (subst (u,var_to_lf w) y) 
 	    (subst_type (v,var_to_lf w) b)
-      | x,y -> raise Internal)
-  | x, y, F_APPLY(j,args) ->
+      | _ -> raise Internal)
+  | F_APPLY(j,args) ->
       let x = head_normalization env x in
       let y = head_normalization env y in
       let t' = path_equivalence env x y in
@@ -340,7 +336,7 @@ and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
   (* assume x and y are head reduced *)
   (* see figure 11, page 711 [EEST] *)
   match x,y with
-  | CAN (xpos,APPLY(f,args)), CAN (ypos,APPLY(f',args')) -> (
+  | (xpos,APPLY(f,args)), (ypos,APPLY(f',args')) -> (
       if not (f = f') 
       then mismatch_term env xpos x ypos y;
       let t = label_to_type env xpos f in
@@ -352,7 +348,7 @@ and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
 	    repeat (subst_type (v,x) b) args args'
 	| _ -> mismatch_term env xpos x ypos y
       in repeat t args args')
-  | _  -> mismatch_term env (get_pos_lf x) x (get_pos_lf y) y
+  | _  -> mismatch_term env (get_pos x) x (get_pos y) y
 
 and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
   (* see figure 11, page 711 [EEST] *)
@@ -417,11 +413,12 @@ and type_check (surr:surrounding) (pos:position) (env:context) (e:lf_expr) (t:lf
   (* we modify the algorithm to return a possibly modified expression e, with holes filled in by tactics *)
   (* We hard code one tactic:
        Fill in holes of the form [ ([ev] f o _) ] by using [tau] to compute the type that ought to go there. *)
-  let (pos,t0) = t in 
-  match e, t0 with
-  | CAN(pos, APPLY(TAC tac,args)), _ -> (
+  let pos = get_pos t in 
+  match unmark e, unmark t with
+  | APPLY(TAC tac,args), _ -> (
+      let pos = get_pos e in 
       match apply_tactic surr env pos t args tac with
-      | TacticDefer(t,args) -> CAN(pos, APPLY(TAC (Tactic_deferred(t,args)),args))
+      | TacticDefer(t,args) -> (pos, APPLY(TAC (Tactic_deferred(t,args)),args))
       | TacticSuccess e -> type_check surr pos env e t
       | TacticFailure ->
 	  raise (TypeCheckingFailure2 (env,
@@ -432,20 +429,19 @@ and type_check (surr:surrounding) (pos:position) (env:context) (e:lf_expr) (t:lf
 				   our lambda doesn't contain type information for the variable,
 				   and theirs does *)
       let e = type_check None pos ((v,a) :: env) e (subst_type (w,var_to_lf v) b) in
-      LAMBDA(v,e)
+      pos, LAMBDA(v,e)
 
   | LAMBDA _, _ -> err env pos "did not expect a lambda expression here"
  
-  | p, F_Sigma(w,a,b) -> (* The published algorithm omits this, correctly, but we want to 
+  | _, F_Sigma(w,a,b) -> (* The published algorithm omits this, correctly, but we want to 
 			    give advice to tactics for filling holes in [p], so we try type-directed
 			    type checking as long as possible. *)
-      let x = pi1 p in
-      let y = pi2 p in
+      let (x,y) = (pi1 e,pi2 e) in
       let x = type_check None pos env x a in
       let y = type_check None pos env y (subst_type (w,x) b) in
-      PAIR(pos,x,y)
+      pos, PAIR(x,y)
 
-  | e, _  ->
+  | _, _  ->
       let (e,s) = type_synthesis env e in 
       subtype env s t;
       e

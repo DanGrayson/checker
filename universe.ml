@@ -13,10 +13,11 @@
 
 *)
 
+open Error
 open Variables
 open Typesystem
 
-exception Inconsistency of atomic_expr * atomic_expr
+exception Inconsistency of lf_expr * lf_expr
 
 let rec memi' i x = function
     [] -> raise Error.Internal
@@ -26,14 +27,14 @@ let memi x = memi' 0 x
 
 let step_size = 10
 
-let chk uv ((lhs:atomic_expr),(rhs:atomic_expr)) =
+let chk uv ((lhs:lf_expr),(rhs:lf_expr)) =
   let index name = memi name uv in
   let rec ev e = 
     let (pos,e0) = e 
     in match e0 with
     | APPLY(V u,NIL) -> - step_size * (index u)
-    | APPLY(U U_next,ARG(CAN u,NIL)) -> (ev u) + 1
-    | APPLY(U U_max,ARG(CAN u,ARG(CAN v,NIL))) -> max (ev u) (ev v)
+    | APPLY(U U_next,ARG(u,NIL)) -> (ev u) + 1
+    | APPLY(U U_max,ARG(u,ARG(v,NIL))) -> max (ev u) (ev v)
     | _ -> raise Error.Internal
   in 
   if (ev lhs) != (ev rhs) then raise (Inconsistency (lhs, rhs))
@@ -46,7 +47,7 @@ let get_uvars =
 
 let get_ueqns =
   let rec get_ueqns accu = function
-  | (_, (pos,F_APPLY(F_ulevel_equality,[CAN u; CAN u']))) :: rest -> get_ueqns ((u,u') :: accu) rest
+  | (_, (pos,F_APPLY(F_ulevel_equality,[u; u']))) :: rest -> get_ueqns ((u,u') :: accu) rest
   | _ :: rest -> get_ueqns accu rest 
   | [] -> List.rev accu
   in get_ueqns []
@@ -59,23 +60,20 @@ let chk_ueqns env ueqns = chk_var_ueqns (get_uvars env) ueqns
 
 let ubind env uvars ueqns =
   let env = List.rev_append (List.map (fun u -> ((Var u), uexp)) uvars) env in
-  let env = List.rev_append (List.map (fun (u,v) -> (Variables.newfresh (Var "ueq"), ulevel_equality (CAN u) (CAN v))) ueqns) env in
+  let env = List.rev_append (List.map (fun (u,v) -> (Variables.newfresh (Var "ueq"), ulevel_equality u v)) ueqns) env in
   chk_ueqns env ueqns;
   env
 
 module Equal = struct
   let term_equiv ulevel_context = 			(* structural equality *)
-    let rec ueq a b = match (a,b) with
-    | CAN(_,a), CAN(_,b) -> (
-	a == b || 
-	match (a,b) with 
-	| APPLY(V x,NIL), APPLY(V x',NIL) -> x = x'
-	| APPLY(U U_next, ARG(x ,NIL)),
-	  APPLY(U U_next, ARG(x',NIL)) -> ueq x x'
-	| APPLY(U U_max, ARG(x,ARG(y,NIL))), 
-	  APPLY(U U_max, ARG(x',ARG(y',NIL))) -> ueq x x' && ueq y y'
-	| _ -> false)
-    | _ -> false
+    let rec ueq a b = 
+      let (a,b) = (unmark a,unmark b) in
+      a == b || 
+      match (a,b) with 
+      | APPLY(V x,NIL), APPLY(V x',NIL) -> x = x'
+      | APPLY(U U_next, ARG(x ,NIL)), APPLY(U U_next, ARG(x',NIL)) -> ueq x x'
+      | APPLY(U U_max, ARG(x,ARG(y,NIL))), APPLY(U U_max, ARG(x',ARG(y',NIL))) -> ueq x x' && ueq y y'
+      | _ -> false
     in ueq
 end
 

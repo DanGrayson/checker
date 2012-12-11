@@ -1,3 +1,4 @@
+open Error
 open Variables
 open Typesystem
 
@@ -26,19 +27,19 @@ module Make(Ueq: Universe.Equivalence) : S = struct
   let uequiv = Ueq.term_equiv
     
   let rec term_eq ulevel_context alpha =
-    let rec term_eq alpha x y = x = y || match (x, y) with 
+    let rec term_eq alpha x y = 
+      match (unmark x, unmark y) with 
       | LAMBDA (x,body), LAMBDA (x',body') ->
 	  let alpha = addalpha x x' alpha 
 	  in term_eq alpha body body'
-      | CAN(_,d), CAN(_,e) -> (
-	  d == e || 
-	  match (d,e) with
-	  | APPLY(h,args), APPLY(h',args') -> (
-	      match (h,h') with
-	      | V t, V t' -> testalpha t t' alpha && Helpers.args_equal (term_eq alpha) args args'
-	      | U _, U _ -> uequiv ulevel_context x y
-	      | _ -> h = h' && Helpers.args_equal (term_eq alpha) args args'))
-      | _ -> false
+      | APPLY(h,args), APPLY(h',args') -> (
+	  match (h,h') with
+	  | V t, V t' -> testalpha t t' alpha && Helpers.args_equal (term_eq alpha) args args'
+	  | U _, U _ -> uequiv ulevel_context x y
+	  | _ -> h = h' && Helpers.args_equal (term_eq alpha) args args')
+      | PAIR(x,y), PAIR(x',y') ->
+	  term_eq alpha x x' && term_eq alpha y y'
+      | _,_ -> false
     in term_eq alpha
     
   let rec type_eq ulevel_context alpha = 

@@ -76,7 +76,6 @@ type lf_type_head =
 	aspect 2 could be a type T, and aspect 3 could be a derivation of the
 	judgment that t has type T.  Similarly for the other two types of
 	judgment in TS. *)
-
 type lf_expr_head =
   | U of uHead			(** labels for u-expressions of TS *)
   | T of tHead			(** labels for t-expressions of TS *)
@@ -84,29 +83,17 @@ type lf_expr_head =
   | V of var			(** labels for variables of TS *)
   | TAC of tactic_expr		(** An empty hole, to be filled in later by calling a tactic routine. *)
 
-(** The expressions of LF are the "canonical" terms, and are of type [lf_expr].
-
-    Canonical terms include the atomic (non-canonical) terms via [CAN].
- *)
-and lf_expr = 
+(** The expressions of LF, including the expressions of TS as instances of [APPLY].*)
+and lf_expr = unmarked_expr marked
+and unmarked_expr =
   | LAMBDA of var * lf_expr
 	(** Lambda expression of LF. *)
-  | PAIR of position * lf_expr * lf_expr
+  | PAIR of lf_expr * lf_expr
 	(** A pair of dependent type. *)
-  | CAN of atomic_expr
-	(** [CAN] is embeds TS expressions into LF expressions *)
-
-(** The expressions of TS are the "atomic" terms, and are of type [atomic_expr].
-    The constructor [CAN] implements the embedding from TS into LF.
-
-    In an atomic term, top level simplification (evaluation) may be possible;
-    for example, a variable appearing as a lf_expr_head, with a defined value, could
-    be replaced by its value, which is then applied to the arguments, if any. 
- *)
-and atomic_expr = unmarked_atomic_expr marked
-and unmarked_atomic_expr =
   | APPLY of lf_expr_head * spine
-    (** A variable or constant applied iteratively to its arguments, if any. *)
+	(** A variable or constant or tactic applied iteratively to its arguments, if any.
+	    This includes the expressions of TS, with something such as [\[ev\]] as the head
+	    and the branches as the parts of the spine. *)
 
 (** A spine is basically a list of arguments to which the head function of an
     atomic term will be applied, in sequence, but with two new instructions,
@@ -239,19 +226,19 @@ let tfhead_to_kind = function
   | F_type_uequality -> texp @@-> texp @@-> K_type
   | F_object_uequality -> oexp @@-> oexp @@-> K_type
 
-type oSubs = (var * atomic_expr) list
+type oSubs = (var * lf_expr) list
 
 (** Contexts. *)
 
 type context = (var * lf_type) list
 
-type uContext = UContext of var list * (atomic_expr * atomic_expr) list
+type uContext = UContext of var list * (lf_expr * lf_expr) list
 
 let empty_uContext = UContext([],[])
 
 (** Tactics. *)
 
-type surrounding = (int * atomic_expr) option
+type surrounding = (int * lf_expr) option
 
 type tactic_return =
   | TacticFailure
