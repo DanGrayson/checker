@@ -8,9 +8,9 @@ open Typesystem
 open Names
 open Tau
 open Printer
+open Lfcheck
 
-let add_tactic name f =
-  Lfcheck.tactics := (name,f) :: !Lfcheck.tactics
+let add_tactic name f = tactics := (name,f) :: !tactics
 
 (** find the first variable in the context of the right type and return it *)
 let assumption surr env pos t args =
@@ -22,9 +22,9 @@ let assumption surr env pos t args =
 	  | TypeCheckingFailure _
 	  | TypeCheckingFailure2 _
 	  | TypeCheckingFailure3 _ -> false
-	then Some(var_to_lf v)
+	then TacticSuccess(var_to_lf v)
 	else repeat envp
-    | [] -> None
+    | [] -> TacticFailure
   in repeat env
 
 (** fill in the third argument of [ev](f,x,_) using tau *)
@@ -34,7 +34,7 @@ let ev3 surr env pos t args =
   | Some(_, (pos,APPLY( O O_ev, ARG(CAN f,_)))) -> (
       let tf = tau env f in
       match unmark tf with
-      | APPLY(T T_Pi, ARG(_,ARG(t,NIL))) -> Some t
+      | APPLY(T T_Pi, ARG(_,ARG(t,NIL))) -> TacticSuccess t
       | _ -> raise (TypeCheckingFailure(
 		    env,
 		    get_pos f,
@@ -47,9 +47,14 @@ let ev3 surr env pos t args =
       printf "%a: ev3 ?\n" p_pos pos;
       raise Internal
 
+(** a tactic that tells the type checker to defer further type checking until
+    the next pass, unless it returns something *)
+let defer surr env pos t args = TacticDefer(t,args)
+
 let _ = 
   add_tactic "ev3" ev3;
-  add_tactic "a" assumption
+  add_tactic "a" assumption;
+  add_tactic "defer" defer
 
 (* 
   Local Variables:

@@ -77,20 +77,8 @@ let rec strip_singleton ((_,(_,t)) as u) = match t with
 
 (* background assumption: all types in the environment have been verified *)
 
-type surrounding = (int * atomic_expr) option
-
-type tactic_function =
-       surrounding         (* the ambient APPLY(...), if any, and the index among its head and arguments of the hole *)        
-    -> context							      (* the active context *)
-    -> position							      (* the source code position of the tactic hole *)
-    -> lf_type							      (* the type of the hole, e.g., [texp] *)
-    -> spine							      (* the arguments of the tactic *)
- -> lf_expr option									 (* the proffered expression *)
-
-let tactics : (string * tactic_function) list ref = ref []
-
 let apply_tactic surr env pos t args = function
-  | Tactic_hole n -> None
+  | Tactic_hole n -> TacticFailure
   | Tactic_name name ->
       let tactic = 
 	try List.assoc name !tactics
@@ -102,8 +90,9 @@ let apply_tactic surr env pos t args = function
 	try List.nth env n 
 	with Failure nth -> err env pos ("index out of range: "^string_of_int n)
       in
-      if Alpha.UEqual.type_equiv empty_uContext t u then Some(var_to_lf v)
+      if Alpha.UEqual.type_equiv empty_uContext t u then TacticSuccess(var_to_lf v)
       else mismatch_type env pos t (get_pos u) u
+  | Tactic_deferred(t,_) -> raise NotImplemented
 
 let unfold env v =
   match unmark( lookup_type env v ) with
@@ -432,8 +421,9 @@ and type_check (surr:surrounding) (pos:position) (env:context) (e:lf_expr) (t:lf
   match e, t0 with
   | CAN(pos, APPLY(TAC tac,args)), _ -> (
       match apply_tactic surr env pos t args tac with
-      | Some e -> type_check surr pos env e t
-      | None ->
+      | TacticDefer(t,args) -> CAN(pos, APPLY(TAC (Tactic_deferred(t,args)),args))
+      | TacticSuccess e -> type_check surr pos env e t
+      | TacticFailure ->
 	  raise (TypeCheckingFailure2 (env,
 				       pos, "tactic failed     : "^tactic_to_string tac,
 				       pos, "  in hole of type : "^lf_type_to_string t)))

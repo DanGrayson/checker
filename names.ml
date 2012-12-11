@@ -39,6 +39,7 @@ let thead_to_string h = List.assoc (T h) lf_expr_head_table
 let ohead_to_string h = List.assoc (O h) lf_expr_head_table
 
 let tactic_to_string : tactic_expr -> string = function
+  | Tactic_deferred _ -> "$deferred$"
   | Tactic_hole n -> "?" ^ string_of_int n
   | Tactic_name n -> "$" ^ n
   | Tactic_index n -> "$" ^ string_of_int n
@@ -77,6 +78,7 @@ let label_to_type env pos = function
   | T h -> thead_to_lf_type h
   | O h -> ohead_to_lf_type h
   | V v -> fetch_type env pos v
+  | TAC (Tactic_name "defer") -> raise Internal (*?? *)
   | TAC _ -> raise Internal
 
 let rec get_pos_lf (x:lf_expr) =

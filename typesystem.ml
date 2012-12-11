@@ -37,12 +37,26 @@ type oHead =
   | O_pt  | O_pt_r  | O_tt  | O_coprod  | O_ii1  | O_ii2  | O_sum  | O_empty  | O_empty_r
   | O_c  | O_ip_r  | O_ip  | O_paths  | O_refl  | O_J  | O_rr0  | O_rr1
 
-(** Tactics *)
+(** Canonical type families of LF.
 
-type tactic_expr = 
-  | Tactic_hole of int			(* represented by _ *)
-  | Tactic_name of string		(* represented by $foo *)
-  | Tactic_index of int			(* represented by $n *)
+    The following type family constants for LF type families segregate TS
+    expressions into three forms: u-expressions, t-expressions, and
+    o-expressions, and they introduce the four forms of judgments.
+
+    Notation: constructors starting with "F_" refer to type families of
+    LF. *)
+type lf_type_head =
+  | F_uexp
+  | F_texp
+  | F_oexp
+  | F_istype
+  | F_hastype
+  | F_type_equality
+  | F_object_equality
+  | F_ulevel_equality
+  | F_type_uequality			(* written with ~ in the paper *)
+  | F_object_uequality			(* written with ~ in the paper *)
+
 
     (** The type [lf_expr_head] accommodates the variables of LF, and the constants of
         LF, which in turn include the labels of TS, the inference rules of TS,
@@ -69,12 +83,12 @@ type lf_expr_head =
   | O of oHead			(** labels for o-expressions of TS *)
   | V of var			(** labels for variables of TS *)
   | TAC of tactic_expr		(** An empty hole, to be filled in later by calling a tactic routine. *)
-	
+
 (** The expressions of LF are the "canonical" terms, and are of type [lf_expr].
 
     Canonical terms include the atomic (non-canonical) terms via [CAN].
  *)
-type lf_expr = 
+and lf_expr = 
   | LAMBDA of var * lf_expr
 	(** Lambda expression of LF. *)
   | PAIR of position * lf_expr * lf_expr
@@ -105,27 +119,14 @@ and spine =
   | SND of spine
   | NIL
 
-(** Canonical type families of LF.
+(** Tactics *)
+and tactic_expr = 
+  | Tactic_hole of int			(* represented by _ *)
+  | Tactic_name of string		(* represented by $foo *)
+  | Tactic_index of int			(* represented by $n *)
+  | Tactic_deferred of lf_type * spine 	(* a deferred-action tactic result, with a declared type *)
 
-    The following type family constants for LF type families segregate TS
-    expressions into three forms: u-expressions, t-expressions, and
-    o-expressions, and they introduce the four forms of judgments.
-
-    Notation: constructors starting with "F_" refer to type families of
-    LF. *)
-type lf_type_head =
-  | F_uexp
-  | F_texp
-  | F_oexp
-  | F_istype
-  | F_hastype
-  | F_type_equality
-  | F_object_equality
-  | F_ulevel_equality
-  | F_type_uequality			(* written with ~ in the paper *)
-  | F_object_uequality			(* written with ~ in the paper *)
-
-type lf_type = bare_lf_type marked
+and lf_type = bare_lf_type marked
 and bare_lf_type =
   | F_Pi of var * lf_type * lf_type
   | F_Sigma of var * lf_type * lf_type
@@ -247,6 +248,25 @@ type context = (var * lf_type) list
 type uContext = UContext of var list * (atomic_expr * atomic_expr) list
 
 let empty_uContext = UContext([],[])
+
+(** Tactics. *)
+
+type surrounding = (int * atomic_expr) option
+
+type tactic_return =
+  | TacticFailure
+  | TacticDefer of lf_type * spine
+  | TacticSuccess of lf_expr
+
+type tactic_function =
+       surrounding         (* the ambient APPLY(...), if any, and the index among its head and arguments of the hole *)        
+    -> context							      (* the active context *)
+    -> position							      (* the source code position of the tactic hole *)
+    -> lf_type							      (* the type of the hole, e.g., [texp] *)
+    -> spine							      (* the arguments of the tactic *)
+ -> tactic_return								 (* the proffered expression *)
+
+let tactics : (string * tactic_function) list ref = ref []
 
 (* 
   Local Variables:
