@@ -308,8 +308,10 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
 		let (args'',u) = repeat (i+1) env (subst_type (x,m') a'') args' in
 		ARG(m',args''), u
 	    | F_Singleton(e,t), args -> repeat i env t args
-	    | F_Sigma(v,a,b), FST args -> repeat (i+1) env a args
-	    | F_Sigma(v,a,b), SND args -> repeat (i+1) env b args
+	    | F_Sigma(v,a,b), FST args -> 
+		let (x,t) = repeat (i+1) env a args in (FST x, t)
+	    | F_Sigma(v,a,b), SND args -> 
+		let (x,t) = repeat (i+1) env b args in (SND x, t)
 	    | t, NIL -> NIL, (pos,t)
 	    | _, ARG(arg,_) -> err env (get_pos_lf arg) "extra argument"
 	    | _, FST _ -> err env pos "pi1 expected an object of sigma type"
