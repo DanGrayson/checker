@@ -33,8 +33,6 @@ let rec vars_args p_arg args =
 
 let rec atomic_expr_to_free_vars (_,e) = 
   match e with
-  | TacticHole tac -> []
-  | EmptyHole n -> []
   | APPLY(V v,NIL) -> [v]
   | APPLY(h,args) -> 
       let fv = match h with V v -> [v] | _ -> [] in
@@ -61,7 +59,6 @@ let rec lf_kind_to_vars = function
 
 let rec occurs_in_atomic_expr w (_,e) = 
   match e with
-  | TacticHole _ | EmptyHole _ -> false
   | APPLY(V v,args) -> w = v || arg_exists (occurs_in_expr w) args
   | APPLY(h,  args) ->          arg_exists (occurs_in_expr w) args
 
@@ -147,8 +144,6 @@ let rec list_application_to_string p_hd p_arg (h,args) =
 
 let rec atomic_expr_to_string_with_subs subs (_,e) = 
   match e with
-  | TacticHole tac -> tactic_to_string tac
-  | EmptyHole n -> "?" ^ string_of_int n
   | APPLY(V v,NIL) -> vartostring (var_sub subs v)
   | APPLY(h,args) -> 
       let h = match h with V v -> V (var_sub subs v) | _ -> h in
@@ -274,61 +269,40 @@ and ts_expr_to_string ((_,e) as oe) =
      the o-t-u identity of each branch is correct.
    *)
   match e with 
-  | TacticHole tac -> tactic_to_string tac
-  | EmptyHole n -> "?" ^ string_of_int n
   | APPLY(V v,NIL) -> vartostring v
   | APPLY(h,args) -> 
-      (*
-      (
-      let hs = lf_expr_head_to_string h in
-      let vardist = head_to_vardist h in (* example: Some (3, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: []) *)
-      match vardist with
-      | Some(nvars, locs) ->
-	  let branches = apply nvars (fun i -> locations (fun x -> List.mem i x) locs) in
-	  (* example: branches = [[2;3;4];[3;4];[4]] *)
-	  ignore branches;
-	  ignore hs
-      | _ -> ());
-	*)
       match h with
-      | U uh -> paren_args_to_string (uhead_to_string uh) args
-      | T th -> (
-	  match th with 
-	  | T_Pi -> (
-	      match args with
-	      | ARG(CAN t1,ARG(LAMBDA(x, CAN t2),NIL)) -> 
-		  if false
-		  then concat ["(";ts_expr_to_string t1;" ⟶ ";ts_expr_to_string t2;")"]
-		  else concat ["[" ^ lf_expr_head_to_string h ^ ";";vartostring x;"](";ts_expr_to_string t1;",";ts_expr_to_string t2;")"]
-	      | _ -> lf_atomic_p oe)
-	  | T_Sigma -> (
-	      match args with ARG(CAN t1,ARG(LAMBDA(x, CAN t2),NIL)) -> 
-		"[" ^ lf_expr_head_to_string h ^ ";" ^ vartostring x ^ "]" ^
-		"(" ^ ts_expr_to_string t1 ^ "," ^ ts_expr_to_string t2 ^ ")"
-	      | _ -> lf_atomic_p oe)
-	  | _ -> paren_args_to_string ("[" ^ lf_expr_head_to_string h ^ "]") args
-	)
-      | O oh -> (
-	  match oh with
-	  | O_ev -> (
-	      match args with 
-	      | ARG(CAN f,ARG(CAN o,ARG(LAMBDA(x, CAN t),NIL))) ->
-		  "[ev;" ^ vartostring x ^ "](" ^ ts_expr_to_string f ^ "," ^ ts_expr_to_string o ^ "," ^ ts_expr_to_string t ^ ")"
-	      | ARG(CAN f,ARG(CAN o,NIL)) ->
-		  "[ev;_](" ^ ts_expr_to_string f ^ "," ^ ts_expr_to_string o ^ ")"
-	      | _ -> lf_atomic_p oe)
-	  | O_lambda -> (
-	      match args with 
-	      | ARG(CAN t,ARG(LAMBDA(x,CAN o),NIL)) ->
-		  "[λ;" (* lambda *) ^ vartostring x ^ "](" ^ ts_expr_to_string t ^ "," ^ ts_expr_to_string o ^ ")"
-	      | _ -> lf_atomic_p oe)
-	  | O_forall -> (
-	      match args with 
-	      | ARG(CAN u,ARG(CAN u',ARG(CAN o,ARG(LAMBDA(x,CAN o'),NIL)))) ->
-		  "[forall;" ^ vartostring x ^ "](" ^ ts_expr_to_string u ^ "," ^ ts_expr_to_string u' ^ "," ^ ts_expr_to_string o ^ "," ^ ts_expr_to_string o' ^ ")"
-	      | _ -> lf_atomic_p oe)
-	  | _ -> paren_args_to_string ("[" ^ ohead_to_string oh ^ "]") args
-	)
+      | T T_Pi -> (
+	  match args with
+	  | ARG(CAN t1,ARG(LAMBDA(x, CAN t2),NIL)) -> 
+	      if false
+	      then concat ["(";ts_expr_to_string t1;" ⟶ ";ts_expr_to_string t2;")"]
+	      else concat ["[" ^ lf_expr_head_to_string h ^ ";";vartostring x;"](";ts_expr_to_string t1;",";ts_expr_to_string t2;")"]
+	  | _ -> lf_atomic_p oe)
+      | T T_Sigma -> (
+	  match args with ARG(CAN t1,ARG(LAMBDA(x, CAN t2),NIL)) -> 
+	    "[" ^ lf_expr_head_to_string h ^ ";" ^ vartostring x ^ "]" ^
+	    "(" ^ ts_expr_to_string t1 ^ "," ^ ts_expr_to_string t2 ^ ")"
+	  | _ -> lf_atomic_p oe)
+      | O O_ev -> (
+	  match args with 
+	  | ARG(CAN f,ARG(CAN o,ARG(LAMBDA(x, CAN t),NIL))) ->
+	      "[ev;" ^ vartostring x ^ "](" ^ ts_expr_to_string f ^ "," ^ ts_expr_to_string o ^ "," ^ ts_expr_to_string t ^ ")"
+	  | ARG(CAN f,ARG(CAN o,NIL)) ->
+	      "[ev;_](" ^ ts_expr_to_string f ^ "," ^ ts_expr_to_string o ^ ")"
+	  | _ -> lf_atomic_p oe)
+      | O O_lambda -> (
+	  match args with 
+	  | ARG(CAN t,ARG(LAMBDA(x,CAN o),NIL)) ->
+	      "[λ;" (* lambda *) ^ vartostring x ^ "](" ^ ts_expr_to_string t ^ "," ^ ts_expr_to_string o ^ ")"
+	  | _ -> lf_atomic_p oe)
+      | O O_forall -> (
+	  match args with 
+	  | ARG(CAN u,ARG(CAN u',ARG(CAN o,ARG(LAMBDA(x,CAN o'),NIL)))) ->
+	      "[forall;" ^ vartostring x ^ "](" ^ 
+	      ts_expr_to_string u ^ "," ^ ts_expr_to_string u' ^ "," ^ 
+	      ts_expr_to_string o ^ "," ^ ts_expr_to_string o' ^ ")"
+	  | _ -> lf_atomic_p oe)
       | _ -> paren_args_to_string (lf_expr_head_to_string h) args
 
 (** Printing functions for definitions, provisional. *)

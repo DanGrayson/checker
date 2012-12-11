@@ -60,8 +60,7 @@ and subst'' subl = function
                     raise (Unimplemented_expr d))
           with Not_found -> d)
       | APPLY(label,args) -> CAN(pos, APPLY(label,subst_spine subl args))
-      | TacticHole _ -> raise Internal
-      | EmptyHole _ -> d)
+     )
   | PAIR(pos,x,y) -> PAIR(pos,subst subl x,subst subl y)
   | LAMBDA(v, body) -> 
       let (v,body) = subst_fresh subl (v,body) in

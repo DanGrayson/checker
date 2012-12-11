@@ -83,14 +83,12 @@ Define foo (u : Ulevel) (t : [U]([next](u))) := *t;; (El_type ([next] u) t $a).
 
 Define A (u : Ulevel) (t : [U](u)) := *t;; (El_type u t $a).
 
-Show 4.
+Define C (u : Ulevel) (t : [U](u)) := *t;; (El_type ($2 parentheses are optional) $1 ($0 anything can go here)).
 
 End.
 
 Check LF ([A.0] ([next] u1) ([u] u1) (u_univ u1)).
 Check LF ([A.1] ([next] u1) ([u] u1) (u_univ u1)).
-
-Define C (u : Ulevel) (t : [U](u)) := *t;; (El_type $2 $2 $2).
 
 Check LF type texp * oexp .
 Check LF      pair ([U] u0) ([u] u0).

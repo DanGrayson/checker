@@ -5,7 +5,10 @@ open Variables
 open Typesystem
 open Names
 
+let cite_tactic tac args = APPLY(TAC tac, args)
+
 let ( ** ) x s = ARG(x,s)		(* right associative *)
+let ( *** ) x s = ARG(CAN x,s)		(* right associative *)
 
 let rec join_args a b =
   match a with

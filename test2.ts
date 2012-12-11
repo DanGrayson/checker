@@ -1,5 +1,8 @@
 Variable T : Type.
-Define TT := T ;; $a.
+Define TT := T ;; ($a).
+Check LF [TT.1].
+Check TS [TT.1].
+
 End.
 
 

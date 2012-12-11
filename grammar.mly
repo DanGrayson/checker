@@ -150,7 +150,7 @@ lf_type_constant:
     }
 
 lf_expr:
-| e=atomic_term
+| e=unmarked_atomic_term
     { CAN(Position($startpos, $endpos), e)  }
 | e=lf_lambda_expression
     { e }
@@ -176,44 +176,23 @@ lf_expr:
     { pi2 (pi2 (pi2 (pi2 x))) }
 
 lf_lambda_expression:
-| Wlparen Klambda v=variable Wcomma body=lf_expr Wrparen
+| Wlparen Klambda v= variable_or_unused Wcomma body=lf_expr Wrparen
     { LAMBDA(v,body) }
-| Wlparen Klambda v=variable_unused Wcomma body=lf_expr Wrparen
-    { LAMBDA(v,body) }
-| Wlparen v=variable ArrowFromBar body=lf_lambda_expression_body Wrparen
-    { LAMBDA(v,body) }
-| Wlparen v=variable_unused ArrowFromBar body=lf_lambda_expression_body Wrparen
+| Wlparen v= variable_or_unused ArrowFromBar body=lf_lambda_expression_body Wrparen
     { LAMBDA(v,body) }
 
 lf_lambda_expression_body:
 | e=lf_expr
     { e }
-| v=variable ArrowFromBar body=lf_lambda_expression_body
-    { LAMBDA(v,body) }
-| v=variable_unused ArrowFromBar body=lf_lambda_expression_body
+| v= variable_or_unused ArrowFromBar body=lf_lambda_expression_body
     { LAMBDA(v,body) }
 
-variable_unused:
-| Wunderscore
-    { newunused() }
-
-tactic_descriptor:
-| c=IDENTIFIER
-  { c }
-
-tactic_expr:
-| Wdollar name=tactic_descriptor
-    { TacticHole (Q_name name) }
-| Wdollar index=NUMBER
-    { TacticHole (Q_index index) }
-
-atomic_term:
-| tac= tactic_expr
-    {tac}
+unmarked_atomic_term:
 | variable
     { APPLY(V $1,NIL) }
-| Wunderscore
-    { new_hole () }
+| empty_hole {$1}
+| tac= tactic_expr
+    { cite_tactic tac NIL }
 | Wlparen f=lf_expr_head args=list(lf_expr) Wrparen
     { APPLY(f,list_to_spine args) }
 
@@ -222,6 +201,14 @@ lf_expr_head:
     { $1 }
 | variable
     { V $1 }
+| tac= tactic_expr
+    { TAC tac }
+
+tactic_expr:
+| Wdollar name=IDENTIFIER
+    { Tactic_name name }
+| Wdollar index=NUMBER
+    { Tactic_index index }
 
 command: c=command0 
   { Position($startpos, $endpos), c }
@@ -357,12 +344,10 @@ lf_expr_from_ts_syntax:
 | arg= lf_expr_from_ts_syntax Backslash f= lf_expr_from_ts_syntax
     { Substitute.apply_args (Position($startpos, $endpos)) f (arg ** NIL) }
 | tac= tactic_expr
-    { CAN (Position($startpos, $endpos), tac) }
+    { CAN (Position($startpos, $endpos), cite_tactic tac NIL) }
 | e = ts_expr
     { CAN e }
-| v=variable DoubleArrowFromBar body=lf_expr_from_ts_syntax
-    { LAMBDA(v,body) }
-| v=variable_unused DoubleArrowFromBar body=lf_expr_from_ts_syntax
+| v= variable_or_unused DoubleArrowFromBar body=lf_expr_from_ts_syntax
     { LAMBDA(v,body) }
 | o=lf_expr_from_ts_syntax DoubleBackslash f=lf_expr_from_ts_syntax
     { Substitute.apply_args (Position($startpos, $endpos)) f (o ** NIL) }
@@ -381,26 +366,26 @@ arglist:
 | Wlparen a=separated_list(Wcomma,lf_expr_from_ts_syntax) Wrparen
     {a}
 
-variable:
-| IDENTIFIER
-    { Var $1 }
-| v=VARIABLE
-    { v }
+(* it's tempting to include '_' (Wunderscore) as a variable but there would be an 
+    ambiguity when looking at the start [ _ |-> x ] and [ _ ].  In the first case,
+   it's an unused variable, and in the second case, it's an empty hole. *)
 
-variable_or_unused:
-| v=variable
-    {v}
-| v=variable_unused
-    {v}
+empty_hole: Wunderscore { new_hole () }
+unused_variable: Wunderscore { newunused() }
+variable_or_unused: variable {$1} | unused_variable {$1}
+
+variable:
+| IDENTIFIER { Var $1 }
+| v=VARIABLE { v }
 
 unmarked_ts_expr:
 | variable
     { APPLY(V $1,NIL) }
-| Wunderscore
-    { new_hole () }
+| empty_hole {$1}
 | f=ts_expr o=ts_expr
     %prec Reduce_application
-    { APPLY(O O_ev, ARG(CAN f,ARG(CAN o,ARG(CAN(Position($startpos, $endpos), (TacticHole (Q_name "ev3"))),NIL)))) }
+    { let pos = Position($startpos, $endpos) in 
+      APPLY(O O_ev, f *** o *** (pos, cite_tactic (Tactic_name "ev3") NIL) *** NIL) }
 | Klambda x=variable Colon t=ts_expr Wcomma o=ts_expr
     %prec Reduce_binder
     { make_O_lambda t (x,o) }

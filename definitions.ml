@@ -49,8 +49,6 @@ let fold = List.fold_right
 
 let wrap vartypes (def,pos,tm,tp) = (def, pos, fold lamb vartypes tm, fold pi vartypes tp)
 
-let hole pos = CAN(pos, new_hole())
-
 let term_or_hole pos = function
   | Some tm -> tm
   | None -> hole pos

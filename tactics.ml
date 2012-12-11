@@ -13,7 +13,7 @@ let add_tactic name f =
   Lfcheck.tactics := (name,f) :: !Lfcheck.tactics
 
 (** find the first variable in the context of the right type and return it *)
-let assumption surr env pos t =
+let assumption surr env pos t args =
   let rec repeat = function
     | (v,u) :: envp ->
 	if 
@@ -28,7 +28,7 @@ let assumption surr env pos t =
   in repeat env
 
 (** fill in the third argument of [ev](f,x,_) using tau *)
-let ev3 surr env pos t =
+let ev3 surr env pos t args =
   (* This code was formerly a part of the file fillin.ml, removed. *)
   match surr with 
   | Some(_, (pos,APPLY( O O_ev, ARG(CAN f,_)))) -> (
@@ -49,7 +49,6 @@ let ev3 surr env pos t =
 
 let _ = 
   add_tactic "ev3" ev3;
-  add_tactic "assumption" assumption;
   add_tactic "a" assumption
 
 (* 

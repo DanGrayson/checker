@@ -40,8 +40,9 @@ type oHead =
 (** Tactics *)
 
 type tactic_expr = 
-  | Q_name of string
-  | Q_index of int
+  | Tactic_hole of int			(* represented by _ *)
+  | Tactic_name of string		(* represented by $foo *)
+  | Tactic_index of int			(* represented by $n *)
 
     (** The type [lf_expr_head] accommodates the variables of LF, and the constants of
         LF, which in turn include the labels of TS, the inference rules of TS,
@@ -67,6 +68,7 @@ type lf_expr_head =
   | T of tHead			(** labels for t-expressions of TS *)
   | O of oHead			(** labels for o-expressions of TS *)
   | V of var			(** labels for variables of TS *)
+  | TAC of tactic_expr		(** An empty hole, to be filled in later by calling a tactic routine. *)
 	
 (** The expressions of LF are the "canonical" terms, and are of type [lf_expr].
 
@@ -89,11 +91,6 @@ type lf_expr =
  *)
 and atomic_expr = unmarked_atomic_expr marked
 and unmarked_atomic_expr =
-    (* We should move the holes into the head, so pi1 and pi2 can work on them, too *)
-  | EmptyHole of int
-    (** An empty hole, to be filled in later. *)
-  | TacticHole of tactic_expr
-    (** An empty hole, to be filled in later by calling a tactic routine writtn in OCAML. *)
   | APPLY of lf_expr_head * spine
     (** A variable or constant applied iteratively to its arguments, if any. *)
 

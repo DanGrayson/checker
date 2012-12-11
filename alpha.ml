@@ -33,12 +33,11 @@ module Make(Ueq: Universe.Equivalence) : S = struct
       | CAN(_,d), CAN(_,e) -> (
 	  d == e || 
 	  match (d,e) with
-	  | APPLY(V t,NIL), APPLY(V t',NIL) -> testalpha t t' alpha
 	  | APPLY(h,args), APPLY(h',args') -> (
 	      match (h,h') with
+	      | V t, V t' -> testalpha t t' alpha && Helpers.args_equal (term_eq alpha) args args'
 	      | U _, U _ -> uequiv ulevel_context x y
-	      | _ -> h = h' && Helpers.args_equal (term_eq alpha) args args')
-	  | (a,a') -> a = a')
+	      | _ -> h = h' && Helpers.args_equal (term_eq alpha) args args'))
       | _ -> false
     in term_eq alpha
     

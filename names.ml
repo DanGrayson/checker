@@ -38,8 +38,14 @@ let thead_to_string h = List.assoc (T h) lf_expr_head_table
 
 let ohead_to_string h = List.assoc (O h) lf_expr_head_table
 
+let tactic_to_string : tactic_expr -> string = function
+  | Tactic_hole n -> "?" ^ string_of_int n
+  | Tactic_name n -> "$" ^ n
+  | Tactic_index n -> "$" ^ string_of_int n
+
 let lf_expr_head_to_string = function
   | V v -> vartostring v
+  | TAC tac -> tactic_to_string tac
   | h -> "[" ^ List.assoc h lf_expr_head_table ^ "]"
 
 let lf_type_constant_table = [
@@ -61,10 +67,6 @@ let lf_type_heads = List.map fst lf_type_constant_table
 
 let string_to_type_constant = List.map swap lf_type_constant_table
 
-let tactic_to_string : tactic_expr -> string = function
-  | Q_name n -> "$" ^ n
-  | Q_index n -> "$" ^ string_of_int n
-
 let fetch_type env pos v = 
   try List.assoc v env
   with Not_found -> 
@@ -75,6 +77,7 @@ let label_to_type env pos = function
   | T h -> thead_to_lf_type h
   | O h -> ohead_to_lf_type h
   | V v -> fetch_type env pos v
+  | TAC _ -> raise Internal
 
 let rec get_pos_lf (x:lf_expr) =
   match x with
@@ -104,7 +107,8 @@ let ts_bind (v,t) env =
 
 let new_hole = 
   let counter = ref 0 in
-  function () -> (
-    let h = EmptyHole !counter in
+  fun () -> (
     incr counter;
-    h)
+    APPLY(TAC (Tactic_hole !counter), NIL))
+
+let hole pos = CAN(pos, new_hole())

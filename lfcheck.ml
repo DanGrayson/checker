@@ -45,11 +45,9 @@ let ts_binders = [
   ((O O_ev, 2), abstraction3)
 ]
 
-let apply_ts_binder env i = function
-  | APPLY(h,args) -> (
-      try (List.assoc (h,i) ts_binders) env args
-      with Not_found -> env)
-  | _ -> raise Internal
+let apply_ts_binder env i (APPLY(h,args)) =
+  try (List.assoc (h,i) ts_binders) env args
+  with Not_found -> env
 
 let try_alpha = false (* turning this on could slow things down a lot before we implement hash codes *)
 
@@ -86,18 +84,20 @@ type tactic_function =
     -> context							      (* the active context *)
     -> position							      (* the source code position of the tactic hole *)
     -> lf_type							      (* the type of the hole, e.g., [texp] *)
+    -> spine							      (* the arguments of the tactic *)
  -> lf_expr option									 (* the proffered expression *)
 
 let tactics : (string * tactic_function) list ref = ref []
 
-let apply_tactic surr env pos t = function
-  | Q_name name ->
+let apply_tactic surr env pos t args = function
+  | Tactic_hole n -> None
+  | Tactic_name name ->
       let tactic = 
 	try List.assoc name !tactics
 	with Not_found -> err env pos ("unknown tactic: "^name)
       in
-      tactic surr env pos t
-  | Q_index n ->
+      tactic surr env pos t args
+  | Tactic_index n ->
       let (v,u) = 
 	try List.nth env n 
 	with Failure nth -> err env pos ("index out of range: "^string_of_int n)
@@ -116,8 +116,6 @@ let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
   match x with
   | CAN (pos,x) -> (
       match x with
-      | TacticHole _ -> raise NotImplemented
-      | EmptyHole _ -> err env pos "empty hole found"
       | APPLY(l,args) -> 
 	  let t = label_to_type env pos l in
 	  let rec repeat i args t =
@@ -141,14 +139,8 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
   (* may raise Not_found if there is no head reduction *)
   match x with
-  | CAN (pos,x) -> (
-      match x with
-      | APPLY(V v, args) -> let f = unfold env v in apply_args pos f args
-      | APPLY _ -> raise Not_found
-      | TacticHole _ -> raise NotImplemented
-      | EmptyHole _ -> err env pos "empty hole found"
-     )
-  | PAIR _ | LAMBDA _ -> raise Not_found
+  | CAN(pos,APPLY(V v, args)) -> let f = unfold env v in apply_args pos f args
+  | _ -> raise Not_found
 
 let rec head_normalization (env:context) (x:lf_expr) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
@@ -194,8 +186,6 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
   | CAN y ->
       let (pos,y0) = y in
       match y0 with
-      | TacticHole _ -> raise NotImplemented
-      | EmptyHole _ -> err env pos "path_normalization encountered an empty hole"
       | APPLY(f,args) ->
 	  let t0 = label_to_type env pos f in
 	  let (t,args) =
@@ -306,8 +296,6 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
   | CAN e ->
       let (pos,e0) = e in
       match e0 with
-      | TacticHole _ -> err env pos ("tactic hole: "^ts_expr_to_string e)
-      | EmptyHole _ -> err env pos ("empty hole: "^ts_expr_to_string e)
       | APPLY(label,args) -> (
 	  let a = label_to_type env pos label in
 	  let rec repeat i env a args = (
@@ -361,21 +349,18 @@ and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
   (* assume x and y are head reduced *)
   (* see figure 11, page 711 [EEST] *)
   match x,y with
-  | CAN (xpos,x0), CAN (ypos,y0) -> (
-      match x0,y0 with
-      | APPLY(f,args), APPLY(f',args') ->
-	  if not (f = f') 
-	  then mismatch_term env xpos x ypos y;
-	  let t = label_to_type env xpos f in
-	  let rec repeat t args args' =
-	    match t,args,args' with
-	    | t, NIL, NIL -> t
-	    | (pos,F_Pi(v,a,b)), ARG(x,args), ARG(y,args') ->
-		term_equivalence xpos ypos env x y a;
-		repeat (subst_type (v,x) b) args args'
-	    | _ -> mismatch_term env xpos x ypos y
-	  in repeat t args args'
-      | _ -> mismatch_term env xpos x ypos y)
+  | CAN (xpos,APPLY(f,args)), CAN (ypos,APPLY(f',args')) -> (
+      if not (f = f') 
+      then mismatch_term env xpos x ypos y;
+      let t = label_to_type env xpos f in
+      let rec repeat t args args' =
+	match t,args,args' with
+	| t, NIL, NIL -> t
+	| (pos,F_Pi(v,a,b)), ARG(x,args), ARG(y,args') ->
+	    term_equivalence xpos ypos env x y a;
+	    repeat (subst_type (v,x) b) args args'
+	| _ -> mismatch_term env xpos x ypos y
+      in repeat t args args')
   | _  -> mismatch_term env (get_pos_lf x) x (get_pos_lf y) y
 
 and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
@@ -443,12 +428,8 @@ and type_check (surr:surrounding) (pos:position) (env:context) (e:lf_expr) (t:lf
        Fill in holes of the form [ ([ev] f o _) ] by using [tau] to compute the type that ought to go there. *)
   let (pos,t0) = t in 
   match e, t0 with
-  | CAN(pos, EmptyHole _), _ ->
-      raise (TypeCheckingFailure2 (env,
-				   pos, "hole found : "^lf_expr_to_string e,
-				   pos, "   of type : "^lf_type_to_string t))
-  | CAN(pos, TacticHole tac), _ -> (
-      match apply_tactic surr env pos t tac with
+  | CAN(pos, APPLY(TAC tac,args)), _ -> (
+      match apply_tactic surr env pos t args tac with
       | Some e -> type_check surr pos env e t
       | None ->
 	  raise (TypeCheckingFailure2 (env,
