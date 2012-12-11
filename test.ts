@@ -92,7 +92,7 @@ Check LF ([A.1] ([next] u1) ([u] u1) (u_univ u1)).
 
 Define C (u : Ulevel) (t : [U](u)) := *t;; (El_type $2 $2 $2).
 
-Check LF type texp ** oexp .
+Check LF type texp * oexp .
 Check LF      pair ([U] u0) ([u] u0).
 Check LF type Sigma x: uexp, texp.
 Check LF      pair u0 ([U] u0).

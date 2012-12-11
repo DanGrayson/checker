@@ -31,9 +31,9 @@ let chk uv ((lhs:atomic_expr),(rhs:atomic_expr)) =
   let rec ev e = 
     let (pos,e0) = e 
     in match e0 with
-    | APPLY(V u,[]) -> - step_size * (index u)
-    | APPLY(U U_next,[CAN u]) -> (ev u) + 1
-    | APPLY(U U_max,[CAN u;CAN v]) -> max (ev u) (ev v)
+    | APPLY(V u,NIL) -> - step_size * (index u)
+    | APPLY(U U_next,ARG(CAN u,NIL)) -> (ev u) + 1
+    | APPLY(U U_max,ARG(CAN u,ARG(CAN v,NIL))) -> max (ev u) (ev v)
     | _ -> raise Error.Internal
   in 
   if (ev lhs) != (ev rhs) then raise (Inconsistency (lhs, rhs))
@@ -69,11 +69,11 @@ module Equal = struct
     | CAN(_,a), CAN(_,b) -> (
 	a == b || 
 	match (a,b) with 
-	| APPLY(V x,[]), APPLY(V x',[]) -> x = x'
-	| APPLY(U U_next, [x ]),
-	  APPLY(U U_next, [x']) -> ueq x x'
-	| APPLY(U U_max, [x;y]), 
-	  APPLY(U U_max, [x';y']) -> ueq x x' && ueq y y'
+	| APPLY(V x,NIL), APPLY(V x',NIL) -> x = x'
+	| APPLY(U U_next, ARG(x ,NIL)),
+	  APPLY(U U_next, ARG(x',NIL)) -> ueq x x'
+	| APPLY(U U_max, ARG(x,ARG(y,NIL))), 
+	  APPLY(U U_max, ARG(x',ARG(y',NIL))) -> ueq x x' && ueq y y'
 	| _ -> false)
     | _ -> false
     in ueq

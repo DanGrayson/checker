@@ -82,7 +82,7 @@ let rec get_pos_lf (x:lf_expr) =
   | PAIR(pos,_,_) -> pos
   | LAMBDA(x,b) -> get_pos_lf b
 
-let var_to_ts v = APPLY(V v,[])
+let var_to_ts v = APPLY(V v,NIL)
 
 let var_to_lf v = CAN (nowhere 1 (var_to_ts v))
 

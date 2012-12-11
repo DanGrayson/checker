@@ -1,5 +1,11 @@
-Variable u0 : Ulevel.
 Variable T : Type.
+Define TT := T ;; $a.
+End.
+
+
+
+Variable u0 : Ulevel.
+
 
 
 

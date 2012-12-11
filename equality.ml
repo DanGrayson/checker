@@ -19,7 +19,7 @@ and eq' alpha e e' = (
 and eq alpha (pos,e) (pos',e') = (
       match (e,e') with
 
-      | APPLY(V o,[]), APPLY(V o',[]) -> testalpha o o' alpha
+      | APPLY(V o,[]), APPLY(V o',NIL) -> testalpha o o' alpha
 
       |   APPLY(O O_ev,[CAN(_,APPLY(O O_lambda,_) as f );CAN o ;LAMBDA(x ,CAN t )]),
           APPLY(O O_ev,[CAN(_,APPLY(O O_lambda,_) as f');CAN o';LAMBDA(x',CAN t')]) 

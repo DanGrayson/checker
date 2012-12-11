@@ -158,47 +158,22 @@ lf_expr:
     { PAIR(Position($startpos, $endpos), a, b) }
 
 | Wlparen Kpi1 x=lf_expr Wrparen
-    { let pos = Position($startpos, $endpos) in
-      let pi1 x = CAN(pos, PR1 x) in
-      pi1 x }
-
+    { pi1 x }
 | Wlparen Kpi12 x=lf_expr Wrparen
-    { let pos = Position($startpos, $endpos) in
-      let pi1 x = CAN(pos, PR1 x) in
-      let pi2 x = CAN(pos, PR2 x) in
-      pi1 (pi2 x) }
-
+    { pi1 (pi2 x) }
 | Wlparen Kpi122 x=lf_expr Wrparen
-    { let pos = Position($startpos, $endpos) in
-      let pi1 x = CAN(pos, PR1 x) in
-      let pi2 x = CAN(pos, PR2 x) in
-      pi1 (pi2 (pi2 x)) }
-
+    { pi1 (pi2 (pi2 x)) }
 | Wlparen Kpi1222 x=lf_expr Wrparen
-    { let pos = Position($startpos, $endpos) in
-      let pi1 x = CAN(pos, PR1 x) in
-      let pi2 x = CAN(pos, PR2 x) in
-      pi1 (pi2 (pi2 (pi2 x))) }
+    { pi1 (pi2 (pi2 (pi2 x))) }
 
 | Wlparen Kpi2 x=lf_expr Wrparen
-    { let pos = Position($startpos, $endpos) in
-      let pi2 x = CAN(pos, PR2 x) in
-      pi2 x }
-
+    { pi2 x }
 | Wlparen Kpi22 x=lf_expr Wrparen
-    { let pos = Position($startpos, $endpos) in
-      let pi2 x = CAN(pos, PR2 x) in
-      pi2 (pi2 x) }
-
+    { pi2 (pi2 x) }
 | Wlparen Kpi222 x=lf_expr Wrparen
-    { let pos = Position($startpos, $endpos) in
-      let pi2 x = CAN(pos, PR2 x) in
-      pi2 (pi2 (pi2 x)) }
-
+    { pi2 (pi2 (pi2 x)) }
 | Wlparen Kpi2222 x=lf_expr Wrparen
-    { let pos = Position($startpos, $endpos) in
-      let pi2 x = CAN(pos, PR2 x) in
-      pi2 (pi2 (pi2 (pi2 x))) }
+    { pi2 (pi2 (pi2 (pi2 x))) }
 
 lf_lambda_expression:
 | Wlparen Klambda v=variable Wcomma body=lf_expr Wrparen
@@ -236,11 +211,11 @@ atomic_term:
 | tac= tactic_expr
     {tac}
 | variable
-    { APPLY(V $1,[]) }
+    { APPLY(V $1,NIL) }
 | Wunderscore
     { new_hole () }
 | Wlparen f=lf_expr_head args=list(lf_expr) Wrparen
-    { APPLY(f,args) }
+    { APPLY(f,list_to_spine args) }
 
 lf_expr_head:
 | tsterm_head
@@ -330,13 +305,13 @@ uEquation:
 | u=ts_expr Wequal v=ts_expr 
     { (u,v) }
 | v=ts_expr Wgreaterequal u=ts_expr 
-    { (Position($startpos, $endpos), APPLY(U U_max, [ CAN u; CAN v])), v }
+    { let pos = Position($startpos, $endpos) in (pos, make_U_max u v), v }
 | u=ts_expr Wlessequal v=ts_expr 
-    { (Position($startpos, $endpos), APPLY(U U_max, [ CAN u; CAN v])), v }
+    { let pos = Position($startpos, $endpos) in (pos, make_U_max u v), v }
 | v=ts_expr Wgreater u=ts_expr 
-    { (Position($startpos, $endpos), APPLY(U U_max, [ CAN (Position($startpos, $endpos), APPLY( U U_next,[CAN u])); CAN v])), v }
+    { let pos = Position($startpos, $endpos) in (pos, make_U_max (pos, make_U_next u) v), v }
 | u=ts_expr Wless v=ts_expr 
-    { (Position($startpos, $endpos), APPLY(U U_max, [ CAN (Position($startpos, $endpos), APPLY( U U_next,[CAN u])); CAN v])), v }
+    { let pos = Position($startpos, $endpos) in (pos, make_U_max (pos, make_U_next u) v), v }
 
 parenthesized(X): x=delimited(Wlparen,X,Wrparen) {x}
 list_of_parenthesized(X): list(parenthesized(X)) {$1}
@@ -380,7 +355,7 @@ bare_lf_type_from_ts_syntax:
 
 lf_expr_from_ts_syntax:
 | arg= lf_expr_from_ts_syntax Backslash f= lf_expr_from_ts_syntax
-    { Substitute.apply_args (Position($startpos, $endpos)) f [arg] }
+    { Substitute.apply_args (Position($startpos, $endpos)) f (arg ** NIL) }
 | tac= tactic_expr
     { CAN (Position($startpos, $endpos), tac) }
 | e = ts_expr
@@ -390,7 +365,7 @@ lf_expr_from_ts_syntax:
 | v=variable_unused DoubleArrowFromBar body=lf_expr_from_ts_syntax
     { LAMBDA(v,body) }
 | o=lf_expr_from_ts_syntax DoubleBackslash f=lf_expr_from_ts_syntax
-    { Substitute.apply_args (Position($startpos, $endpos)) f [o] }
+    { Substitute.apply_args (Position($startpos, $endpos)) f (o ** NIL) }
 
 ts_expr:
 | unmarked_ts_expr
@@ -420,32 +395,33 @@ variable_or_unused:
 
 unmarked_ts_expr:
 | variable
-    { APPLY(V $1,[]) }
+    { APPLY(V $1,NIL) }
 | Wunderscore
     { new_hole () }
 | f=ts_expr o=ts_expr
     %prec Reduce_application
-    { APPLY(O O_ev, [CAN f; CAN o; CAN(Position($startpos, $endpos), (TacticHole (Q_name "ev3")))]) }
+    { APPLY(O O_ev, ARG(CAN f,ARG(CAN o,ARG(CAN(Position($startpos, $endpos), (TacticHole (Q_name "ev3"))),NIL)))) }
 | Klambda x=variable Colon t=ts_expr Wcomma o=ts_expr
     %prec Reduce_binder
-    { make_OO_lambda t (x,o) }
+    { make_O_lambda t (x,o) }
 | Wstar o=ts_expr
     %prec Reduce_star
-    { make_TT_El o }
+    { make_T_El o }
 | KPi x=variable Colon t1=ts_expr Wcomma t2=ts_expr
     %prec Reduce_binder
-    { make_TT_Pi t1 (x,t2) }
+    { make_T_Pi t1 (x,t2) }
 | Wlparen x=variable Colon t=ts_expr Wrparen Arrow u=ts_expr
-    { make_TT_Pi t (x,u) }
+    { make_T_Pi t (x,u) }
 | t=ts_expr Arrow u=ts_expr
-    { make_TT_Pi t (newunused(),u) }
+    { make_T_Pi t (newunused(),u) }
 | KSigma x=variable Colon t1=ts_expr Wcomma t2=ts_expr
     %prec Reduce_binder
-    { make_TT_Sigma t1 (x,t2) }
+    { make_T_Sigma t1 (x,t2) }
 | Kumax Wlparen u=ts_expr Wcomma v=ts_expr Wrparen
-    { APPLY(U U_max,[CAN u;CAN v])  }
+    { APPLY(U U_max,ARG(CAN u,ARG(CAN v,NIL)))  }
 | label=tsterm_head args=arglist
     {
+     let args = list_to_spine args in
      match label with
      | V _ -> APPLY(label,args)
      | _ -> (
@@ -490,7 +466,7 @@ unmarked_ts_expr:
                  ) indices arg
           ) varindices args
          in
-         APPLY(label,args)
+         APPLY(label,list_to_spine args)
    }
  
 (* 

@@ -5,7 +5,7 @@ open Names
 
 let rec get_ts_type (v:var) (env:context) : atomic_expr = (
   match env with
-  | (_, (pos, F_APPLY(F_hastype,[CAN(_,APPLY(V v',[])); CAN t]))) :: env 
+  | (_, (pos, F_APPLY(F_hastype,[CAN(_,APPLY(V v',NIL)); CAN t]))) :: env 
     -> if v = v' then t else get_ts_type v env
   | _ :: env -> get_ts_type v env
   | [] -> raise Not_found
@@ -13,9 +13,9 @@ let rec get_ts_type (v:var) (env:context) : atomic_expr = (
 
 let rec tau (pos:position) (env:context) (pos,e) : atomic_expr = 
   match e with
-  | PR1 _ | PR2 _ | TacticHole _ -> raise NotImplemented
+  | TacticHole _ -> raise NotImplemented
   | EmptyHole _ -> raise (TypeCheckingFailure(env, pos, "empty hole, type undetermined"))
-  | APPLY(V v,[]) -> (
+  | APPLY(V v,NIL) -> (
       try get_ts_type v env
       with Not_found -> raise (TypeCheckingFailure(env,pos, "unbound variable, not in TS context: " ^ vartostring v)))
   | APPLY(h,args) -> with_pos pos (
@@ -29,26 +29,30 @@ let rec tau (pos:position) (env:context) (pos,e) : atomic_expr =
 	      match oh with
 	    | O_u -> (
 		match args with 
-		| [CAN u] -> Helpers.make_TT_U (pos, (Helpers.make_UU U_next [CAN u]))
+		| ARG(CAN u,NIL) -> Helpers.make_T_U (pos, (Helpers.make_U_next u))
 		| _ -> raise Internal)
 	    | O_j -> (
 		match args with 
-		| [CAN m1;CAN m2] -> 
-		    Helpers.make_TT_Pi 
-		      (with_pos_of m1 (Helpers.make_TT_U m1))
-		      (newunused(), (with_pos_of m2 (Helpers.make_TT_U m2)))
+		| ARG(CAN m1,ARG(CAN m2,NIL)) -> 
+		    Helpers.make_T_Pi 
+		      (with_pos_of m1 (Helpers.make_T_U m1))
+		      (newunused(), (with_pos_of m2 (Helpers.make_T_U m2)))
 		| _ -> raise Internal)
 	    | O_ev -> (
 		match args with 
-		| [f; o; LAMBDA(x,t)] -> unmark (uncan (Substitute.subst (x,o) t)) (* ????  any use of "uncan" is suspect *)
+		| ARG(f,ARG(o,ARG(LAMBDA(x,t),NIL))) ->
+		    (* ????  any use of "uncan" is suspect *)
+		    unmark (Helpers.uncan (Substitute.subst (x,o) t))
 		| _ -> raise Internal)
 	    | O_lambda -> (
 		match args with 
-		| [CAN t;LAMBDA(x,CAN o)] -> Helpers.make_TT_Pi t (x, tau pos (ts_bind (x,t) env) o)
+		| ARG(CAN t,ARG(LAMBDA(x,CAN o),NIL)) ->
+		    Helpers.make_T_Pi t (x, tau pos (ts_bind (x,t) env) o)
 		| _ -> raise Internal)
 	    | O_forall -> (
 		match args with 
-		| CAN u :: CAN u' :: _ -> Helpers.make_TT_U (nowhere 6 (Helpers.make_UU U_max [CAN u; CAN u']))
+		| ARG(CAN u,ARG(CAN u',_)) ->
+		    Helpers.make_T_U (nowhere 6 (Helpers.make_U_max u u'))
 		| _ -> raise Internal)
 	    | O_pair -> raise NotImplemented
 	    | O_pr1 -> raise NotImplemented
@@ -56,7 +60,7 @@ let rec tau (pos:position) (env:context) (pos,e) : atomic_expr =
 	    | O_total -> raise NotImplemented
 	    | O_pt -> raise NotImplemented
 	    | O_pt_r -> raise NotImplemented
-	    | O_tt -> Helpers.make_TT_Pt
+	    | O_tt -> Helpers.make_T_Pt
 	    | O_coprod -> raise NotImplemented
 	    | O_ii1 -> raise NotImplemented
 	    | O_ii2 -> raise NotImplemented

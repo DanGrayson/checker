@@ -2,6 +2,7 @@
 
 open Error
 open Variables
+open Helpers
 open Typesystem
 open Names
 open Printf
@@ -18,52 +19,51 @@ let rec remove x = function
   | [] -> []
   | y :: rest -> if x = y then remove x rest else y :: remove x rest
 
-let join a b = List.flatten [a;b]
-
 let pvar free_vars v = if List.mem v free_vars then vartostring v else "_"
 
 (** Lists of free variables. *)
 
-let rec vars_args fv p_arg args = 
-  let r = List.map p_arg args in
-  join (List.flatten r) fv
+let rec vars_arglist p_arg args = List.flatten (List.map p_arg args)
+
+let rec vars_args p_arg args = 
+  match args with 
+  | ARG(x,args) -> p_arg x @ vars_args p_arg args
+  | FST args | SND args -> vars_args p_arg args
+  | NIL -> []
 
 let rec atomic_expr_to_free_vars (_,e) = 
   match e with
   | TacticHole tac -> []
   | EmptyHole n -> []
-  | APPLY(V v,[]) -> [v]
+  | APPLY(V v,NIL) -> [v]
   | APPLY(h,args) -> 
       let fv = match h with V v -> [v] | _ -> [] in
-      vars_args fv lf_expr_to_vars args
-  | PR1 x
-  | PR2 x -> lf_expr_to_vars x
+      fv @ vars_args lf_expr_to_vars args
 
 and lf_expr_to_vars = function
   | LAMBDA(x,body) -> remove x (lf_expr_to_vars body)
-  | PAIR(_,x,y) -> join (lf_expr_to_vars x) (lf_expr_to_vars y)
+  | PAIR(_,x,y) -> lf_expr_to_vars x @ lf_expr_to_vars y
   | CAN e -> atomic_expr_to_free_vars e
 
-let rec dependent_vars (v,t,u) = join (lf_type_to_vars t) (remove v (lf_type_to_vars u))
+let rec dependent_vars (v,t,u) = lf_type_to_vars t @ remove v (lf_type_to_vars u)
 
 and lf_type_to_vars (_,t) = match t with
   | F_Pi   (v,t,u) -> dependent_vars (v,t,u)
   | F_Sigma(v,t,u) -> dependent_vars (v,t,u)
-  | F_Singleton(x,t) -> join (lf_expr_to_vars x) (lf_type_to_vars t)
-  | F_APPLY(hd,args) -> vars_args [] lf_expr_to_vars args
+  | F_Singleton(x,t) -> lf_expr_to_vars x @ lf_type_to_vars t
+  | F_APPLY(hd,args) -> vars_arglist lf_expr_to_vars args
 
 let rec lf_kind_to_vars = function
   | K_type -> []
-  | K_Pi(v,t,k) -> join (lf_type_to_vars t) (remove v (lf_kind_to_vars k))
+  | K_Pi(v,t,k) -> lf_type_to_vars t @ remove v (lf_kind_to_vars k)
 
 (** Whether [x] occurs as a free variable in an expression. *)
 
 let rec occurs_in_atomic_expr w (_,e) = 
   match e with
   | TacticHole _ | EmptyHole _ -> false
-  | APPLY(V v,args) -> w = v || List.exists (occurs_in_expr w) args
-  | APPLY(h,  args) ->          List.exists (occurs_in_expr w) args
-  | PR1 e | PR2 e -> occurs_in_expr w e
+  | APPLY(V v,args) -> w = v || arg_exists (occurs_in_expr w) args
+  | APPLY(h,  args) ->          arg_exists (occurs_in_expr w) args
 
 and occurs_in_expr w = function
   | LAMBDA(v,body) -> w <> v && occurs_in_expr w body
@@ -131,26 +131,28 @@ let var_chooser x subs occurs_in e =
 
 let occurs_in_list occurs_in x args = List.exists (occurs_in x) args
 
-let rec application_to_string p_hd p_arg (h,args) = 
-  let r = List.map p_arg args in
-  let args = concat (List.flatten (List.map (fun arg -> [" ";arg]) r)) in
-  let s = concat [p_hd h; args] in
-  if String.contains s ' ' then concat ["(";s;")"] else s
+let rec spine_application_to_string p_hd p_arg (h,args) = 
+  args_fold
+    (fun accu arg -> accu ^ " " ^ p_arg arg)
+    (fun accu -> "(π₁ " ^ accu ^ ")")
+    (fun accu -> "(π₂ " ^ accu ^ ")")
+    (p_hd h)
+    args
+
+let rec list_application_to_string p_hd p_arg (h,args) = 
+  List.fold_left
+    (fun accu arg -> accu ^ " " ^ p_arg arg)
+    (p_hd h)
+    args
 
 let rec atomic_expr_to_string_with_subs subs (_,e) = 
   match e with
   | TacticHole tac -> tactic_to_string tac
   | EmptyHole n -> "?" ^ string_of_int n
-  | APPLY(V v,[]) -> vartostring (var_sub subs v)
+  | APPLY(V v,NIL) -> vartostring (var_sub subs v)
   | APPLY(h,args) -> 
       let h = match h with V v -> V (var_sub subs v) | _ -> h in
-      application_to_string lf_expr_head_to_string (lf_expr_to_string_with_subs subs) (h,args)
-  | PR1 x -> 
-      let s = lf_expr_to_string_with_subs subs x in
-      concat ["(π₁ ";s;")"]
-  | PR2 x -> 
-      let s = lf_expr_to_string_with_subs subs x in
-      concat ["(π₂ ";s;")"]
+      spine_application_to_string lf_expr_head_to_string (lf_expr_to_string_with_subs subs) (h,args)
 
 and lf_expr_to_string_with_subs' subs = function (* would be better to implement parsing precedences *)
   | LAMBDA(x,body) -> 
@@ -193,7 +195,7 @@ and lf_type_to_string_with_subs' target subs (_,t) = match t with
       let t = lf_type_to_string_with_subs subs t in
       concat ["Singleton(";x;" : ";t;")"]
   | F_APPLY(hd,args) -> 
-      application_to_string lf_type_head_to_string (lf_expr_to_string_with_subs subs) (hd,args)
+      list_application_to_string lf_type_head_to_string (lf_expr_to_string_with_subs subs) (hd,args)
 
 and lf_type_to_string_with_subs subs t = lf_type_to_string_with_subs' true subs t
 
@@ -250,9 +252,16 @@ let apply n f =				(* generate f 0 :: f 1 :: f 2 :: ... :: f (n-1) *)
     else f i :: repeat (i+1)
   in repeat 0
     
-let rec args_to_string s = String.concat "," (List.map ts_can_to_string s)
+let ends_in_paren s = s.[String.length s - 1] = '('
 
-and paren_args_to_string s = String.concat "" [ "("; args_to_string s; ")" ]
+let rec paren_args_to_string hd args = (
+  args_fold
+    (fun accu arg -> 
+      (if (ends_in_paren accu) then accu else accu ^ ",") ^ ts_can_to_string arg)
+    (fun accu -> "[π₁](" ^ accu ^ ")")
+    (fun accu -> "[π₂](" ^ accu ^ ")")
+    (hd ^ "(")
+    args) ^ ")"
 
 and ts_can_to_string = function 
   | CAN e -> ts_expr_to_string e
@@ -265,11 +274,12 @@ and ts_expr_to_string ((_,e) as oe) =
      the o-t-u identity of each branch is correct.
    *)
   match e with 
-  | PR1 _ | PR2 _ -> lf_expr_p (CAN oe)		(* normally this branch will not be used *)
   | TacticHole tac -> tactic_to_string tac
   | EmptyHole n -> "?" ^ string_of_int n
-  | APPLY(V v,[]) -> vartostring v
-  | APPLY(h,args) -> (
+  | APPLY(V v,NIL) -> vartostring v
+  | APPLY(h,args) -> 
+      (*
+      (
       let hs = lf_expr_head_to_string h in
       let vardist = head_to_vardist h in (* example: Some (3, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: []) *)
       match vardist with
@@ -279,68 +289,48 @@ and ts_expr_to_string ((_,e) as oe) =
 	  ignore branches;
 	  ignore hs
       | _ -> ());
+	*)
       match h with
-      | U uh -> uhead_to_string uh ^ paren_args_to_string args
+      | U uh -> paren_args_to_string (uhead_to_string uh) args
       | T th -> (
 	  match th with 
 	  | T_Pi -> (
 	      match args with
-	      | [CAN t1; LAMBDA( x, CAN t2 )] -> 
+	      | ARG(CAN t1,ARG(LAMBDA(x, CAN t2),NIL)) -> 
 		  if false
 		  then concat ["(";ts_expr_to_string t1;" ⟶ ";ts_expr_to_string t2;")"]
 		  else concat ["[" ^ lf_expr_head_to_string h ^ ";";vartostring x;"](";ts_expr_to_string t1;",";ts_expr_to_string t2;")"]
 	      | _ -> lf_atomic_p oe)
 	  | T_Sigma -> (
-	      match args with [CAN t1; LAMBDA( x, CAN t2 )] -> 
+	      match args with ARG(CAN t1,ARG(LAMBDA(x, CAN t2),NIL)) -> 
 		"[" ^ lf_expr_head_to_string h ^ ";" ^ vartostring x ^ "]" ^
 		"(" ^ ts_expr_to_string t1 ^ "," ^ ts_expr_to_string t2 ^ ")"
 	      | _ -> lf_atomic_p oe)
-	  | T_Coprod2 -> (
-	      match args with 
-	      | [CAN t; CAN t'; LAMBDA( x,CAN u); LAMBDA( x', CAN u'); CAN o] ->
-		  "[" ^ lf_expr_head_to_string h ^ ";" ^ vartostring x ^ "," ^ vartostring x' ^ "](" 
-		  ^ ts_expr_to_string t ^ "," ^ ts_expr_to_string t ^ ","
-		  ^ ts_expr_to_string u ^ "," ^ ts_expr_to_string u' ^ ","
-		  ^ ts_expr_to_string o
-		  ^ ")"
-	      | _ -> lf_atomic_p oe)
-	  | T_IP -> (
-	      match args with 
-		[CAN tA; CAN a;
-		 LAMBDA(x1,CAN tB);
-		 LAMBDA(x2,LAMBDA(y2,CAN tD));
-		 LAMBDA(x3,LAMBDA(y3,LAMBDA(z3,CAN q)))]
-		-> "[" ^ lf_expr_head_to_string h ^ ";" 
-		  ^ vartostring x1 ^ ","
-		  ^ vartostring x2 ^ "," ^ vartostring y2 ^ "," 
-		  ^ vartostring x3 ^ "," ^ vartostring y3 ^ "," ^ vartostring z3 
-		  ^ "]("
-		  ^ ts_expr_to_string tA ^ "," ^ ts_expr_to_string a ^ "," ^ ts_expr_to_string tB ^ "," ^ ts_expr_to_string tD ^ "," ^ ts_expr_to_string q ^ ")"
-	      | _ -> lf_atomic_p oe)
-	  | _ -> "[" ^ lf_expr_head_to_string h ^ "]" ^ paren_args_to_string args
-	 )
+	  | _ -> paren_args_to_string ("[" ^ lf_expr_head_to_string h ^ "]") args
+	)
       | O oh -> (
 	  match oh with
 	  | O_ev -> (
 	      match args with 
-	      | [CAN f;CAN o;LAMBDA(x, CAN t)] ->
+	      | ARG(CAN f,ARG(CAN o,ARG(LAMBDA(x, CAN t),NIL))) ->
 		  "[ev;" ^ vartostring x ^ "](" ^ ts_expr_to_string f ^ "," ^ ts_expr_to_string o ^ "," ^ ts_expr_to_string t ^ ")"
-	      | [CAN f;CAN o] ->
+	      | ARG(CAN f,ARG(CAN o,NIL)) ->
 		  "[ev;_](" ^ ts_expr_to_string f ^ "," ^ ts_expr_to_string o ^ ")"
 	      | _ -> lf_atomic_p oe)
 	  | O_lambda -> (
 	      match args with 
-	      | [CAN t;LAMBDA( x,CAN o)] ->
+	      | ARG(CAN t,ARG(LAMBDA(x,CAN o),NIL)) ->
 		  "[λ;" (* lambda *) ^ vartostring x ^ "](" ^ ts_expr_to_string t ^ "," ^ ts_expr_to_string o ^ ")"
 	      | _ -> lf_atomic_p oe)
 	  | O_forall -> (
 	      match args with 
-	      | [CAN u;CAN u';CAN o;LAMBDA( x,CAN o')] ->
+	      | ARG(CAN u,ARG(CAN u',ARG(CAN o,ARG(LAMBDA(x,CAN o'),NIL)))) ->
 		  "[forall;" ^ vartostring x ^ "](" ^ ts_expr_to_string u ^ "," ^ ts_expr_to_string u' ^ "," ^ ts_expr_to_string o ^ "," ^ ts_expr_to_string o' ^ ")"
 	      | _ -> lf_atomic_p oe)
-	  | _ -> "[" ^ ohead_to_string oh ^ "]" ^ paren_args_to_string args
-	 )
-      | _ -> lf_expr_head_to_string h ^ paren_args_to_string args
+	  | _ -> paren_args_to_string ("[" ^ ohead_to_string oh ^ "]") args
+	)
+      | _ -> paren_args_to_string (lf_expr_head_to_string h) args
+
 (** Printing functions for definitions, provisional. *)
 
 let parmstostring = function
@@ -420,11 +410,11 @@ let print_signature env file =
   fprintf file "  Type family constants:\n";
   List.iter (fun h -> 
     fprintf file "     %a : %a\n" p_type_head h  p_kind (tfhead_to_kind h)
-	    ) lf_type_heads;
+	   ) lf_type_heads;
   fprintf file "  Object constants:\n";
   List.iter (fun h -> 
     fprintf file "     %a : %a\n" p_expr_head h  p_type (label_to_type env (Error.no_pos 23) h)
-	    ) lf_expr_heads;
+	   ) lf_expr_heads;
   flush file
 
 let print_context n file (env:context) = 
@@ -439,7 +429,7 @@ let print_context n file (env:context) =
 	    fprintf file "     %a  : %a\n" p_var_phantom v  p_type t; flush file
 	| _ -> 
 	    fprintf file "     %a : %a\n" p_var v  p_type t; flush file
-      ) 
+     ) 
       env
   with Limit -> ()
 

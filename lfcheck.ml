@@ -22,18 +22,18 @@ open Helpers
 open Tau
 
 let abstraction1 (env:context) = function
-  | [CAN t; LAMBDA(x, _)] -> ts_bind (x,t) env
+  | ARG(CAN t,ARG(LAMBDA(x, _),_)) -> ts_bind (x,t) env
   | _ -> env
 
 let abstraction2 (env:context) = function
-  | [_; _; CAN n; LAMBDA(x,_)] -> ts_bind (x,(get_pos n, make_TT_El n)) env
+  | ARG(_,ARG(_,ARG(CAN n,ARG(LAMBDA(x,_),_)))) -> ts_bind (x,(get_pos n, make_T_El n)) env
   | _ -> env
 
 let abstraction3 (env:context) = function
-  | [CAN f; _; LAMBDA(x, _)] -> 
+  | ARG(CAN f,ARG(_,ARG(LAMBDA(x, _),_))) -> 
       let tf = tau env f in (
       match unmark tf with
-      | APPLY(T T_Pi, [CAN t; LAMBDA _]) -> ts_bind (x,t) env
+      | APPLY(T T_Pi, ARG(CAN t, _)) -> ts_bind (x,t) env
       | _ -> env)
   | _ -> env
 
@@ -122,21 +122,16 @@ let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
 	  let t = label_to_type env pos l in
 	  let rec repeat i args t =
 	    match args, unmark t with
-	    | x :: args, F_Pi(v,a,b) -> 
+	    | ARG(x,args), F_Pi(v,a,b) -> 
 		repeat (i+1) args (subst_type (v,x) b)
-	    | x :: args, _ -> err env pos "at least one argument too many"
-	    | [], F_Pi(v,a,b) -> errmissingarg env pos a (* we insist on eta-long format *)
-	    | [], t -> t
+	    | ARG _, _ -> err env pos "at least one argument too many"
+	    | FST args, F_Sigma(v,a,b) -> repeat (i+1) args a
+	    | FST _, _ -> err env pos "pi1 expected an object of sigma type"
+	    | SND args, F_Sigma(v,a,b) -> repeat (i+1) args b
+	    | SND _, _ -> err env pos "pi2 expected an object of sigma type"
+	    | NIL, F_Pi(v,a,b) -> errmissingarg env pos a (* we insist on eta-long format *)
+	    | NIL, t -> t
 	  in nowhere 5 (repeat 0 args t)
-      | PR1 xy -> (
-	  match unmark (natural_type pos env xy) with
-	  | F_Sigma(v,a,b) -> a
-	  | _ -> raise Internal)
-      | PR2 xy -> (
-	  let (xypos,xy0) = natural_type pos env xy in
-	  match xy0 with
-	  | F_Sigma(v,a,b) -> subst_type (v,CAN(xypos, PR1 xy)) b
-	  | _ -> raise Internal)
      )
   | LAMBDA _ -> err env pos "LF lambda expression found, has no natural type"
   | PAIR _ -> err env pos "LF pair found, has no natural type"
@@ -148,10 +143,6 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
   match x with
   | CAN (pos,x) -> (
       match x with
-      | PR1(PAIR(_,x,_)) -> x
-      | PR2(PAIR(_,_,y)) -> y
-      | PR1 e -> CAN(pos,PR1(head_reduction env e))
-      | PR2 e -> CAN(pos,PR2(head_reduction env e))
       | APPLY(V v, args) -> let f = unfold env v in apply_args pos f args
       | APPLY _ -> raise Not_found
       | TacticHole _ -> raise NotImplemented
@@ -180,11 +171,7 @@ let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
 	  LAMBDA(w,body)
       | _ -> raise Internal)
   | F_Sigma(v,a,b) ->
-      let pos = get_pos_lf x in
-      let x,y = CAN(pos,PR1 x),CAN(pos,PR2 x) in
-      PAIR(pos,
-	   term_normalization env x a,
-	   term_normalization env y (subst_type (v,x) b))
+      raise NotImplemented
   | F_APPLY _
   | F_Singleton _ ->
       let x = head_normalization env x in
@@ -203,36 +190,36 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
       match y0 with
       | TacticHole _ -> raise NotImplemented
       | EmptyHole _ -> err env pos "path_normalization encountered an empty hole"
-      | PR1 p -> (
-	  let p',s = path_normalization env pos p in
-	  match unmark s with 
-	  | F_Sigma(v,a,b) -> CAN(pos,PR1 p'), a
-	  | _ -> raise Internal)
-      | PR2 p -> (
-	  let p',s = path_normalization env pos p in
-	  match unmark s with 
-	  | F_Sigma(v,a,b) -> CAN(pos,PR2 p'), subst_type (v,CAN(pos,PR1 p')) b
-	  | _ -> raise Internal)
       | APPLY(f,args) ->
 	  let t0 = label_to_type env pos f in
 	  let (t,args) =
-	    let rec repeat t args : lf_type * lf_expr list = (
+	    let rec repeat t args : lf_type * spine = (
 	      match unmark t with
 	      | F_Pi(v,a,b) -> (
 		  match args with
-		  | [] -> raise (TypeCheckingFailure2 (env,
-		    pos , ("expected "^string_of_int (num_args t)^" more arguments"),
+		  | NIL -> raise (TypeCheckingFailure2 (env,
+		    pos , "expected "^string_of_int (num_args t)^" more arguments",
 		    (get_pos t0), (" using:\n\t"^lf_expr_head_to_string f^" : "^lf_type_to_string t0)))
-		  | x :: args ->
+		  | FST args -> err env pos "pi1 expected an object of sigma type"
+		  | SND args -> err env pos "pi2 expected an object of sigma type"
+		  | ARG(x, args) ->
 		      let b = subst_type (v,x) b in
 		      let x = term_normalization env x a in
 		      let (c,args) = repeat b args in
-		      (c, x :: args))
+		      (c, ARG(x,args)))
 	      | F_Singleton _ -> raise Internal (* x was head normalized, so any definition of f should have been unfolded *)
-	      | _ -> (
+	      | F_Sigma(v,a,b) -> (
+		  match args with 
+		  | NIL -> (t,NIL)
+		  | FST args -> repeat a args
+		  | SND args -> repeat b args
+		  | ARG(x,_) -> err env (get_pos_lf x) "unexpected argument")
+	      | F_APPLY _ -> (
 		  match args with
-		  | [] -> (t,[])
-		  | x :: args -> err env pos "unexpected argument"))
+		  | NIL -> (t,NIL)
+		  | FST args -> err env pos "pi1 expected an object of sigma type"
+		  | SND args -> err env pos "pi2 expected an object of sigma type"
+		  | ARG(x,args) -> err env (get_pos_lf x) "unexpected argument"))
 	    in repeat t0 args
 	  in (CAN(pos,APPLY(f,args)), t)
 
@@ -315,34 +302,24 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_type =
       match e0 with
       | TacticHole _ -> err env pos ("tactic hole: "^ts_expr_to_string e)
       | EmptyHole _ -> err env pos ("empty hole: "^ts_expr_to_string e)
-      | PR1 p -> (
-	  let p',s = type_synthesis env p in
-	  match unmark s with 
-	  | F_Sigma(v,a,b) -> CAN(pos,PR1 p'), a
-	  | _ -> err env pos "argument of pi1 not of sigma type")
-      | PR2 p -> (
-	  let p',s = type_synthesis env p in
-	  match unmark s with 
-	  | F_Sigma(v,a,b) -> CAN(pos,PR2 p'), subst_type (v,CAN(pos,PR1 p')) b
-	  | _ -> err env pos "argument of pi2 not of sigma type")
-      (* | APPLY(V v, []) -> x, (pos, F_Singleton(CAN e, fetch_type env pos v)) *)
       | APPLY(label,args) -> (
 	  let a = label_to_type env pos label in
-	  let rec repeat i env (a:lf_type) (args:lf_expr list) : lf_expr list * lf_type = (
+	  let rec repeat i env a args = (
 	    let (apos,a0) = a in
 	    match a0, args with
-	    | F_Pi(x,a',a''), m' :: args' ->
+	    | F_Pi(x,a',a''), ARG(m',args') ->
 		let surr = Some(i,e) in 
 		let env = apply_ts_binder env i e0 in
 		let m' = type_check surr pos env m' a' in
 		let (args'',u) = repeat (i+1) env (subst_type (x,m') a'') args' in
-		m' :: args'', u
+		ARG(m',args''), u
 	    | F_Singleton(e,t), args -> repeat i env t args
-	    | F_Pi _ as t, [] -> [], (pos,t) (* allow not all arguments to be present; not eta-long *)
-	    | F_Sigma _ as t, [] -> [], (pos,t)
-	    | F_APPLY _ as t, [] -> [], (pos,t)
-	    | F_Sigma _,  arg :: _
-	    | F_APPLY _, arg :: _ -> err env (get_pos_lf arg) "extra argument"
+	    | F_Sigma(v,a,b), FST args -> repeat (i+1) env a args
+	    | F_Sigma(v,a,b), SND args -> repeat (i+1) env b args
+	    | t, NIL -> NIL, (pos,t)
+	    | _, ARG(arg,_) -> err env (get_pos_lf arg) "extra argument"
+	    | _, FST _ -> err env pos "pi1 expected an object of sigma type"
+	    | _, SND _ -> err env pos "pi2 expected an object of sigma type"
 	   )
 	  in
 	  let (args',t) = repeat 0 env a args
@@ -357,8 +334,7 @@ and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (
   match x, y, t0 with
   | _, _, F_Singleton _ -> ()
   | x, y, F_Sigma (v,a,b) ->
-      term_equivalence xpos ypos env (CAN(xpos,PR1 x)) (CAN(ypos,PR1 y)) a;
-      term_equivalence xpos ypos env (CAN(xpos,PR2 x)) (CAN(ypos,PR2 y)) (subst_type (v,CAN(xpos,PR1 x)) b)
+      raise NotImplemented
   | x, y, F_Pi (v,a,b) -> (
       match x,y with
       | LAMBDA(t,x), LAMBDA(u,y) ->
@@ -387,8 +363,8 @@ and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
 	  let t = label_to_type env xpos f in
 	  let rec repeat t args args' =
 	    match t,args,args' with
-	    | t, [], [] -> t
-	    | (pos,F_Pi(v,a,b)), x :: args, y :: args' ->
+	    | t, NIL, NIL -> t
+	    | (pos,F_Pi(v,a,b)), ARG(x,args), ARG(y,args') ->
 		term_equivalence xpos ypos env x y a;
 		repeat (subst_type (v,x) b) args args'
 	    | _ -> mismatch_term env xpos x ypos y
@@ -480,20 +456,6 @@ and type_check (surr:surrounding) (pos:position) (env:context) (e:lf_expr) (t:lf
       LAMBDA(v,e)
 
   | LAMBDA _, _ -> err env pos "did not expect a lambda expression here"
-
-  | p, F_Sigma(w,a,b) -> (* The published algorithm omits this, correctly, but we want to 
-			    give advice to tactics for filling holes in [p], so we try type-directed
-			    type checking as long as possible. *)
-      let (x,y) = (
-	match p with			(* save energy if it's already a pair *)
-	| PAIR(pos,x,y) -> (x,y)
-	| p -> 
-	    let pos = get_pos_lf p in
-	    CAN(pos,PR1 p), CAN(pos, PR2 p)
-       ) in
-      let x = type_check None pos env x a in
-      let y = type_check None pos env y (subst_type (w,x) b) in
-      PAIR(pos,x,y)
 
   | e, _  ->
       let (e,s) = type_synthesis env e in 

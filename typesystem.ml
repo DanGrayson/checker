@@ -89,27 +89,24 @@ type lf_expr =
  *)
 and atomic_expr = unmarked_atomic_expr marked
 and unmarked_atomic_expr =
+    (* We should move the holes into the head, so pi1 and pi2 can work on them, too *)
   | EmptyHole of int
     (** An empty hole, to be filled in later. *)
   | TacticHole of tactic_expr
     (** An empty hole, to be filled in later by calling a tactic routine writtn in OCAML. *)
-  | APPLY of lf_expr_head * lf_expr list
+  | APPLY of lf_expr_head * spine
     (** A variable or constant applied iteratively to its arguments, if any. *)
-  | PR1 of lf_expr
-  | PR2 of lf_expr
 
-(*
+(** A spine is basically a list of arguments to which the head function of an
+    atomic term will be applied, in sequence, but with two new instructions,
+    [FST] and [SND], which turn the tables on the function, expecting it to be
+    a pair, and replacing it by the first or second component, respectively.
+    *)
 and spine =
   | ARG of lf_expr * spine
   | FST of spine
   | SND of spine
-  | EMPTY
-*)
-
-(** Force an expression to be atomic. *)
-let uncan = function
-  | CAN e -> e
-  | _ -> raise NotImplemented
+  | NIL
 
 (** Canonical type families of LF.
 
@@ -138,21 +135,21 @@ and bare_lf_type =
   | F_APPLY of lf_type_head * lf_expr list
   | F_Singleton of (lf_expr * lf_type)
 
-let ( ** ) f x : lf_type = nowhere 3 (F_APPLY(f,x))
+let ( @@ ) f x : lf_type = nowhere 3 (F_APPLY(f,x))
 
-let uexp = F_uexp ** []
-let texp = F_texp ** []
-let oexp = F_oexp ** []
+let uexp = F_uexp @@ []
+let texp = F_texp @@ []
+let oexp = F_oexp @@ []
 
 let ( @-> ) a b = nowhere 4 (F_Pi(newunused(), a, b))
 
-let istype t = F_istype ** [t]
-let hastype o t = F_hastype ** [o;t]
-let ulevel_equality u u' = F_ulevel_equality ** [u;u']
-let type_uequality t t' = F_type_uequality ** [t;t']
-let type_equality t t' = F_type_equality ** [t;t']
-let object_similariy o o' t = F_object_uequality ** [o;o';t]
-let object_equality o o' t = F_object_equality ** [o;o';t]
+let istype t = F_istype @@ [t]
+let hastype o t = F_hastype @@ [o;t]
+let ulevel_equality u u' = F_ulevel_equality @@ [u;u']
+let type_uequality t t' = F_type_uequality @@ [t;t']
+let type_equality t t' = F_type_equality @@ [t;t']
+let object_similariy o o' t = F_object_uequality @@ [o;o';t]
+let object_equality o o' t = F_object_equality @@ [o;o';t]
 
 let texp1 = oexp @-> texp
 let texp2 = oexp @-> oexp @-> texp
