@@ -250,7 +250,7 @@ let empty_uContext = UContext([],[])
 
 (** Tactics. *)
 
-type surrounding = (int * lf_expr) option
+type surrounding = (int * lf_expr) list
 
 type tactic_return =
   | TacticFailure

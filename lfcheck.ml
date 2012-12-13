@@ -109,6 +109,7 @@ let unfold env v =
   | _ -> raise Not_found		(* What if the type is effectively a singleton, such as Sing(x)*Sing(y) ? *)
 
 let rec natural_type (env:context) (x:lf_expr) : lf_type =
+  if true then raise Internal;		(* this function is unused *)
   (* assume nothing *)
   (* see figure 9 page 696 [EEST] *)
   let pos = get_pos x in 
@@ -128,6 +129,10 @@ let rec natural_type (env:context) (x:lf_expr) : lf_type =
       in nowhere 5 (repeat 0 args t)
   | LAMBDA _ -> err env pos "LF lambda expression found, has no natural type"
   | CONS _ -> err env pos "LF pair found, has no natural type"
+
+(** Normalization routines. *)
+
+(* We may wish to put this in another file. *)
 
 let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
   (* assume nothing *)
@@ -251,79 +256,9 @@ let rec type_normalization (env:context) (t:lf_type) : lf_type =
       F_Singleton( term_normalization env x t, type_normalization env t )
   in (pos,t)
 
+(** Type checking and equivalence routines. *)
 
-let rec type_validity (env:context) (t:lf_type) : lf_type =
-  (* assume the kinds of constants, and the types in them, have been checked *)
-  (* driven by syntax *)
-  (* return the same type t, but with tactic holes replaced *)
-  (* see figure 12, page 715 [EEST] *)
-  let (pos,t) = t 
-  in 
-  ( pos,
-    match t with 
-    | F_Pi(v,t,u) ->
-	let t = type_validity env t in
-	let u = type_validity ((v,t) :: env) u in
-	F_Pi(v,t,u)
-    | F_Sigma(v,t,u) ->
-	let t = type_validity env t in
-	let u = type_validity ((v,t) :: env) u in
-	F_Sigma(v,t,u)
-    | F_APPLY(head,args) ->
-	let kind = tfhead_to_kind head in
-	let rec repeat env kind (args:lf_expr list) = 
-	  match kind, args with 
-	  | K_type, [] -> []
-	  | K_type, x :: args -> err env pos "at least one argument too many";
-	  | K_Pi(v,a,kind'), x :: args -> 
-	      type_check None env x a :: repeat ((v,a) :: env) kind' args
-	  | K_Pi(_,a,_), [] -> errmissingarg env pos a
-	in 
-	let args' = repeat env kind args in
-	F_APPLY(head,args')
-    | F_Singleton(x,t) -> 
-	let t = type_validity env t in
-	let x = type_check None env x t in		(* rule 46 *)
-	F_Singleton(x,t))
-
-and type_synthesis (env:context) (m:lf_expr) : lf_expr * lf_type =
-  (* assume nothing *)
-  (* see figure 13, page 716 [EEST] *)
-  (* return a pair consisting of the original expression with any tactic holes filled in, 
-     and the synthesized type *)
-  let pos = get_pos m in
-  match unmark m with
-  | LAMBDA _ -> err env pos ("function has no type: "^lf_expr_to_string m)
-  | CONS(x,y) ->
-      let x',t = type_synthesis env x in
-      let y',u = type_synthesis env y in (pos,CONS(x',y')), (pos,F_Sigma(newunused(),t,u))
-  | APPLY(label,args) -> (
-      let a = label_to_type env pos label in
-      let rec repeat i env a args = (
-	let (apos,a0) = a in
-	match a0, args with
-	| F_Pi(v,a',a''), ARG(m',args') ->
-	    let surr = Some(i,m) in 
-	    let env = apply_ts_binder env i m in
-	    let m' = type_check surr env m' a' in
-	    let (args'',u) = repeat (i+1) env (subst_type (v,m') a'') args' in
-	    ARG(m',args''), u
-	| F_Singleton(e,t), args -> repeat i env t args
-	| F_Sigma(v,a,b), CAR args -> 
-	    let (x,t) = repeat (i+1) env a args in (CAR x, t)
-	| F_Sigma(v,a,b), CDR args -> 
-	    let (x,t) = repeat (i+1) env b args in (CDR x, t)
-	| t, END -> END, (pos,t)
-	| _, ARG(arg,_) -> err env (get_pos arg) "extra argument"
-	| _, CAR _ -> err env pos "pi1 expected an object of sigma type"
-	| _, CDR _ -> err env pos "pi2 expected an object of sigma type"
-       )
-      in
-      let (args',t) = repeat 0 env a args
-      in (pos,APPLY(label,args')), t
-     )
-
-and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : unit =
+let rec term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : unit =
   (* assume x and y have already been verified to be of type t *)
   (* see figure 11, page 711 [EEST] *)
   if try_alpha && Alpha.UEqual.term_equiv empty_uContext x y then () else
@@ -395,7 +330,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
       in repeat k args args'
   | _ -> mismatch_type env tpos t upos u
 
-and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
+let rec subtype (env:context) (t:lf_type) (u:lf_type) : unit =
   (* assume t and u have already been verified to be types *)
   (* driven by syntax *)
   (* see figure 12, page 715 [EEST] *)
@@ -421,7 +356,7 @@ and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
       subtype ((w, a) :: env) (subst_type (x,var_to_lf w) b) (subst_type (y,var_to_lf w) d)
   | _ -> type_equivalence env (tpos,t0) (upos,u0)
 
-and type_check (surr:surrounding) (env:context) (e:lf_expr) (t:lf_type) : lf_expr = 
+let rec type_check (surr:surrounding) (env:context) (e:lf_expr) (t:lf_type) : lf_expr = 
   (* assume t has been verified to be a type *)
   (* see figure 13, page 716 [EEST] *)
   (* we modify the algorithm to return a possibly modified expression e, with holes filled in by tactics *)
@@ -441,7 +376,7 @@ and type_check (surr:surrounding) (env:context) (e:lf_expr) (t:lf_type) : lf_exp
   | LAMBDA(v,e), F_Pi(w,a,b) -> (* the published algorithm is not applicable here, since
 				   our lambda doesn't contain type information for the variable,
 				   and theirs does *)
-      let e = type_check None ((v,a) :: env) e (subst_type (w,var_to_lf v) b) in
+      let e = type_check surr ((v,a) :: env) e (subst_type (w,var_to_lf v) b) in
       pos, LAMBDA(v,e)
 
   | LAMBDA _, _ -> err env pos "did not expect a lambda expression here"
@@ -450,14 +385,89 @@ and type_check (surr:surrounding) (env:context) (e:lf_expr) (t:lf_type) : lf_exp
 			    give advice to tactics for filling holes in [p], so we try type-directed
 			    type checking as long as possible. *)
       let (x,y) = (pi1 e,pi2 e) in
-      let x = type_check None env x a in
-      let y = type_check None env y (subst_type (w,x) b) in
+      let x = type_check surr env x a in
+      let y = type_check surr env y (subst_type (w,x) b) in
       pos, CONS(x,y)
 
   | _, _  ->
-      let (e,s) = type_synthesis env e in 
+      let (e,s) = type_synthesis surr env e in 
       subtype env s t;
       e
+
+and type_synthesis (surr:surrounding) (env:context) (m:lf_expr) : lf_expr * lf_type =
+  (* assume nothing *)
+  (* see figure 13, page 716 [EEST] *)
+  (* return a pair consisting of the original expression with any tactic holes filled in, 
+     and the synthesized type *)
+  let pos = get_pos m in
+  match unmark m with
+  | LAMBDA _ -> err env pos ("function has no type: "^lf_expr_to_string m)
+  | CONS(x,y) ->
+      let x',t = type_synthesis surr env x in
+      let y',u = type_synthesis surr env y in (pos,CONS(x',y')), (pos,F_Sigma(newunused(),t,u))
+  | APPLY(label,args) -> (
+      let a = label_to_type env pos label in
+      let rec repeat i env a args = (
+	let (apos,a0) = a in
+	match a0, args with
+	| F_Pi(v,a',a''), ARG(m',args') ->
+	    let surr = (i,m) :: surr in 
+	    let env = apply_ts_binder env i m in
+	    let m' = type_check surr env m' a' in
+	    let (args'',u) = repeat (i+1) env (subst_type (v,m') a'') args' in
+	    ARG(m',args''), u
+	| F_Singleton(e,t), args -> repeat i env t args
+	| F_Sigma(v,a,b), CAR args -> 
+	    let (x,t) = repeat (i+1) env a args in (CAR x, t)
+	| F_Sigma(v,a,b), CDR args -> 
+	    let (x,t) = repeat (i+1) env b args in (CDR x, t)
+	| t, END -> END, (pos,t)
+	| _, ARG(arg,_) -> err env (get_pos arg) "extra argument"
+	| _, CAR _ -> err env pos "pi1 expected an object of sigma type"
+	| _, CDR _ -> err env pos "pi2 expected an object of sigma type"
+       )
+      in
+      let (args',t) = repeat 0 env a args
+      in (pos,APPLY(label,args')), t
+     )
+
+let rec type_validity (env:context) (t:lf_type) : lf_type =
+  (* assume the kinds of constants, and the types in them, have been checked *)
+  (* driven by syntax *)
+  (* return the same type t, but with tactic holes replaced *)
+  (* see figure 12, page 715 [EEST] *)
+  let (pos,t) = t 
+  in 
+  ( pos,
+    match t with 
+    | F_Pi(v,t,u) ->
+	let t = type_validity env t in
+	let u = type_validity ((v,t) :: env) u in
+	F_Pi(v,t,u)
+    | F_Sigma(v,t,u) ->
+	let t = type_validity env t in
+	let u = type_validity ((v,t) :: env) u in
+	F_Sigma(v,t,u)
+    | F_APPLY(head,args) ->
+	let kind = tfhead_to_kind head in
+	let rec repeat env kind (args:lf_expr list) = 
+	  match kind, args with 
+	  | K_type, [] -> []
+	  | K_type, x :: args -> err env pos "at least one argument too many";
+	  | K_Pi(v,a,kind'), x :: args -> 
+	      type_check [] env x a :: repeat ((v,a) :: env) kind' args
+	  | K_Pi(_,a,_), [] -> errmissingarg env pos a
+	in 
+	let args' = repeat env kind args in
+	F_APPLY(head,args')
+    | F_Singleton(x,t) -> 
+	let t = type_validity env t in
+	let x = type_check [] env x t in		(* rule 46 *)
+	F_Singleton(x,t))
+
+let type_synthesis = type_synthesis []
+
+let type_check = type_check []
 
 (* 
   Local Variables:

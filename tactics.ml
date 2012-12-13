@@ -31,7 +31,7 @@ let assumption surr env pos t args =
 let ev3 surr env pos t args =
   (* This code was formerly a part of the file fillin.ml, removed. *)
   match surr with 
-  | Some(_, (pos,APPLY( O O_ev, ARG(f,_)))) -> (
+  | (_, (pos,APPLY( O O_ev, ARG(f,_)))) :: _ -> (
       let tf = tau env f in
       match unmark tf with
       | APPLY(T T_Pi, ARG(_,ARG(t,END))) -> TacticSuccess t
@@ -40,14 +40,20 @@ let ev3 surr env pos t args =
 		    get_pos f,
 		    "expected a TS function:\n    " ^ ts_expr_to_string f ^
 		    "\n  : "^ts_expr_to_string tf)))
-  | Some(i,e) ->
+  | (i,e) :: _ ->
       printf "ev3 ( %d , %a ) ?\n" i _e (e); flush stdout;
       raise Internal
-  | None -> 
+  | [] -> 
       printf "%a: ev3 ?\n" _pos pos;
       raise Internal
 
 let default surr env pos t args = 
+  printf "   #surr = %d\n" (List.length surr);
+  let _ = match surr with 
+  | (i,e) :: _ ->
+      printf " default: i = %d\n   e = %a\n" i _e e
+  | _ -> () in
+  printf "   t = %a\n" _t t; flush stdout;
   raise NotImplemented
 
 let _ = 

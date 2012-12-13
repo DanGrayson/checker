@@ -126,7 +126,7 @@ let defCommand env defs =
       printf "       %a : %a\n" _v v  _t tp; flush stdout;
       let tp' = Lfcheck.type_validity env tp in
       printf "       %a : %a [after tactics]\n" _v v  _t tp'; flush stdout;
-      let tm' = Lfcheck.type_check None env tm tp in
+      let tm' = Lfcheck.type_check env tm tp in
       printf "       %a = %a [after tactics]\n" _v v  _e tm'; flush stdout;
       let tm'' = Lfcheck.term_normalization env tm' tp' in
       printf "       %a = %a [normalized]\n" _v v  _e tm''; flush stdout;

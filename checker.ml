@@ -131,7 +131,7 @@ let add_tVars env tvars =
 
 let ts_axiomCommand env pos name t = 
   if show_rules then ( printf "\nAxiom TS %s: %a\n" name  _ts t; flush stdout );
-  let t = Lfcheck.type_check None env t texp in
+  let t = Lfcheck.type_check env t texp in
   if show_rules then ( printf "        : %a\n" _e t; flush stdout );
   let v = Var name in
   ensure_new_name env pos v;
