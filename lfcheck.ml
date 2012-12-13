@@ -142,7 +142,11 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
   let pos = get_pos x in
   match unmark x with
   | EVAL(V v, args) -> let f = unfold env v in apply_args pos f args
-  | APPLY(f,x) -> apply_args pos f (x ** END)
+  | APPLY(f,x) -> (
+      try
+	let f = head_reduction env f in with_pos pos (APPLY(f,x))
+      with Not_found ->
+	apply_args pos f (x ** END))
   | EVAL ((TAC _|O _|T _|U _), _)
   | CONS _ | LAMBDA _ -> raise Not_found
 
