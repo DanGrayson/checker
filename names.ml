@@ -81,14 +81,14 @@ let label_to_type env pos = function
   | TAC (Tactic_name "defer") -> raise Internal (*?? *)
   | TAC _ -> raise Internal
 
-let var_to_ts v = APPLY(V v,NIL)
+let var_to_ts v = EVAL(V v,END)
 
 let var_to_lf v = nowhere 1 (var_to_ts v)
 
-let lookup_type env v = List.assoc v env
+let lookup_type (env:context) v = List.assoc v env
 
 let ensure_new_name env pos v =
-  try lookup_type env v;
+  try ignore (lookup_type env v);
       raise (MarkedError (pos, "variable already defined: "^vartostring v))
   with Not_found -> ()
 
@@ -105,6 +105,6 @@ let new_hole =
   let counter = ref 0 in
   fun () -> (
     incr counter;
-    APPLY(TAC (Tactic_hole !counter), NIL))
+    EVAL(TAC (Tactic_hole !counter), END))
 
 let hole pos = pos, new_hole()

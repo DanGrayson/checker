@@ -83,35 +83,37 @@ type lf_expr_head =
   | V of var			(** labels for variables of TS *)
   | TAC of tactic_expr		(** An empty hole, to be filled in later by calling a tactic routine. *)
 
-(** The expressions of LF, including the expressions of TS as instances of [APPLY].*)
+(** The expressions of LF, including the expressions of TS as instances of [EVAL].*)
 and lf_expr = unmarked_expr marked
 and unmarked_expr =
   | LAMBDA of var * lf_expr
 	(** Lambda expression of LF. *)
-  | PAIR of lf_expr * lf_expr
+  | CONS of lf_expr * lf_expr
 	(** A pair of dependent type. *)
-  | APPLY of lf_expr_head * spine
-	(** A variable or constant or tactic applied iteratively to its arguments, if any.
-	    This includes the expressions of TS, with something such as [\[ev\]] as the head
-	    and the branches as the parts of the spine. *)
+  | EVAL of lf_expr_head * spine
+	(** A variable or constant or tactic applied iteratively to its
+	    arguments, if any.  This includes the expressions of TS, with
+	    something such as [\[ev\]] as the head and the branches as the
+	    parts of the spine.
+
+	    Because the head is a variable, we are blocked from further
+	    evaluation, unless the variable has a definition (i.e., belongs to
+	    a singleton type), in which case, the unfolding will happen when
+	    the LF type checker needs to put the expression in weak head
+	    reduced form. *)
+  | APPLY of lf_expr * lf_expr
+	(** This is a beta-redex [(f,a)] ready to be reduced, i.e., it's a function [f]
+	    and an argument [a], and we're ready to apply [f] to [a]. *)
 
 (** A spine is basically a list of arguments to which the head function of an
     atomic term will be applied, in sequence, but with two new instructions,
-    [FST] and [SND], which turn the tables on the function, expecting it to be
-    a pair, and replacing it by the first or second component, respectively.
-    *)
+    [CAR] and [CDR], which turn the tables on the function, expecting it to be
+    a pair, and replacing it by the first or second component, respectively. *)
 and spine =
   | ARG of lf_expr * spine
-  | FST of spine
-  | SND of spine
-  | NIL
-
-(** Tactics *)
-and tactic_expr = 
-  | Tactic_hole of int			(* represented by _ *)
-  | Tactic_name of string		(* represented by $foo *)
-  | Tactic_index of int			(* represented by $n *)
-  | Tactic_deferred of lf_type * spine 	(* a deferred-action tactic result, with a declared type *)
+  | CAR of spine
+  | CDR of spine
+  | END
 
 and lf_type = bare_lf_type marked
 and bare_lf_type =
@@ -119,6 +121,13 @@ and bare_lf_type =
   | F_Sigma of var * lf_type * lf_type
   | F_APPLY of lf_type_head * lf_expr list
   | F_Singleton of (lf_expr * lf_type)
+
+(** Tactics *)
+and tactic_expr = 
+  | Tactic_hole of int			(* represented by _ *)
+  | Tactic_name of string		(* represented by $foo *)
+  | Tactic_index of int			(* represented by $n *)
+  | Tactic_deferred of lf_type * spine 	(* a deferred-action tactic result, with a declared type *)
 
 let ( @@ ) f x : lf_type = nowhere 3 (F_APPLY(f,x))
 
@@ -246,7 +255,7 @@ type tactic_return =
   | TacticSuccess of lf_expr
 
 type tactic_function =
-       surrounding         (* the ambient APPLY(...), if any, and the index among its head and arguments of the hole *)        
+       surrounding         (* the ambient EVAL(...), if any, and the index among its head and arguments of the hole *)        
     -> context							      (* the active context *)
     -> position							      (* the source code position of the tactic hole *)
     -> lf_type							      (* the type of the hole, e.g., [texp] *)

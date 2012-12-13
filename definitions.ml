@@ -35,7 +35,7 @@ let fixParmList (p:parm list) : uContext * (var list) * ((var * lf_expr) list) =
 
 let ( @@ ) f g x = f (g x)
 
-let apply f vartypes = (nowhere 7 (APPLY(V f, list_to_spine(List.map (var_to_lf @@ fst) vartypes))))
+let apply f vartypes = (nowhere 7 (EVAL(V f, list_to_spine(List.map (var_to_lf @@ fst) vartypes))))
 
 let ist x = istype (var_to_lf x)
 
@@ -87,7 +87,7 @@ let tDefinition name (UContext (uvars,ueqns),tvars,o_vartypes) t d1 =
      then
        [ (name0, pos, t, texp); (name1, pos, j, istype (apply name0 vartypes)) ]
      else 
-       let tj = pos,PAIR(t,j) in 
+       let tj = pos,CONS(t,j) in 
        let v = newfresh (Var "T") in
        [ ( name0, pos, tj, ist_s v ) ]
     )
@@ -104,7 +104,7 @@ let oDefinition name (UContext(uvars,ueqns),tvars,o_vartypes) o (t:lf_expr) d1 =
      then
        [ (name0, pos, o, oexp); (name1, pos, j, hastype (apply name0 vartypes) t) ]
      else
-       let oj = pos, PAIR(o, j ) in
+       let oj = pos, CONS(o, j ) in
        let v = newfresh (Var "o") in
        [ ( name0, pos, oj , hast_s v t ) ]
     )

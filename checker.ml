@@ -2,6 +2,8 @@
 
 let debug = false
 
+let show_rules = false
+
 let try_normalization = false
 
 let env_limit = Some 6
@@ -128,21 +130,21 @@ let add_tVars env tvars =
       env
 
 let ts_axiomCommand env pos name t = 
-  printf "\nAxiom TS %s: %a\n" name  _ts t; flush stdout;
+  if show_rules then ( printf "\nAxiom TS %s: %a\n" name  _ts t; flush stdout );
   let t = Lfcheck.type_check None (get_pos t) env t texp in
-  printf "        : %a\n" _e t; flush stdout;
+  if show_rules then ( printf "        : %a\n" _e t; flush stdout );
   let v = Var name in
   ensure_new_name env pos v;
   ts_bind (v,t) env
 
 let lf_axiomCommand env pos name t =
-  printf "\nAxiom LF %s: %a\n" name  _t t; flush stdout;
+  if show_rules then ( printf "\nAxiom LF %s: %a\n" name  _t t; flush stdout );
   let t = Lfcheck.type_validity env t in
   let v = Var name in
   ensure_new_name env pos v;
   (v,t) :: env
 
-let is_can x = (function (APPLY _) -> true | _ -> false) (unmark x)
+let is_can x = (function (EVAL _) -> true | _ -> false) (unmark x)
 
 let checkLFCommand env pos x =
   printf "\nCheck LF   = %a\n" _e x; flush stdout;

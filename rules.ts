@@ -91,15 +91,21 @@ Rule 24 λ_equality :: ∏ T:texp, ∏ T':texp, ∏ U:oexp ⟶ texp, ∏ o:oexp 
 Rule 25 ev_hastype :: ∏ T : texp, ∏ U : oexp ⟶ texp, ∏ f : oexp, ∏ o : oexp,
 
      [ f : ([∏] T U) ] ⟶ 
+
      [ o : T ] ⟶ 
+
      [ ([ev] f o U) : (U o)].
 
 Rule 26 ev_eq :: ∏ T : texp, ∏ U : oexp ⟶ texp, ∏ f : oexp, ∏ o : oexp,
+
      ∏ T' : texp, ∏ U' : oexp ⟶ texp, ∏ f' : oexp, ∏ o' : oexp,
 
      (∏ x:oexp, [ x : T ] ⟶ [ (U x) = (U' x) ]) ⟶ 
+
      [ f = f' : ([∏] T U) ] ⟶ 
+
      [ o = o' : T ] ⟶ 
+
      [ ([ev] f o U) = ([ev] f' o' U') : (U o)].
 
 Rule 27 beta_reduction :: ∏ T : texp, ∏ U : oexp ⟶ texp, ∏ t : oexp, ∏ f : oexp ⟶ oexp,
@@ -125,12 +131,15 @@ Rule 30 El_j_reduction :: ∏ M_1:uexp, ∏ M_2:uexp, ∏ o:oexp,
 Rule 31 forall_type :: ∏ M_1:uexp, ∏ M_2:uexp, ∏ o_1:oexp, ∏ o_2:oexp ⟶ oexp,
 
      ( ∏ x:oexp, [ x : ([El] o_1) ] ⟶ [ (o_2 x) : ([U] M_2) ] ) ⟶
+
      [ ( [∀] M_1 M_2 o_1 o_2 ) : ([U] ( [max] M_1 M_2 )) ].
 
 Rule 32 El_forall_reduction :: ∏ M_1 : uexp, ∏ M_2 : uexp, ∏ o_1 : oexp, ∏ o_2 : oexp ⟶ oexp,
 
      [ o_1 : ([U] M_1) ] ⟶
+
      (∏ x: oexp, [ x : ([El] o_1) ] ⟶ [ (o_2 x) : ([U] M_2) ]) ⟶
+
      [ ([El] ([∀] M_1 M_2 o_1 o_2)) = ([∏] ([El] o_1) (x ⟼ ([El] (o_2 x)))) ].
 
 Rule 100 teq_empty_eta :: ∏ T:texp, ∏ T':texp, ∏ a:oexp,
@@ -158,6 +167,14 @@ Rule 201 jj_reduction :: ∏ M_1:uexp, ∏ M_2:uexp, ∏ M'_2:uexp, ∏ M_3:uexp
      =  ([ev] ([j] M_1 M_3) o (_ ⟼ ([U] M_3)))
 
      : ([∏] ([U] M_1) (_ ⟼ ([U] M_3))) ].
+
+End.
+
+Rule 202 forall_j_reduction :: 
+
+     ∏ M_0:uexp, ∏ M_1:uexp, ∏ M'_1:uexp, ∏ M_2:uexp, 
+
+     
 
 
 #   Local Variables:

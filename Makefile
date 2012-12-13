@@ -60,6 +60,7 @@ lc:; wc -l $(SRCFILES) rules.ts
 rules:$(CHECKER_EXE) rules.ts ; $(CHECKER)
 run:  $(CHECKER_EXE) rules.ts test.ts ; $(CHECKER) test.ts
 run2: $(CHECKER_EXE) test2.ts ; $(BARE_CHECKER) test2.ts
+run3: $(CHECKER_EXE) test3.ts ; $(BARE_CHECKER) rules.ts test3.ts
 demo: $(CHECKER_EXE) rules.ts test.ts ; $(CHECKER) demo.ts
 debug:
 	ocamlbuild $(BFLAGS) checker.byte 

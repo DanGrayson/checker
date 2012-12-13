@@ -33,32 +33,33 @@ let rec subst_list (subl : (var * lf_expr) list) es = List.map (subst subl) es
 
 and subst_spine subl = function
   | ARG(x,a) -> ARG(subst subl x, subst_spine subl a)
-  | FST a -> FST(subst_spine subl a)
-  | SND a -> SND(subst_spine subl a)
-  | NIL -> NIL
+  | CAR a -> CAR(subst_spine subl a)
+  | CDR a -> CDR(subst_spine subl a)
+  | END -> END
 
 and subst subl e = spy _e subst'' subl e
 
 and subst'' subl e = 
   let pos = get_pos e in
   match unmark e with 
-  | APPLY(V v,args) -> (
+  | EVAL(V v,args) -> (
       try 
         let z = List.assoc v subl in
         match args with
-        | NIL -> z
+        | END -> z
         | args -> (
 	    let args = subst_spine subl args in 
             match z with 
-            | (zpos,APPLY(f,brgs)) -> (pos,APPLY(f, join_args brgs args))
+            | (zpos,EVAL(f,brgs)) -> (pos,EVAL(f, join_args brgs args))
             | pos, LAMBDA _ as f -> apply_args pos f args
             | _ -> 
 		printf "about to replace %a by %a in %a, not implemented\n" _v v _e z _e e; flush stdout; 
 		raise (Unimplemented_expr e)
 	   )
-      with Not_found -> pos, APPLY(V v,subst_spine subl args))
-  | APPLY(label,args) -> (pos, APPLY(label,subst_spine subl args))
-  | PAIR(x,y) -> pos, PAIR(subst subl x,subst subl y)
+      with Not_found -> pos, EVAL(V v,subst_spine subl args))
+  | EVAL(label,args) -> (pos, EVAL(label,subst_spine subl args))
+  | CONS(x,y) -> pos, CONS(subst subl x,subst subl y)
+  | APPLY(f,x) -> pos, APPLY(subst subl f,subst subl x)
   | LAMBDA(v, body) -> 
       let (v,body) = subst_fresh subl (v,body) in
       pos, LAMBDA(v, body)
@@ -72,16 +73,16 @@ and apply_args pos (f:lf_expr) args =
   let rec repeat f args = 
     let pos = get_pos f in
     match unmark f with
-    | APPLY(f,brgs) -> (pos,APPLY(f, join_args brgs args))
+    | EVAL(f,brgs) -> (pos,EVAL(f, join_args brgs args))
     | LAMBDA(v,body) -> (
         match args with
         | ARG(x,args) -> repeat (subst [(v,x)] body) args
-        | FST args -> repeat (pi1 body) args
-        | SND args -> repeat (pi2 body) args
-        | NIL -> raise (GeneralError "too few arguments"))
+        | CAR args -> repeat (pi1 body) args
+        | CDR args -> repeat (pi2 body) args
+        | END -> raise (GeneralError "too few arguments"))
     | x -> (
         match args with
-        | NIL -> pos,x
+        | END -> pos,x
         | _ -> raise (GeneralError "too few arguments"))
   in repeat f args
 

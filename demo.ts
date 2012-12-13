@@ -1,13 +1,5 @@
 # -*- coding: utf-8 -*-
 
-
-Define compose1 (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := [ev;_](g,[ev;_](f,t,U),V) : V ;; (
-       # LF syntax
-       ev_hastype U (_ ⟼ V) g ([ev] f t (_ ⟼ U)) $a (ev_hastype T (_ ⟼ U) f t $a $a)).
-
-End.
-
-
 # idea:
 # Axiom LF car : Notation( (x |-> (pi1 x)) ).
 
@@ -55,9 +47,9 @@ Define E (u1 u2 u3:Ulevel)(K:Type) := K⟶K;; (∏_istype $a (_ ⟼ $a) (_ ⟼ _
 
 Define E'(u1 u2 u3:Ulevel)(K:Type) := K⟶K; [∏_istype]($a, _ ⟾ $a, _ ⟾ _ ⟾ $a).
 
-End.
-
 Check LF beta_reduction.
+
+End.
 
 Check LFtypeTS
 

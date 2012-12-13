@@ -177,7 +177,7 @@ unmarked_lf_expr:
 | e=lf_lambda_expression
     { e }
 | Wlparen Kpair a=lf_expr b=lf_expr Wrparen
-    { PAIR(a, b) }
+    { CONS(a, b) }
 
 lf_lambda_expression:
 | Wlparen Klambda v= variable_or_unused Wcomma body=lf_expr Wrparen
@@ -193,12 +193,12 @@ lf_lambda_expression_body:
 
 unmarked_atomic_term:
 | variable
-    { APPLY(V $1,NIL) }
+    { EVAL(V $1,END) }
 | empty_hole {$1}
 | tac= tactic_expr
-    { cite_tactic tac NIL }
+    { cite_tactic tac END }
 | Wlparen f=lf_expr_head args=list(lf_expr) Wrparen
-    { APPLY(f,list_to_spine args) }
+    { EVAL(f,list_to_spine args) }
 
 lf_expr_head:
 | tsterm_head
@@ -346,15 +346,15 @@ unmarked_lf_type_from_ts_syntax:
 
 lf_expr_from_ts_syntax:
 | arg= lf_expr_from_ts_syntax Backslash f= lf_expr_from_ts_syntax
-    { Substitute.apply_args (Position($startpos, $endpos)) f (arg ** NIL) }
+    { Position($startpos, $endpos), APPLY(f, arg) }
 | tac= tactic_expr
-    { (Position($startpos, $endpos), cite_tactic tac NIL) }
+    { (Position($startpos, $endpos), cite_tactic tac END) }
 | e = ts_expr
     { e }
 | v= variable_or_unused DoubleArrowFromBar body=lf_expr_from_ts_syntax
     { Position($startpos, $endpos), let (v,body) = Substitute.subst_fresh (v,body) in LAMBDA(v,body) }
 | o=lf_expr_from_ts_syntax DoubleBackslash f=lf_expr_from_ts_syntax
-    { Substitute.apply_args (Position($startpos, $endpos)) f (o ** NIL) }
+    { Position($startpos, $endpos), APPLY(f, o) }
 
 ts_expr:
 | unmarked_ts_expr
@@ -384,12 +384,12 @@ variable:
 
 unmarked_ts_expr:
 | variable
-    { APPLY(V $1,NIL) }
+    { EVAL(V $1,END) }
 | empty_hole {$1}
 | f=ts_expr o=ts_expr
     %prec Reduce_application
     { let pos = Position($startpos, $endpos) in 
-      APPLY(O O_ev, f ** o ** (pos, cite_tactic (Tactic_name "ev3") NIL) ** NIL) }
+      EVAL(O O_ev, f ** o ** (pos, cite_tactic (Tactic_name "ev3") END) ** END) }
 | Klambda x=variable Colon t=ts_expr Wcomma o=ts_expr
     %prec Reduce_binder
     { make_O_lambda t (x,o) }
@@ -407,17 +407,17 @@ unmarked_ts_expr:
     %prec Reduce_binder
     { make_T_Sigma t1 (x,t2) }
 | Kumax Wlparen u=ts_expr Wcomma v=ts_expr Wrparen
-    { APPLY(U U_max, u**v**NIL)  }
+    { EVAL(U U_max, u**v**END)  }
 | label=tsterm_head args=arglist
     {
      let args = list_to_spine args in
      match label with
-     | V _ -> APPLY(label,args)
+     | V _ -> EVAL(label,args)
      | _ -> (
          match head_to_vardist label with
-         | None -> APPLY(label,args)
+         | None -> EVAL(label,args)
          | Some (n,_) ->
-             if n = 0 then APPLY(label,args)
+             if n = 0 then EVAL(label,args)
              else
                raise (MarkedError
                         ( Position($startpos, $endpos),
@@ -458,7 +458,7 @@ unmarked_ts_expr:
             ) indices arg
           ) varindices args
          in
-         APPLY(label,list_to_spine args)
+         EVAL(label,list_to_spine args)
    }
  
 (* 

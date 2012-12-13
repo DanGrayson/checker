@@ -5,7 +5,7 @@ open Names
 
 let rec get_ts_type (v:var) (env:context) : lf_expr = (
   match env with
-  | (_, (pos, F_APPLY(F_hastype,[(_,APPLY(V v',NIL)); t]))) :: env 
+  | (_, (pos, F_APPLY(F_hastype,[(_,EVAL(V v',END)); t]))) :: env 
     -> if v = v' then t else get_ts_type v env
   | _ :: env -> get_ts_type v env
   | [] -> raise Not_found
@@ -14,10 +14,10 @@ let rec get_ts_type (v:var) (env:context) : lf_expr = (
 let rec tau (pos:position) (env:context) e : lf_expr = 
   let pos = get_pos e in
   match unmark e with
-  | APPLY(V v,NIL) -> (
+  | EVAL(V v,END) -> (
       try get_ts_type v env
       with Not_found -> raise (TypeCheckingFailure(env,pos, "unbound variable, not in TS context: " ^ vartostring v)))
-  | APPLY(h,args) -> with_pos pos (
+  | EVAL(h,args) -> with_pos pos (
       match h with
       | TAC _ -> raise NotImplemented
       | V v -> 
@@ -29,23 +29,23 @@ let rec tau (pos:position) (env:context) e : lf_expr =
           match oh with
           | O_u -> (
               match args with 
-              | ARG(u,NIL) -> Helpers.make_T_U (pos, (Helpers.make_U_next u))
+              | ARG(u,END) -> Helpers.make_T_U (pos, (Helpers.make_U_next u))
               | _ -> raise Internal)
           | O_j -> (
               match args with 
-              | ARG(m1,ARG(m2,NIL)) -> 
+              | ARG(m1,ARG(m2,END)) -> 
                   Helpers.make_T_Pi 
                     (with_pos_of m1 (Helpers.make_T_U m1))
                     (newunused(), (with_pos_of m2 (Helpers.make_T_U m2)))
               | _ -> raise Internal)
           | O_ev -> (
               match args with 
-              | ARG(f,ARG(o,ARG((_,LAMBDA(x,t)),NIL))) ->
+              | ARG(f,ARG(o,ARG((_,LAMBDA(x,t)),END))) ->
                   unmark (Substitute.subst (x,o) t)
               | _ -> raise Internal)
           | O_lambda -> (
               match args with 
-              | ARG(t,ARG((_,LAMBDA(x,o)),NIL)) ->
+              | ARG(t,ARG((_,LAMBDA(x,o)),END)) ->
                   Helpers.make_T_Pi t (x, tau pos (ts_bind (x,t) env) o)
               | _ -> raise Internal)
           | O_forall -> (

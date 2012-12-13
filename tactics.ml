@@ -31,10 +31,10 @@ let assumption surr env pos t args =
 let ev3 surr env pos t args =
   (* This code was formerly a part of the file fillin.ml, removed. *)
   match surr with 
-  | Some(_, (pos,APPLY( O O_ev, ARG(f,_)))) -> (
+  | Some(_, (pos,EVAL( O O_ev, ARG(f,_)))) -> (
       let tf = tau env f in
       match unmark tf with
-      | APPLY(T T_Pi, ARG(_,ARG(t,NIL))) -> TacticSuccess t
+      | EVAL(T T_Pi, ARG(_,ARG(t,END))) -> TacticSuccess t
       | _ -> raise (TypeCheckingFailure(
 		    env,
 		    get_pos f,

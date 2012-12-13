@@ -28,14 +28,15 @@ let rec vars_arglist p_arg args = List.flatten (List.map p_arg args)
 let rec vars_args p_arg args = 
   match args with 
   | ARG(x,args) -> p_arg x @ vars_args p_arg args
-  | FST args | SND args -> vars_args p_arg args
-  | NIL -> []
+  | CAR args | CDR args -> vars_args p_arg args
+  | END -> []
 
 let rec lf_expr_to_vars (pos,e) = match e with
   | LAMBDA(x,body) -> remove x (lf_expr_to_vars body)
-  | PAIR(x,y) -> lf_expr_to_vars x @ lf_expr_to_vars y
-  | APPLY(V v,NIL) -> [v]
-  | APPLY(h,args) -> 
+  | APPLY(f,x) -> lf_expr_to_vars f @ lf_expr_to_vars x
+  | CONS(x,y) -> lf_expr_to_vars x @ lf_expr_to_vars y
+  | EVAL(V v,END) -> [v]
+  | EVAL(h,args) -> 
       let fv = match h with V v -> [v] | _ -> [] in
       fv @ vars_args lf_expr_to_vars args
 
@@ -53,11 +54,13 @@ let rec lf_kind_to_vars = function
 
 (** Whether [x] occurs as a free variable in an expression. *)
 
-let rec occurs_in_expr w e = match unmark e with 
+let rec occurs_in_expr w e = 
+  match unmark e with 
+  | APPLY(f,x) -> occurs_in_expr w f || occurs_in_expr w x
   | LAMBDA(v,body) -> w <> v && occurs_in_expr w body
-  | PAIR(x,y) -> occurs_in_expr w x || occurs_in_expr w y
-  | APPLY(V v,args) -> w = v || arg_exists (occurs_in_expr w) args
-  | APPLY(h,  args) ->          arg_exists (occurs_in_expr w) args
+  | CONS(x,y) -> occurs_in_expr w x || occurs_in_expr w y
+  | EVAL(V v,args) -> w = v || arg_exists (occurs_in_expr w) args
+  | EVAL(h,  args) ->          arg_exists (occurs_in_expr w) args
 
 and occurs_in_type w (_,t) = match t with
   | F_Pi   (v,t,u)
@@ -155,12 +158,16 @@ and lf_expr_to_string_with_subs subs e =
       let subs = (x,w) :: subs in
       let s = lf_expr_to_string_with_subs' subs body in
       concat ["(";vartostring (var_sub subs x);" ⟼ ";s;")"]
-  | PAIR(x,y) -> 
+  | CONS(x,y) -> 
       let x = lf_expr_to_string_with_subs subs x in
       let y = lf_expr_to_string_with_subs subs y in
       concat ["(pair ";x;" ";y;")"]
-  | APPLY(V v,NIL) -> vartostring (var_sub subs v)
-  | APPLY(h,args) -> 
+  | APPLY(f,x) -> 
+      let f = lf_expr_to_string_with_subs subs f in
+      let x = lf_expr_to_string_with_subs subs x in
+      concat ["(";f;" ";x;")"]
+  | EVAL(V v,END) -> vartostring (var_sub subs v)
+  | EVAL(h,args) -> 
       let h = match h with V v -> V (var_sub subs v) | _ -> h in
       "(" ^ (spine_application_to_string lf_expr_head_to_string (lf_expr_to_string_with_subs subs) (h,args)) ^ ")"
 
@@ -261,37 +268,37 @@ and ts_expr_to_string e =
      the o-t-u identity of each branch is correct.
    *)
   match unmark e with 
-  | PAIR _ | LAMBDA _ -> lf_expr_p e		(* normally this branch will not be used *)
-  | APPLY(V v,NIL) -> vartostring v
-  | APPLY(h,args) -> 
+  | APPLY _ | CONS _ | LAMBDA _ -> lf_expr_p e		(* normally this branch will not be used *)
+  | EVAL(V v,END) -> vartostring v
+  | EVAL(h,args) -> 
       match h with
       | T T_Pi -> (
 	  match args with
-	  | ARG(t1,ARG((_,LAMBDA(x, t2)),NIL)) -> 
+	  | ARG(t1,ARG((_,LAMBDA(x, t2)),END)) -> 
 	      if false
 	      then concat ["(";ts_expr_to_string t1;" ⟶ ";ts_expr_to_string t2;")"]
 	      else concat ["[" ^ lf_expr_head_to_string h ^ ";";vartostring x;"](";ts_expr_to_string t1;",";ts_expr_to_string t2;")"]
 	  | _ -> lf_atomic_p e)
       | T T_Sigma -> (
-	  match args with ARG(t1,ARG((_,LAMBDA(x, t2)),NIL)) -> 
+	  match args with ARG(t1,ARG((_,LAMBDA(x, t2)),END)) -> 
 	    "[" ^ lf_expr_head_to_string h ^ ";" ^ vartostring x ^ "]" ^
 	    "(" ^ ts_expr_to_string t1 ^ "," ^ ts_expr_to_string t2 ^ ")"
 	  | _ -> lf_atomic_p e)
       | O O_ev -> (
 	  match args with 
-	  | ARG(f,ARG(o,ARG((_,LAMBDA(x, t)),NIL))) ->
+	  | ARG(f,ARG(o,ARG((_,LAMBDA(x, t)),END))) ->
 	      "[ev;" ^ vartostring x ^ "](" ^ ts_expr_to_string f ^ "," ^ ts_expr_to_string o ^ "," ^ ts_expr_to_string t ^ ")"
-	  | ARG(f,ARG(o,NIL)) ->
+	  | ARG(f,ARG(o,END)) ->
 	      "[ev;_](" ^ ts_expr_to_string f ^ "," ^ ts_expr_to_string o ^ ")"
 	  | _ -> lf_atomic_p e)
       | O O_lambda -> (
 	  match args with 
-	  | ARG(t,ARG((_,LAMBDA(x,o)),NIL)) ->
+	  | ARG(t,ARG((_,LAMBDA(x,o)),END)) ->
 	      "[λ;" (* lambda *) ^ vartostring x ^ "](" ^ ts_expr_to_string t ^ "," ^ ts_expr_to_string o ^ ")"
 	  | _ -> lf_atomic_p e)
       | O O_forall -> (
 	  match args with 
-	  | ARG(u,ARG(u',ARG(o,ARG((_,LAMBDA(x,o')),NIL)))) ->
+	  | ARG(u,ARG(u',ARG(o,ARG((_,LAMBDA(x,o')),END)))) ->
 	      "[forall;" ^ vartostring x ^ "](" ^ 
 	      ts_expr_to_string u ^ "," ^ ts_expr_to_string u' ^ "," ^ 
 	      ts_expr_to_string o ^ "," ^ ts_expr_to_string o' ^ ")"
