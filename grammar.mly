@@ -193,12 +193,12 @@ lf_lambda_expression_body:
 
 unmarked_atomic_term:
 | variable
-    { EVAL(V $1,END) }
+    { APPLY(V $1,END) }
 | empty_hole {$1}
 | tac= tactic_expr
     { cite_tactic tac END }
 | Wlparen f=lf_expr_head args=list(lf_expr) Wrparen
-    { EVAL(f,list_to_spine args) }
+    { APPLY(f,list_to_spine args) }
 
 lf_expr_head:
 | tsterm_head
@@ -384,12 +384,12 @@ variable:
 
 unmarked_ts_expr:
 | variable
-    { EVAL(V $1,END) }
+    { APPLY(V $1,END) }
 | empty_hole {$1}
 | f=ts_expr o=ts_expr
     %prec Reduce_application
     { let pos = Position($startpos, $endpos) in 
-      EVAL(O O_ev, f ** o ** (pos, cite_tactic (Tactic_name "ev3") END) ** END) }
+      APPLY(O O_ev, f ** o ** (pos, cite_tactic (Tactic_name "ev3") END) ** END) }
 | Klambda x=variable Colon t=ts_expr Wcomma o=ts_expr
     %prec Reduce_binder
     { make_O_lambda t (x,o) }
@@ -407,17 +407,17 @@ unmarked_ts_expr:
     %prec Reduce_binder
     { make_T_Sigma t1 (x,t2) }
 | Kumax Wlparen u=ts_expr Wcomma v=ts_expr Wrparen
-    { EVAL(U U_max, u**v**END)  }
+    { APPLY(U U_max, u**v**END)  }
 | label=tsterm_head args=arglist
     {
      let args = list_to_spine args in
      match label with
-     | V _ -> EVAL(label,args)
+     | V _ -> APPLY(label,args)
      | _ -> (
          match head_to_vardist label with
-         | None -> EVAL(label,args)
+         | None -> APPLY(label,args)
          | Some (n,_) ->
-             if n = 0 then EVAL(label,args)
+             if n = 0 then APPLY(label,args)
              else
                raise (MarkedError
                         ( Position($startpos, $endpos),
@@ -458,7 +458,7 @@ unmarked_ts_expr:
             ) indices arg
           ) varindices args
          in
-         EVAL(label,list_to_spine args)
+         APPLY(label,list_to_spine args)
    }
  
 (* 

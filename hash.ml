@@ -26,23 +26,23 @@ let tachash = function
   | Tactic_index n -> 55 * n
   | Tactic_hole n -> 5 + n
 
-let hhash = function
+let rec hhash = function
   | TAC tac -> tachash tac
   | U h -> uhash h
   | T h -> thash h
   | O h -> ohash h
   | V h -> 2
+  | FUN(f,t) -> 36 * expr_hash f + type_hash t
 
-let rec chash e = match Error.unmark e with
-  | APPLY(f,t,x) -> 57 * chash f + thash t + 33 * chash x
-  | CONS(x,y) -> 611 * chash x + 711 * chash y
-  | LAMBDA(_,body) -> chash body
-  | EVAL(h,args) -> hhash h + spine_hash args
+and expr_hash e = match Error.unmark e with
+  | CONS(x,y) -> 611 * expr_hash x + 711 * expr_hash y
+  | LAMBDA(_,body) -> expr_hash body
+  | APPLY(h,args) -> hhash h + spine_hash args
+
+and type_hash t = raise Error.NotImplemented
 
 and spine_hash = function
   | END -> 1
   | CAR r -> 123 + spine_hash r
   | CDR r -> 13 + spine_hash r
-  | ARG(c,r) -> chash c + 2345 * (spine_hash r)
-
-and thash t = raise Error.NotImplemented
+  | ARG(c,r) -> expr_hash c + 2345 * (spine_hash r)

@@ -23,22 +23,25 @@ let pvar free_vars v = if List.mem v free_vars then vartostring v else "_"
 
 (** Lists of free variables. *)
 
-let rec vars_arglist p_arg args = List.flatten (List.map p_arg args)
+let rec vars_in_list p_arg args = List.flatten (List.map p_arg args)
 
-let rec vars_args p_arg args = 
+let rec vars_in_spine args = 
   match args with 
-  | ARG(x,args) -> p_arg x @ vars_args p_arg args
-  | CAR args | CDR args -> vars_args p_arg args
+  | ARG(x,args) -> lf_expr_to_vars x @ vars_in_spine args
+  | CAR args | CDR args -> vars_in_spine args
   | END -> []
 
-let rec lf_expr_to_vars (pos,e) = match e with
+and head_to_vars h = 
+  match h with
+  | V v -> [v]
+  | FUN(f,t) -> lf_expr_to_vars f @ lf_type_to_vars t
+  | U _ | T _ | O _ | TAC _ -> []
+
+and lf_expr_to_vars (pos,e) = match e with
   | LAMBDA(x,body) -> remove x (lf_expr_to_vars body)
-  | APPLY(f,t,x) -> lf_expr_to_vars f @ lf_type_to_vars t @ lf_expr_to_vars x
   | CONS(x,y) -> lf_expr_to_vars x @ lf_expr_to_vars y
-  | EVAL(V v,END) -> [v]
-  | EVAL(h,args) -> 
-      let fv = match h with V v -> [v] | _ -> [] in
-      fv @ vars_args lf_expr_to_vars args
+  | APPLY(V v,END) -> [v]
+  | APPLY(h,args) -> head_to_vars h @ vars_in_spine args
 
 and dependent_vars (v,t,u) = lf_type_to_vars t @ remove v (lf_type_to_vars u)
 
@@ -46,7 +49,7 @@ and lf_type_to_vars (_,t) = match t with
   | F_Pi   (v,t,u) -> dependent_vars (v,t,u)
   | F_Sigma(v,t,u) -> dependent_vars (v,t,u)
   | F_Singleton(x,t) -> lf_expr_to_vars x @ lf_type_to_vars t
-  | F_APPLY(hd,args) -> vars_arglist lf_expr_to_vars args
+  | F_APPLY(hd,args) -> vars_in_list lf_expr_to_vars args
 
 let rec lf_kind_to_vars = function
   | K_type -> []
@@ -54,19 +57,23 @@ let rec lf_kind_to_vars = function
 
 (** Whether [x] occurs as a free variable in an expression. *)
 
-let rec occurs_in_expr w e = 
+let rec occurs_in_head w h =
+  match h with 
+  | V v -> w = v
+  | FUN(f,t) -> occurs_in_expr w f || occurs_in_type w t
+  | U _ | T _ | O _ | TAC _ -> false
+
+and occurs_in_expr w e = 
   match unmark e with 
-  | APPLY(f,t,x) -> occurs_in_expr w f || occurs_in_type w t || occurs_in_expr w x
   | LAMBDA(v,body) -> w <> v && occurs_in_expr w body
   | CONS(x,y) -> occurs_in_expr w x || occurs_in_expr w y
-  | EVAL(V v,args) -> w = v || arg_exists (occurs_in_expr w) args
-  | EVAL(h,  args) ->          arg_exists (occurs_in_expr w) args
+  | APPLY(h,  args) -> occurs_in_head w h || exists_in_spine (occurs_in_expr w) args
 
 and occurs_in_type w (_,t) = match t with
   | F_Pi   (v,t,u)
   | F_Sigma(v,t,u) -> occurs_in_type w t || w <> v && occurs_in_type w u
   | F_Singleton(e,t) -> occurs_in_expr w e || occurs_in_type w t
-  | F_APPLY(hd,args) -> List.exists (occurs_in_expr w) args
+  | F_APPLY(h,args) -> List.exists (occurs_in_expr w) args
 
 let rec occurs_in_kind w = function
   | K_type -> false
@@ -128,13 +135,12 @@ let var_chooser x subs occurs_in e =
 
 let occurs_in_list occurs_in x args = List.exists (occurs_in x) args
 
-let rec spine_application_to_string p_hd p_arg (h,args) = 
+let rec spine_application_to_string p_arg head_string args = 
   args_fold
     (fun accu arg -> accu ^ " " ^ p_arg arg)
     (fun accu -> "(π₁ " ^ accu ^ ")")
     (fun accu -> "(π₂ " ^ accu ^ ")")
-    (p_hd h)
-    args
+    head_string args
 
 let target_paren target k = if target || (not (String.contains k ' ')) then k else "(" ^ k ^ ")"
 
@@ -153,6 +159,16 @@ let rec lf_expr_to_string_with_subs' subs e =   (* would be better to implement 
       concat [vartostring w;" ⟼ ";s]
   | _  -> lf_expr_to_string_with_subs subs e
 
+and lf_head_to_string_with_subs subs h =
+  match h with
+  | V v -> vartostring (var_sub subs v)
+  | U _ | T _ | O _ -> "[" ^ List.assoc h lf_expr_head_table ^ "]"
+  | TAC tac -> tactic_to_string tac
+  | FUN(f,t) ->
+      let f = lf_expr_to_string_with_subs subs f in
+      let t = lf_type_to_string_with_subs subs t in
+      concat["(";f;" : ";t;")"]
+
 and lf_expr_to_string_with_subs subs e = 
   match unmark e with
   | LAMBDA(x,body) -> 
@@ -164,15 +180,12 @@ and lf_expr_to_string_with_subs subs e =
       let x = lf_expr_to_string_with_subs subs x in
       let y = lf_expr_to_string_with_subs subs y in
       concat ["(pair ";x;" ";y;")"]
-  | APPLY(f,t,x) -> 
-      let f = lf_expr_to_string_with_subs subs f in
-      let t = lf_type_to_string_with_subs subs t in
-      let x = lf_expr_to_string_with_subs subs x in
-      concat ["((";f;" : ";t;") ";x;")"]
-  | EVAL(V v,END) -> vartostring (var_sub subs v)
-  | EVAL(h,args) -> 
-      let h = match h with V v -> V (var_sub subs v) | _ -> h in
-      "(" ^ (spine_application_to_string lf_expr_head_to_string (lf_expr_to_string_with_subs subs) (h,args)) ^ ")"
+  | APPLY(V v,END) -> vartostring (var_sub subs v)
+  | APPLY(h,args) -> 
+      let h = lf_head_to_string_with_subs subs h in
+      let h = h ^ " " in
+      let r = spine_application_to_string (lf_expr_to_string_with_subs subs) h args in
+      "(" ^ r ^ ")"
 
 and dependent_sub subs prefix infix target (v,t,u) =
   let used = occurs_in_type v u in
@@ -199,6 +212,7 @@ and lf_type_to_string_with_subs' target subs (_,t) = match t with
       target_paren target k
 
 and lf_type_to_string_with_subs subs t = lf_type_to_string_with_subs' true subs t
+
 
 let rec lf_kind_to_string_with_subs subs = function
   | K_type -> "type"
@@ -253,6 +267,8 @@ let apply n f =				(* generate f 0 :: f 1 :: f 2 :: ... :: f (n-1) *)
     
 let ends_in_paren s = s.[String.length s - 1] = '('
 
+let lf_head_to_string h = lf_head_to_string_with_subs [] h
+
 let rec paren_args_to_string hd args = (
   args_fold
     (fun accu arg -> 
@@ -269,20 +285,20 @@ and ts_expr_to_string e =
      the o-t-u identity of each branch is correct.
    *)
   match unmark e with 
-  | APPLY _ | CONS _ | LAMBDA _ -> lf_expr_p e		(* normally this branch will not be used *)
-  | EVAL(V v,END) -> vartostring v
-  | EVAL(h,args) -> 
+  | CONS _ | LAMBDA _ -> lf_expr_p e		(* normally this branch will not be used *)
+  | APPLY(V v,END) -> vartostring v
+  | APPLY(h,args) -> 
       match h with
       | T T_Pi -> (
 	  match args with
 	  | ARG(t1,ARG((_,LAMBDA(x, t2)),END)) -> 
 	      if false
 	      then concat ["(";ts_expr_to_string t1;" ⟶ ";ts_expr_to_string t2;")"]
-	      else concat ["[" ^ lf_expr_head_to_string h ^ ";";vartostring x;"](";ts_expr_to_string t1;",";ts_expr_to_string t2;")"]
+	      else concat ["[" ^ lf_head_to_string h ^ ";";vartostring x;"](";ts_expr_to_string t1;",";ts_expr_to_string t2;")"]
 	  | _ -> lf_atomic_p e)
       | T T_Sigma -> (
 	  match args with ARG(t1,ARG((_,LAMBDA(x, t2)),END)) -> 
-	    "[" ^ lf_expr_head_to_string h ^ ";" ^ vartostring x ^ "]" ^
+	    "[" ^ lf_head_to_string h ^ ";" ^ vartostring x ^ "]" ^
 	    "(" ^ ts_expr_to_string t1 ^ "," ^ ts_expr_to_string t2 ^ ")"
 	  | _ -> lf_atomic_p e)
       | O O_ev -> (
@@ -304,7 +320,7 @@ and ts_expr_to_string e =
 	      ts_expr_to_string u ^ "," ^ ts_expr_to_string u' ^ "," ^ 
 	      ts_expr_to_string o ^ "," ^ ts_expr_to_string o' ^ ")"
 	  | _ -> lf_atomic_p e)
-      | _ -> paren_args_to_string (lf_expr_head_to_string h) args
+      | _ -> paren_args_to_string (lf_head_to_string h) args
 
 (** Printing functions for definitions, provisional. *)
 
@@ -364,7 +380,7 @@ let _ts file x = output_string file (ts_expr_to_string x)
 
 let _e file x = output_string file (lf_expr_to_string x)
 
-let _eh file x = output_string file (lf_expr_head_to_string x)
+let _eh file x = output_string file (lf_head_to_string x)
 
 let _t file x = output_string file (lf_type_to_string x)
 

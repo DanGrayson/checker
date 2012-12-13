@@ -33,7 +33,7 @@ let abstraction3 (env:context) = function
   | ARG(f,ARG(_,ARG((_,LAMBDA(x, _)),_))) -> 
       let tf = tau env f in (
       match unmark tf with
-      | EVAL(T T_Pi, ARG(t, _)) -> ts_bind (x,t) env
+      | APPLY(T T_Pi, ARG(t, _)) -> ts_bind (x,t) env
       | _ -> env)
   | _ -> env
 
@@ -47,7 +47,7 @@ let ts_binders = [
 
 let apply_ts_binder env i e =
   match unmark e with
-  | EVAL(h,args) -> (
+  | APPLY(h,args) -> (
       try
 	(List.assoc (h,i) ts_binders) env args
       with
@@ -113,11 +113,7 @@ let rec natural_type (env:context) (x:lf_expr) : lf_type =
   (* see figure 9 page 696 [EEST] *)
   let pos = get_pos x in 
   match unmark x with
-  | APPLY(f,t,x) -> (
-      match unmark t with
-      | F_Pi(v,a,b) -> subst_type (v,x) b
-      | _ -> function_expected env f t)
-  | EVAL(l,args) -> 
+  | APPLY(l,args) -> 
       let t = label_to_type env pos l in
       let rec repeat i args t =
 	match args, unmark t with
@@ -139,13 +135,16 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
   (* may raise Not_found if there is no head reduction *)
   let pos = get_pos x in
   match unmark x with
-  | EVAL(V v, args) -> let f = unfold env v in apply_args pos f args
-  | APPLY(f,t,x) -> (
-      try
-	let f = head_reduction env f in with_pos pos (APPLY(f,t,x))
-      with Not_found ->
-	apply_args pos f (x ** END))
-  | EVAL ((TAC _|O _|T _|U _), _)
+  | APPLY(h,args) -> (
+      match h with
+      | V v -> let f = unfold env v in apply_args pos f args
+      | FUN(f,t) -> (
+	  try
+	    let f = head_reduction env f in with_pos pos (APPLY(FUN(f,t),args))
+	  with Not_found ->
+	    apply_args pos f args)
+      | TAC _ -> raise Internal
+      | (O _|T _|U _) -> raise Not_found)
   | CONS _ | LAMBDA _ -> raise Not_found
 
 let rec head_normalization (env:context) (x:lf_expr) : lf_expr =
@@ -190,7 +189,7 @@ and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_type =
   match unmark x with
   | LAMBDA _ -> err env pos "path_normalization encountered a function"
   | CONS _ -> err env pos "path_normalization encountered a pair"
-  | EVAL(f,args) -> (
+  | APPLY(f,args) -> (
       let t0 = label_to_type env pos f in
       let (t,args) =
 	let rec repeat t args : lf_type * spine = (
@@ -199,7 +198,7 @@ and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_type =
 	      match args with
 	      | END -> raise (TypeCheckingFailure2 (env,
 						    pos , "expected "^string_of_int (num_args t)^" more arguments",
-						    (get_pos t0), (" using:\n\t"^lf_expr_head_to_string f^" : "^lf_type_to_string t0)))
+						    (get_pos t0), (" using:\n\t"^lf_head_to_string f^" : "^lf_type_to_string t0)))
 	      | CAR args -> err env pos "pi1 expected an object of sigma type"
 	      | CDR args -> err env pos "pi2 expected an object of sigma type"
 	      | ARG(x, args) ->
@@ -221,14 +220,7 @@ and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_type =
 	      | CDR args -> err env pos "pi2 expected an object of sigma type"
 	      | ARG(x,args) -> err env (get_pos x) "unexpected argument"))
 	in repeat t0 args
-      in ((pos,EVAL(f,args)), t))
-  | APPLY(f,t,x) -> (
-      match unmark t with
-      | F_Pi(v,a,b) ->
-	  let x = term_normalization env x a in
-	  let r = subst_type (v,x) b in
-	  (pos, APPLY(f,t,x)), r
-      | _ -> function_expected env f t)
+      in ((pos,APPLY(f,args)), t))
 
 let rec type_normalization (env:context) (t:lf_type) : lf_type =
   (* see figure 9 page 696 [EEST] *)
@@ -305,14 +297,7 @@ and type_synthesis (env:context) (m:lf_expr) : lf_expr * lf_type =
   | CONS(x,y) ->
       let x',t = type_synthesis env x in
       let y',u = type_synthesis env y in (pos,CONS(x',y')), (pos,F_Sigma(newunused(),t,u))
-  | APPLY(f,t,x) -> (
-      match unmark t with
-      | F_Pi(v,a,b) ->
-	  let x = type_check None env x a in
-	  let r = subst_type (v,x) b in
-	  (pos, APPLY(f,t,x)), r
-      | _ -> function_expected env f t)
-  | EVAL(label,args) -> (
+  | APPLY(label,args) -> (
       let a = label_to_type env pos label in
       let rec repeat i env a args = (
 	let (apos,a0) = a in
@@ -335,7 +320,7 @@ and type_synthesis (env:context) (m:lf_expr) : lf_expr * lf_type =
        )
       in
       let (args',t) = repeat 0 env a args
-      in (pos,EVAL(label,args')), t
+      in (pos,APPLY(label,args')), t
      )
 
 and term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : unit =
@@ -365,7 +350,7 @@ and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
   (* assume x and y are head reduced *)
   (* see figure 11, page 711 [EEST] *)
   match x,y with
-  | (xpos,EVAL(f,args)), (ypos,EVAL(f',args')) -> (
+  | (xpos,APPLY(f,args)), (ypos,APPLY(f',args')) -> (
       if not (f = f') 
       then mismatch_term env xpos x ypos y;
       let t = label_to_type env xpos f in
@@ -444,7 +429,7 @@ and type_check (surr:surrounding) (env:context) (e:lf_expr) (t:lf_type) : lf_exp
        Fill in holes of the form [ ([ev] f o _) ] by using [tau] to compute the type that ought to go there. *)
   let pos = get_pos t in 
   match unmark e, unmark t with
-  | EVAL(TAC tac,args), _ -> (
+  | APPLY(TAC tac,args), _ -> (
       let pos = get_pos e in 
       match apply_tactic surr env pos t args tac with
       | TacticSuccess e -> type_check surr env e t

@@ -82,15 +82,22 @@ type lf_expr_head =
   | O of oHead			(** labels for o-expressions of TS *)
   | V of var			(** labels for variables of TS *)
   | TAC of tactic_expr		(** An empty hole, to be filled in later by calling a tactic routine. *)
+  | FUN of lf_expr * lf_type
+	(** In context with the spine, this is a [beta-redex] ready to be
+	    reduced, i.e., it's a function [f] of type [t] and an argument
+	    spine [args], and we're ready to apply [f] to [args].  The main
+	    justification for introducing it is for implementing local
+	    definitions with a head of the form [(x |-> b, (x:Singleton(a)) ->
+	    B)]. *)
 
-(** The expressions of LF, including the expressions of TS as instances of [EVAL].*)
+(** The expressions of LF, including the expressions of TS as instances of [APPLY].*)
 and lf_expr = unmarked_expr marked
 and unmarked_expr =
   | LAMBDA of var * lf_expr
 	(** Lambda expression of LF. *)
   | CONS of lf_expr * lf_expr
 	(** A pair of dependent type. *)
-  | EVAL of lf_expr_head * spine
+  | APPLY of lf_expr_head * spine
 	(** A variable or constant or tactic applied iteratively to its
 	    arguments, if any.  This includes the expressions of TS, with
 	    something such as [\[ev\]] as the head and the branches as the
@@ -101,12 +108,6 @@ and unmarked_expr =
 	    a singleton type), in which case, the unfolding will happen when
 	    the LF type checker needs to put the expression in weak head
 	    reduced form. *)
-  | APPLY of lf_expr * lf_type * lf_expr
-	(** This is a beta-redex [(f,t,a)] ready to be reduced, i.e., it's a
-	    function [f] of type [t] and an argument [a], and we're ready to
-	    apply [f] to [a].  The main justification for introducing it is for
-	    implementing local definitions in the form 
-	    [(x |-> b, (x:Singleton(a)) -> B, a)]. *)
 
 (** A spine is basically a list of arguments to which the head function of an
     atomic term will be applied, in sequence, but with two new instructions,
@@ -256,7 +257,7 @@ type tactic_return =
   | TacticSuccess of lf_expr
 
 type tactic_function =
-       surrounding         (* the ambient EVAL(...), if any, and the index among its head and arguments of the hole *)        
+       surrounding         (* the ambient APPLY(...), if any, and the index among its head and arguments of the hole *)        
     -> context							      (* the active context *)
     -> position							      (* the source code position of the tactic hole *)
     -> lf_type							      (* the type of the hole, e.g., [texp] *)

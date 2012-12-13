@@ -32,9 +32,9 @@ let chk uv ((lhs:lf_expr),(rhs:lf_expr)) =
   let rec ev e = 
     let (pos,e0) = e 
     in match e0 with
-    | EVAL(V u,END) -> - step_size * (index u)
-    | EVAL(U U_next,ARG(u,END)) -> (ev u) + 1
-    | EVAL(U U_max,ARG(u,ARG(v,END))) -> max (ev u) (ev v)
+    | APPLY(V u,END) -> - step_size * (index u)
+    | APPLY(U U_next,ARG(u,END)) -> (ev u) + 1
+    | APPLY(U U_max,ARG(u,ARG(v,END))) -> max (ev u) (ev v)
     | _ -> raise Error.Internal
   in 
   if (ev lhs) != (ev rhs) then raise (Inconsistency (lhs, rhs))
@@ -70,9 +70,9 @@ module Equal = struct
       let (a,b) = (unmark a,unmark b) in
       a == b || 
       match (a,b) with 
-      | EVAL(V x,END), EVAL(V x',END) -> x = x'
-      | EVAL(U U_next, ARG(x ,END)), EVAL(U U_next, ARG(x',END)) -> ueq x x'
-      | EVAL(U U_max, ARG(x,ARG(y,END))), EVAL(U U_max, ARG(x',ARG(y',END))) -> ueq x x' && ueq y y'
+      | APPLY(V x,END), APPLY(V x',END) -> x = x'
+      | APPLY(U U_next, ARG(x ,END)), APPLY(U U_next, ARG(x',END)) -> ueq x x'
+      | APPLY(U U_max, ARG(x,ARG(y,END))), APPLY(U U_max, ARG(x',ARG(y',END))) -> ueq x x' && ueq y y'
       | _ -> false
     in ueq
 end

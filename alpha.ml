@@ -32,7 +32,7 @@ module Make(Ueq: Universe.Equivalence) : S = struct
       | LAMBDA (x,body), LAMBDA (x',body') ->
 	  let alpha = addalpha x x' alpha 
 	  in term_eq alpha body body'
-      | EVAL(h,args), EVAL(h',args') -> (
+      | APPLY(h,args), APPLY(h',args') -> (
 	  match (h,h') with
 	  | V t, V t' -> testalpha t t' alpha && Helpers.args_equal (term_eq alpha) args args'
 	  | U _, U _ -> uequiv ulevel_context x y

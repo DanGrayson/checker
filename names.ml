@@ -43,11 +43,6 @@ let tactic_to_string : tactic_expr -> string = function
   | Tactic_name n -> "$" ^ n
   | Tactic_index n -> "$" ^ string_of_int n
 
-let lf_expr_head_to_string = function
-  | V v -> vartostring v
-  | TAC tac -> tactic_to_string tac
-  | h -> "[" ^ List.assoc h lf_expr_head_table ^ "]"
-
 let lf_type_constant_table = [
   F_uexp, "uexp" ;
   F_texp, "texp" ;
@@ -73,13 +68,14 @@ let fetch_type env pos v =
     raise (TypeCheckingFailure (env, pos, ("unbound variable: "^vartostring v)))
 
 let label_to_type env pos = function
+  | FUN(f,t) -> t
   | U h -> uhead_to_lf_type h
   | T h -> thead_to_lf_type h
   | O h -> ohead_to_lf_type h
   | V v -> fetch_type env pos v
   | TAC _ -> raise Internal
 
-let var_to_ts v = EVAL(V v,END)
+let var_to_ts v = APPLY(V v,END)
 
 let var_to_lf v = nowhere 1 (var_to_ts v)
 
@@ -103,6 +99,6 @@ let new_hole =
   let counter = ref 0 in
   fun () -> (
     incr counter;
-    EVAL(TAC (Tactic_hole !counter), END))
+    APPLY(TAC (Tactic_hole !counter), END))
 
 let hole pos = pos, new_hole()

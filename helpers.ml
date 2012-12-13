@@ -5,7 +5,7 @@ open Variables
 open Typesystem
 open Names
 
-let cite_tactic tac args = EVAL(TAC tac, args)
+let cite_tactic tac args = APPLY(TAC tac, args)
 
 let ( ** ) x s = ARG(x,s)		(* right associative *)
 
@@ -20,10 +20,10 @@ let rec list_to_spine = function
   | x :: a -> x ** list_to_spine a
   | [] -> END
 
-let rec arg_exists p args =
+let rec exists_in_spine p args =
   match args with
-  | ARG(x,a) -> p x || arg_exists p a
-  | CAR a | CDR a -> arg_exists p a
+  | ARG(x,a) -> p x || exists_in_spine p a
+  | CAR a | CDR a -> exists_in_spine p a
   | END -> false
 
 let rec args_length = function
@@ -48,12 +48,12 @@ let args_fold f pi1 pi2 accu args = (* it's fold_left, which is the only directi
   in repeat accu args
 
 let pi1 = function
-  | pos, EVAL(h,args) -> (pos,EVAL(h,join_args args (CAR END)))
+  | pos, APPLY(h,args) -> (pos,APPLY(h,join_args args (CAR END)))
   | pos, CONS(x,_) -> x
   | _ -> raise Internal
 
 let pi2 = function
-  | pos, EVAL(h,args) -> (pos,EVAL(h,join_args args (CDR END)))
+  | pos, APPLY(h,args) -> (pos,APPLY(h,join_args args (CDR END)))
   | pos, CONS(_,y) -> y
   | _ -> raise Internal
 
@@ -65,9 +65,9 @@ let lambda3 v1 v2 v3 x = lambda1 v1 (lambda2 v2 v3 x)
 
 let make_Var c = Var c
 
-let make_U h a = EVAL(U h, a)
-let make_T h a = EVAL(T h, a)
-let make_O h a = EVAL(O h, a)
+let make_U h a = APPLY(U h, a)
+let make_T h a = APPLY(T h, a)
+let make_O h a = APPLY(O h, a)
 
 let make_Variable x = var_to_ts x
 let make_U_next x = make_U U_next (x ** END)

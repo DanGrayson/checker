@@ -15,10 +15,10 @@ SRCFILES =					\
 	error.ml				\
 	variables.ml \
 	typesystem.ml				\
+	helpers.ml				\
 	names.ml				\
 	printer.ml				\
 	hash.ml					\
-	helpers.ml				\
 	universe.ml				\
 	alpha.ml alpha.mli			\
 	substitute.ml				\

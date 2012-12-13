@@ -144,7 +144,7 @@ let lf_axiomCommand env pos name t =
   ensure_new_name env pos v;
   (v,t) :: env
 
-let is_can x = (function (EVAL _) -> true | _ -> false) (unmark x)
+let is_can x = (function (APPLY _) -> true | _ -> false) (unmark x)
 
 let checkLFCommand env pos x =
   printf "\nCheck LF   = %a\n" _e x; flush stdout;

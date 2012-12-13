@@ -42,24 +42,25 @@ and subst subl e = spy _e subst'' subl e
 and subst'' subl e = 
   let pos = get_pos e in
   match unmark e with 
-  | EVAL(V v,args) -> (
-      try 
-        let z = List.assoc v subl in
-        match args with
-        | END -> z
-        | args -> (
-	    let args = subst_spine subl args in 
-            match z with 
-            | (zpos,EVAL(f,brgs)) -> (pos,EVAL(f, join_args brgs args))
-            | pos, LAMBDA _ as f -> apply_args pos f args
-            | _ -> 
-		printf "about to replace %a by %a in %a, not implemented\n" _v v _e z _e e; flush stdout; 
-		raise (Unimplemented_expr e)
-	   )
-      with Not_found -> pos, EVAL(V v,subst_spine subl args))
-  | EVAL(label,args) -> (pos, EVAL(label,subst_spine subl args))
+  | APPLY(h,args) -> (
+      match h with 
+      | V v -> (
+	  try 
+	    let z = List.assoc v subl in
+	    match args with
+	    | END -> z
+	    | args -> (
+		let args = subst_spine subl args in 
+		match z with 
+		| (zpos,APPLY(f,brgs)) -> (pos,APPLY(f, join_args brgs args))
+		| pos, LAMBDA _ as f -> apply_args pos f args
+		| _ -> 
+		    printf "about to replace %a by %a in %a, not implemented\n" _v v _e z _e e; flush stdout; 
+		    raise (Unimplemented_expr e))
+	  with Not_found -> pos, APPLY(V v,subst_spine subl args))
+      | FUN(f,t) -> raise NotImplemented
+      | U _ | T _ | O _ | TAC _ -> pos, APPLY(h,subst_spine subl args))
   | CONS(x,y) -> pos, CONS(subst subl x,subst subl y)
-  | APPLY(f,t,x) -> pos, APPLY(subst subl f,subst_type subl t,subst subl x)
   | LAMBDA(v, body) -> 
       let (v,body) = subst_fresh subl (v,body) in
       pos, LAMBDA(v, body)
@@ -73,7 +74,7 @@ and apply_args pos (f:lf_expr) args =
   let rec repeat f args = 
     let pos = get_pos f in
     match unmark f with
-    | EVAL(f,brgs) -> (pos,EVAL(f, join_args brgs args))
+    | APPLY(f,brgs) -> (pos,APPLY(f, join_args brgs args))
     | LAMBDA(v,body) -> (
         match args with
         | ARG(x,args) -> repeat (subst [(v,x)] body) args

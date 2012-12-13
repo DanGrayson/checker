@@ -35,7 +35,7 @@ let fixParmList (p:parm list) : uContext * (var list) * ((var * lf_expr) list) =
 
 let ( @@ ) f g x = f (g x)
 
-let apply f vartypes = (nowhere 7 (EVAL(V f, list_to_spine(List.map (var_to_lf @@ fst) vartypes))))
+let apply f vartypes = (nowhere 7 (APPLY(V f, list_to_spine(List.map (var_to_lf @@ fst) vartypes))))
 
 let ist x = istype (var_to_lf x)
 

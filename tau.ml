@@ -5,7 +5,7 @@ open Names
 
 let rec get_ts_type (v:var) (env:context) : lf_expr = (
   match env with
-  | (_, (pos, F_APPLY(F_hastype,[(_,EVAL(V v',END)); t]))) :: env 
+  | (_, (pos, F_APPLY(F_hastype,[(_,APPLY(V v',END)); t]))) :: env 
     -> if v = v' then t else get_ts_type v env
   | _ :: env -> get_ts_type v env
   | [] -> raise Not_found
@@ -14,15 +14,16 @@ let rec get_ts_type (v:var) (env:context) : lf_expr = (
 let rec tau (pos:position) (env:context) e : lf_expr = 
   let pos = get_pos e in
   match unmark e with
-  | EVAL(V v,END) -> (
+  | APPLY(V v,END) -> (
       try get_ts_type v env
       with Not_found -> raise (TypeCheckingFailure(env,pos, "unbound variable, not in TS context: " ^ vartostring v)))
-  | EVAL(h,args) -> with_pos pos (
+  | APPLY(h,args) -> with_pos pos (
       match h with
       | TAC _ -> raise NotImplemented
       | V v -> 
           let _ = get_ts_type v in
           raise NotImplemented
+      | FUN _ -> raise NotImplemented
       | U uh -> raise Internal          (* u-expression doesn't have a type *)
       | T th -> raise Internal          (* t-expression doesn't have a type *)
       | O oh -> (
