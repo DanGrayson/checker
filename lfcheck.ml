@@ -109,13 +109,12 @@ let unfold env v =
   | F_Singleton a -> let (x,t) = strip_singleton a in x
   | _ -> raise Not_found		(* What if the type is effectively a singleton, such as Sing(x)*Sing(y) ? *)
 
-let rec natural_type (pos:position) (env:context) (x:lf_expr) : lf_type =
+let rec natural_type (env:context) (x:lf_expr) : lf_type =
   (* assume nothing *)
   (* see figure 9 page 696 [EEST] *)
   let pos = get_pos x in 
   match unmark x with
-  | APPLY(f,x) -> (
-      let t = natural_type pos env f in
+  | APPLY(f,t,x) -> (
       match unmark t with
       | F_Pi(v,a,b) -> subst_type (v,x) b
       | _ -> function_expected env f t)
@@ -142,9 +141,9 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
   let pos = get_pos x in
   match unmark x with
   | EVAL(V v, args) -> let f = unfold env v in apply_args pos f args
-  | APPLY(f,x) -> (
+  | APPLY(f,t,x) -> (
       try
-	let f = head_reduction env f in with_pos pos (APPLY(f,x))
+	let f = head_reduction env f in with_pos pos (APPLY(f,t,x))
       with Not_found ->
 	apply_args pos f (x ** END))
   | EVAL ((TAC _|O _|T _|U _), _)
@@ -181,10 +180,10 @@ let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
   | F_APPLY _
   | F_Singleton _ ->
       let x = head_normalization env x in
-      let (x,t) = path_normalization env pos x in
+      let (x,t) = path_normalization env x in
       x
       
-and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
+and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_type =
   (* returns the normalized term x and the inferred type of x *)
   (* see figure 9 page 696 [EEST] *)
   (* assume x is head normalized *)
@@ -224,13 +223,12 @@ and path_normalization (env:context) pos (x:lf_expr) : lf_expr * lf_type =
 	      | ARG(x,args) -> err env (get_pos x) "unexpected argument"))
 	in repeat t0 args
       in ((pos,EVAL(f,args)), t))
-  | APPLY(f,x) -> (
-      let (f,t) = path_normalization env pos f in
+  | APPLY(f,t,x) -> (
       match unmark t with
       | F_Pi(v,a,b) ->
 	  let x = term_normalization env x a in
 	  let r = subst_type (v,x) b in
-	  (pos, APPLY(f,x)), r
+	  (pos, APPLY(f,t,x)), r
       | _ -> function_expected env f t)
 
 let rec type_normalization (env:context) (t:lf_type) : lf_type =
@@ -287,14 +285,14 @@ let rec type_validity (env:context) (t:lf_type) : lf_type =
 	  | K_type, [] -> []
 	  | K_type, x :: args -> err env pos "at least one argument too many";
 	  | K_Pi(v,a,kind'), x :: args -> 
-	      type_check None pos env x a :: repeat ((v,a) :: env) kind' args
+	      type_check None env x a :: repeat ((v,a) :: env) kind' args
 	  | K_Pi(_,a,_), [] -> errmissingarg env pos a
 	in 
 	let args' = repeat env kind args in
 	F_APPLY(head,args')
     | F_Singleton(x,t) -> 
 	let t = type_validity env t in
-	let x = type_check None pos env x t in		(* rule 46 *)
+	let x = type_check None env x t in		(* rule 46 *)
 	F_Singleton(x,t))
 
 and type_synthesis (env:context) (m:lf_expr) : lf_expr * lf_type =
@@ -308,13 +306,12 @@ and type_synthesis (env:context) (m:lf_expr) : lf_expr * lf_type =
   | CONS(x,y) ->
       let x',t = type_synthesis env x in
       let y',u = type_synthesis env y in (pos,CONS(x',y')), (pos,F_Sigma(newunused(),t,u))
-  | APPLY(f,x) -> (
-      let (f,t) = type_synthesis env f in
+  | APPLY(f,t,x) -> (
       match unmark t with
       | F_Pi(v,a,b) ->
-	  let x = type_check None (get_pos x) env x a in
+	  let x = type_check None env x a in
 	  let r = subst_type (v,x) b in
-	  (pos, APPLY(f,x)), r
+	  (pos, APPLY(f,t,x)), r
       | _ -> function_expected env f t)
   | EVAL(label,args) -> (
       let a = label_to_type env pos label in
@@ -324,7 +321,7 @@ and type_synthesis (env:context) (m:lf_expr) : lf_expr * lf_type =
 	| F_Pi(v,a',a''), ARG(m',args') ->
 	    let surr = Some(i,m) in 
 	    let env = apply_ts_binder env i m in
-	    let m' = type_check surr pos env m' a' in
+	    let m' = type_check surr env m' a' in
 	    let (args'',u) = repeat (i+1) env (subst_type (v,m') a'') args' in
 	    ARG(m',args''), u
 	| F_Singleton(e,t), args -> repeat i env t args
@@ -440,7 +437,7 @@ and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
       subtype ((w, a) :: env) (subst_type (x,var_to_lf w) b) (subst_type (y,var_to_lf w) d)
   | _ -> type_equivalence env (tpos,t0) (upos,u0)
 
-and type_check (surr:surrounding) (pos:position) (env:context) (e:lf_expr) (t:lf_type) : lf_expr = 
+and type_check (surr:surrounding) (env:context) (e:lf_expr) (t:lf_type) : lf_expr = 
   (* assume t has been verified to be a type *)
   (* see figure 13, page 716 [EEST] *)
   (* we modify the algorithm to return a possibly modified expression e, with holes filled in by tactics *)
@@ -452,7 +449,7 @@ and type_check (surr:surrounding) (pos:position) (env:context) (e:lf_expr) (t:lf
       let pos = get_pos e in 
       match apply_tactic surr env pos t args tac with
       | TacticDefer(t,args) -> (pos, EVAL(TAC (Tactic_deferred(t,args)),args))
-      | TacticSuccess e -> type_check surr pos env e t
+      | TacticSuccess e -> type_check surr env e t
       | TacticFailure ->
 	  raise (TypeCheckingFailure2 (env,
 				       pos, "tactic failed     : "^tactic_to_string tac,
@@ -461,7 +458,7 @@ and type_check (surr:surrounding) (pos:position) (env:context) (e:lf_expr) (t:lf
   | LAMBDA(v,e), F_Pi(w,a,b) -> (* the published algorithm is not applicable here, since
 				   our lambda doesn't contain type information for the variable,
 				   and theirs does *)
-      let e = type_check None pos ((v,a) :: env) e (subst_type (w,var_to_lf v) b) in
+      let e = type_check None ((v,a) :: env) e (subst_type (w,var_to_lf v) b) in
       pos, LAMBDA(v,e)
 
   | LAMBDA _, _ -> err env pos "did not expect a lambda expression here"
@@ -470,8 +467,8 @@ and type_check (surr:surrounding) (pos:position) (env:context) (e:lf_expr) (t:lf
 			    give advice to tactics for filling holes in [p], so we try type-directed
 			    type checking as long as possible. *)
       let (x,y) = (pi1 e,pi2 e) in
-      let x = type_check None pos env x a in
-      let y = type_check None pos env y (subst_type (w,x) b) in
+      let x = type_check None env x a in
+      let y = type_check None env y (subst_type (w,x) b) in
       pos, CONS(x,y)
 
   | _, _  ->

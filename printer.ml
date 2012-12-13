@@ -33,14 +33,14 @@ let rec vars_args p_arg args =
 
 let rec lf_expr_to_vars (pos,e) = match e with
   | LAMBDA(x,body) -> remove x (lf_expr_to_vars body)
-  | APPLY(f,x) -> lf_expr_to_vars f @ lf_expr_to_vars x
+  | APPLY(f,t,x) -> lf_expr_to_vars f @ lf_type_to_vars t @ lf_expr_to_vars x
   | CONS(x,y) -> lf_expr_to_vars x @ lf_expr_to_vars y
   | EVAL(V v,END) -> [v]
   | EVAL(h,args) -> 
       let fv = match h with V v -> [v] | _ -> [] in
       fv @ vars_args lf_expr_to_vars args
 
-let rec dependent_vars (v,t,u) = lf_type_to_vars t @ remove v (lf_type_to_vars u)
+and dependent_vars (v,t,u) = lf_type_to_vars t @ remove v (lf_type_to_vars u)
 
 and lf_type_to_vars (_,t) = match t with
   | F_Pi   (v,t,u) -> dependent_vars (v,t,u)
@@ -56,7 +56,7 @@ let rec lf_kind_to_vars = function
 
 let rec occurs_in_expr w e = 
   match unmark e with 
-  | APPLY(f,x) -> occurs_in_expr w f || occurs_in_expr w x
+  | APPLY(f,t,x) -> occurs_in_expr w f || occurs_in_type w t || occurs_in_expr w x
   | LAMBDA(v,body) -> w <> v && occurs_in_expr w body
   | CONS(x,y) -> occurs_in_expr w x || occurs_in_expr w y
   | EVAL(V v,args) -> w = v || arg_exists (occurs_in_expr w) args
@@ -136,6 +136,8 @@ let rec spine_application_to_string p_hd p_arg (h,args) =
     (p_hd h)
     args
 
+let target_paren target k = if target || (not (String.contains k ' ')) then k else "(" ^ k ^ ")"
+
 let rec list_application_to_string p_hd p_arg (h,args) = 
   List.fold_left
     (fun accu arg -> accu ^ " " ^ p_arg arg)
@@ -162,18 +164,17 @@ and lf_expr_to_string_with_subs subs e =
       let x = lf_expr_to_string_with_subs subs x in
       let y = lf_expr_to_string_with_subs subs y in
       concat ["(pair ";x;" ";y;")"]
-  | APPLY(f,x) -> 
+  | APPLY(f,t,x) -> 
       let f = lf_expr_to_string_with_subs subs f in
+      let t = lf_type_to_string_with_subs subs t in
       let x = lf_expr_to_string_with_subs subs x in
-      concat ["(";f;" ";x;")"]
+      concat ["((";f;" : ";t;") ";x;")"]
   | EVAL(V v,END) -> vartostring (var_sub subs v)
   | EVAL(h,args) -> 
       let h = match h with V v -> V (var_sub subs v) | _ -> h in
       "(" ^ (spine_application_to_string lf_expr_head_to_string (lf_expr_to_string_with_subs subs) (h,args)) ^ ")"
 
-let target_paren target k = if target || (not (String.contains k ' ')) then k else "(" ^ k ^ ")"
-
-let rec dependent_sub subs prefix infix target (v,t,u) =
+and dependent_sub subs prefix infix target (v,t,u) =
   let used = occurs_in_type v u in
   let w = var_chooser v subs occurs_in_type u in
   let subs = (v,w) :: subs in

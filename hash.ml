@@ -35,7 +35,7 @@ let hhash = function
   | V h -> 2
 
 let rec chash e = match Error.unmark e with
-  | APPLY(f,x) -> 57 * chash f + 33 * chash x
+  | APPLY(f,t,x) -> 57 * chash f + thash t + 33 * chash x
   | CONS(x,y) -> 611 * chash x + 711 * chash y
   | LAMBDA(_,body) -> chash body
   | EVAL(h,args) -> hhash h + spine_hash args
@@ -45,3 +45,5 @@ and spine_hash = function
   | CAR r -> 123 + spine_hash r
   | CDR r -> 13 + spine_hash r
   | ARG(c,r) -> chash c + 2345 * (spine_hash r)
+
+and thash t = raise Error.NotImplemented

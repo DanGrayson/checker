@@ -346,7 +346,7 @@ unmarked_lf_type_from_ts_syntax:
 
 lf_expr_from_ts_syntax:
 | arg= lf_expr_from_ts_syntax Backslash f= lf_expr_from_ts_syntax
-    { Position($startpos, $endpos), APPLY(f, arg) }
+    { Substitute.apply_args (Position($startpos, $endpos)) f (arg ** END) }
 | tac= tactic_expr
     { (Position($startpos, $endpos), cite_tactic tac END) }
 | e = ts_expr
@@ -354,7 +354,7 @@ lf_expr_from_ts_syntax:
 | v= variable_or_unused DoubleArrowFromBar body=lf_expr_from_ts_syntax
     { Position($startpos, $endpos), let (v,body) = Substitute.subst_fresh (v,body) in LAMBDA(v,body) }
 | o=lf_expr_from_ts_syntax DoubleBackslash f=lf_expr_from_ts_syntax
-    { Position($startpos, $endpos), APPLY(f, o) }
+    { Substitute.apply_args (Position($startpos, $endpos)) f (o ** END) }
 
 ts_expr:
 | unmarked_ts_expr

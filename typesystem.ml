@@ -101,9 +101,12 @@ and unmarked_expr =
 	    a singleton type), in which case, the unfolding will happen when
 	    the LF type checker needs to put the expression in weak head
 	    reduced form. *)
-  | APPLY of lf_expr * lf_expr
-	(** This is a beta-redex [(f,a)] ready to be reduced, i.e., it's a function [f]
-	    and an argument [a], and we're ready to apply [f] to [a]. *)
+  | APPLY of lf_expr * lf_type * lf_expr
+	(** This is a beta-redex [(f,t,a)] ready to be reduced, i.e., it's a
+	    function [f] of type [t] and an argument [a], and we're ready to
+	    apply [f] to [a].  The main justification for introducing it is for
+	    implementing local definitions in the form 
+	    [(x |-> b, (x:Singleton(a)) -> B, a)]. *)
 
 (** A spine is basically a list of arguments to which the head function of an
     atomic term will be applied, in sequence, but with two new instructions,

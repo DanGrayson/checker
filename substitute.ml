@@ -59,7 +59,7 @@ and subst'' subl e =
       with Not_found -> pos, EVAL(V v,subst_spine subl args))
   | EVAL(label,args) -> (pos, EVAL(label,subst_spine subl args))
   | CONS(x,y) -> pos, CONS(subst subl x,subst subl y)
-  | APPLY(f,x) -> pos, APPLY(subst subl f,subst subl x)
+  | APPLY(f,t,x) -> pos, APPLY(subst subl f,subst_type subl t,subst subl x)
   | LAMBDA(v, body) -> 
       let (v,body) = subst_fresh subl (v,body) in
       pos, LAMBDA(v, body)
@@ -86,7 +86,7 @@ and apply_args pos (f:lf_expr) args =
         | _ -> raise (GeneralError "too few arguments"))
   in repeat f args
 
-let rec subst_type_list (subl : (var * lf_expr) list) ts = List.map (subst_type subl) ts
+and subst_type_list (subl : (var * lf_expr) list) ts = List.map (subst_type subl) ts
 
 and subst_type subl t = spy _t subst_type'' subl t
 
