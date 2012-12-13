@@ -4,7 +4,7 @@ let debug_mode = ref false
 
 let nowhere_trap = ref 0
 
-let disable_sigma = true
+let disable_sigma = false
 
 (* raise an exception when a certain fresh variable is generated *)
 let genctr_trap = 0

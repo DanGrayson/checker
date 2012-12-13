@@ -25,7 +25,6 @@ let tachash = function
   | Tactic_name _ -> 1233		(* ?? *)
   | Tactic_index n -> 55 * n
   | Tactic_hole n -> 5 + n
-  | Tactic_deferred _ -> 4758
 
 let hhash = function
   | TAC tac -> tachash tac

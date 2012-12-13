@@ -374,7 +374,7 @@ arglist:
     ambiguity when looking at the start [ _ |-> x ] and [ _ ].  In the first case,
    it's an unused variable, and in the second case, it's an empty hole. *)
 
-empty_hole: Wunderscore { new_hole () }
+empty_hole: Wunderscore { cite_tactic (Tactic_name "default") END }
 unused_variable: Wunderscore { newunused() }
 variable_or_unused: variable {$1} | unused_variable {$1}
 

@@ -47,14 +47,13 @@ let ev3 surr env pos t args =
       printf "%a: ev3 ?\n" _pos pos;
       raise Internal
 
-(** a tactic that tells the type checker to defer further type checking until
-    the next pass, unless it returns something *)
-let defer surr env pos t args = TacticDefer(t,args)
+let default surr env pos t args = 
+  raise NotImplemented
 
 let _ = 
   add_tactic "ev3" ev3;
   add_tactic "a" assumption;
-  add_tactic "defer" defer
+  add_tactic "default" default
 
 (* 
   Local Variables:

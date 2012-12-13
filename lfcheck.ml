@@ -102,7 +102,6 @@ let apply_tactic surr env pos t args = function
       in
       if Alpha.UEqual.type_equiv empty_uContext t u then TacticSuccess(var_to_lf v)
       else mismatch_type env pos t (get_pos u) u
-  | Tactic_deferred(t,_) -> raise NotImplemented
 
 let unfold env v =
   match unmark( lookup_type env v ) with
@@ -448,7 +447,6 @@ and type_check (surr:surrounding) (env:context) (e:lf_expr) (t:lf_type) : lf_exp
   | EVAL(TAC tac,args), _ -> (
       let pos = get_pos e in 
       match apply_tactic surr env pos t args tac with
-      | TacticDefer(t,args) -> (pos, EVAL(TAC (Tactic_deferred(t,args)),args))
       | TacticSuccess e -> type_check surr env e t
       | TacticFailure ->
 	  raise (TypeCheckingFailure2 (env,

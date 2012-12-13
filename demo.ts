@@ -12,19 +12,19 @@ Check LFtype oexp -> oexp.
 
 Axiom t : T.
 
-Define compose1 (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := [ev;_](g,[ev;_](f,t,U),V) : V ;; (
+Define compose1 (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;; (
        # LF syntax
        ev_hastype U (_ ⟼ V) g ([ev] f t (_ ⟼ U)) $a (ev_hastype T (_ ⟼ U) f t $a $a)).
 
-Define compose1' (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := [ev;_](g,[ev;_](f,t,U),V) : V ;
+Define compose1' (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;
        # new TS syntax
        [ev_hastype](U, _ ⟾ V, g, f t, $a, [ev_hastype](T, _ ⟾ U, f, t, $a, $a)).
 
-Define compose2 (T U V:Type) (g:U⟶V) (f:T⟶U) := [lambda;t](T,[ev;_](g,[ev;_](f,t,U),V)) : T ⟶ V ;;
+Define compose2 (T U V:Type) (g:U⟶V) (f:T⟶U) := [lambda;t](T,g(f t)) : T ⟶ V ;;
       # LF syntax
       (λ_hastype T (_ ⟼ V) (t ⟼ ([ev] g ([ev] f t (_ ⟼ U)) (_ ⟼ V)) ) $a (t ⟼ _ ⟼ (ev_hastype U (_ ⟼ V) g ([ev] f t (_ ⟼ U)) $a (ev_hastype T (_ ⟼ U) f t $a $a )))).
 
-Define compose2' (T U V:Type) (g:U⟶V) (f:T⟶U) := [lambda;t](T,[ev;_](g,[ev;_](f,t,U),V)) : T ⟶ V ;
+Define compose2' (T U V:Type) (g:U⟶V) (f:T⟶U) := [lambda;t](T,g(f t)) : T ⟶ V ;
       # new TS syntax
       [λ_hastype](T, _ ⟾ V, t ⟾ g (f t), $a, t ⟾ _ ⟾ [ev_hastype](U, _ ⟾ V, g, f t, $a, [ev_hastype](T, _ ⟾ U, f, t, $a, $a))).
 

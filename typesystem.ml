@@ -130,7 +130,6 @@ and tactic_expr =
   | Tactic_hole of int			(* represented by _ *)
   | Tactic_name of string		(* represented by $foo *)
   | Tactic_index of int			(* represented by $n *)
-  | Tactic_deferred of lf_type * spine 	(* a deferred-action tactic result, with a declared type *)
 
 let ( @@ ) f x : lf_type = nowhere 3 (F_APPLY(f,x))
 
@@ -254,7 +253,6 @@ type surrounding = (int * lf_expr) option
 
 type tactic_return =
   | TacticFailure
-  | TacticDefer of lf_type * spine
   | TacticSuccess of lf_expr
 
 type tactic_function =
