@@ -10,6 +10,18 @@ open Tau
 open Printer
 open Lfcheck
 
+let show_surr (i,e,t) =
+  let _ = match i with
+  | Some i -> printf "    argument %d in %a\n" i _e e
+  | None ->   printf "    in expression %a\n"   _e e in
+  let _ = match t with
+  | Some t -> printf "          of type %a\n" _t t
+  | None -> () in
+  flush stdout
+
+let show_surroundings (surr:surrounding) = 
+  List.iter show_surr surr
+
 let add_tactic name f = tactics := (name,f) :: !tactics
 
 (** find the first variable in the context of the right type and return it *)
@@ -28,10 +40,10 @@ let assumption surr env pos t args =
   in repeat env
 
 (** fill in the third argument of [ev](f,x,_) using tau *)
-let ev3 surr env pos t args =
+let ev3 (surr:surrounding) env pos t args =
   (* This code was formerly a part of the file fillin.ml, removed. *)
   match surr with 
-  | (_, (pos,APPLY( O O_ev, ARG(f,_)))) :: _ -> (
+  | (_, (pos,APPLY( O O_ev, ARG(f,_))), _) :: _ -> (
       let tf = tau env f in
       match unmark tf with
       | APPLY(T T_Pi, ARG(_,ARG(t,END))) -> TacticSuccess t
@@ -40,7 +52,8 @@ let ev3 surr env pos t args =
 		    get_pos f,
 		    "expected a TS function:\n    " ^ ts_expr_to_string f ^
 		    "\n  : "^ts_expr_to_string tf)))
-  | (i,e) :: _ ->
+  | (i,e,t) :: _ ->
+      let i = match i with Some i -> i | None -> -1 in
       printf "ev3 ( %d , %a ) ?\n" i _e (e); flush stdout;
       raise Internal
   | [] -> 
@@ -48,12 +61,9 @@ let ev3 surr env pos t args =
       raise Internal
 
 let default surr env pos t args = 
-  printf "   #surr = %d\n" (List.length surr);
-  let _ = match surr with 
-  | (i,e) :: _ ->
-      printf " default: i = %d\n   e = %a\n" i _e e
-  | _ -> () in
-  printf "   t = %a\n" _t t; flush stdout;
+  printf "Default tactic:\n";
+  printf "     hole of type %a\n" _t t; flush stdout;
+  show_surroundings surr;
   raise NotImplemented
 
 let _ = 

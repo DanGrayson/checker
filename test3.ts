@@ -1,4 +1,4 @@
-Define id0 (T:Type) (t:T) := _ : T ; _ .
+# Define id0 (T:Type) (t:T) := _ : T ; _ .
 
 Define compose0 (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;; (
        ev_hastype U (_ ⟼ V) g ([ev] f t (_ ⟼ U)) $a (ev_hastype T (_ ⟼ U) f t $a $a)).

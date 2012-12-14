@@ -40,7 +40,8 @@ let ohead_to_string h = List.assoc (O h) lf_expr_head_table
 
 let tactic_to_string : tactic_expr -> string = function
   | Tactic_hole n -> "?" ^ string_of_int n
-  | Tactic_name n -> "$" ^ n
+  | Tactic_name n -> 
+      if n = "default" then "_" else "$" ^ n
   | Tactic_index n -> "$" ^ string_of_int n
 
 let lf_type_constant_table = [
