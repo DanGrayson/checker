@@ -29,13 +29,9 @@ let assumption surr env pos t args =
   let rec repeat = function
     | (v,u) :: envp -> (
 	try
-	  printf "- t=%a\n- u=%a\n%!" _t t _t u;
 	  Lfcheck.type_equivalence env t u;
-	  printf "- equal\n%!";
-	  printf "- tactic success: %a\n%!" _v v;
 	  TacticSuccess(var_to_lf v)
 	with TypeEquivalenceFailure -> 
-	  printf "- unequal\n%!";
 	  repeat envp)
     | [] -> TacticFailure
   in repeat env
@@ -58,7 +54,7 @@ let ev3 (surr:surrounding) env pos t args =
       printf "ev3 ( %d , %a ) ?\n%!" i _e (e);
       raise Internal
   | [] -> 
-      printf "%a: ev3 ?\n" _pos pos;
+      printf "%a: ev3 ?\n%!" _pos pos;
       raise Internal
 
 let default surr env pos t args = 

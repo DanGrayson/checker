@@ -225,15 +225,12 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
         term_equivalence tpos upos env x y t
     | F_Sigma(v,a,b), F_Sigma(w,c,d)
     | F_Pi(v,a,b), F_Pi(w,c,d) ->
-	printf "- a=%a\n- c=%a\n%!" _t a _t c;
         type_equivalence env a c;
         let x = newfresh v in
 	let b = subst_type (v, var_to_lf x) b in
 	let d = subst_type (w, var_to_lf x) d in
 	let env = (x, a) :: env in
-	printf "- equal\n- b=%a\n- d=%a\n%!" _t b _t d;
-        type_equivalence env b d;
-	printf "- equal\n%!";
+        type_equivalence env b d
     | F_APPLY(h,args), F_APPLY(h',args') ->
         (* Here we augment the algorithm in the paper to handle the type families of LF. *)
         if not (h = h') then raise TypeEquivalenceFailure;
@@ -241,9 +238,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
         let rec repeat (k:lf_kind) args args' : unit =
           match k,args,args' with
           | K_Pi(v,t,k), x :: args, x' :: args' ->
-	      printf "- x=%a x'=%a t=%a\n%!" _e x _e x' _t t;
               term_equivalence tpos upos env x x' t;
-	      printf "- equal\n%!";
               repeat (subst_kind (v,x) k) args args'
           | K_type, [], [] -> ()
           | _ -> raise Internal
