@@ -5,8 +5,7 @@ Rule 17 El_type :: ∏ M:uexp, ∏ o:oexp,
 
 Define A (u : Ulevel; u=u) (t : [U](u)) := [El](t);; (El_type u $a $0).
 
-# this only works if disable_sigma is on
-# Check LF [A.1].
+Check LF [A.1].			# sigma mode off for this
 
 End.
 

@@ -6,9 +6,7 @@ open Typesystem
 
 exception Internal_expr of lf_expr
 exception Unimplemented_expr of lf_expr
-exception TypeCheckingFailure of context * position * string
-exception TypeCheckingFailure2 of context * position * string * position * string
-exception TypeCheckingFailure3 of context * position * string * position * string * position * string
+exception TypeCheckingFailure of context * (position * string) list
 
 let lf_expr_head_table = [
   T T_Pi, "∏" ; T T_Sigma, "Σ" ; T T_Coprod, "∐" ; 
@@ -68,7 +66,7 @@ let lookup_type (env:context) v = List.assoc v env
 let fetch_type env pos v = 
   try lookup_type env v
   with Not_found -> 
-    raise (TypeCheckingFailure (env, pos, ("unbound variable: "^vartostring v)))
+    raise (TypeCheckingFailure (env, [pos, "unbound variable: " ^ vartostring v]))
 
 let label_to_type env pos = function
   | FUN(f,t) -> t

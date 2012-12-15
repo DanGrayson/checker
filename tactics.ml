@@ -30,10 +30,7 @@ let assumption surr env pos t args =
     | (v,u) :: envp ->
 	if 
 	  try Lfcheck.type_equivalence env t u; true
-	  with 
-	  | TypeCheckingFailure _
-	  | TypeCheckingFailure2 _
-	  | TypeCheckingFailure3 _ -> false
+	  with TypeEquivalenceFailure -> false
 	then TacticSuccess(var_to_lf v)
 	else repeat envp
     | [] -> TacticFailure
@@ -48,10 +45,10 @@ let ev3 (surr:surrounding) env pos t args =
       match unmark tf with
       | APPLY(T T_Pi, ARG(_,ARG(t,END))) -> TacticSuccess t
       | _ -> raise (TypeCheckingFailure(
-		    env,
+		    env, [
 		    get_pos f,
 		    "expected a TS function:\n    " ^ ts_expr_to_string f ^
-		    "\n  : "^ts_expr_to_string tf)))
+		    "\n  : " ^ ts_expr_to_string tf ])))
   | (i,e,t) :: _ ->
       let i = match i with Some i -> i | None -> -1 in
       printf "ev3 ( %d , %a ) ?\n" i _e (e); flush stdout;

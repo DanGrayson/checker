@@ -56,7 +56,7 @@ let sigma (pos,v,t) u =
 
 let fold = List.fold_right
 
-let wrap vartypes (def,pos,tm,tp) = (def, pos, fold lamb vartypes tm, fold pi vartypes tp)
+let wrap vartypes (def,pos,tm,tp) = (def, pos, with_pos pos (unmark (fold lamb vartypes tm)), with_pos pos (unmark (fold pi vartypes tp)))
 
 let term_or_hole pos = function
   | Some tm -> tm
@@ -74,9 +74,9 @@ let hast_s pos v t = sigma (pos,v,oexp) (hast pos v t)
 
 let hast_1 pos v t = [pos, v,hast_s pos v t]
 
-let ist_12 = if disable_sigma then ist_2 else ist_1
+let ist_12 pos v = if not (!sigma_mode) then ist_2 pos v else ist_1 pos v
 
-let hast_12 = if disable_sigma then hast_2 else hast_1
+let hast_12 pos v = if not (!sigma_mode) then hast_2 pos v else hast_1 pos v
 
 let augment uvars ueqns tvars o_vartypes = List.flatten (
     List.flatten [
@@ -94,7 +94,7 @@ let tDefinition name (UContext (uvars,ueqns),tvars,o_vartypes) t d1 =
   let j = term_or_hole pos d1 in
   let r = List.map (wrap vartypes) 
     (
-     if disable_sigma 
+     if not (!sigma_mode) 
      then
        [ (name0, pos, t, texp); (name1, pos, j, istype (apply pos name0 vartypes)) ]
      else 
@@ -112,7 +112,7 @@ let oDefinition name (UContext(uvars,ueqns),tvars,o_vartypes) o (t:lf_expr) d1 =
   let j = term_or_hole pos d1 in
   let r = List.map (wrap vartypes) 
     (
-     if disable_sigma
+     if not (!sigma_mode)
      then
        [ (name0, pos, o, oexp); (name1, pos, j, hastype (apply pos name0 vartypes) t) ]
      else

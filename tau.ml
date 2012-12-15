@@ -16,7 +16,7 @@ let rec tau (pos:position) (env:context) e : lf_expr =
   match unmark e with
   | APPLY(V v,END) -> (
       try get_ts_type v env
-      with Not_found -> raise (TypeCheckingFailure(env,pos, "unbound variable, not in TS context: " ^ vartostring v)))
+      with Not_found -> raise (TypeCheckingFailure(env, [pos, "unbound variable, not in TS context: " ^ vartostring v])))
   | APPLY(h,args) -> with_pos pos (
       match h with
       | TAC _ -> raise NotImplemented

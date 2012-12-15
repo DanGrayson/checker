@@ -1,6 +1,6 @@
-(** Exceptions, error message handling, and source code positions. *)
+(** Exceptions, experiments, error message handling, and source code positions. *)
 
-let disable_sigma = true		(* status of our sigma type experiment *)
+let sigma_mode = ref false		(* status of our sigma type experiment *)
 
 let debug_mode = ref false
 

@@ -48,7 +48,7 @@ and subst'' subl e =
 	  try 
 	    let z = List.assoc v subl in
 	    match args with
-	    | END -> z
+	    | END -> with_pos pos (unmark z)
 	    | args -> (
 		let args = subst_spine subl args in 
 		match z with 

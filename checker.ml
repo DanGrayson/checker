@@ -69,23 +69,8 @@ let rec handle_exception pos0 e =
       flush stderr;
       Tokens.bump_error_count();
       raise_switch ex Error_Handled
-  | TypeCheckingFailure (env,p,s) as ex -> 
-      fprintf stderr "%s: type checking failure: %s\n" (errfmt p) s;
-      flush stderr;
-      print_context env_limit stderr env;
-      Tokens.bump_error_count();
-      raise_switch ex Error_Handled
-  | TypeCheckingFailure2 (env,p1,s1,p2,s2) as ex -> 
-      fprintf stderr "%s: type mismatch: %s\n" (errfmt p1) s1;
-      fprintf stderr "%s:      ...       %s\n" (errfmt p2) s2;
-      flush stderr;
-      print_context env_limit stderr env;
-      Tokens.bump_error_count();
-      raise_switch ex Error_Handled
-  | TypeCheckingFailure3 (env,p1,s1,p2,s2,p3,s3) as ex -> 
-      fprintf stderr "%s: type mismatch: %s\n" (errfmt p1) s1;
-      fprintf stderr "%s:      ...       %s\n" (errfmt p2) s2;
-      fprintf stderr "%s:      ...       %s\n" (errfmt p3) s3;
+  | TypeCheckingFailure (env,ps) as ex -> 
+      List.iter (fun (pos,s) -> fprintf stderr "%s: %s\n" (errfmt pos) s) ps;
       flush stderr;
       print_context env_limit stderr env;
       Tokens.bump_error_count();
@@ -266,9 +251,10 @@ let toplevel() =
   let env = ref [] in
   (try
     Arg.parse 
-      [
-       ("--debug" , Arg.Set debug_mode, "turn on debug mode")
-     ]
+      (Arg.align
+	 [("--debug" , Arg.Set debug_mode, " Turn on debug mode");
+	  ("--sigma", Arg.Set sigma_mode, " Turn on sigma mode");
+	  ("--no-sigma", Arg.Clear sigma_mode, " Turn off sigma mode")])
       (fun filename -> env := parse_file !env filename)
       "usage: [options] filename ...";
   with FileFinished -> ());

@@ -8,7 +8,7 @@ open Definitions
 
 let add_sigma pos v t t' u =
   let v' = newfresh v in
-  if disable_sigma then 
+  if not (!sigma_mode) then 
     F_Pi(v, t, (pos, F_Pi(v', new_pos pos (t' (var_to_lf v)), u)))
   else
     F_Pi(v, (pos, F_Sigma(v', t, t' (var_to_lf v'))), u)
