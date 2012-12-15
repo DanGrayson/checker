@@ -1,5 +1,7 @@
 (** Functions for converting expressions to strings for printing *)
 
+let enable_variable_prettification = true
+
 open Error
 open Variables
 open Helpers
@@ -108,12 +110,7 @@ let rec occurs_in_kind w = function
 
  *)
 
-let enable_variable_prettification = true
-
-let var_sub subs v = 
-  if enable_variable_prettification && (not !debug_mode)
-  then (try List.assoc v subs with Not_found -> v) 
-  else v
+let var_sub subs v = try List.assoc v subs with Not_found -> v
 
 let var_tester w subs occurs_in e =
   not( List.exists (fun (_,v) -> v = w) subs )
@@ -121,15 +118,16 @@ let var_tester w subs occurs_in e =
   not( occurs_in w e )
 
 let var_chooser x subs occurs_in e =
+  if not enable_variable_prettification then x else
   match x with
   | VarGen(i,name) as v -> 
       if not (occurs_in v e) then Var "_" else
       let w = Var name in
       if var_tester w subs occurs_in e then w
       else let rec repeat i =
-	let w = Var (name ^ string_of_int i) in
-	if var_tester w subs occurs_in e then w
-	else repeat (i+1)
+        let w = Var (name ^ string_of_int i) in
+        if var_tester w subs occurs_in e then w
+        else repeat (i+1)
       in repeat 0
   | _ -> x
 
@@ -226,9 +224,9 @@ let rec lf_kind_to_string_with_subs subs = function
       let t = lf_type_to_string_with_subs' false subs t in
       let k = lf_kind_to_string_with_subs subs k in
       if used then
-	concat ["(";prefix; vartostring v; ":"; t; ") "; k]
+        concat ["(";prefix; vartostring v; ":"; t; ") "; k]
       else
-	concat [t; infix; k]
+        concat [t; infix; k]
 
 let lf_expr_to_string = lf_expr_to_string_with_subs []
 
@@ -246,21 +244,21 @@ let lf_expr_p e = "$$" ^ lf_expr_to_string e
 
 let lf_atomic_p e = "$$" ^ lf_expr_to_string e
 
-let locate f x = 			(* find the index of the element of the list x for which f is true *)
+let locate f x =                        (* find the index of the element of the list x for which f is true *)
   let rec repeat i x =
     match x with 
     | xi :: x -> if f xi then i else repeat (i+1) x
     | [] -> raise Not_found
   in repeat 0 x
 
-let locations f x = 			(* find the indices of all elements of the list x for which f is true *)
+let locations f x =                     (* find the indices of all elements of the list x for which f is true *)
   let rec repeat i x =
     match x with 
     | xi :: x -> if f xi then i :: repeat (i+1) x else repeat (i+1) x
     | [] -> []
   in repeat 0 x
 
-let apply n f =				(* generate f 0 :: f 1 :: f 2 :: ... :: f (n-1) *)
+let apply n f =                         (* generate f 0 :: f 1 :: f 2 :: ... :: f (n-1) *)
   let rec repeat i =
     if i = n then []
     else f i :: repeat (i+1)
@@ -286,41 +284,41 @@ and ts_expr_to_string e =
      the o-t-u identity of each branch is correct.
    *)
   match unmark e with 
-  | CONS _ | LAMBDA _ -> lf_expr_p e		(* normally this branch will not be used *)
+  | CONS _ | LAMBDA _ -> lf_expr_p e            (* normally this branch will not be used *)
   | APPLY(V v,END) -> vartostring v
   | APPLY(h,args) -> 
       match h with
       | T T_Pi -> (
-	  match args with
-	  | ARG(t1,ARG((_,LAMBDA(x, t2)),END)) -> 
-	      if false
-	      then concat ["(";ts_expr_to_string t1;" ⟶ ";ts_expr_to_string t2;")"]
-	      else concat ["[" ^ lf_head_to_string h ^ ";";vartostring x;"](";ts_expr_to_string t1;",";ts_expr_to_string t2;")"]
-	  | _ -> lf_atomic_p e)
+          match args with
+          | ARG(t1,ARG((_,LAMBDA(x, t2)),END)) -> 
+              if false
+              then concat ["(";ts_expr_to_string t1;" ⟶ ";ts_expr_to_string t2;")"]
+              else concat ["[" ^ lf_head_to_string h ^ ";";vartostring x;"](";ts_expr_to_string t1;",";ts_expr_to_string t2;")"]
+          | _ -> lf_atomic_p e)
       | T T_Sigma -> (
-	  match args with ARG(t1,ARG((_,LAMBDA(x, t2)),END)) -> 
-	    "[" ^ lf_head_to_string h ^ ";" ^ vartostring x ^ "]" ^
-	    "(" ^ ts_expr_to_string t1 ^ "," ^ ts_expr_to_string t2 ^ ")"
-	  | _ -> lf_atomic_p e)
+          match args with ARG(t1,ARG((_,LAMBDA(x, t2)),END)) -> 
+            "[" ^ lf_head_to_string h ^ ";" ^ vartostring x ^ "]" ^
+            "(" ^ ts_expr_to_string t1 ^ "," ^ ts_expr_to_string t2 ^ ")"
+          | _ -> lf_atomic_p e)
       | O O_ev -> (
-	  match args with 
-	  | ARG(f,ARG(o,ARG((_,LAMBDA(x, t)),END))) ->
-	      "[ev;" ^ vartostring x ^ "](" ^ ts_expr_to_string f ^ "," ^ ts_expr_to_string o ^ "," ^ ts_expr_to_string t ^ ")"
-	  | ARG(f,ARG(o,END)) ->
-	      "[ev;_](" ^ ts_expr_to_string f ^ "," ^ ts_expr_to_string o ^ ")"
-	  | _ -> lf_atomic_p e)
+          match args with 
+          | ARG(f,ARG(o,ARG((_,LAMBDA(x, t)),END))) ->
+              "[ev;" ^ vartostring x ^ "](" ^ ts_expr_to_string f ^ "," ^ ts_expr_to_string o ^ "," ^ ts_expr_to_string t ^ ")"
+          | ARG(f,ARG(o,END)) ->
+              "[ev;_](" ^ ts_expr_to_string f ^ "," ^ ts_expr_to_string o ^ ")"
+          | _ -> lf_atomic_p e)
       | O O_lambda -> (
-	  match args with 
-	  | ARG(t,ARG((_,LAMBDA(x,o)),END)) ->
-	      "[λ;" (* lambda *) ^ vartostring x ^ "](" ^ ts_expr_to_string t ^ "," ^ ts_expr_to_string o ^ ")"
-	  | _ -> lf_atomic_p e)
+          match args with 
+          | ARG(t,ARG((_,LAMBDA(x,o)),END)) ->
+              "[λ;" (* lambda *) ^ vartostring x ^ "](" ^ ts_expr_to_string t ^ "," ^ ts_expr_to_string o ^ ")"
+          | _ -> lf_atomic_p e)
       | O O_forall -> (
-	  match args with 
-	  | ARG(u,ARG(u',ARG(o,ARG((_,LAMBDA(x,o')),END)))) ->
-	      "[forall;" ^ vartostring x ^ "](" ^ 
-	      ts_expr_to_string u ^ "," ^ ts_expr_to_string u' ^ "," ^ 
-	      ts_expr_to_string o ^ "," ^ ts_expr_to_string o' ^ ")"
-	  | _ -> lf_atomic_p e)
+          match args with 
+          | ARG(u,ARG(u',ARG(o,ARG((_,LAMBDA(x,o')),END)))) ->
+              "[forall;" ^ vartostring x ^ "](" ^ 
+              ts_expr_to_string u ^ "," ^ ts_expr_to_string u' ^ "," ^ 
+              ts_expr_to_string o ^ "," ^ ts_expr_to_string o' ^ ")"
+          | _ -> lf_atomic_p e)
       | _ -> paren_args_to_string (lf_head_to_string h) args
 
 (** Printing functions for definitions, provisional. *)
@@ -330,21 +328,21 @@ let parmstostring = function
     -> concatl [
       if List.length uexp_parms > 0 
       then ["(";
-	    (String.concat " " (List.map (vartostring) uexp_parms));
-	    ":Univ";
-	    (String.concat "" (List.map 
-				 (fun (u,v) -> concat ["; "; ts_expr_to_string u; "="; ts_expr_to_string v]) 
-				 ueqns));
-	    ")"]
+            (String.concat " " (List.map (vartostring <<- snd) uexp_parms));
+            ":Univ";
+            (String.concat "" (List.map 
+                                 (fun (pos,(u,v)) -> concat ["; "; ts_expr_to_string u; "="; ts_expr_to_string v]) 
+                                 ueqns));
+            ")"]
       else [];
       if List.length texp_parms > 0
       then ["("; 
-	    String.concat " " (List.map (vartostring) texp_parms);
-	    ":Type)"]
+            String.concat " " (List.map (vartostring) texp_parms);
+            ":Type)"]
       else [];
       List.flatten (List.map 
-		      (fun (v,t) -> ["(";vartostring v; ":"; ts_expr_to_string t;")"])
-		      oexp_parms)
+                      (fun (v,t) -> ["(";vartostring v; ":"; ts_expr_to_string t;")"])
+                      oexp_parms)
     ]
 
 (** Printing of ulevel contexts. *)
@@ -353,12 +351,12 @@ let ulevel_context_to_string (UContext(uexp_parms,ueqns)) =
     concatl [
       if List.length uexp_parms > 0 
       then [
-	    (String.concat " " (List.map (vartostring) uexp_parms));
-	    ":Univ";
-	    (String.concat "" (List.map 
-				 (fun (u,v) -> concat ["; "; ts_expr_to_string u; "="; ts_expr_to_string v]) 
-				 ueqns));
-	    ]
+            (String.concat " " (List.map (vartostring <<- snd) uexp_parms));
+            ":Univ";
+            (String.concat "" (List.map 
+                                 (fun (pos,(u,v)) -> concat ["; "; ts_expr_to_string u; "="; ts_expr_to_string v]) 
+                                 ueqns));
+            ]
       else [] ]
 
 exception Limit
@@ -400,11 +398,11 @@ let print_signature env file =
   fprintf file "  Type family constants:\n";
   List.iter (fun h -> 
     fprintf file "     %a : %a\n" _th h  _k (tfhead_to_kind h)
-	   ) lf_type_heads;
+           ) lf_type_heads;
   fprintf file "  Object constants:\n";
   List.iter (fun h -> 
     fprintf file "     %a : %a\n" _eh h  _t (label_to_type env (Error.no_pos 23) h)
-	   ) lf_expr_heads;
+           ) lf_expr_heads;
   flush file
 
 let print_context n file (env:context) = 
@@ -412,13 +410,13 @@ let print_context n file (env:context) =
   fprintf file "Context:\n";
   try iteri
       (fun i (v,t) ->
-	if i = n then raise Limit;
-	match unmark t with
-	| F_Singleton(e,t) ->
-	    fprintf file "     %a := %a\n" _v v          _e e;
-	    fprintf file "     %a  : %a\n" _v_phantom v  _t t; flush file
-	| _ -> 
-	    fprintf file "     %a : %a\n" _v v  _t t; flush file
+        if i = n then raise Limit;
+        match unmark t with
+        | F_Singleton(e,t) ->
+            fprintf file "     %a := %a\n" _v v          _e e;
+            fprintf file "     %a  : %a\n" _v_phantom v  _t t; flush file
+        | _ -> 
+            fprintf file "     %a : %a\n" _v v  _t t; flush file
      ) 
       env
   with Limit -> ()

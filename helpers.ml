@@ -69,7 +69,6 @@ let make_U h a = APPLY(U h, a)
 let make_T h a = APPLY(T h, a)
 let make_O h a = APPLY(O h, a)
 
-let make_Variable x = var_to_ts x
 let make_U_next x = make_U U_next (x ** END)
 let make_U_max x y = make_U U_max (x **  y ** END)
 let make_T_El x = make_T T_El (x ** END)

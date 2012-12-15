@@ -244,7 +244,7 @@ type oSubs = (var * lf_expr) list
 
 type context = (var * lf_type) list
 
-type uContext = UContext of var list * (lf_expr * lf_expr) list
+type uContext = UContext of var marked list * (lf_expr * lf_expr) marked list
 
 let empty_uContext = UContext([],[])
 

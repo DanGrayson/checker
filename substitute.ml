@@ -8,9 +8,9 @@ open Names
 open Printer
 open Printf
 
-let fresh v subl =
+let fresh pos v subl =
   let v' = newfresh v in
-  v', (v,var_to_lf v') :: subl
+  v', (v,var_to_lf_pos pos v') :: subl
 
 let show_subs (subl : (var * lf_expr) list) =
   printf " subs =\n";
@@ -62,11 +62,11 @@ and subst'' subl e =
       | U _ | T _ | O _ | TAC _ -> pos, APPLY(h,subst_spine subl args))
   | CONS(x,y) -> pos, CONS(subst subl x,subst subl y)
   | LAMBDA(v, body) -> 
-      let (v,body) = subst_fresh subl (v,body) in
+      let (v,body) = subst_fresh pos subl (v,body) in
       pos, LAMBDA(v, body)
 
-and subst_fresh subl (v,e) =
-  let (v',subl) = fresh v subl in
+and subst_fresh pos subl (v,e) =
+  let (v',subl) = fresh pos v subl in
   let e' = subst subl e in
   v', e'
 
@@ -96,17 +96,17 @@ and subst_type'' (subl : (var * lf_expr) list) (pos,t) =
    match t with
    | F_Pi(v,a,b) ->
        let a = subst_type subl a in
-       let (v,b) = subst_type_fresh subl (v,b) in
+       let (v,b) = subst_type_fresh pos subl (v,b) in
        F_Pi(v,a,b)
    | F_Sigma(v,a,b) -> 
        let a = subst_type subl a in
-       let (v,b) = subst_type_fresh subl (v,b) in
+       let (v,b) = subst_type_fresh pos subl (v,b) in
        F_Sigma(v,a,b)
    | F_APPLY(label,args) -> F_APPLY(label, subst_list subl args)
    | F_Singleton(e,t) -> F_Singleton( subst subl e, subst_type subl t ))
 
-and subst_type_fresh subl (v,t) =
-  let (v,subl) = fresh v subl in
+and subst_type_fresh pos subl (v,t) =
+  let (v,subl) = fresh pos v subl in
   let t = subst_type subl t in
   v,t
 
@@ -119,10 +119,10 @@ and subst_kind'' (subl : (var * lf_expr) list) k =
    | K_type -> K_type
    | K_Pi(v,a,b) -> 
        let a = subst_type subl a in
-       let (v,b) = subst_kind_fresh subl (v,b) in K_Pi(v, a, b)
+       let (v,b) = subst_kind_fresh (get_pos a) subl (v,b) in K_Pi(v, a, b)
 
-and subst_kind_fresh subl (v,t) =
-  let (v,subl) = fresh v subl in
+and subst_kind_fresh pos subl (v,t) =
+  let (v,subl) = fresh pos v subl in
   v, subst_kind subl t  
 
 let preface subber (v,x) e = subber [(v,x)] e
@@ -133,7 +133,9 @@ let subst_type = preface subst_type
 
 let subst_kind = preface subst_kind
 
-let subst_fresh (v,e) = subst_fresh [] (v,e)
+let subst_fresh pos (v,e) = subst_fresh pos [] (v,e)
+
+let subst_type_fresh pos (v,e) = subst_type_fresh pos [] (v,e)
 
 (* 
   Local Variables:

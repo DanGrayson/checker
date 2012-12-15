@@ -1,12 +1,11 @@
 (** Exceptions, error message handling, and source code positions. *)
 
+let disable_sigma = true		(* status of our sigma type experiment *)
+
 let debug_mode = ref false
 
-let nowhere_trap = ref 0
+let nowhere_trap = 0
 
-let disable_sigma = false
-
-(* raise an exception when a certain fresh variable is generated *)
 let genctr_trap = 0
 
 let trap () = ()			(* set a break point here *)
@@ -46,6 +45,22 @@ let errfmt = function
   | Nowhere(i,j) -> "internal:" ^ string_of_int i ^ ":" ^ string_of_int j
 
 type 'a marked = position * 'a
+
+let min_pos p q =
+  if p.Lexing.pos_fname != q.Lexing.pos_fname then raise Internal;
+  if p.Lexing.pos_cnum < q.Lexing.pos_cnum then p else q
+
+let max_pos p q =
+  if p.Lexing.pos_fname != q.Lexing.pos_fname then raise Internal;
+  if p.Lexing.pos_cnum > q.Lexing.pos_cnum then p else q
+
+let merge_pos p q = 
+  match (p,q) with
+  | Position _ , Nowhere _ -> p
+  | Nowhere _ , Position _ -> q
+  | Nowhere _ , Nowhere _ -> p
+  | Position(s,e) , Position(s',e') -> Position(min_pos s s', max_pos e e')
+
 let unmark ((_:position), x) = x
 let get_pos ((pos:position), _) = pos
 let errpos x = errfmt (get_pos x)
@@ -57,7 +72,7 @@ let seepos pos = Printf.fprintf stderr "%s: ... debugging ...\n" (errfmt pos); f
 
 let no_pos i = 
   incr nowhere_ctr;
-  if !nowhere_ctr = !nowhere_trap then raise DebugMe;
+  if !nowhere_ctr = nowhere_trap then raise DebugMe;
   Nowhere(i, !nowhere_ctr)
 let nowhere i x = (no_pos i,x)
 let nopos i = errfmt (no_pos i)

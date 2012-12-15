@@ -1,13 +1,15 @@
-# Define id0 (T:Type) (t:T) := _ : T ; _ .
+Define id0 (T:Type) (t:T) := _ : [pi1](T) ; _ .
 
-Define compose0 (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;; (
-       ev_hastype U (_ ⟼ V) g ([ev] f t (_ ⟼ U)) $a (ev_hastype T (_ ⟼ U) f t $a $a)).
+End.
 
-Define compose0' (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;
-       [ev_hastype](U, _ ⟾ V, g, f t, $a, [ev_hastype](T, _ ⟾ U, f, t, $a, $a)).
+#Define compose0 (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;; (
+#       ev_hastype U (_ ⟼ V) g ([ev] f t (_ ⟼ U)) $a (ev_hastype T (_ ⟼ U) f t $a $a)).
+
+#Define compose0' (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;
+#       [ev_hastype](U, _ ⟾ V, g, f t, $a, [ev_hastype](T, _ ⟾ U, f, t, $a, $a)).
 
 
-Define compose1 (T U V:Type) (f:T->U) (g:U->V) := _ : T->V ; _.
+# Define compose1 (T U V:Type) (f:T->U) (g:U->V) := _ : T->V ; _.
 
 # =	(T ⟼ _ ⟼ U ⟼ _ ⟼ V ⟼ _ ⟼ f ⟼ _ ⟼ g ⟼ _ ⟼ (pair (?1) (?2)))
 # 

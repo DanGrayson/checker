@@ -15,8 +15,8 @@ SRCFILES =					\
 	error.ml				\
 	variables.ml \
 	typesystem.ml				\
-	helpers.ml				\
 	names.ml				\
+	helpers.ml				\
 	printer.ml				\
 	hash.ml					\
 	universe.ml				\

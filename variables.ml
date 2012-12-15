@@ -14,8 +14,8 @@ let basename = function
 
 let vartostring = function
   | Var x -> x
-  | VarGen(i,x) -> x ^ "$" ^ (string_of_int i)
-  | VarDefined (name,aspect) -> "[" ^ name ^ "." ^ (string_of_int aspect) ^ "]"
+  | VarGen(i,x) -> x ^ "$" ^ string_of_int i
+  | VarDefined (name,aspect) -> "[" ^ name ^ "." ^ string_of_int aspect ^ "]"
 
 exception GensymCounterOverflow
 

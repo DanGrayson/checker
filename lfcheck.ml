@@ -103,6 +103,28 @@ let apply_tactic surr env pos t args = function
       if Alpha.UEqual.type_equiv empty_uContext t u then TacticSuccess(var_to_lf v)
       else mismatch_type env pos t (get_pos u) u
 
+let rec natural_type (env:context) (x:lf_expr) : lf_type =
+  if true then raise Internal;		(* this function is unused, because "unfold" below does what we need for weak head reduction *)
+  (* assume nothing *)
+  (* see figure 9 page 696 [EEST] *)
+  let pos = get_pos x in 
+  match unmark x with
+  | APPLY(l,args) -> 
+      let t = label_to_type env pos l in
+      let rec repeat i args t =
+	match args, unmark t with
+	| ARG(x,args), F_Pi(v,a,b) -> repeat (i+1) args (subst_type (v,x) b)
+	| ARG _, _ -> err env pos "at least one argument too many"
+	| CAR args, F_Sigma(v,a,b) -> repeat (i+1) args a
+	| CAR _, _ -> err env pos "pi1 expected a pair"
+	| CDR args, F_Sigma(v,a,b) -> repeat (i+1) args b
+	| CDR _, _ -> err env pos "pi2 expected a pair"
+	| END, F_Pi(v,a,b) -> errmissingarg env pos a
+	| END, t -> t
+      in nowhere 5 (repeat 0 args t)
+  | LAMBDA _ -> err env pos "LF lambda expression found, has no natural type"
+  | CONS _ -> err env pos "LF pair found, has no natural type"
+
 let unfold env v =
   match unmark( lookup_type env v ) with
   | F_Singleton a -> let (x,t) = strip_singleton a in x
@@ -447,28 +469,6 @@ let rec type_normalization (env:context) (t:lf_type) : lf_type =
   | F_Singleton(x,t) -> 
       F_Singleton( term_normalization env x t, type_normalization env t )
   in (pos,t)
-
-let rec natural_type (env:context) (x:lf_expr) : lf_type =
-  if true then raise Internal;		(* this function is unused *)
-  (* assume nothing *)
-  (* see figure 9 page 696 [EEST] *)
-  let pos = get_pos x in 
-  match unmark x with
-  | APPLY(l,args) -> 
-      let t = label_to_type env pos l in
-      let rec repeat i args t =
-	match args, unmark t with
-	| ARG(x,args), F_Pi(v,a,b) -> repeat (i+1) args (subst_type (v,x) b)
-	| ARG _, _ -> err env pos "at least one argument too many"
-	| CAR args, F_Sigma(v,a,b) -> repeat (i+1) args a
-	| CAR _, _ -> err env pos "pi1 expected an object of sigma type"
-	| CDR args, F_Sigma(v,a,b) -> repeat (i+1) args b
-	| CDR _, _ -> err env pos "pi2 expected an object of sigma type"
-	| END, F_Pi(v,a,b) -> errmissingarg env pos a
-	| END, t -> t
-      in nowhere 5 (repeat 0 args t)
-  | LAMBDA _ -> err env pos "LF lambda expression found, has no natural type"
-  | CONS _ -> err env pos "LF pair found, has no natural type"
 
 (* 
   Local Variables:

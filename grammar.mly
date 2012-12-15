@@ -180,16 +180,26 @@ unmarked_lf_expr:
     { CONS(a, b) }
 
 lf_lambda_expression:
-| Wlparen Klambda v= variable_or_unused Wcomma body=lf_expr Wrparen
-    { let (v,body) = Substitute.subst_fresh (v,body) in LAMBDA(v,body) }
-| Wlparen v= variable_or_unused ArrowFromBar body=lf_lambda_expression_body Wrparen
-    { let (v,body) = Substitute.subst_fresh (v,body) in LAMBDA(v,body) }
+| Wlparen Klambda v= marked_variable_or_unused Wcomma body=lf_expr Wrparen
+    { 
+      let (pos,v) = v in
+      let (v,body) = Substitute.subst_fresh pos (v,body) in 
+      LAMBDA(v,body) }
+
+| Wlparen v= marked_variable_or_unused ArrowFromBar body= lf_lambda_expression_body Wrparen
+    { 
+      let (pos,v) = v in
+      let (v,body) = Substitute.subst_fresh pos (v,body) in 
+      LAMBDA(v,body) }
 
 lf_lambda_expression_body:
 | e=lf_expr
     { e }
-| v= variable_or_unused ArrowFromBar body=lf_lambda_expression_body
-    { Position($startpos, $endpos), let (v,body) = Substitute.subst_fresh (v,body) in LAMBDA(v,body) }
+| v= marked_variable_or_unused ArrowFromBar body=lf_lambda_expression_body
+    { Position($startpos, $endpos), 
+      let (pos,v) = v in
+      let (v,body) = Substitute.subst_fresh pos (v,body) in 
+      LAMBDA(v,body) }
 
 unmarked_atomic_term:
 | variable
@@ -285,12 +295,22 @@ command0:
 | WEnd Wperiod
     { Toplevel.End }
 
-uParm: vars=nonempty_list(IDENTIFIER) Colon KUlevel eqns=preceded(Semicolon,uEquation)*
-    { UParm (UContext ((List.map make_Var vars),eqns)) }
-tParm: vars=nonempty_list(IDENTIFIER) Colon Type 
-    { TParm (List.map make_Var vars) }
-oParm: vars=nonempty_list(IDENTIFIER) Colon t=ts_expr 
-    { OParm (List.map (fun s -> (Var s,t)) vars) }
+marked_variable:
+| IDENTIFIER
+    { Position($startpos, $endpos), Var $1 }
+
+uParm: vars=nonempty_list(marked_variable) Colon KUlevel eqns=preceded(Semicolon,marked_uEquation)*
+    { UParm (UContext (vars,eqns)) }
+
+tParm: vars=nonempty_list(marked_variable) Colon Type 
+    { TParm vars }
+
+oParm: vars=nonempty_list(marked_variable) Colon t=ts_expr 
+    { OParm (List.map (fun s -> (s,t)) vars) }
+
+marked_uEquation:
+| uEquation
+    { Position($startpos, $endpos), $1 }
 
 uEquation:
 | u=ts_expr Wequal v=ts_expr 
@@ -345,24 +365,35 @@ unmarked_lf_type_from_ts_syntax:
     { add_sigma (Position($startpos, $endpos)) v oexp (fun o -> hastype o t) u }
 
 lf_expr_from_ts_syntax:
+
 | arg= lf_expr_from_ts_syntax Backslash f= lf_expr_from_ts_syntax
     { Substitute.apply_args (Position($startpos, $endpos)) f (arg ** END) }
+
 | tac= tactic_expr
     { (Position($startpos, $endpos), cite_tactic tac END) }
+
 | e = ts_expr
     { e }
-| v= variable_or_unused DoubleArrowFromBar body=lf_expr_from_ts_syntax
-    { Position($startpos, $endpos), let (v,body) = Substitute.subst_fresh (v,body) in LAMBDA(v,body) }
+
+| v= marked_variable_or_unused DoubleArrowFromBar body=lf_expr_from_ts_syntax
+    { Position($startpos, $endpos), 
+      let (pos,v) = v in
+      let (v,body) = Substitute.subst_fresh pos (v,body) in 
+      LAMBDA(v,body) }
+
 | o=lf_expr_from_ts_syntax DoubleBackslash f=lf_expr_from_ts_syntax
     { Substitute.apply_args (Position($startpos, $endpos)) f (o ** END) }
 
 ts_expr:
+
 | unmarked_ts_expr
     { (Position($startpos, $endpos), $1) }
+
 | parenthesized(ts_expr) 
     {$1}
 
 tsterm_head:
+
 | name=CONSTANT
     { try List.assoc name Names.lf_expr_head_strings with Not_found -> V (Var name) }
 
@@ -375,8 +406,12 @@ arglist:
    it's an unused variable, and in the second case, it's an empty hole. *)
 
 empty_hole: Wunderscore { cite_tactic (Tactic_name "default") END }
+
 unused_variable: Wunderscore { newunused() }
+
 variable_or_unused: variable {$1} | unused_variable {$1}
+
+marked_variable_or_unused: variable_or_unused { Position($startpos, $endpos), $1 }
 
 variable:
 | IDENTIFIER { Var $1 }
@@ -423,7 +458,7 @@ unmarked_ts_expr:
                         ( Position($startpos, $endpos),
                           "expected " ^ string_of_int n ^ " variable" ^ if n != 1 then "s" else "")))
    }
-| name=CONSTANT_SEMI vars=separated_list(Wcomma,variable_or_unused) Wrbracket args=arglist
+| name=CONSTANT_SEMI vars=separated_list(Wcomma,marked_variable_or_unused) Wrbracket args=arglist
     {
      let label = 
        try List.assoc name Names.lf_expr_head_strings
@@ -452,8 +487,8 @@ unmarked_ts_expr:
              (* example: indices = [0;1], change arg to (LAMBDA v_0, (LAMBDA v_1, arg)) *)
              List.fold_right (
              fun index arg -> with_pos (get_pos arg) (
-	       let v = List.nth vars index in
-	       let (v,arg) = Substitute.subst_fresh (v,arg) in 
+	       let (pos,v) = List.nth vars index in
+	       let (v,arg) = Substitute.subst_fresh pos (v,arg) in 
 	       LAMBDA(v,arg))
             ) indices arg
           ) varindices args

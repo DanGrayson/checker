@@ -63,8 +63,10 @@ let lf_type_heads = List.map fst lf_type_constant_table
 
 let string_to_type_constant = List.map swap lf_type_constant_table
 
+let lookup_type (env:context) v = List.assoc v env
+
 let fetch_type env pos v = 
-  try List.assoc v env
+  try lookup_type env v
   with Not_found -> 
     raise (TypeCheckingFailure (env, pos, ("unbound variable: "^vartostring v)))
 
@@ -76,11 +78,9 @@ let label_to_type env pos = function
   | V v -> fetch_type env pos v
   | TAC _ -> raise Internal
 
-let var_to_ts v = APPLY(V v,END)
+let var_to_lf v = nowhere 1 (APPLY(V v,END))
 
-let var_to_lf v = nowhere 1 (var_to_ts v)
-
-let lookup_type (env:context) v = List.assoc v env
+let var_to_lf_pos pos v = with_pos pos (APPLY(V v,END))
 
 let ensure_new_name env pos v =
   try ignore (lookup_type env v);

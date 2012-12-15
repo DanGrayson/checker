@@ -3,6 +3,7 @@ open Variables
 open Typesystem
 open Names
 open Helpers
+open Substitute
 
 let emptyUContext = UContext ([],[])
 let mergeUContext : uContext -> uContext -> uContext =
@@ -10,10 +11,10 @@ let mergeUContext : uContext -> uContext -> uContext =
 
 type parm =
   | UParm of uContext
-  | TParm of var list
-  | OParm of (var * lf_expr) list
+  | TParm of var marked list
+  | OParm of (var marked * lf_expr) list
 
-let fixParmList (p:parm list) : uContext * (var list) * ((var * lf_expr) list) =
+let fixParmList (p:parm list) : uContext * (var marked list) * ((var marked * lf_expr) list) =
   let rec fix us ts os p =
     match p with 
     | UParm u :: p -> 
@@ -35,15 +36,23 @@ let fixParmList (p:parm list) : uContext * (var list) * ((var * lf_expr) list) =
 
 let ( @@ ) f g x = f (g x)
 
-let apply f vartypes = (nowhere 7 (APPLY(V f, list_to_spine(List.map (var_to_lf @@ fst) vartypes))))
+let apply pos f vartypes = with_pos pos (APPLY(V f, list_to_spine(List.map (fun (pos,v,t) -> var_to_lf_pos pos v) vartypes)))
 
-let ist x = istype (var_to_lf x)
+let ist pos x = istype (var_to_lf_pos pos x)
 
-let hast x t = hastype (var_to_lf x) t
+let hast pos x t = hastype (var_to_lf_pos pos x) t
 
-let lamb (v,t1) t2 = nowhere 99 (LAMBDA(v,t2))
+let lamb (pos,v,t) o = 
+  let (v,o) = subst_fresh pos (v,o) in
+  with_pos (get_pos o) (LAMBDA(v,o))
 
-let pi   (v,t1) t2 = nowhere 8 (F_Pi(v,t1,t2))
+let pi (pos,v,t) u = 
+  let (v,u) = subst_type_fresh pos (v,u) in
+  with_pos pos (F_Pi(v,t,u))
+
+let sigma (pos,v,t) u = 
+  let (v,u) = subst_type_fresh pos (v,u) in
+  with_pos pos (F_Sigma(v,t,u))
 
 let fold = List.fold_right
 
@@ -53,26 +62,28 @@ let term_or_hole pos = function
   | Some tm -> tm
   | None -> hole pos
 
-let sigma v t u = nowhere 43 (F_Sigma(v,t,u))
+let ist_2 pos v = [pos, v,texp; pos, newfresh (Var "i"), ist pos v]
 
-let ist_2 v = [v,texp; newfresh (Var "i"), ist  v]
+let ist_s pos v = sigma (pos,v,texp) (ist pos v)
 
-let ist_s v = sigma v texp (ist v)
+let ist_1 pos v = [pos, v, ist_s pos v]
 
-let ist_1 v = [v,ist_s v]
+let hast_2 pos v t = [pos, v, oexp; pos, newfresh (Var "h"), hast pos v t]
 
-let hast_2 v t = [v,oexp; newfresh (Var "h"), hast v t]
+let hast_s pos v t = sigma (pos,v,oexp) (hast pos v t)
 
-let hast_s v t = sigma v oexp (hast v t)
+let hast_1 pos v t = [pos, v,hast_s pos v t]
 
-let hast_1 v t = [v,hast_s v t]
+let ist_12 = if disable_sigma then ist_2 else ist_1
+
+let hast_12 = if disable_sigma then hast_2 else hast_1
 
 let augment uvars ueqns tvars o_vartypes = List.flatten (
     List.flatten [
-    List.map (fun  x    -> [x,uexp]) uvars;
-    List.map (fun (l,r) -> [newfresh (Var "u"), ulevel_equality l r]) ueqns;
-    List.map (fun  x    -> ist_2 x) tvars;
-    List.map (fun (x,t) -> hast_2 x t) o_vartypes
+    List.map (fun (pos,x)    -> [pos,x,uexp]) uvars;
+    List.map (fun (pos,(l,r)) -> [pos, newfresh (Var "u"), ulevel_equality l r]) ueqns;
+    List.map (fun (pos,x) -> ist_12 pos x) tvars;
+    List.map (fun ((pos,x),t) -> hast_12 pos x t) o_vartypes
   ])
 
 let tDefinition name (UContext (uvars,ueqns),tvars,o_vartypes) t d1 = 
@@ -81,16 +92,17 @@ let tDefinition name (UContext (uvars,ueqns),tvars,o_vartypes) t d1 =
   let name0 = Var name in
   let name1 = VarDefined(name,1) in
   let j = term_or_hole pos d1 in
-  List.map (wrap vartypes) 
+  let r = List.map (wrap vartypes) 
     (
      if disable_sigma 
      then
-       [ (name0, pos, t, texp); (name1, pos, j, istype (apply name0 vartypes)) ]
+       [ (name0, pos, t, texp); (name1, pos, j, istype (apply pos name0 vartypes)) ]
      else 
-       let tj = pos,CONS(t,j) in 
+       let tj = pos, CONS(t,j) in 
        let v = newfresh (Var "T") in
-       [ ( name0, pos, tj, ist_s v ) ]
-    )
+       [ ( name0, pos, tj, ist_s pos v ) ]
+    ) in
+  r
 
 let oDefinition name (UContext(uvars,ueqns),tvars,o_vartypes) o (t:lf_expr) d1 =
   let pos = get_pos o in
@@ -98,16 +110,17 @@ let oDefinition name (UContext(uvars,ueqns),tvars,o_vartypes) o (t:lf_expr) d1 =
   let name0 = Var name in
   let name1 = VarDefined(name,1) in
   let j = term_or_hole pos d1 in
-  List.map (wrap vartypes) 
+  let r = List.map (wrap vartypes) 
     (
      if disable_sigma
      then
-       [ (name0, pos, o, oexp); (name1, pos, j, hastype (apply name0 vartypes) t) ]
+       [ (name0, pos, o, oexp); (name1, pos, j, hastype (apply pos name0 vartypes) t) ]
      else
        let oj = pos, CONS(o, j ) in
        let v = newfresh (Var "o") in
-       [ ( name0, pos, oj , hast_s v t ) ]
-    )
+       [ ( name0, pos, oj , hast_s pos v t ) ]
+    ) in
+  r
 
 let teqDefinition _ _ _ _ = raise (Unimplemented "teqDefinition")
 
