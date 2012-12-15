@@ -9,6 +9,14 @@ let cite_tactic tac args = APPLY(TAC tac, args)
 
 let ( ** ) x s = ARG(x,s)		(* right associative *)
 
+let reverse_spine a =
+  let rec repeat r = function
+  | ARG(x,a) -> repeat (ARG(x,r)) a
+  | CAR a -> repeat (CAR r) a
+  | CDR a -> repeat (CDR r) a
+  | END -> r
+  in repeat END a
+
 let rec join_args a b =
   match a with
   | ARG(x,a) -> ARG(x,join_args a b)

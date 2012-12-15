@@ -90,7 +90,7 @@ let augment uvars ueqns tvars o_vartypes = List.flatten (
     List.map (fun ((pos,x),t) -> hast_12 pos x t) o_vartypes
   ])
 
-let tDefinition name (UContext (uvars,ueqns),tvars,o_vartypes) t d1 = 
+let tDefinition dpos name (UContext (uvars,ueqns),tvars,o_vartypes) t d1 = 
   let pos = get_pos t in
   let vartypes = augment uvars ueqns tvars o_vartypes in
   let name0 = Var name in
@@ -108,27 +108,43 @@ let tDefinition name (UContext (uvars,ueqns),tvars,o_vartypes) t d1 =
     ) in
   r
 
-let oDefinition name (UContext(uvars,ueqns),tvars,o_vartypes) o (t:lf_expr) d1 =
-  let pos = get_pos o in
+let theorem dpos name (UContext(uvars,ueqns),tvars,o_vartypes) (t:lf_expr) d1 =
+  let pos = get_pos t in
   let vartypes = augment uvars ueqns tvars o_vartypes in
   let name0 = Var name in
-  let name1 = VarDefined(name,1) in
-  let j = term_or_hole pos d1 in
+  let oj = term_or_hole pos d1 in	(* a single hold for the pair: proof term and derivation *)
   let r = List.map (wrap vartypes) 
     (
      if not (!sigma_mode)
      then
-       [ (name0, pos, o, oexp); (name1, pos, j, hastype (apply pos name0 vartypes) t) ]
+       raise NotImplemented
      else
-       let oj = pos, CONS(o, j ) in
        let v = newfresh (Var "o") in
        [ ( name0, pos, oj , hast_s pos v t ) ]
     ) in
   r
 
-let teqDefinition _ _ _ _ = raise (Unimplemented "teqDefinition")
+let oDefinition dpos name (UContext(uvars,ueqns),tvars,o_vartypes) o (t:lf_expr) d1 =
+  let pos = get_pos o in
+  let vartypes = augment uvars ueqns tvars o_vartypes in
+  let name0 = Var name in
+  let name1 = VarDefined(name,1) in
+  let j = term_or_hole dpos d1 in
+  let r = List.map (wrap vartypes) 
+    (
+     if not (!sigma_mode)
+     then
+       [ (name0, dpos, o, oexp); (name1, dpos, j, hastype (apply pos name0 vartypes) t) ]
+     else
+       let oj = dpos, CONS(o, j ) in
+       let v = newfresh (Var "o") in
+       [ ( name0, dpos, oj , hast_s pos v t ) ]
+    ) in
+  r
 
-let oeqDefinition _ _ _ _ _ = raise (Unimplemented "oeqDefinition")
+let teqDefinition dpos _ _ _ _ = raise (Unimplemented "teqDefinition")
+
+let oeqDefinition dpos _ _ _ _ _ = raise (Unimplemented "oeqDefinition")
 
 open Printf
 open Printer
@@ -140,33 +156,37 @@ let defCommand env defs =
     (fun env (v, pos, tm, tp) -> 
       printf "Define %a = %a\n" _v v  _e tm;
       flush stdout;
-      printf "       %a : %a\n" _v v  _t tp; flush stdout;
+      printf "       %a : %a\n%!" _v v  _t tp;
       let tp' = Lfcheck.type_validity env tp in
-      printf "       %a : %a [after tactics]\n" _v v  _t tp'; flush stdout;
+      printf "       %a : %a [after tactics]\n%!" _v v  _t tp';
       let tm' = Lfcheck.type_check env tm tp in
-      printf "       %a = %a [after tactics]\n" _v v  _e tm'; flush stdout;
+      printf "       %a = %a [after tactics]\n%!" _v v  _e tm';
       let tm'' = Lfcheck.term_normalization env tm' tp' in
-      printf "       %a = %a [normalized]\n" _v v  _e tm''; flush stdout;
+      printf "       %a = %a [normalized]\n%!" _v v  _e tm'';
       let tp'' = Lfcheck.type_normalization env tp' in
-      printf "       %a : %a [normalized]\n" _v v  _t tp''; flush stdout;
+      printf "       %a : %a [normalized]\n%!" _v v  _t tp'';
       addDefinition env v pos tm' tp'
     ) 
     env defs
 
-let tDefCommand env (name,parms,t,d1) = 
-  let defs = tDefinition name (fixParmList parms) t d1 in
+let tDefCommand env (pos,name,parms,t,d1) = 
+  let defs = tDefinition pos name (fixParmList parms) t d1 in
   defCommand env defs
 
-let oDefCommand env (name,parms,o,t,d1) = 
-  let defs = oDefinition name (fixParmList parms) o t d1 in
+let theoremCommand env (pos,name,parms,t,d1) = 
+  let defs = theorem pos name (fixParmList parms) t d1 in
   defCommand env defs
 
-let teqDefCommand env (name,parms,t1,t2) = 
-  let defs = teqDefinition name (fixParmList parms) t1 t2 in
+let oDefCommand env (pos,name,parms,o,t,d1) = 
+  let defs = oDefinition pos name (fixParmList parms) o t d1 in
   defCommand env defs
 
-let oeqDefCommand env (name,parms,o1,o2,t) = 
-  let defs = oeqDefinition name (fixParmList parms) o1 o2 t in
+let teqDefCommand env (pos,name,parms,t1,t2) = 
+  let defs = teqDefinition pos name (fixParmList parms) t1 t2 in
+  defCommand env defs
+
+let oeqDefCommand env (pos,name,parms,o1,o2,t) = 
+  let defs = oeqDefinition pos name (fixParmList parms) o1 o2 t in
   defCommand env defs
 
 (* 

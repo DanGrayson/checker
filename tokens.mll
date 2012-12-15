@@ -64,6 +64,7 @@ rule expr_tokens = parse
   | "Alpha" { WAlpha }
   | "Variable" { WVariable }
   | "Define" { WDefine }
+  | "Theorem" { Theorem }
   | "End" { WEnd }
   | "Show" { WShow }
 

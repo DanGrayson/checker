@@ -1,4 +1,4 @@
-Define id0 (T:Type) (t:T) := _ : T ; _ .
+Theorem id0 (T:Type) (t:T) : T ;; $a.
 
 End.
 

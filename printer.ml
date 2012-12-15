@@ -136,8 +136,8 @@ let occurs_in_list occurs_in x args = List.exists (occurs_in x) args
 let rec spine_application_to_string p_arg head_string args = 
   args_fold
     (fun accu arg -> accu ^ " " ^ p_arg arg)
-    (fun accu -> "(π₁ " ^ accu ^ ")")
-    (fun accu -> "(π₂ " ^ accu ^ ")")
+    (fun accu -> "π₁ " ^ accu)
+    (fun accu -> "π₂ " ^ accu)
     head_string args
 
 let target_paren target k = if target || (not (String.contains k ' ')) then k else "(" ^ k ^ ")"
@@ -412,10 +412,10 @@ let print_context n file (env:context) =
         if i = n then raise Limit;
         match unmark t with
         | F_Singleton(e,t) ->
-            fprintf file "     %a := %a\n" _v v          _e e;
-            fprintf file "     %a  : %a\n" _v_phantom v  _t t; flush file
+            fprintf file "     %a := %a\n"   _v v          _e e;
+            fprintf file "     %a  : %a\n%!" _v_phantom v  _t t
         | _ -> 
-            fprintf file "     %a : %a\n" _v v  _t t; flush file
+            fprintf file "     %a : %a\n%!" _v v  _t t
      ) 
       env
   with Limit -> ()

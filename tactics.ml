@@ -27,12 +27,16 @@ let add_tactic name f = tactics := (name,f) :: !tactics
 (** find the first variable in the context of the right type and return it *)
 let assumption surr env pos t args =
   let rec repeat = function
-    | (v,u) :: envp ->
-	if 
-	  try Lfcheck.type_equivalence env t u; true
-	  with TypeEquivalenceFailure -> false
-	then TacticSuccess(var_to_lf v)
-	else repeat envp
+    | (v,u) :: envp -> (
+	try
+	  printf "- t=%a\n- u=%a\n%!" _t t _t u;
+	  Lfcheck.type_equivalence env t u;
+	  printf "- equal\n%!";
+	  printf "- tactic success: %a\n%!" _v v;
+	  TacticSuccess(var_to_lf v)
+	with TypeEquivalenceFailure -> 
+	  printf "- unequal\n%!";
+	  repeat envp)
     | [] -> TacticFailure
   in repeat env
 
@@ -51,7 +55,7 @@ let ev3 (surr:surrounding) env pos t args =
 		    "\n  : " ^ ts_expr_to_string tf ])))
   | (i,e,t) :: _ ->
       let i = match i with Some i -> i | None -> -1 in
-      printf "ev3 ( %d , %a ) ?\n" i _e (e); flush stdout;
+      printf "ev3 ( %d , %a ) ?\n%!" i _e (e);
       raise Internal
   | [] -> 
       printf "%a: ev3 ?\n" _pos pos;
@@ -59,7 +63,7 @@ let ev3 (surr:surrounding) env pos t args =
 
 let default surr env pos t args = 
   printf "Default tactic:\n";
-  printf "     hole of type %a\n" _t t; flush stdout;
+  printf "     hole of type %a\n%!" _t t;
   show_surroundings surr;
   raise NotImplemented
 

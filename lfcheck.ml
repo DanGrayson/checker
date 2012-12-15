@@ -199,6 +199,10 @@ and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
       let rec repeat t args args' =
         match t,args,args' with
         | t, END, END -> t
+	| (pos,F_Sigma(v,a,b)), CAR args, CAR args' ->
+	    repeat a args args'
+	| (pos,F_Sigma(v,a,b)), CDR args, CDR args' ->
+	    repeat (subst_type (v,x) b) args args'
         | (pos,F_Pi(v,a,b)), ARG(x,args), ARG(y,args') ->
             term_equivalence xpos ypos env x y a;
             repeat (subst_type (v,x) b) args args'
@@ -221,9 +225,15 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
         term_equivalence tpos upos env x y t
     | F_Sigma(v,a,b), F_Sigma(w,c,d)
     | F_Pi(v,a,b), F_Pi(w,c,d) ->
+	printf "- a=%a\n- c=%a\n%!" _t a _t c;
         type_equivalence env a c;
         let x = newfresh v in
-        type_equivalence ((x, a) :: env) (subst_type (v, var_to_lf x) b) (subst_type (w, var_to_lf x) d)
+	let b = subst_type (v, var_to_lf x) b in
+	let d = subst_type (w, var_to_lf x) d in
+	let env = (x, a) :: env in
+	printf "- equal\n- b=%a\n- d=%a\n%!" _t b _t d;
+        type_equivalence env b d;
+	printf "- equal\n%!";
     | F_APPLY(h,args), F_APPLY(h',args') ->
         (* Here we augment the algorithm in the paper to handle the type families of LF. *)
         if not (h = h') then raise TypeEquivalenceFailure;
@@ -231,7 +241,9 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
         let rec repeat (k:lf_kind) args args' : unit =
           match k,args,args' with
           | K_Pi(v,t,k), x :: args, x' :: args' ->
+	      printf "- x=%a x'=%a t=%a\n%!" _e x _e x' _t t;
               term_equivalence tpos upos env x x' t;
+	      printf "- equal\n%!";
               repeat (subst_kind (v,x) k) args args'
           | K_type, [], [] -> ()
           | _ -> raise Internal
@@ -297,7 +309,7 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
                             type checking as long as possible. *)
       let (x,y) = (pi1 e0,pi2 e0) in
       let x = type_check [(Some 0,e0,Some t)] env x a in
-      let y = type_check [(Some 1,e0,Some t)] env y (subst_type (w,x) b) in
+      let y = type_check [(Some 1,e0,Some t)] ((w,a) :: env) y (subst_type (w,x) b) in
       pos, CONS(x,y)
 
   | _, _  ->
@@ -305,7 +317,7 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
       try
         subtype env s t;
         e
-      with SubtypeFailure -> mismatch_term_type env e s t
+      with SubtypeFailure -> mismatch_term_type env e0 s t
 
 and type_synthesis (surr:surrounding) (env:context) (m:lf_expr) : lf_expr * lf_type =
   (* assume nothing *)
@@ -318,30 +330,33 @@ and type_synthesis (surr:surrounding) (env:context) (m:lf_expr) : lf_expr * lf_t
   | CONS(x,y) ->
       let x',t = type_synthesis surr env x in
       let y',u = type_synthesis surr env y in (pos,CONS(x',y')), (pos,F_Sigma(newunused(),t,u))
-  | APPLY(label,args) -> (
-      let a = label_to_type env pos label in
-      let rec repeat i env a args = (
-        let (apos,a0) = a in
+  | APPLY(head,args) -> (
+      let head_type = label_to_type env pos head in
+      let args_past = END in		(* we retain the arguments we've passed as a spine in reverse order *)
+      let rec repeat i env head_type args_past args = (
+        let (apos,a0) = head_type in
         match a0, args with
         | F_Pi(v,a',a''), ARG(m',args') ->
             let surr = (Some i,m,None) :: surr in 
             let env = apply_ts_binder env i m in
             let m' = type_check surr env m' a' in
-            let (args'',u) = repeat (i+1) env (subst_type (v,m') a'') args' in
+            let (args'',u) = repeat (i+1) env (subst_type (v,m') a'') (ARG(m',args_past)) args' in
             ARG(m',args''), u
-        | F_Singleton(e,t), args -> repeat i env t args
-        | F_Sigma(v,a,b), CAR args -> 
-            let (x,t) = repeat (i+1) env a args in (CAR x, t)
-        | F_Sigma(v,a,b), CDR args -> 
-            let (x,t) = repeat (i+1) env b args in (CDR x, t)
+        | F_Singleton(e,t), args -> repeat i env t args_past args
+        | F_Sigma(v,head_type,b), CAR args -> 
+            let (x,t) = repeat (i+1) env head_type (CAR args_past) args in
+	    (CAR x, t)
+        | F_Sigma(v,head_type,b), CDR args -> 
+            let (x,t) = repeat (i+1) env (subst_type (v,with_pos pos (APPLY(head,reverse_spine (CAR args_past)))) b) (CDR args_past) args in
+	    (CDR x, t)
         | t, END -> END, (pos,t)
         | _, ARG(arg,_) -> err env (get_pos arg) "extra argument"
         | _, CAR _ -> err env pos "pi1 expected an object of sigma type"
         | _, CDR _ -> err env pos "pi2 expected an object of sigma type"
        )
       in
-      let (args',t) = repeat 0 env a args
-      in (pos,APPLY(label,args')), t
+      let (args',t) = repeat 0 env head_type args_past args
+      in (pos,APPLY(head,args')), t
      )
 
 let type_validity (env:context) (t:lf_type) : lf_type =
@@ -432,29 +447,34 @@ and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_type =
   match unmark x with
   | LAMBDA _ -> err env pos "path_normalization encountered a function"
   | CONS _ -> err env pos "path_normalization encountered a pair"
-  | APPLY(f,args) -> (
-      let t0 = label_to_type env pos f in
+  | APPLY(head,args) -> (
+      let t0 = label_to_type env pos head in
       let (t,args) =
-        let rec repeat t args : lf_type * spine = (
+	let args_past = END in		(* we store the arguments we've passed in reverse order *)
+        let rec repeat t args_past args : lf_type * spine = (
           match unmark t with
           | F_Pi(v,a,b) -> (
               match args with
               | END -> raise (TypeCheckingFailure (env, [
                                                     pos , "expected "^string_of_int (num_args t)^" more arguments";
-                                                    (get_pos t0), (" using:\n\t"^lf_head_to_string f^" : "^lf_type_to_string t0)]))
+                                                    (get_pos t0), (" using:\n\t"^lf_head_to_string head^" : "^lf_type_to_string t0)]))
               | CAR args -> err env pos "pi1 expected an object of sigma type"
               | CDR args -> err env pos "pi2 expected an object of sigma type"
               | ARG(x, args) ->
                   let b = subst_type (v,x) b in
                   let x = term_normalization env x a in
-                  let (c,args) = repeat b args in
+                  let (c,args) = repeat b (ARG(x,args_past)) args in
                   (c, ARG(x,args)))
-          | F_Singleton _ -> raise Internal (* x was head normalized, so any definition of f should have been unfolded *)
+          | F_Singleton _ -> raise Internal (* x was head normalized, so any definition of head should have been unfolded *)
           | F_Sigma(v,a,b) -> (
               match args with 
               | END -> (t,END)
-              | CAR args -> repeat a args
-              | CDR args -> repeat b args
+              | CAR args -> 
+                  let (c,args) = repeat a (CAR args_past) args in
+                  (c, CAR args)
+              | CDR args -> 
+                  let (c,args) = repeat (subst_type (v,with_pos pos (APPLY(head,reverse_spine (CAR args_past)))) b) (CDR args_past) args in
+                  (c, CDR args)
               | ARG(x,_) -> err env (get_pos x) "unexpected argument")
           | F_APPLY _ -> (
               match args with
@@ -462,8 +482,8 @@ and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_type =
               | CAR args -> err env pos "pi1 expected an object of sigma type"
               | CDR args -> err env pos "pi2 expected an object of sigma type"
               | ARG(x,args) -> err env (get_pos x) "unexpected argument"))
-        in repeat t0 args
-      in ((pos,APPLY(f,args)), t))
+        in repeat t0 args_past args
+      in ((pos,APPLY(head,args)), t))
 
 let rec type_normalization (env:context) (t:lf_type) : lf_type =
   (* see figure 9 page 696 [EEST] *)

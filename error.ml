@@ -68,7 +68,7 @@ let with_pos (pos:position) e = (pos, e)
 let new_pos (pos:position) ((_:position),e) = (pos, e)
 let with_pos_of ((pos:position),_) e = (pos,e)
 let nowhere_ctr = ref 0
-let seepos pos = Printf.fprintf stderr "%s: ... debugging ...\n" (errfmt pos); flush stderr
+let seepos pos = Printf.fprintf stderr "%s: ... debugging ...\n%!" (errfmt pos)
 
 let no_pos i = 
   incr nowhere_ctr;

@@ -27,9 +27,9 @@ let spy p subber subl e =
     let n = !spy_counter in
     incr spy_counter;
     show_subs subl;
-    printf " in  %d = %a\n" n p e; flush stdout;
+    printf " in  %d = %a\n%!" n p e;
     let e = subber subl e in
-    printf " out %d = %a\n" n p e; flush stdout;
+    printf " out %d = %a\n%!" n p e;
     e)
   else subber subl e
 
@@ -59,7 +59,7 @@ and subst'' subl e =
 		| (zpos,APPLY(f,brgs)) -> (pos,APPLY(f, join_args brgs args))
 		| pos, LAMBDA _ as f -> apply_args pos f args
 		| _ -> 
-		    printf "about to replace %a by %a in %a, not implemented\n" _v v _e z _e e; flush stdout; 
+		    printf "about to replace %a by %a in %a, not implemented\n%!" _v v _e z _e e;
 		    raise (Unimplemented_expr e))
 	  with Not_found -> pos, APPLY(V v,subst_spine subl args))
       | FUN(f,t) -> raise NotImplemented

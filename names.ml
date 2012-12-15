@@ -82,7 +82,7 @@ let var_to_lf_pos pos v = with_pos pos (APPLY(V v,END))
 
 let ensure_new_name env pos v =
   try ignore (lookup_type env v);
-      raise (MarkedError (pos, "variable already defined: "^vartostring v))
+      raise (MarkedError (pos, "variable already defined: " ^ vartostring v))
   with Not_found -> ()
 
 let def_bind v (pos:position) o t (env:context) = 
