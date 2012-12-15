@@ -181,8 +181,7 @@ and lf_expr_to_string_with_subs subs e =
   | APPLY(V v,END) -> vartostring (var_sub subs v)
   | APPLY(TAC tac,END) -> tactic_to_string tac
   | APPLY(h,args) -> 
-      let h = lf_head_to_string_with_subs subs h in
-      let h = h ^ " " in
+      let h = lf_head_to_string_with_subs subs h in (* don't add a space to h here *)
       let r = spine_application_to_string (lf_expr_to_string_with_subs subs) h args in
       "(" ^ r ^ ")"
 

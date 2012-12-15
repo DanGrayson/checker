@@ -1,4 +1,4 @@
-Define id0 (T:Type) (t:T) := _ : [pi1](T) ; _ .
+Define id0 (T:Type) (t:T) := _ : T ; _ .
 
 End.
 
