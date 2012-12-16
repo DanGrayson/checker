@@ -98,13 +98,13 @@ let rec strip_singleton ((_,(_,t)) as u) = match t with
 
 (* background assumption: all types in the environment have been verified *)
 
-let apply_tactic surr env pos t args = function
+let apply_tactic surr env pos t = function
   | Tactic_hole n -> TacticFailure
   | Tactic_name name ->
       let tactic = 
         try List.assoc name !tactics
         with Not_found -> err env pos ("unknown tactic: " ^ name) in
-      tactic surr env pos t args
+      tactic surr env pos t
   | Tactic_index n ->
       let (v,u) = 
         try List.nth env n 
@@ -280,11 +280,10 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
   let pos = get_pos t in 
   match unmark e0, unmark t with
   | APPLY(TAC tac,args), _ -> (
-      let (tacargs,otherargs) = split_spine args in
       let pos = get_pos e0 in 
-      match apply_tactic surr env pos t tacargs tac with
+      match apply_tactic surr env pos t tac with
       | TacticSuccess suggestion -> 
-          let suggestion = apply_args suggestion otherargs in
+          let suggestion = apply_args suggestion args in
           type_check surr env suggestion t
       | TacticFailure ->
           raise (TypeCheckingFailure (env, [
@@ -299,14 +298,14 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
       pos, LAMBDA(v,body)
   | LAMBDA _, _ -> err env pos "did not expect a lambda expression here"
  
-  | _, F_Sigma(w,a,b) -> (* The published algorithm omits this, correctly, but we want to
-                            give advice to tactics for filling holes in [p], so we try type-directed
-                            type checking as long as possible. *)
-      let (x,y) = (pi1 e0,pi2 e0) in
-      let x = type_check [(Some 0,e0,Some t)] env x a in
-      let b = subst_type (w,x) b in
-      let y = type_check [(Some 1,e0,Some t)] env y b in
-      pos, CONS(x,y)
+  (* | _, F_Sigma(w,a,b) -> (\* The published algorithm omits this, correctly, but we want to *)
+  (*                           give advice to tactics for filling holes in [p], so we try type-directed *)
+  (*                           type checking as long as possible. *\) *)
+  (*     let (x,y) = (pi1 e0,pi2 e0) in *)
+  (*     let x = type_check [(Some 0,e0,Some t)] env x a in *)
+  (*     let b = subst_type (w,x) b in *)
+  (*     let y = type_check [(Some 1,e0,Some t)] env y b in *)
+  (*     pos, CONS(x,y) *)
 
   | _, _  ->
       let (e,s) = type_synthesis surr env e0 in 
@@ -327,6 +326,9 @@ and type_synthesis (surr:surrounding) (env:context) (m:lf_expr) : lf_expr * lf_t
       let x',t = type_synthesis surr env x in
       let y',u = type_synthesis surr env y in (pos,CONS(x',y')), (pos,F_Sigma(newunused(),t,u))
   | APPLY(head,args) -> (
+      match head with
+      | TAC _ -> err env pos "tactic found in context where no type advice is available"
+      | _ -> ();
       let head_type = label_to_type env pos head in
       let args_past = END in            (* we retain the arguments we've passed as a spine in reverse order *)
       let rec repeat i env head_type args_past args = (

@@ -1,7 +1,5 @@
 Theorem id0 (T:Type) (t:T) : T ;; $a.
 
-Theorem id1 (T:Type) (t:T) : T ;; (pair (pi1 $0) (pi2 $0)).
-
 End.
 
 #Define compose0 (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;; (

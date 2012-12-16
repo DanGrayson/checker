@@ -261,7 +261,6 @@ type tactic_function =
     -> context							      (* the active context *)
     -> position							      (* the source code position of the tactic hole *)
     -> lf_type							      (* the type of the hole, e.g., [texp] *)
-    -> spine							      (* the arguments of the tactic *)
  -> tactic_return								 (* the proffered expression *)
 
 let tactics : (string * tactic_function) list ref = ref []

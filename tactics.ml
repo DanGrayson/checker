@@ -25,7 +25,7 @@ let show_surroundings (surr:surrounding) =
 let add_tactic name f = tactics := (name,f) :: !tactics
 
 (** find the first variable in the context of the right type and return it *)
-let assumption surr env pos t args =
+let assumption surr env pos t =
   let rec repeat = function
     | (v,u) :: envp -> (
 	try
@@ -37,7 +37,7 @@ let assumption surr env pos t args =
   in repeat env
 
 (** fill in the third argument of [ev](f,x,_) using tau *)
-let ev3 (surr:surrounding) env pos t args =
+let ev3 (surr:surrounding) env pos t =
   (* This code was formerly a part of the file fillin.ml, removed. *)
   match surr with 
   | (_, (pos,APPLY( O O_ev, ARG(f,_))), _) :: _ -> (
@@ -57,7 +57,7 @@ let ev3 (surr:surrounding) env pos t args =
       printf "%a: ev3 ?\n%!" _pos pos;
       raise Internal
 
-let default surr env pos t args = 
+let default surr env pos t = 
   printf "Default tactic:\n";
   printf "     hole of type %a\n%!" _t t;
   show_surroundings surr;

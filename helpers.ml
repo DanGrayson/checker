@@ -17,12 +17,6 @@ let reverse_spine a =
   | END -> r
   in repeat END a
 
-let split_spine a =			(* return a pair of spines, with the first part include the real args up to END, CAR, or CDR *)
-  let rec repeat r = function
-  | ARG(x,a) -> repeat (ARG(x,r)) a
-  | END | CAR _ | CDR _ as a -> reverse_spine r, a
-  in repeat END a
-
 let rec join_args a b =
   match a with
   | ARG(x,a) -> ARG(x,join_args a b)

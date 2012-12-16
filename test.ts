@@ -83,7 +83,7 @@ Define foo (u : Ulevel) (t : [U]([next](u))) := *t;; (El_type ([next] u) t $a).
 
 Define A (u : Ulevel) (t : [U](u)) := *t;; (El_type u t $a).
 
-Define C (u : Ulevel) (t : [U](u)) := *t;; (El_type ($2 parentheses are optional) $1 ($0 anything can go here)).
+Define C (u : Ulevel) (t : [U](u)) := *t;; (El_type $2 $1 $0).
 
 End.
 
