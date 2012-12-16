@@ -12,40 +12,40 @@ Check LFtype oexp -> oexp.
 
 Axiom t : T.
 
-Define compose1 (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;; (
+Definition compose1 (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;; (
        # LF syntax
        ev_hastype U (_ ⟼ V) g ([ev] f t (_ ⟼ U)) $a (ev_hastype T (_ ⟼ U) f t $a $a)).
 
-Define compose1' (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;
+Definition compose1' (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;
        # new TS syntax
        [ev_hastype](U, _ ⟾ V, g, f t, $a, [ev_hastype](T, _ ⟾ U, f, t, $a, $a)).
 
-Define compose2 (T U V:Type) (g:U⟶V) (f:T⟶U) := [lambda;t](T,g(f t)) : T ⟶ V ;;
+Definition compose2 (T U V:Type) (g:U⟶V) (f:T⟶U) := [lambda;t](T,g(f t)) : T ⟶ V ;;
       # LF syntax
       (λ_hastype T (_ ⟼ V) (t ⟼ ([ev] g ([ev] f t (_ ⟼ U)) (_ ⟼ V)) ) $a (t ⟼ _ ⟼ (ev_hastype U (_ ⟼ V) g ([ev] f t (_ ⟼ U)) $a (ev_hastype T (_ ⟼ U) f t $a $a )))).
 
-Define compose2' (T U V:Type) (g:U⟶V) (f:T⟶U) := [lambda;t](T,g(f t)) : T ⟶ V ;
+Definition compose2' (T U V:Type) (g:U⟶V) (f:T⟶U) := [lambda;t](T,g(f t)) : T ⟶ V ;
       # new TS syntax
       [λ_hastype](T, _ ⟾ V, t ⟾ g (f t), $a, t ⟾ _ ⟾ [ev_hastype](U, _ ⟾ V, g, f t, $a, [ev_hastype](T, _ ⟾ U, f, t, $a, $a))).
 
 
-Define A (u : Ulevel; u=u) (t : [U](u)) := [El](t);; (El_type u $a $0).
+Definition A (u : Ulevel; u=u) (t : [U](u)) := [El](t);; (El_type u $a $0).
 
-Define A'(u : Ulevel; u=u) (t : [U](u)) := [El](t); [El_type](u, $a, $0).
+Definition A'(u : Ulevel; u=u) (t : [U](u)) := [El](t); [El_type](u, $a, $0).
 
 Variable u1 : Ulevel.
 
-Define C := [u](u1) : [U]([next](u1));; (u_univ $a).
+Definition C := [u](u1) : [U]([next](u1));; (u_univ $a).
 
-Define B (u : Ulevel) (t : [U](u)) := [El](t);; (El_type u $a $0).
+Definition B (u : Ulevel) (t : [U](u)) := [El](t);; (El_type u $a $0).
 
 Check LF (B ([next] u1) ([u] u1) (u_univ u1)).
 
 Check LF ∏_istype.
 
-Define E (u1 u2 u3:Ulevel)(K:Type) := K⟶K;; (∏_istype $a (_ ⟼ $a) (_ ⟼ _ ⟼ $a) ).
+Definition E (u1 u2 u3:Ulevel)(K:Type) := K⟶K;; (∏_istype $a (_ ⟼ $a) (_ ⟼ _ ⟼ $a) ).
 
-Define E'(u1 u2 u3:Ulevel)(K:Type) := K⟶K; [∏_istype]($a, _ ⟾ $a, _ ⟾ _ ⟾ $a).
+Definition E'(u1 u2 u3:Ulevel)(K:Type) := K⟶K; [∏_istype]($a, _ ⟾ $a, _ ⟾ _ ⟾ $a).
 
 Check LF beta_reduction.
 

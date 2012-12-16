@@ -12,10 +12,10 @@ open Lfcheck
 
 let show_surr (i,e,t) =
   let _ = match i with
-  | Some i -> printf "    argument %d in %a\n" i _e e
-  | None ->   printf "    in expression %a\n"   _e e in
+  | Some i -> printf "  argument %d in %a\n" i _e e
+  | None ->   printf "  in expression %a\n"   _e e in
   let _ = match t with
-  | Some t -> printf "          of type %a\n" _t t
+  | Some t -> printf "        of type %a\n" _t t
   | None -> () in
   flush stdout
 
@@ -59,9 +59,9 @@ let ev3 (surr:surrounding) env pos t =
 
 let default surr env pos t = 
   printf "Default tactic:\n";
-  printf "     hole of type %a\n%!" _t t;
+  printf "   hole of type %a\n%!" _t t;
   show_surroundings surr;
-  raise NotImplemented
+  TacticFailure
 
 let _ = 
   add_tactic "ev3" ev3;

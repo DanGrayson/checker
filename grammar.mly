@@ -32,7 +32,7 @@ let add_sigma pos v t t' u =
   Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod Colon Wstar Arrow
   ArrowFromBar Wequal Colonequal Wunderscore WRule Wgreaterequal Wgreater
   Wlessequal Wless Semicolon KUlevel Kumax Type KPi Klambda KSigma WCheck
-  WDefine WShow WEnd WVariable WAlpha Weof WCheckUniverses Wtilde Singleton
+  Definition WShow WEnd WVariable WAlpha Weof WCheckUniverses Wtilde Singleton
   Axiom Wdollar LF LFtype LFtypeTS TS Kpair Kpi1 Kpi12 Kpi122 Kpi1222 Kpi2
   Kpi22 Kpi222 Kpi2222 Wtimes DoubleBackslash Turnstile DoubleArrow DoubleColon
   Backslash DoubleArrowFromBar DoubleSemicolon Theorem
@@ -268,15 +268,15 @@ command0:
 | WAlpha e1=ts_expr Wequal e2=ts_expr Wperiod
     { Toplevel.Alpha (e1, e2) }
 
-| WDefine name=IDENTIFIER parms=parmList Colonequal o=ts_expr Colon t=ts_expr DoubleSemicolon d1=lf_expr Wperiod 
+| Definition name=IDENTIFIER parms=parmList Colonequal o=ts_expr Colon t=ts_expr DoubleSemicolon d1=lf_expr Wperiod 
     { 
       let pos = Position($startpos, $endpos) in
       Toplevel.ODefinition (pos,name, parms, o, t, Some d1) }
-| WDefine name=IDENTIFIER parms=parmList Colonequal o=ts_expr Colon t=ts_expr Semicolon d1=ts_expr Wperiod 
+| Definition name=IDENTIFIER parms=parmList Colonequal o=ts_expr Colon t=ts_expr Semicolon d1=ts_expr Wperiod 
     { 
       let pos = Position($startpos, $endpos) in
       Toplevel.ODefinition (pos,name, parms, o, t, Some d1) }
-| WDefine name=IDENTIFIER parms=parmList Colonequal o=ts_expr Colon t=ts_expr Wperiod 
+| Definition name=IDENTIFIER parms=parmList Colonequal o=ts_expr Colon t=ts_expr Wperiod 
     { 
       let pos = Position($startpos, $endpos) in
       Toplevel.ODefinition (pos,name, parms, o, t, None) }
@@ -294,25 +294,25 @@ command0:
       let pos = Position($startpos, $endpos) in
       Toplevel.Theorem (pos,name, parms, t, None) }
 
-| WDefine name=IDENTIFIER parms=parmList Colonequal t=ts_expr DoubleSemicolon d1=lf_expr Wperiod 
+| Definition name=IDENTIFIER parms=parmList Colonequal t=ts_expr DoubleSemicolon d1=lf_expr Wperiod 
     { 
       let pos = Position($startpos, $endpos) in
       Toplevel.TDefinition (pos,name, parms, t, Some d1) }
-| WDefine name=IDENTIFIER parms=parmList Colonequal t=ts_expr Semicolon d1=ts_expr Wperiod 
+| Definition name=IDENTIFIER parms=parmList Colonequal t=ts_expr Semicolon d1=ts_expr Wperiod 
     { 
       let pos = Position($startpos, $endpos) in
       Toplevel.TDefinition (pos,name, parms, t, Some d1) }
-| WDefine name=IDENTIFIER parms=parmList Colonequal t=ts_expr Wperiod 
+| Definition name=IDENTIFIER parms=parmList Colonequal t=ts_expr Wperiod 
     { 
       let pos = Position($startpos, $endpos) in
       Toplevel.TDefinition (pos,name, parms, t, None) }
 
-| WDefine name=IDENTIFIER parms=parmList Colonequal t1=ts_expr Wequal t2=ts_expr Wperiod 
+| Definition name=IDENTIFIER parms=parmList Colonequal t1=ts_expr Wequal t2=ts_expr Wperiod 
     { 
       let pos = Position($startpos, $endpos) in
       Toplevel.TeqDefinition (pos,name, parms, t1, t2) }
 
-| WDefine name=IDENTIFIER parms=parmList Colonequal o1=ts_expr Wequal o2=ts_expr Colon t=ts_expr Wperiod 
+| Definition name=IDENTIFIER parms=parmList Colonequal o1=ts_expr Wequal o2=ts_expr Colon t=ts_expr Wperiod 
     { 
       let pos = Position($startpos, $endpos) in
       Toplevel.OeqDefinition (pos,name, parms, o1, o2, t) }

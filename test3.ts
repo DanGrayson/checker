@@ -2,14 +2,18 @@ Theorem id0 (T:Type) (t:T) : T ;; $a.
 
 End.
 
-#Define compose0 (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;; (
+Definition id0 (T:Type) (t:T) := _ : T.
+
+End.
+
+#Definition compose0 (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;; (
 #       ev_hastype U (_ ⟼ V) g ([ev] f t (_ ⟼ U)) $a (ev_hastype T (_ ⟼ U) f t $a $a)).
 
-#Define compose0' (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;
+#Definition compose0' (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;
 #       [ev_hastype](U, _ ⟾ V, g, f t, $a, [ev_hastype](T, _ ⟾ U, f, t, $a, $a)).
 
 
-# Define compose1 (T U V:Type) (f:T->U) (g:U->V) := _ : T->V ; _.
+# Definition compose1 (T U V:Type) (f:T->U) (g:U->V) := _ : T->V ; _.
 
 # =	(T ⟼ _ ⟼ U ⟼ _ ⟼ V ⟼ _ ⟼ f ⟼ _ ⟼ g ⟼ _ ⟼ (pair (?1) (?2)))
 # 
@@ -29,18 +33,18 @@ End.
 # ...       
 
 
-Define compose1 (T U V:Type) (f:T->U) (g:U->V) := lambda x:T, (g (f x)) : T->V ; _.
+Definition compose1 (T U V:Type) (f:T->U) (g:U->V) := lambda x:T, (g (f x)) : T->V ; _.
 
-Define compose1 (T U V:Type) (f:T->U) (g:U->V) := lambda x:T, _ : T->V ; _.
+Definition compose1 (T U V:Type) (f:T->U) (g:U->V) := lambda x:T, _ : T->V ; _.
 
-Define compose1 (T U V:Type) (f:T->U) (g:U->V) := lambda x:T, (g (f _)) : T->V ; _.
+Definition compose1 (T U V:Type) (f:T->U) (g:U->V) := lambda x:T, (g (f _)) : T->V ; _.
 
 
 End.
 
-Define compose2 (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V.
+Definition compose2 (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V.
 
-Define compose3 (T U V:Type) (f:T->U) (g:U->V) := lambda x:T, (g (f _)) : T->V.
+Definition compose3 (T U V:Type) (f:T->U) (g:U->V) := lambda x:T, (g (f _)) : T->V.
 
 # in coq it looks like this:
 

@@ -63,7 +63,7 @@ rule expr_tokens = parse
   | "Rule" { WRule }
   | "Alpha" { WAlpha }
   | "Variable" { WVariable }
-  | "Define" { WDefine }
+  | "Definition" { Definition }
   | "Theorem" { Theorem }
   | "End" { WEnd }
   | "Show" { WShow }
