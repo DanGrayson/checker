@@ -57,7 +57,7 @@ and subst'' subl e =
 		let args = subst_spine subl args in 
 		match z with 
 		| (zpos,APPLY(f,brgs)) -> (pos,APPLY(f, join_args brgs args))
-		| pos, LAMBDA _ as f -> apply_args pos f args
+		| pos, LAMBDA _ as f -> apply_args f args
 		| _ -> 
 		    printf "about to replace %a by %a in %a, not implemented\n%!" _v v _e z _e e;
 		    raise (Unimplemented_expr e))
@@ -74,22 +74,24 @@ and subst_fresh pos subl (v,e) =
   let e' = subst subl e in
   v', e'
 
-and apply_args pos (f:lf_expr) args =
-  let rec repeat f args = 
-    let pos = get_pos f in
-    match unmark f with
-    | APPLY(f,brgs) -> (pos,APPLY(f, join_args brgs args))
+and apply_args (head:lf_expr) args =
+  let rec repeat head args = 
+    let pos = get_pos head in
+    match unmark head with
+    | APPLY(head,brgs) -> (pos, APPLY(head, join_args brgs args))
+    | CONS(x,y) -> (
+        match args with
+        | ARG _ -> raise (GeneralError "too many arguments")
+        | CAR args -> repeat x args
+	| CDR args -> repeat y args
+        | END -> head)
     | LAMBDA(v,body) -> (
         match args with
         | ARG(x,args) -> repeat (subst [(v,x)] body) args
-        | CAR args -> repeat (pi1 body) args
-        | CDR args -> repeat (pi2 body) args
-        | END -> raise (GeneralError "too few arguments"))
-    | x -> (
-        match args with
-        | END -> pos,x
-        | _ -> raise (GeneralError "too few arguments"))
-  in repeat f args
+        | CAR args -> raise (GeneralError "pi1 expected a pair")
+	| CDR args -> raise (GeneralError "pi2 expected a pair")
+        | END -> head)
+  in repeat head args
 
 and subst_type_list (subl : (var * lf_expr) list) ts = List.map (subst_type subl) ts
 

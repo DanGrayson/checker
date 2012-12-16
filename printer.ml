@@ -133,12 +133,21 @@ let var_chooser x subs occurs_in e =
 
 let occurs_in_list occurs_in x args = List.exists (occurs_in x) args
 
+let paren k = if String.contains k ' ' then "(" ^ k ^ ")" else k
+
 let rec spine_application_to_string p_arg head_string args = 
   args_fold
     (fun accu arg -> accu ^ " " ^ p_arg arg)
-    (fun accu -> "π₁ " ^ accu)
-    (fun accu -> "π₂ " ^ accu)
+    (fun accu -> "π₁ " ^ paren accu)
+    (fun accu -> "π₂ " ^ paren accu)
     head_string args
+
+let spine_to_string p_arg args = 
+  args_fold
+    (fun accu arg -> accu ^ ";" ^ p_arg arg)
+    (fun accu -> accu ^ ";π₁")
+    (fun accu -> accu ^ ";π₂")
+    "" args
 
 let target_paren target k = if target || (not (String.contains k ' ')) then k else "(" ^ k ^ ")"
 
@@ -375,6 +384,10 @@ let _v file x = output_string file (vartostring x)
 let _v_phantom file x = output_string file (phantom (vartostring x))
 
 let _ts file x = output_string file (ts_expr_to_string x)
+
+let _tac file tac = output_string file (tactic_to_string tac)
+
+let _s file x = output_string file (spine_to_string lf_expr_to_string x)
 
 let _e file x = output_string file (lf_expr_to_string x)
 
