@@ -47,23 +47,13 @@ and subst'' subl e =
   let pos = get_pos e in
   match unmark e with 
   | APPLY(h,args) -> (
+      let args = subst_spine subl args in 
       match h with 
       | V v -> (
-	  try 
-	    let z = List.assoc v subl in
-	    match args with
-	    | END -> with_pos pos (unmark z)
-	    | args -> (
-		let args = subst_spine subl args in 
-		match z with 
-		| (zpos,APPLY(f,brgs)) -> (pos,APPLY(f, join_args brgs args))
-		| pos, LAMBDA _ as f -> apply_args f args
-		| _ -> 
-		    printf "about to replace %a by %a in %a, not implemented\n%!" _v v _e z _e e;
-		    raise (Unimplemented_expr e))
-	  with Not_found -> pos, APPLY(V v,subst_spine subl args))
+	  try apply_args (List.assoc v subl) args
+	  with Not_found -> pos, APPLY(h,args))
       | FUN(f,t) -> raise NotImplemented
-      | U _ | T _ | O _ | TAC _ -> pos, APPLY(h,subst_spine subl args))
+      | U _ | T _ | O _ | TAC _ -> pos, APPLY(h,args))
   | CONS(x,y) -> pos, CONS(subst subl x,subst subl y)
   | LAMBDA(v, body) -> 
       let (v,body) = subst_fresh pos subl (v,body) in

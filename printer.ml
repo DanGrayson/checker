@@ -377,7 +377,7 @@ let iteri f l = iteri 0 f l
 
 let phantom s = String.make (String.length s) ' '
 
-(** The following routines can be used with [printf "%a"]. *)
+(** The following routines can be used with [printf "%a"], and are convenient for debugging. *)
 
 let _v file x = output_string file (vartostring x)
 
@@ -391,11 +391,9 @@ let _s file x = output_string file (spine_to_string lf_expr_to_string x)
 
 let _e file x = output_string file (lf_expr_to_string x)
 
-let _eh file x = output_string file (lf_head_to_string x)
+let _h file x = output_string file (lf_head_to_string x)
 
 let _t file x = output_string file (lf_type_to_string x)
-
-let _th file x = output_string file (lf_type_head_to_string x)
 
 let _k file x = output_string file (lf_kind_to_string x)
 
@@ -405,6 +403,8 @@ let _pos file x = output_string file (errfmt x)
 
 let _pos_of file x = output_string file (errfmt (get_pos x))
 
+(** Display the signature. *)
+
 let print_signature env file =
   fprintf file "Signature:\n";
   fprintf file "  Type family constants:\n";
@@ -413,9 +413,11 @@ let print_signature env file =
            ) lf_type_heads;
   fprintf file "  Object constants:\n";
   List.iter (fun h -> 
-    fprintf file "     %a : %a\n" _eh h  _t (label_to_type env (Error.no_pos 23) h)
+    fprintf file "     %a : %a\n" _h h  _t (label_to_type env (Error.no_pos 23) h)
            ) lf_expr_heads;
   flush file
+
+(** Print the context. *)
 
 let print_context n file (env:context) = 
   let n = match n with None -> -1 | Some n -> n in

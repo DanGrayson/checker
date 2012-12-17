@@ -1,8 +1,10 @@
-Theorem id0 (T:Type) (t:T) : T ;; $a.
-
 End.
 
-Definition id1 (T:Type) (t:T) := t : T.
+Theorem id0 (T:Type) (t:T) : T ;; $a.
+
+Definition id1 (T:Type) (t:T) := t : T ;; (pi2 t).
+
+End.
 
 Check LF ev_hastype2.
 

@@ -42,16 +42,18 @@ let ist pos x = istype (var_to_lf_pos pos x)
 
 let hast pos x t = hastype (var_to_lf_pos pos x) t
 
-let subst_fresh_switch p vo = if !sigma_mode then subst_fresh_pi1 p vo else subst_fresh p vo
+(* let subst_fresh_switch p vo = if !sigma_mode then subst_fresh_pi1 p vo else subst_fresh p vo *)
 
-let subst_type_fresh_switch p vo = if !sigma_mode then subst_type_fresh_pi1 p vo else subst_type_fresh p vo
+(* let subst_type_fresh_switch p vo = if !sigma_mode then subst_type_fresh_pi1 p vo else subst_type_fresh p vo *)
+
+
 
 let lamb (pos,v,t) o = 
-  let (v,o) = subst_fresh_switch pos (v,o) in
+  let (v,o) = subst_fresh pos (v,o) in
   with_pos (get_pos o) (LAMBDA(v,o))
 
 let pi (pos,v,t) u = 
-  let (v,u) = subst_type_fresh_switch pos (v,u) in
+  let (v,u) = subst_type_fresh pos (v,u) in
   with_pos pos (F_Pi(v,t,u))
 
 let sigma (pos,v,t) u = 
