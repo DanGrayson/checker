@@ -135,12 +135,12 @@ let occurs_in_list occurs_in x args = List.exists (occurs_in x) args
 
 let paren k = if String.contains k ' ' then "(" ^ k ^ ")" else k
 
+let p1 k = if String.contains k ' ' then "(π₁ " ^ k ^ ")" else k ^ "₁"
+
+let p2 k = if String.contains k ' ' then "(π₂ " ^ k ^ ")" else k ^ "₂"
+
 let rec spine_application_to_string p_arg head_string args = 
-  args_fold
-    (fun accu arg -> accu ^ " " ^ p_arg arg)
-    (fun accu -> "π₁ " ^ paren accu)
-    (fun accu -> "π₂ " ^ paren accu)
-    head_string args
+  args_fold (fun accu arg -> accu ^ " " ^ p_arg arg) p1 p2 head_string args
 
 let spine_to_string p_arg args = 
   args_fold
@@ -192,7 +192,7 @@ and lf_expr_to_string_with_subs subs e =
   | APPLY(h,args) -> 
       let h = lf_head_to_string_with_subs subs h in (* don't add a space to h here *)
       let r = spine_application_to_string (lf_expr_to_string_with_subs subs) h args in
-      "(" ^ r ^ ")"
+      paren r
 
 and dependent_sub subs prefix infix target (v,t,u) =
   let used = occurs_in_type v u in

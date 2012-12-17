@@ -39,9 +39,9 @@ let app (hd,reversed_args) arg = (hd, ARG(arg,reversed_args))
   ArrowFromBar Wequal Colonequal Wunderscore WRule Wgreaterequal Wgreater
   Wlessequal Wless Semicolon KUlevel Kumax Type KPi Klambda KSigma WCheck
   Definition WShow WEnd WVariable WAlpha Weof WCheckUniverses Wtilde Singleton
-  Axiom Wdollar LF LFtype LFtypeTS TS Kpair Kpi1 Kpi12 Kpi122 Kpi1222 Kpi2
-  Kpi22 Kpi222 Kpi2222 Wtimes DoubleBackslash Turnstile DoubleArrow DoubleColon
-  Backslash DoubleArrowFromBar DoubleSemicolon Theorem
+  Axiom Wdollar LF LFtype LFtypeTS TS Kpair K_1 K_2 Wtimes DoubleBackslash
+  Turnstile DoubleArrow DoubleColon Backslash DoubleArrowFromBar
+  DoubleSemicolon Theorem
 
 (* precedences, lowest first *)
 
@@ -190,51 +190,36 @@ lf_lambda_expression_body:
       LAMBDA(v,body) }
 
 unmarked_atomic_term:
-| variable
-    { APPLY(V $1,END) }
 | empty_hole {$1}
-| tac= tactic_expr
-    { cite_tactic tac END }
-| Wlparen hd_args= lf_expr_head_and_reversed_spine Wrparen
-    {
-     let (hd,args) = hd_args in
+| hd_args= lf_expr_head
+    {let (hd,args) = hd_args in
      let args = reverse_spine args in
      APPLY(hd,args) }
-| hd_args= lf_expr_head_and_reversed_spine_paren
-    {
-     let (hd,args) = hd_args in
+| Wlparen hd_args= lf_expr_head_and_reversed_spine Wrparen
+    {let (hd,args) = hd_args in
      let args = reverse_spine args in
      APPLY(hd,args) }
 
-lf_expr_head_and_reversed_spine:
+lf_expr_head:
 | tsterm_head
     { $1, END }
 | variable
     { V $1, END }
 | tac= tactic_expr
     { TAC tac, END }
-| lf_expr_head_and_reversed_spine_paren
-    { $1 }
+| hd_args=lf_expr_head K_1
+    { car hd_args }
+| hd_args=lf_expr_head K_2
+    { cdr hd_args }
+| Wlparen hd_args=lf_expr_head_and_reversed_spine Wrparen K_1
+    { car hd_args }
+| Wlparen hd_args=lf_expr_head_and_reversed_spine Wrparen K_2
+    { cdr hd_args }
+
+lf_expr_head_and_reversed_spine:
+| lf_expr_head {$1}
 | hd_args=lf_expr_head_and_reversed_spine arg=lf_expr
     { app hd_args arg }
-
-lf_expr_head_and_reversed_spine_paren:
-| Wlparen Kpi1 hd_args=lf_expr_head_and_reversed_spine Wrparen
-    { car hd_args }
-| Wlparen Kpi12 hd_args=lf_expr_head_and_reversed_spine Wrparen
-    { car (cdr hd_args) }
-| Wlparen Kpi122 hd_args=lf_expr_head_and_reversed_spine Wrparen
-    { car (cdr (cdr hd_args)) }
-| Wlparen Kpi1222 hd_args=lf_expr_head_and_reversed_spine Wrparen
-    { car (cdr (cdr (cdr hd_args))) }
-| Wlparen Kpi2 hd_args=lf_expr_head_and_reversed_spine Wrparen
-    { cdr hd_args }
-| Wlparen Kpi22 hd_args=lf_expr_head_and_reversed_spine Wrparen
-    { cdr (cdr hd_args) }
-| Wlparen Kpi222 hd_args=lf_expr_head_and_reversed_spine Wrparen
-    { cdr (cdr (cdr hd_args)) }
-| Wlparen Kpi2222 hd_args=lf_expr_head_and_reversed_spine Wrparen
-    { cdr (cdr (cdr (cdr hd_args))) }
 
 tactic_expr:
 | Wdollar name=IDENTIFIER

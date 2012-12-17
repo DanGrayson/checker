@@ -12,10 +12,6 @@ let fresh pos v subl =
   let v' = newfresh v in
   v', (v,var_to_lf_pos pos v') :: subl
 
-let fresh_pi1 pos v subl =
-  let v' = newfresh v in
-  v', (v,pi1(var_to_lf_pos pos v')) :: subl
-
 let show_subs (subl : (var * lf_expr) list) =
   printf " subs =\n";
   List.iter (fun (v,e) -> printf "   %a => %a\n" _v v _e e) subl
@@ -121,15 +117,9 @@ and subst_kind_fresh pos subl (v,t) =
   let (v,subl) = fresh pos v subl in
   v, subst_kind subl t  
 
-let subst_fresh_pi1 pos (v,t) =
-  let (v,subl) = fresh_pi1 pos v [] in
-  let t = subst subl t in
-  v,t
+let subst_l subs e = if subs = [] then e else subst subs e
 
-let subst_type_fresh_pi1 pos (v,t) =
-  let (v,subl) = fresh_pi1 pos v [] in
-  let t = subst_type subl t in
-  v,t
+let subst_type_l subs t = if subs = [] then t else subst_type subs t
 
 let preface subber (v,x) e = subber [(v,x)] e
 

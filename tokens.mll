@@ -36,7 +36,11 @@ let utf8_next       = [ '\128' - '\191' ]
 let utf8_first_of_1 = [ '\001' - '\127' ]
 let utf8_first_of_2 = [ '\192' - '\223' ]
 let utf8_first_of_3 = [ '\224' - '\225' '\227' - '\239' ] (* just guessing that characters starting with \226 \159 are symbols *)
-let utf8_first_2_of_3 = '\226' [ '\128' - '\158' '\160' - '\191' ] (* just guessing that characters starting with \226 \159 are symbols *)
+
+(* Characters starting with \226 \159 seem to be symbols,
+   and those starting with \226 \130 include SUBSCRIPT ONE and SUBSCRIPT TWO *)
+let utf8_first_2_of_3 = '\226' [ '\128' - '\129' '\131' - '\158' '\160' - '\191' ] 
+
 let utf8_first_of_4 = [ '\240' - '\255' ]
 let utf8_1 = utf8_first_of_1
 let utf8_2 = utf8_first_of_2 utf8_next
@@ -138,25 +142,10 @@ rule expr_tokens = parse
 
   | "pair" { Kpair }
 
-  | "pi1" { Kpi1 }
-  | "pi12" { Kpi12 }
-  | "pi122" { Kpi122 }
-  | "pi1222" { Kpi1222 }
-
-  | "π₁" { Kpi1 }
-  | "π₁₂" { Kpi12 }
-  | "π₁₂₂" { Kpi122 }
-  | "π₁₂₂₂" { Kpi1222 }
-
-  | "pi2" { Kpi2 }
-  | "pi22" { Kpi22 }
-  | "pi222" { Kpi222 }
-  | "pi2222" { Kpi2222 }
-
-  | "π₂" { Kpi2 }
-  | "π₂₂" { Kpi22 }
-  | "π₂₂₂" { Kpi222 }
-  | "π₂₂₂₂" { Kpi2222 }
+  | "₁" { K_1 }
+  | "₂" { K_2 }
+  | "_1" { K_1 }
+  | "_2" { K_2 }
 
 (* variable names *)
 
