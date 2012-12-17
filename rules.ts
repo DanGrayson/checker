@@ -96,6 +96,18 @@ Rule 25 ev_hastype :: ∏ T : texp, ∏ U : oexp ⟶ texp, ∏ f : oexp, ∏ o :
 
      [ ([ev] f o U) : (U o)].
 
+Rule 25.2 ev_hastype2 :: 
+
+     ∏ T : (T':texp) * istype T',
+
+     ∏ U : (U':oexp ⟶ texp) * (t:(t':oexp) * hastype t' (pi1 T)) -> istype (U' (pi1 t)), 
+
+     ∏ f : (f':oexp) * hastype f' ([∏] (pi1 T) (pi1 U)),
+
+     ∏ o : (o':oexp) * hastype o' (pi1 T),
+
+     (hastype ([ev] (pi1 f) (pi1 o) (pi1 U)) ((pi1 U) (pi1 o))).
+
 Rule 26 ev_eq :: ∏ T : texp, ∏ U : oexp ⟶ texp, ∏ f : oexp, ∏ o : oexp,
 
      ∏ T' : texp, ∏ U' : oexp ⟶ texp, ∏ f' : oexp, ∏ o' : oexp,

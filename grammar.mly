@@ -13,6 +13,12 @@ let add_sigma pos v t t' u =
   else
     F_Pi(v, (pos, F_Sigma(v', t, t' (var_to_lf v'))), u)
 
+let car (hd,reversed_args) = (hd, CAR reversed_args)
+
+let cdr (hd,reversed_args) = (hd, CDR reversed_args)
+
+let app (hd,reversed_args) arg = (hd, ARG(arg,reversed_args))
+
 %}
 %start command ts_exprEof
 %type <Toplevel.command> command
@@ -153,24 +159,6 @@ lf_expr:
 | e=unmarked_lf_expr 
     {(Position($startpos, $endpos), e)}
 
-| Wlparen Kpi1 x=lf_expr Wrparen
-    { pi1 x }
-| Wlparen Kpi12 x=lf_expr Wrparen
-    { pi1 (pi2 x) }
-| Wlparen Kpi122 x=lf_expr Wrparen
-    { pi1 (pi2 (pi2 x)) }
-| Wlparen Kpi1222 x=lf_expr Wrparen
-    { pi1 (pi2 (pi2 (pi2 x))) }
-
-| Wlparen Kpi2 x=lf_expr Wrparen
-    { pi2 x }
-| Wlparen Kpi22 x=lf_expr Wrparen
-    { pi2 (pi2 x) }
-| Wlparen Kpi222 x=lf_expr Wrparen
-    { pi2 (pi2 (pi2 x)) }
-| Wlparen Kpi2222 x=lf_expr Wrparen
-    { pi2 (pi2 (pi2 (pi2 x))) }
-
 unmarked_lf_expr:
 | e=unmarked_atomic_term
     { e  }
@@ -207,16 +195,46 @@ unmarked_atomic_term:
 | empty_hole {$1}
 | tac= tactic_expr
     { cite_tactic tac END }
-| Wlparen f=lf_expr_head args=list(lf_expr) Wrparen
-    { APPLY(f,list_to_spine args) }
+| Wlparen hd_args= lf_expr_head_and_reversed_spine Wrparen
+    {
+     let (hd,args) = hd_args in
+     let args = reverse_spine args in
+     APPLY(hd,args) }
+| hd_args= lf_expr_head_and_reversed_spine_paren
+    {
+     let (hd,args) = hd_args in
+     let args = reverse_spine args in
+     APPLY(hd,args) }
 
-lf_expr_head:
+lf_expr_head_and_reversed_spine:
 | tsterm_head
-    { $1 }
+    { $1, END }
 | variable
-    { V $1 }
+    { V $1, END }
 | tac= tactic_expr
-    { TAC tac }
+    { TAC tac, END }
+| lf_expr_head_and_reversed_spine_paren
+    { $1 }
+| hd_args=lf_expr_head_and_reversed_spine arg=lf_expr
+    { app hd_args arg }
+
+lf_expr_head_and_reversed_spine_paren:
+| Wlparen Kpi1 hd_args=lf_expr_head_and_reversed_spine Wrparen
+    { car hd_args }
+| Wlparen Kpi12 hd_args=lf_expr_head_and_reversed_spine Wrparen
+    { car (cdr hd_args) }
+| Wlparen Kpi122 hd_args=lf_expr_head_and_reversed_spine Wrparen
+    { car (cdr (cdr hd_args)) }
+| Wlparen Kpi1222 hd_args=lf_expr_head_and_reversed_spine Wrparen
+    { car (cdr (cdr (cdr hd_args))) }
+| Wlparen Kpi2 hd_args=lf_expr_head_and_reversed_spine Wrparen
+    { cdr hd_args }
+| Wlparen Kpi22 hd_args=lf_expr_head_and_reversed_spine Wrparen
+    { cdr (cdr hd_args) }
+| Wlparen Kpi222 hd_args=lf_expr_head_and_reversed_spine Wrparen
+    { cdr (cdr (cdr hd_args)) }
+| Wlparen Kpi2222 hd_args=lf_expr_head_and_reversed_spine Wrparen
+    { cdr (cdr (cdr (cdr hd_args))) }
 
 tactic_expr:
 | Wdollar name=IDENTIFIER

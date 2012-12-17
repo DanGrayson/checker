@@ -47,7 +47,7 @@ let subst_fresh_switch p vo = if !sigma_mode then subst_fresh_pi1 p vo else subs
 let subst_type_fresh_switch p vo = if !sigma_mode then subst_type_fresh_pi1 p vo else subst_type_fresh p vo
 
 let lamb (pos,v,t) o = 
-  let (v,o) = subst_fresh pos (v,o) in
+  let (v,o) = subst_fresh_switch pos (v,o) in
   with_pos (get_pos o) (LAMBDA(v,o))
 
 let pi (pos,v,t) u = 
@@ -62,9 +62,9 @@ let fold = List.fold_right
 
 let wrap vartypes (def,pos,tm,tp) = (def, pos, with_pos pos (unmark (fold lamb vartypes tm)), with_pos pos (unmark (fold pi vartypes tp)))
 
-let term_or_hole pos = function
+let term_or_default_tactic pos = function
   | Some tm -> tm
-  | None -> hole pos
+  | None -> pos, APPLY(TAC (Tactic_name "default"), END)
 
 let ist_2 pos v = [pos, v,texp; pos, newfresh (Var "i"), ist pos v]
 
@@ -95,7 +95,7 @@ let tDefinition dpos name (UContext (uvars,ueqns),tvars,o_vartypes) t d1 =
   let vartypes = augment uvars ueqns tvars o_vartypes in
   let name0 = Var name in
   let name1 = VarDefined(name,1) in
-  let j = term_or_hole pos d1 in
+  let j = term_or_default_tactic pos d1 in
   let r = List.map (wrap vartypes) 
     (
      if not (!sigma_mode) 
@@ -112,7 +112,7 @@ let theorem dpos name (UContext(uvars,ueqns),tvars,o_vartypes) (t:lf_expr) d1 =
   let pos = get_pos t in
   let vartypes = augment uvars ueqns tvars o_vartypes in
   let name0 = Var name in
-  let oj = term_or_hole pos d1 in	(* a single hold for the pair: proof term and derivation *)
+  let oj = term_or_default_tactic pos d1 in	(* a single hold for the pair: proof term and derivation *)
   let r = List.map (wrap vartypes) 
     (
      if not (!sigma_mode)
@@ -129,7 +129,7 @@ let oDefinition dpos name (UContext(uvars,ueqns),tvars,o_vartypes) o (t:lf_expr)
   let vartypes = augment uvars ueqns tvars o_vartypes in
   let name0 = Var name in
   let name1 = VarDefined(name,1) in
-  let j = term_or_hole dpos d1 in
+  let j = term_or_default_tactic dpos d1 in
   let r = List.map (wrap vartypes) 
     (
      if not (!sigma_mode)
@@ -158,12 +158,16 @@ let defCommand env defs =
       flush stdout;
       printf "       %a : %a\n%!" _v v  _t tp;
       let tp' = Lfcheck.type_validity env tp in
+      if not (Alpha.UEqual.type_equiv empty_uContext tp tp') then
       printf "       %a : %a [after tactics]\n%!" _v v  _t tp';
       let tm' = Lfcheck.type_check env tm tp in
+      if not (Alpha.UEqual.term_equiv empty_uContext tm tm') then
       printf "       %a = %a [after tactics]\n%!" _v v  _e tm';
       let tm'' = Lfcheck.term_normalization env tm' tp' in
+      if not (Alpha.UEqual.term_equiv empty_uContext tm' tm'') then
       printf "       %a = %a [normalized]\n%!" _v v  _e tm'';
       let tp'' = Lfcheck.type_normalization env tp' in
+      if not (Alpha.UEqual.type_equiv empty_uContext tp' tp'') then
       printf "       %a : %a [normalized]\n%!" _v v  _t tp'';
       addDefinition env v pos tm' tp'
     ) 

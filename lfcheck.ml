@@ -298,14 +298,14 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
       pos, LAMBDA(v,body)
   | LAMBDA _, _ -> err env pos "did not expect a lambda expression here"
  
-  (* | _, F_Sigma(w,a,b) -> (\* The published algorithm omits this, correctly, but we want to *)
-  (*                           give advice to tactics for filling holes in [p], so we try type-directed *)
-  (*                           type checking as long as possible. *\) *)
-  (*     let (x,y) = (pi1 e0,pi2 e0) in *)
-  (*     let x = type_check [(Some 0,e0,Some t)] env x a in *)
-  (*     let b = subst_type (w,x) b in *)
-  (*     let y = type_check [(Some 1,e0,Some t)] env y b in *)
-  (*     pos, CONS(x,y) *)
+  | _, F_Sigma(w,a,b) -> (* The published algorithm omits this, correctly, but we want to
+                            give advice to tactics for filling holes in [p], so we try type-directed
+                            type checking as long as possible. *)
+      let (x,y) = (pi1 e0,pi2 e0) in
+      let x = type_check [(Some 0,e0,Some t)] env x a in
+      let b = subst_type (w,x) b in
+      let y = type_check [(Some 1,e0,Some t)] env y b in
+      pos, CONS(x,y)
 
   | _, _  ->
       let (e,s) = type_synthesis surr env e0 in 

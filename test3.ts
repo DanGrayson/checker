@@ -2,9 +2,9 @@ Theorem id0 (T:Type) (t:T) : T ;; $a.
 
 End.
 
-Definition id0 (T:Type) (t:T) := _ : T.
+Definition id1 (T:Type) (t:T) := t : T.
 
-End.
+Check LF ev_hastype2.
 
 #Definition compose0 (T U V:Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;; (
 #       ev_hastype U (_ ⟼ V) g ([ev] f t (_ ⟼ U)) $a (ev_hastype T (_ ⟼ U) f t $a $a)).
