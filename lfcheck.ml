@@ -118,7 +118,7 @@ let rec natural_type (env:context) (x:lf_expr) : lf_type =
   let pos = get_pos x in 
   match unmark x with
   | APPLY(l,args) -> 
-      let t = label_to_type env pos l in
+      let t = head_to_type env pos l in
       let rec repeat i args t =
         match args, unmark t with
         | ARG(x,args), F_Pi(v,a,b) -> repeat (i+1) args (subst_type (v,x) b)
@@ -133,28 +133,40 @@ let rec natural_type (env:context) (x:lf_expr) : lf_type =
   | LAMBDA _ -> err env pos "LF lambda expression found, has no natural type"
   | CONS _ -> err env pos "LF pair found, has no natural type"
 
-let unfold env v =
-  match unmark( lookup_type env v ) with
-  | F_Singleton a -> let (x,t) = strip_singleton a in x
-  | _ -> raise Not_found                (* What if the type is effectively a singleton, such as Sing(x)*Sing(y) ? *)
-
 let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
-  (* assume nothing *)
   (* see figure 9 page 696 [EEST] *)
-  (* may raise Not_found if there is no head reduction *)
+  (* assume x is not a pair or a function *)
+  (* raises Not_found if there is no head reduction *)
+  (* we work out the natural type of each partial head path in the loop below,
+     while looking for singletons, instead of calling the routine natural_type *)
   let pos = get_pos x in
   match unmark x with
   | APPLY(h,args) -> (
       match h with
-      | V v -> let f = unfold env v in apply_args f args
+      | TAC _ -> raise Internal
+      | (O _|T _|U _) -> raise Not_found (* we know the constants in our signature don't involve singleton types *)
       | FUN(f,t) -> (
+	  (* merge this case with the case below ??? *)
+	  if true then raise NotImplemented;
+	  (* if f reduces to a lambda expression, then we can apply it, so implement that case *)
           try
             let f = head_reduction env f in with_pos pos (APPLY(FUN(f,t),args))
           with Not_found ->
             apply_args f args)
-      | TAC _ -> raise Internal
-      | (O _|T _|U _) -> raise Not_found)
-  | CONS _ | LAMBDA _ -> raise Not_found
+      | head -> 
+	  let t = head_to_type env pos head in
+	  let args_past = END in
+	  let rec repeat t args_past args =
+	    match unmark t, args with
+	    | F_Singleton s, args -> let (x,t) = strip_singleton s in apply_args x args
+	    | F_Pi(v,a,b), ARG(x,args) -> repeat (subst_type (v,x) b) (ARG(x,args_past)) args
+	    | F_Sigma(v,a,b), CAR args -> repeat a (CAR args_past) args
+	    | F_Sigma(v,a,b), CDR args -> repeat (subst_type (v,with_pos pos (APPLY(head,reverse_spine (CAR args_past)))) b) (CDR args_past) args
+	    | _, END -> raise Not_found
+	    | _, _ -> raise Internal in
+	  repeat t args_past args
+     )
+  | CONS _ | LAMBDA _ -> raise Internal	(* head reduction is not defined for pairs or functions *)
 
 let rec head_normalization (env:context) (x:lf_expr) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
@@ -166,7 +178,7 @@ let rec head_normalization (env:context) (x:lf_expr) : lf_expr =
 let rec term_equivalence (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : unit =
   (* assume x and y have already been verified to be of type t *)
   (* see figure 11, page 711 [EEST] *)
-  printf " term_equivalence\n\t x=%a\n\t y=%a\n\t t=%a\n%!" _e x _e y _t t;
+  if !debug_mode then printf " term_equivalence\n\t x=%a\n\t y=%a\n\t t=%a\n%!" _e x _e y _t t;
   (if try_alpha && Alpha.UEqual.term_equiv empty_uContext x y then () else
   match unmark t with
   | F_Singleton _ -> ()
@@ -186,27 +198,27 @@ let rec term_equivalence (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : uni
   | F_APPLY(j,args) ->
       let x = head_normalization env x in
       let y = head_normalization env y in
-      printf "\t new x=%a\n\t new y=%a\n%!" _e x _e y;
+      if !debug_mode then printf "\t new x=%a\n\t new y=%a\n%!" _e x _e y;
       let t' = path_equivalence env x y in
-      printf "\t new t'=%a\n\n%!" _t t';
+      if !debug_mode then printf "\t new t'=%a\n\n%!" _t t';
       subtype env t' t			(* this was not spelled out in the paper, which concerned base types only *)
   );
-  printf " term_equivalence okay\n%!"
+  if !debug_mode then printf " term_equivalence okay\n%!"
 
 and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
   (* assume x and y are head reduced *)
   (* see figure 11, page 711 [EEST] *)
-  printf " path_equivalence\n\t x=%a\n\t y=%a\n%!" _e x _e y;
+  if !debug_mode then printf " path_equivalence\n\t x=%a\n\t y=%a\n%!" _e x _e y;
   let t = 
   (
   match x,y with
   | (xpos,APPLY(head,args)), (ypos,APPLY(head',args')) -> (
       if not (head = head') then (
-	printf " path_equivalence failure\n%!";
+	if !debug_mode then printf " path_equivalence failure\n%!";
 	raise TermEquivalenceFailure);
-      let t = label_to_type env xpos head in
+      let t = head_to_type env xpos head in
       let rec repeat t args_past args args' =
-	printf " path_equivalence repeat, head type = %a, args_past = %a\n\targs = %a\n\targs' = %a\n%!" _t t _s args_past _s args _s args';
+	if !debug_mode then printf " path_equivalence repeat, head type = %a, args_past = %a\n\targs = %a\n\targs' = %a\n%!" _t t _s args_past _s args _s args';
         match t,args,args' with
         | (pos,F_Pi(v,a,b)), ARG(x,args), ARG(y,args') ->
             term_equivalence env x y a;
@@ -221,19 +233,19 @@ and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
 	    repeat b' args_past' args args'
         | t, END, END -> t
         | _ -> 
-	    printf " path_equivalence failure\n%!";
+	    if !debug_mode then printf " path_equivalence failure\n%!";
 	    raise TermEquivalenceFailure
       in repeat t END args args')
   | _  -> 
-      printf " path_equivalence failure\n%!";
+      if !debug_mode then printf " path_equivalence failure\n%!";
       raise TermEquivalenceFailure) in
-  printf " path_equivalence okay, type = %a\n%!" _t t;
+  if !debug_mode then printf " path_equivalence okay, type = %a\n%!" _t t;
   t
 
 and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
   (* see figure 11, page 711 [EEST] *)
   (* assume t and u have already been verified to be types *)
-  printf " type_equivalence\n\t t=%a\n\t u=%a\n%!" _t t _t u;
+  if !debug_mode then printf " type_equivalence\n\t t=%a\n\t u=%a\n%!" _t t _t u;
   if try_alpha && Alpha.UEqual.type_equiv empty_uContext t u then () else
   let (tpos,t0) = t in 
   let (upos,u0) = u in 
@@ -271,7 +283,7 @@ and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
   (* assume t and u have already been verified to be types *)
   (* driven by syntax *)
   (* see figure 12, page 715 [EEST] *)
-  printf " subtype\n\t t=%a\n\t u=%a\n%!" _t t _t u;
+  if !debug_mode then printf " subtype\n\t t=%a\n\t u=%a\n%!" _t t _t u;
   let (tpos,t0) = t in 
   let (upos,u0) = u in 
   try
@@ -354,7 +366,7 @@ and type_synthesis (surr:surrounding) (env:context) (m:lf_expr) : lf_expr * lf_t
       match head with
       | TAC _ -> err env pos "tactic found in context where no type advice is available"
       | _ -> ();
-      let head_type = label_to_type env pos head in
+      let head_type = head_to_type env pos head in
       let args_past = END in            (* we retain the arguments we've passed as a spine in reverse order *)
       let rec repeat i env head_type args_past args = (
         match unmark head_type, args with
@@ -466,18 +478,18 @@ and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_type =
   (* returns the normalized term x and the inferred type of x *)
   (* see figure 9 page 696 [EEST] *)
   (* assume x is head normalized *)
-  printf " path_normalization entering with x=%a\n%!" _e x;
+  if !debug_mode then printf " path_normalization entering with x=%a\n%!" _e x;
   let pos = get_pos x in
   match unmark x with
   | LAMBDA _ -> err env pos "path_normalization encountered a function"
   | CONS _ -> err env pos "path_normalization encountered a pair"
   | APPLY(head,args) -> (
-      printf "\thead=%a args=%a\n%!" _h head _s args;
-      let t0 = label_to_type env pos head in
+      if !debug_mode then printf "\thead=%a args=%a\n%!" _h head _s args;
+      let t0 = head_to_type env pos head in
       let (t,args) =
         let args_past = END in          (* we store the arguments we've passed in reverse order *)
         let rec repeat t args_past args : lf_type * spine = (
-	  printf " path_normalization repeat\n\tt=%a\n\targs_past=%a\n\targs=%a\n%!" _e x _s args_past _s args;
+	  if !debug_mode then printf " path_normalization repeat\n\tt=%a\n\targs_past=%a\n\targs=%a\n%!" _e x _s args_past _s args;
           match unmark t with
           | F_Pi(v,a,b) -> (
               match args with
@@ -492,7 +504,7 @@ and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_type =
                   let (c,args) = repeat b (ARG(x,args_past)) args in
                   (c, ARG(x,args)))
           | F_Singleton _ -> 
-	      printf "\tbad type t = %a\n%!" _t t;
+	      if !debug_mode then printf "\tbad type t = %a\n%!" _t t;
 	      print_context (Some 5) stdout env;
 	      raise Internal (* x was head normalized, so any definition of head should have been unfolded *)
           | F_Sigma(v,a,b) -> (

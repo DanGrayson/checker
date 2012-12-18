@@ -135,9 +135,9 @@ let occurs_in_list occurs_in x args = List.exists (occurs_in x) args
 
 let paren k = if String.contains k ' ' then "(" ^ k ^ ")" else k
 
-let p1 k = if String.contains k ' ' then "(π₁ " ^ k ^ ")" else k ^ "₁"
+let p1 k = if String.contains k ' ' then "(π₁ (" ^ k ^ "))" else k ^ "₁"
 
-let p2 k = if String.contains k ' ' then "(π₂ " ^ k ^ ")" else k ^ "₂"
+let p2 k = if String.contains k ' ' then "(π₂ (" ^ k ^ "))" else k ^ "₂"
 
 let rec spine_application_to_string p_arg head_string args = 
   args_fold (fun accu arg -> accu ^ " " ^ p_arg arg) p1 p2 head_string args
@@ -413,7 +413,7 @@ let print_signature env file =
            ) lf_type_heads;
   fprintf file "  Object constants:\n";
   List.iter (fun h -> 
-    fprintf file "     %a : %a\n" _h h  _t (label_to_type env (Error.no_pos 23) h)
+    fprintf file "     %a : %a\n" _h h  _t (head_to_type env (Error.no_pos 23) h)
            ) lf_expr_heads;
   flush file
 
