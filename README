@@ -274,3 +274,18 @@ See
 for an alternative to putting unicode into files.
 
 -----------------------------------------------------------------------------
+
+Definition parameters:
+
+
+TS format		LF translation
+
+T : Type		((T:texp) * (istype T))
+
+t : T			((t:oexp) * (hastype t T))
+
+X : T -> Type		((X:oexp->texp) * ((t : ((t:oexp) * (hastype t T))) -> (istype (X t)))
+
+X : Type -> Type	((X:texp->texp) * ((T : ((T:texp) * (istype T))) -> (istype (X T))
+
+

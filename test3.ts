@@ -1,5 +1,5 @@
 
-Theorem id0 (T:Type) (t:T) : T ;; $a.
+Theorem id0 (T:Type) (t:T) : T ;; t.
 
 Definition id1 (T:Type) (t:T) := t : T ;; t₂.
 
@@ -10,6 +10,15 @@ Theorem id3 (T U:Type) (f:T->U) (t:T) : U ;; (ev T U f t).  # think about making
 Theorem compose0 (T U V:Type) (g:U -> V) (f:T -> U) (t:T) : V ;; (ev U V g (ev T U f t)).
 
 End.
+
+# dependent version like this?:
+
+Theorem id (T:Type) (U:T -> Type) (g: forall (t:T), U t) (t:T) : U t .
+
+# or like this?:
+
+Theorem id (T:Type) (t:T |- U Type) (g: forall (t:T), t\\U) (t:T) : t\\U .
+
 
 Definition compose0 (T U V:Type) (g:U -> V) (f:T -> U) (t:T) := g(f t) : V ;; (ev U V g (ev T U f t)).
 
