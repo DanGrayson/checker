@@ -1,9 +1,15 @@
 
-Check LF ev_hastype2.
-
 Theorem id0 (T:Type) (t:T) : T ;; $a.
 
 Definition id1 (T:Type) (t:T) := t : T ;; t₂.
+
+Theorem id2 (T U:Type) (f:T->U) : T->U ;; $a.
+
+Theorem id3 (T U:Type) (f:T->U) (t:T) : U ;; (ev_hastype3 $3 $a $a $a).
+
+End.
+
+Definition id4 (T U:Type) (f:T->U) (t:T) := f t : U ;; (ev_hastype3 $3 $a $a $a).
 
 End.
 

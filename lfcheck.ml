@@ -163,18 +163,21 @@ let rec head_normalization (env:context) (x:lf_expr) : lf_expr =
 
 (** Type checking and equivalence routines. *)
 
-let rec term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : unit =
+let rec term_equivalence (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : unit =
   (* assume x and y have already been verified to be of type t *)
   (* see figure 11, page 711 [EEST] *)
-  if try_alpha && Alpha.UEqual.term_equiv empty_uContext x y then () else
+  printf " term_equivalence\n\t x=%a\n\t y=%a\n\t t=%a\n%!" _e x _e y _t t;
+  (if try_alpha && Alpha.UEqual.term_equiv empty_uContext x y then () else
   match unmark t with
   | F_Singleton _ -> ()
-  | F_Sigma (v,a,b) -> raise NotImplemented
+  | F_Sigma (v,a,b) -> 
+      term_equivalence env (pi1 x) (pi1 y) a;
+      term_equivalence env (pi2 x) (pi2 y) (subst_type (v,(pi1 x)) b)
   | F_Pi (v,a,b) -> (
       match unmark x, unmark y with
       | LAMBDA(t,x), LAMBDA(u,y) ->
           let w = newfresh (Var "v") in
-          term_equivalence xpos ypos 
+          term_equivalence
             ((w,a) :: env)
             (subst (t,var_to_lf w) x)   (* with deBruijn indices, this will go away *)
             (subst (u,var_to_lf w) y) 
@@ -183,33 +186,54 @@ let rec term_equivalence (xpos:position) (ypos:position) (env:context) (x:lf_exp
   | F_APPLY(j,args) ->
       let x = head_normalization env x in
       let y = head_normalization env y in
+      printf "\t new x=%a\n\t new y=%a\n%!" _e x _e y;
       let t' = path_equivalence env x y in
-      type_equivalence env t t'
+      printf "\t new t'=%a\n\n%!" _t t';
+      subtype env t' t			(* this was not spelled out in the paper, which concerned base types only *)
+  );
+  printf " term_equivalence okay\n%!"
 
 and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
   (* assume x and y are head reduced *)
   (* see figure 11, page 711 [EEST] *)
+  printf " path_equivalence\n\t x=%a\n\t y=%a\n%!" _e x _e y;
+  let t = 
+  (
   match x,y with
-  | (xpos,APPLY(f,args)), (ypos,APPLY(f',args')) -> (
-      if not (f = f') then raise TermEquivalenceFailure;
-      let t = label_to_type env xpos f in
-      let rec repeat t args args' =
+  | (xpos,APPLY(head,args)), (ypos,APPLY(head',args')) -> (
+      if not (head = head') then (
+	printf " path_equivalence failure\n%!";
+	raise TermEquivalenceFailure);
+      let t = label_to_type env xpos head in
+      let rec repeat t args_past args args' =
+	printf " path_equivalence repeat, head type = %a, args_past = %a\n\targs = %a\n\targs' = %a\n%!" _t t _s args_past _s args _s args';
         match t,args,args' with
-        | t, END, END -> t
-        | (pos,F_Sigma(v,a,b)), CAR args, CAR args' ->
-            repeat a args args'
-        | (pos,F_Sigma(v,a,b)), CDR args, CDR args' ->
-            repeat (subst_type (v,x) b) args args'
         | (pos,F_Pi(v,a,b)), ARG(x,args), ARG(y,args') ->
-            term_equivalence xpos ypos env x y a;
-            repeat (subst_type (v,x) b) args args'
-        | _ -> raise TermEquivalenceFailure
-      in repeat t args args')
-  | _  -> raise TermEquivalenceFailure
+            term_equivalence env x y a;
+	    let b' = subst_type (v,x) b in
+            repeat b' (ARG(x,args_past)) args args'
+        | (pos,F_Sigma(v,a,b)), CAR args, CAR args' -> 
+	    let args_past' = CAR args_past in
+	    repeat a args_past' args args'
+        | (pos,F_Sigma(v,a,b)), CDR args, CDR args' -> 
+	    let b' = subst_type (v,with_pos pos (APPLY(head,reverse_spine (CAR args_past)))) b in
+	    let args_past' = CDR args_past in
+	    repeat b' args_past' args args'
+        | t, END, END -> t
+        | _ -> 
+	    printf " path_equivalence failure\n%!";
+	    raise TermEquivalenceFailure
+      in repeat t END args args')
+  | _  -> 
+      printf " path_equivalence failure\n%!";
+      raise TermEquivalenceFailure) in
+  printf " path_equivalence okay, type = %a\n%!" _t t;
+  t
 
 and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
   (* see figure 11, page 711 [EEST] *)
   (* assume t and u have already been verified to be types *)
+  printf " type_equivalence\n\t t=%a\n\t u=%a\n%!" _t t _t u;
   if try_alpha && Alpha.UEqual.type_equiv empty_uContext t u then () else
   let (tpos,t0) = t in 
   let (upos,u0) = u in 
@@ -219,7 +243,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
         let (x,t) = strip_singleton a in
         let (y,u) = strip_singleton b in
         type_equivalence env t u;
-        term_equivalence tpos upos env x y t
+        term_equivalence env x y t
     | F_Sigma(v,a,b), F_Sigma(w,c,d)
     | F_Pi(v,a,b), F_Pi(w,c,d) ->
         type_equivalence env a c;
@@ -235,7 +259,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
         let rec repeat (k:lf_kind) args args' : unit =
           match k,args,args' with
           | K_Pi(v,t,k), x :: args, x' :: args' ->
-              term_equivalence tpos upos env x x' t;
+              term_equivalence env x x' t;
               repeat (subst_kind (v,x) k) args args'
           | K_type, [], [] -> ()
           | _ -> raise Internal
@@ -243,10 +267,11 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
     | _ -> raise TypeEquivalenceFailure
   with TermEquivalenceFailure -> raise TypeEquivalenceFailure
 
-let rec subtype (env:context) (t:lf_type) (u:lf_type) : unit =
+and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
   (* assume t and u have already been verified to be types *)
   (* driven by syntax *)
   (* see figure 12, page 715 [EEST] *)
+  printf " subtype\n\t t=%a\n\t u=%a\n%!" _t t _t u;
   let (tpos,t0) = t in 
   let (upos,u0) = u in 
   try
@@ -255,7 +280,7 @@ let rec subtype (env:context) (t:lf_type) (u:lf_type) : unit =
         let (x,t) = strip_singleton a in
         let (y,u) = strip_singleton b in
         type_equivalence env t u;
-        term_equivalence tpos upos env x y t
+        term_equivalence env x y t
     | _, F_Singleton _ -> raise SubtypeFailure
     | F_Singleton a, _ -> 
         let (x,t) = strip_singleton a in
@@ -344,8 +369,8 @@ and type_synthesis (surr:surrounding) (env:context) (m:lf_expr) : lf_expr * lf_t
             let (args',t) = repeat (i+1) env a (CAR args_past) args in
             (CAR args', t)
         | F_Sigma(v,a,b), CDR args -> 
-            let b = subst_type (v,with_pos pos (APPLY(head,reverse_spine (CAR args_past)))) b in 
-            let (args',t) = repeat (i+1) env b (CDR args_past) args in
+            let b' = subst_type (v,with_pos pos (APPLY(head,reverse_spine (CAR args_past)))) b in 
+            let (args',t) = repeat (i+1) env b' (CDR args_past) args in
             (CDR args', t)
         | t, END -> END, (pos,t)
         | _, ARG(arg,_) -> err env (get_pos arg) "extra argument"
@@ -441,15 +466,18 @@ and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_type =
   (* returns the normalized term x and the inferred type of x *)
   (* see figure 9 page 696 [EEST] *)
   (* assume x is head normalized *)
+  printf " path_normalization entering with x=%a\n%!" _e x;
   let pos = get_pos x in
   match unmark x with
   | LAMBDA _ -> err env pos "path_normalization encountered a function"
   | CONS _ -> err env pos "path_normalization encountered a pair"
   | APPLY(head,args) -> (
+      printf "\thead=%a args=%a\n%!" _h head _s args;
       let t0 = label_to_type env pos head in
       let (t,args) =
         let args_past = END in          (* we store the arguments we've passed in reverse order *)
         let rec repeat t args_past args : lf_type * spine = (
+	  printf " path_normalization repeat\n\tt=%a\n\targs_past=%a\n\targs=%a\n%!" _e x _s args_past _s args;
           match unmark t with
           | F_Pi(v,a,b) -> (
               match args with
@@ -463,7 +491,10 @@ and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_type =
                   let x = term_normalization env x a in
                   let (c,args) = repeat b (ARG(x,args_past)) args in
                   (c, ARG(x,args)))
-          | F_Singleton _ -> raise Internal (* x was head normalized, so any definition of head should have been unfolded *)
+          | F_Singleton _ -> 
+	      printf "\tbad type t = %a\n%!" _t t;
+	      print_context (Some 5) stdout env;
+	      raise Internal (* x was head normalized, so any definition of head should have been unfolded *)
           | F_Sigma(v,a,b) -> (
               match args with 
               | END -> (t,END)
@@ -515,6 +546,6 @@ let rec type_normalization (env:context) (t:lf_type) : lf_type =
 
 (* 
   Local Variables:
-  compile-command: "ocamlbuild -cflags -g,-annot lfcheck.cmo "
+  compile-command: "make lfcheck.cmo "
   End:
  *)

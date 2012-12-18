@@ -1,28 +1,38 @@
+open Printf
+open Printer
 open Error
 open Variables
 open Typesystem
 open Names
 
-let rec get_ts_type (v:var) (env:context) : lf_expr = (
+let rec get_ts_type v env = 
+  if !sigma_mode then raise Internal;
   match env with
-  | (_, (pos, F_APPLY(F_hastype,[(_,APPLY(V v',END)); t]))) :: env 
-    -> if v = v' then t else get_ts_type v env
+  | (_, (pos, F_APPLY(F_hastype,[(_,APPLY(V v',END)); t]))) :: env -> if v = v' then t else get_ts_type v env
   | _ :: env -> get_ts_type v env
-  | [] -> raise Not_found
- )
+  | _ -> raise Not_found
+
+let rec get_ts_type_2 v env =
+  if not (!sigma_mode) then raise Internal;
+  match unmark (List.assoc v env) with
+  | F_Sigma(_,_,(_,F_APPLY(F_hastype,[(_,APPLY(V v',END)); t]))) -> t
+  | _ -> raise Internal
 
 let rec tau (pos:position) (env:context) e : lf_expr = 
   let pos = get_pos e in
   match unmark e with
   | APPLY(V v,END) -> (
       try get_ts_type v env
-      with Not_found -> raise (TypeCheckingFailure(env, [pos, "unbound variable, not in TS context: " ^ vartostring v])))
+      with Not_found -> raise (TypeCheckingFailure(env, [pos, "variable not in TS context: " ^ vartostring v])))
+  | APPLY(V v,CAR END) -> (		(* pi1 v *)
+      printf " v = %a\n%!" _v v;
+      print_context (Some 4) stderr env;
+      try get_ts_type_2 v env
+      with Not_found -> raise (TypeCheckingFailure(env, [pos, "variable not in TS context: " ^ vartostring v])))
   | APPLY(h,args) -> with_pos pos (
       match h with
       | TAC _ -> raise NotImplemented
-      | V v -> 
-          let _ = get_ts_type v in
-          raise NotImplemented
+      | V v -> raise NotImplemented
       | FUN _ -> raise NotImplemented
       | U uh -> raise Internal          (* u-expression doesn't have a type *)
       | T th -> raise Internal          (* t-expression doesn't have a type *)
@@ -63,3 +73,9 @@ let rec tau (pos:position) (env:context) e : lf_expr =
   | _ -> raise Internal
 
 let tau env e = tau (no_pos 2) env e
+
+(* 
+  Local Variables:
+  compile-command: "make tau.cmo "
+  End:
+ *)

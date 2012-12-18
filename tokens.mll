@@ -50,8 +50,8 @@ let utf8_char_nonascii = utf8_2 | utf8_3 | utf8_4
 let utf8_char = utf8_1 | utf8_2 | utf8_3 | utf8_4
 let utf8_word = utf8_char +
 let first = [ 'A'-'Z' 'a'-'z' ] | utf8_char_nonascii
-let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' '_' ] | utf8_char_nonascii
-let ident = first after*
+let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' ] | utf8_char_nonascii
+let ident = first ( after | '_' first ) *
 
 rule expr_tokens = parse
 

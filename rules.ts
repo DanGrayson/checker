@@ -108,6 +108,18 @@ Rule 25.2 ev_hastype2 ::
 
      (e: Singleton(([ev] f₁ o₁ U₁) : oexp)) * hastype e (U₁ o₁).
 
+Rule 25.3 ev_hastype3 ::   # non-dependent version
+
+     (T : (T':texp) * istype T') ->
+
+     (U : (U':texp) * istype U') ->
+
+     (f : (f':oexp) * hastype f' ([∏] T₁ (_ |-> U₁))) ->
+
+     (o : (o':oexp) * hastype o' T₁) ->
+
+     (e: Singleton(([ev] f₁ o₁ (_ |-> U₁)) : oexp)) * hastype e U₁.
+
 Rule 26 ev_eq :: ∏ T : texp, ∏ U : oexp ⟶ texp, ∏ f : oexp, ∏ o : oexp,
 
      ∏ T' : texp, ∏ U' : oexp ⟶ texp, ∏ f' : oexp, ∏ o' : oexp,
@@ -132,27 +144,27 @@ Rule 28 eta_reduction :: ∏ T:texp, ∏ U:oexp ⟶ texp, ∏ f:oexp,
 
      [ f : ([∏] T U) ] ⟶ [ ([λ] T (x ⟼ ([ev] f x U))) = f : ([∏] T U) ].
 
-Rule 29 j_type :: ∏ M_1:uexp, ∏ M_2:uexp, 
+Rule 29 j_type :: ∏ M1:uexp, ∏ M2:uexp, 
 
-     uequal ([max] M_1 M_2) M_2 ⟶ [ ([j] M_1 M_2) : ([∏] ([U] M_1) (_ ⟼ ([U] M_2))) ].
+     uequal ([max] M1 M2) M2 ⟶ [ ([j] M1 M2) : ([∏] ([U] M1) (_ ⟼ ([U] M2))) ].
 
-Rule 30 El_j_reduction :: ∏ M_1:uexp, ∏ M_2:uexp, ∏ o:oexp,
+Rule 30 El_j_reduction :: ∏ M1:uexp, ∏ M2:uexp, ∏ o:oexp,
 
-     [ o : ([U] M_1) ] ⟶ uequal ([max] M_1 M_2) M_2 ⟶ [ ([El]( [ev] ([j] M_1 M_2) o (_ ⟼ ([U] M_2)) )) = ([El] o) ].
+     [ o : ([U] M1) ] ⟶ uequal ([max] M1 M2) M2 ⟶ [ ([El]( [ev] ([j] M1 M2) o (_ ⟼ ([U] M2)) )) = ([El] o) ].
 
-Rule 31 forall_type :: ∏ M_1:uexp, ∏ M_2:uexp, ∏ o_1:oexp, ∏ o_2:oexp ⟶ oexp,
+Rule 31 forall_type :: ∏ M1:uexp, ∏ M2:uexp, ∏ o1:oexp, ∏ o2:oexp ⟶ oexp,
 
-     ( ∏ x:oexp, [ x : ([El] o_1) ] ⟶ [ (o_2 x) : ([U] M_2) ] ) ⟶
+     ( ∏ x:oexp, [ x : ([El] o1) ] ⟶ [ (o2 x) : ([U] M2) ] ) ⟶
 
-     [ ( [∀] M_1 M_2 o_1 o_2 ) : ([U] ( [max] M_1 M_2 )) ].
+     [ ( [∀] M1 M2 o1 o2 ) : ([U] ( [max] M1 M2 )) ].
 
-Rule 32 El_forall_reduction :: ∏ M_1 : uexp, ∏ M_2 : uexp, ∏ o_1 : oexp, ∏ o_2 : oexp ⟶ oexp,
+Rule 32 El_forall_reduction :: ∏ M1 : uexp, ∏ M2 : uexp, ∏ o1 : oexp, ∏ o2 : oexp ⟶ oexp,
 
-     [ o_1 : ([U] M_1) ] ⟶
+     [ o1 : ([U] M1) ] ⟶
 
-     (∏ x: oexp, [ x : ([El] o_1) ] ⟶ [ (o_2 x) : ([U] M_2) ]) ⟶
+     (∏ x: oexp, [ x : ([El] o1) ] ⟶ [ (o2 x) : ([U] M2) ]) ⟶
 
-     [ ([El] ([∀] M_1 M_2 o_1 o_2)) = ([∏] ([El] o_1) (x ⟼ ([El] (o_2 x)))) ].
+     [ ([El] ([∀] M1 M2 o1 o2)) = ([∏] ([El] o1) (x ⟼ ([El] (o2 x)))) ].
 
 Rule 100 teq_empty_eta :: ∏ T:texp, ∏ T':texp, ∏ a:oexp,
 
@@ -162,29 +174,29 @@ Rule 101 oeq_empty_eta :: ∏ T:texp, ∏ x:oexp, ∏ y:oexp, ∏ a:oexp,
 
      [ a : ([Empty]) ] ⟶ [ x : T ] ⟶ [ y : T ] ⟶ [ x = y : T ].
 
-Rule 200 jMM_reduction :: ∏ M_1:uexp, ∏ M_2:uexp,
+Rule 200 jMM_reduction :: ∏ M1:uexp, ∏ M2:uexp,
 
-     uequal M_1 M_2 ⟶ 
+     uequal M1 M2 ⟶ 
 
-     [ ([j] M_1 M_2) = ([lambda] ([U](M_1)) (x |-> x)) : ([∏] ([U] M_1) (_ ⟼ ([U] M_2))) ].
+     [ ([j] M1 M2) = ([lambda] ([U](M1)) (x |-> x)) : ([∏] ([U] M1) (_ ⟼ ([U] M2))) ].
 
-Rule 201 jj_reduction :: ∏ M_1:uexp, ∏ M_2:uexp, ∏ M'_2:uexp, ∏ M_3:uexp, Pi o:oexp,
+Rule 201 jj_reduction :: ∏ M1:uexp, ∏ M2:uexp, ∏ M2':uexp, ∏ M3:uexp, Pi o:oexp,
 
-     uequal M_2 M'_2 ⟶ 
+     uequal M2 M2' ⟶ 
 
-     [ o : ([U] M_1) ] ->
+     [ o : ([U] M1) ] ->
 
-     [  ([ev] ([j] M'_2 M_3) ([ev] ([j] M_1 M_2) o (_ ⟼ ([U] M_2))) (_ ⟼ ([U] M_3)))
+     [  ([ev] ([j] M2' M3) ([ev] ([j] M1 M2) o (_ ⟼ ([U] M2))) (_ ⟼ ([U] M3)))
 
-     =  ([ev] ([j] M_1 M_3) o (_ ⟼ ([U] M_3)))
+     =  ([ev] ([j] M1 M3) o (_ ⟼ ([U] M3)))
 
-     : ([∏] ([U] M_1) (_ ⟼ ([U] M_3))) ].
+     : ([∏] ([U] M1) (_ ⟼ ([U] M3))) ].
 
 End.
 
 Rule 202 forall_j_reduction :: 
 
-     ∏ M_0:uexp, ∏ M_1:uexp, ∏ M'_1:uexp, ∏ M_2:uexp, 
+     ∏ M_0:uexp, ∏ M1:uexp, ∏ M'_1:uexp, ∏ M2:uexp, 
 
      
 

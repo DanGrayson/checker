@@ -264,3 +264,13 @@ C-H C-P gives this advice about that:
 
     You may have bad X11 fonts; try installing the intlfonts distribution
     or the etl-unicode collection (see above).
+
+-----------------------------------------------------------------------------
+
+See
+
+	ProofGeneral/lib/unicode-tokens.el
+
+for an alternative to putting unicode into files.
+
+-----------------------------------------------------------------------------
