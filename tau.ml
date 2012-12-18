@@ -25,8 +25,8 @@ let rec tau (pos:position) (env:context) e : lf_expr =
       try get_ts_type v env
       with Not_found -> raise (TypeCheckingFailure(env, [pos, "variable not in TS context: " ^ vartostring v])))
   | APPLY(V v,CAR END) -> (		(* pi1 v *)
-      printf " v = %a\n%!" _v v;
-      print_context (Some 4) stderr env;
+      if !debug_mode then printf " v = %a\n%!" _v v;
+      if !debug_mode then print_context (Some 4) stderr env;
       try get_ts_type_2 v env
       with Not_found -> raise (TypeCheckingFailure(env, [pos, "variable not in TS context: " ^ vartostring v])))
   | APPLY(h,args) -> with_pos pos (

@@ -108,7 +108,7 @@ Rule 25.2 ev_hastype2 ::
 
      (e: Singleton(([ev] f₁ o₁ U₁) : oexp)) * hastype e (U₁ o₁).
 
-Rule 25.3 ev_hastype3 ::   # non-dependent version
+Rule 25.3 ev ::   # non-dependent version
 
      (T : (T':texp) * istype T') ->
 

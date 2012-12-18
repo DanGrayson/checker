@@ -5,11 +5,13 @@ Definition id1 (T:Type) (t:T) := t : T ;; t₂.
 
 Theorem id2 (T U:Type) (f:T->U) : T->U ;; $a.
 
-Theorem id3 (T U:Type) (f:T->U) (t:T) : U ;; (ev_hastype3 $3 $a $a $a).
+Theorem id3 (T U:Type) (f:T->U) (t:T) : U ;; (ev T U f t).  # think about making T and U implicit parameters
+
+Theorem compose0 (T U V:Type) (g:U -> V) (f:T -> U) (t:T) : V ;; (ev U V g (ev T U f t)).
 
 End.
 
-Definition id4 (T U:Type) (f:T->U) (t:T) := f t : U ;; (ev_hastype3 $3 $a $a $a).
+Definition compose0 (T U V:Type) (g:U -> V) (f:T -> U) (t:T) := g(f t) : V ;; (ev U V g (ev T U f t)).
 
 End.
 
