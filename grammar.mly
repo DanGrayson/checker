@@ -51,11 +51,6 @@ let app (hd,reversed_args) arg = (hd, ARG(arg,reversed_args))
   (* we want [lambda x, f b] to be [lambda x, (f b)] *)
   Reduce_binder
 
-%nonassoc
-
-  (* we want  [*f x] to be [*(f x)]  and  [*x->y] to be [( *x )->y]  *)
-  Reduce_star
-
 %right
 
   (* function type *)
@@ -64,6 +59,11 @@ let app (hd,reversed_args) arg = (hd, ARG(arg,reversed_args))
   DoubleArrowFromBar
   DoubleArrow
   Arrow
+
+%nonassoc
+
+  (* we want  [*f x] to be [*(f x)]  and  [*x->y] to be [( *x )->y]  *)
+  Reduce_star
 
 %right
 

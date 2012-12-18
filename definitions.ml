@@ -89,7 +89,20 @@ let augment uvars ueqns tvars o_vartypes = List.flatten (
   List.map (fun (pos,x) -> ist_12 pos x) tvars;
   List.map (fun ((pos,x),t) -> hast_12 pos x t) o_vartypes ])
 
-let make_subs vartypes = if !sigma_mode then List.map (fun (pos,v,t) -> (v, pi1 (var_to_lf_pos pos v))) vartypes else []
+let is_uexp t =
+  match unmark t with
+  | F_APPLY(F_uexp _,_) -> true
+  | _ -> false
+
+let make_subs vartypes = 
+  if not (!sigma_mode) 
+  then []
+  else List.flatten (
+    List.map 
+      (fun (pos,v,t) -> 
+	if is_uexp t then []
+	else [(v, pi1 (var_to_lf_pos pos v))]) 
+      vartypes)
 
 let map_subs subs vartypes = if subs = [] then vartypes else List.map (fun (pos,v,t) -> pos,v,subst_type_l subs t) vartypes
 

@@ -46,6 +46,10 @@ Rule 17 El_type :: ∏ M:uexp, ∏ o:oexp,
 
      [ o : ([U] M) ] ⟶ [ ([El] o) Type ].
 
+Rule 17.1 El :: 
+
+     (M:uexp) -> (o:(o:oexp) * hastype o ([U] M)) -> (T: Singleton( ([El] o₁) : texp )) * istype T.
+
 Rule 18 El_u_reduction :: ∏ M:uexp,
 
      [ ([El]([u] M)) = ([U] M) ].

@@ -1,13 +1,23 @@
 
 Theorem id0 (T:Type) (t:T) : T ;; t.
 
+Theorem id0' (u:Ulevel) (T:[U](u)) (t:*T) : *T ;; t .
+
 Definition id1 (T:Type) (t:T) := t : T ;; t₂.
 
-Theorem id2 (T U:Type) (f:T->U) : T->U ;; $a.
+Definition id1' (u:Ulevel) (T:[U](u)) (t:*T) := t : *T ;; t₂.
 
-Theorem id3 (T U:Type) (f:T->U) (t:T) : U ;; (ev T U f t).  # think about making T and U implicit parameters
+Theorem id2 (T U:Type) (f:T->U) : T->U ;; f.
+
+Theorem id2' (u:Ulevel) (T U:[U](u)) (f:*T->*U) : *T->*U ;; f.
+
+Theorem id3 (T U:Type) (f:T->U) (t:T) : U ;; (ev T U f t).
+
+Theorem id3' (u:Ulevel) (T U:[U](u)) (f:*T->*U) (t:*T) : *U ;; (ev (El u T) (El u U) f t).
 
 Theorem compose0 (T U V:Type) (g:U -> V) (f:T -> U) (t:T) : V ;; (ev U V g (ev T U f t)).
+
+Theorem compose0' (u:Ulevel) (T U V:[U](u)) (g:*U -> *V) (f:*T -> *U) (t:*T) : *V ;; (ev (El u U) (El u V) g (ev (El u T) (El u U) f t)).
 
 End.
 
