@@ -112,24 +112,27 @@ let rec occurs_in_kind w = function
 
 let var_sub subs v = try List.assoc v subs with Not_found -> v
 
+let in_range w subs = List.exists (fun (_,v) -> v = w) subs
+
 let var_tester w subs occurs_in e =
-  not( List.exists (fun (_,v) -> v = w) subs )
+  not( in_range w subs )
     &&
   not( occurs_in w e )
 
 let var_chooser x subs occurs_in e =
-  if not enable_variable_prettification then x else
+  if not enable_variable_prettification then x, subs else
   match x with
-  | VarGen(i,name) as v -> 
-      if not (occurs_in v e) then Var "_" else
+  | Var name 
+  | VarGen(_,name) -> 
+      if not (occurs_in x e) then Var "_", subs else
       let w = Var name in
-      if var_tester w subs occurs_in e then w
+      if x = w && not( in_range w subs ) || var_tester w subs occurs_in e then w, (x,w) :: subs
       else let rec repeat i =
-        let w = Var (name ^ string_of_int i) in
-        if var_tester w subs occurs_in e then w
+        let w = Var (name ^ (if i = 0 then "'" else string_of_int i)) in
+        if var_tester w subs occurs_in e then w, (x,w) :: subs
         else repeat (i+1)
       in repeat 0
-  | _ -> x
+  | _ -> x, subs
 
 let occurs_in_list occurs_in x args = List.exists (occurs_in x) args
 
@@ -160,8 +163,7 @@ let rec list_application_to_string p_hd p_arg (h,args) =
 let rec lf_expr_to_string_with_subs' subs e =   (* would be better to implement parsing precedences *)
   match unmark e with
   | LAMBDA(x,body) -> 
-      let w = var_chooser x subs occurs_in_expr body in
-      let subs = (x,w) :: subs in
+      let w,subs = var_chooser x subs occurs_in_expr body in
       let s = lf_expr_to_string_with_subs' subs body in
       concat [vartostring w;" ⟼ ";s]
   | _  -> lf_expr_to_string_with_subs subs e
@@ -179,8 +181,7 @@ and lf_head_to_string_with_subs subs h =
 and lf_expr_to_string_with_subs subs e = 
   match unmark e with
   | LAMBDA(x,body) -> 
-      let w = var_chooser x subs occurs_in_expr body in
-      let subs = (x,w) :: subs in
+      let w,subs = var_chooser x subs occurs_in_expr body in
       let s = lf_expr_to_string_with_subs' subs body in
       concat ["(";vartostring (var_sub subs x);" ⟼ ";s;")"]
   | CONS(x,y) -> 
@@ -196,8 +197,7 @@ and lf_expr_to_string_with_subs subs e =
 
 and dependent_sub subs prefix infix target (v,t,u) =
   let used = occurs_in_type v u in
-  let w = var_chooser v subs occurs_in_type u in
-  let subs = (v,w) :: subs in
+  let w,subs = var_chooser v subs occurs_in_type u in
   let u = lf_type_to_string_with_subs' true subs u in
   let t = lf_type_to_string_with_subs' used subs t in
   let k = (
@@ -225,8 +225,7 @@ let rec lf_kind_to_string_with_subs subs = function
   | K_type -> "type"
   | K_Pi(v,t,k) -> 
       let used = occurs_in_kind v k in
-      let w = var_chooser v subs occurs_in_kind k in
-      let subs = (v,w) :: subs in
+      let w,subs = var_chooser v subs occurs_in_kind k in
       let prefix = "∏ " in
       let infix = " ⟶ " in
       let t = lf_type_to_string_with_subs' false subs t in

@@ -184,6 +184,19 @@ Rule 31.2 forall ::
 
      (e : Singleton( ( [∀] M1 M2 o1_1 o2_1 ) : oexp )) * [ e : ([U] ( [max] M1 M2 )) ].
 
+Axiom LFtypeTS forall2 : 
+
+      [ |- M1 Ulevel ] => [ |- M2 Ulevel ] => 
+
+      [ |- o1 : [U](M1) ] =>
+
+      [ x : [El](o1) |- o2 : [U](M2) ] =>
+
+      [ := [∀;x](M1,M2,o1,o2) : [U]([max](M1,M2)) ].
+
+Check LF forall.
+Check LF forall2.
+
 Rule 32 El_forall_reduction :: ∏ M1 : uexp, ∏ M2 : uexp, ∏ o1 : oexp, ∏ o2 : oexp ⟶ oexp,
 
      [ o1 : ([U] M1) ] ⟶

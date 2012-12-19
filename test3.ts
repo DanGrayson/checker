@@ -62,7 +62,7 @@ Theorem compose0' (u Ulevel)
 			(g : *[∀;x](u,u,U,V))
 			(f : *[∀;x](u,u,T,U)) (t:*T) : *V ;;
 
-	 (ev (El u U) (El u V) (cast2 (El u (forall u u U (pair (_ |-> V_1) (_ |-> _ |-> V_2) ))) _ _ g) (ev (El u T) (El u U) f t)).
+	 (ev (El u U) (El u V) (cast2 (El u (forall u u U (pair (_ |-> V _1) (_ |-> _ |-> V _2) ))) _ _ g) (ev (El u T) (El u U) f t)).
 
 End.
 

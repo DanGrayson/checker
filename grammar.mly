@@ -13,6 +13,12 @@ let add_sigma pos v t t' u =
   else
     F_Pi(v, (pos, F_Sigma(v', t, t' (var_to_lf v'))), u)
 
+let add_single v t u = F_Pi(v, t, u)
+
+let add_definition e t =
+  let v = newfresh (Var "e") in
+  F_Sigma(v, with_pos_of e (F_Singleton(e,oexp)), hastype (var_to_lf v) t)
+
 let car (hd,reversed_args) = (hd, CAR reversed_args)
 
 let cdr (hd,reversed_args) = (hd, CDR reversed_args)
@@ -383,18 +389,37 @@ unmarked_lf_type_from_ts_syntax:
 (* judgments *)
 | Wlbracket x= lf_expr_from_ts_syntax Wequal y= lf_expr_from_ts_syntax Colon t= lf_expr_from_ts_syntax Wrbracket
     { unmark (object_equality x y t) }
+| Wlbracket Colonequal x= lf_expr_from_ts_syntax Colon t= lf_expr_from_ts_syntax Wrbracket
+    { add_definition x t }
 
 (* introduction of parameters *)
 | Wlbracket 
-    separated_list(Wcomma,separated_pair(variable,Colon,lf_expr_from_ts_syntax))
-    Turnstile v= variable Type Wrbracket
+    c= separated_list(Wcomma,separated_pair(variable,Colon,lf_expr_from_ts_syntax))
+    Turnstile v= marked_variable Type Wrbracket
     DoubleArrow u= lf_type_from_ts_syntax
-    { add_sigma (Position($startpos, $endpos)) v texp istype u }
+    { ignore c;
+      let (vpos,v) = v in
+      let pos = Position($startpos, $endpos) in
+      let u = Substitute.subst_type (v,pi1 (var_to_lf_pos vpos v)) u in
+      add_sigma pos v texp istype u }
+
+| Wlbracket
+    c= separated_list(Wcomma,separated_pair(variable,Colon,lf_expr_from_ts_syntax))
+    Turnstile v= variable Ulevel Wrbracket
+    DoubleArrow u= lf_type_from_ts_syntax
+    { 
+      if c <> [] then $syntaxerror;
+      add_single v uexp u }
+
 | Wlbracket 
-    separated_list(Wcomma,separated_pair(variable,Colon,lf_expr_from_ts_syntax))
-    Turnstile v= variable Colon t= lf_expr_from_ts_syntax Wrbracket
+    c= separated_list(Wcomma,separated_pair(variable,Colon,lf_expr_from_ts_syntax))
+    Turnstile v= marked_variable Colon t= lf_expr_from_ts_syntax Wrbracket
     DoubleArrow u= lf_type_from_ts_syntax
-    { add_sigma (Position($startpos, $endpos)) v oexp (fun o -> hastype o t) u }
+    { ignore c;
+      let (vpos,v) = v in
+      let pos = Position($startpos, $endpos) in
+      let u = Substitute.subst_type (v,pi1 (var_to_lf_pos vpos v)) u in
+      add_sigma pos v oexp (fun o -> hastype o t) u }
 
 lf_expr_from_ts_syntax:
 
