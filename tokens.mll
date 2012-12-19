@@ -128,7 +128,7 @@ rule expr_tokens = parse
 
 (* tokens of TS *)
 
-  | "Ulevel" { KUlevel }
+  | "Ulevel" { Ulevel }
   | "Type" { Type }
   | "max" { Kumax }
 

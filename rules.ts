@@ -4,7 +4,7 @@
 
 Rule 7 tsimeq :: ∏ T:texp, ∏ U:texp,
 
-     [ T Type ] ⟶ [ U Type ] ⟶ [ T ~ U : Type ] ⟶ [ T = U ].
+     [ T Type ] ⟶ [ U Type ] ⟶ [ T ~ U Type ] ⟶ [ T = U ].
 
 Rule 8 teqsymm :: ∏ T:texp, ∏ U:texp,
 

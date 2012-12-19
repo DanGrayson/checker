@@ -37,7 +37,7 @@ let app (hd,reversed_args) arg = (hd, ARG(arg,reversed_args))
 
   Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod Colon Wstar Arrow
   ArrowFromBar Wequal Colonequal Wunderscore WRule Wgreaterequal Wgreater
-  Wlessequal Wless Semicolon KUlevel Kumax Type KPi Klambda KSigma WCheck
+  Wlessequal Wless Semicolon Ulevel Kumax Type KPi Klambda KSigma WCheck
   Definition WShow WEnd WVariable WAlpha Weof WCheckUniverses Wtilde Singleton
   Axiom Wdollar LF LFtype LFtypeTS TS Kpair K_1 K_2 Wtimes DoubleBackslash
   Turnstile DoubleArrow DoubleColon Backslash DoubleArrowFromBar
@@ -137,7 +137,7 @@ unmarked_lf_type:
 | Wlbracket a=lf_expr Wequal b=lf_expr Wrbracket
     { F_APPLY(F_type_equality, [a;b]) }
 
-| Wlbracket a=lf_expr Wtilde b=lf_expr Colon Type Wrbracket
+| Wlbracket a=lf_expr Wtilde b=lf_expr Type Wrbracket
     { F_APPLY(F_type_uequality, [a;b]) }
 | Wlbracket a=lf_expr Wtilde b=lf_expr Wrbracket
     { F_APPLY(F_object_uequality, [a;b]) }
@@ -233,9 +233,9 @@ command: c=command0
 command0:
 | Weof
     { raise Eof }
-| WVariable vars=nonempty_list(IDENTIFIER) Colon Type Wperiod
+| WVariable vars=nonempty_list(IDENTIFIER) Type Wperiod
     { Toplevel.Variable vars }
-| WVariable vars=nonempty_list(IDENTIFIER) Colon KUlevel eqns=preceded(Semicolon,uEquation)* Wperiod
+| WVariable vars=nonempty_list(IDENTIFIER) Ulevel eqns=preceded(Semicolon,uEquation)* Wperiod
     { Toplevel.UVariable (vars,eqns) }
 
 | WRule num=separated_nonempty_list(Wperiod,NUMBER) name=IDENTIFIER DoubleColon t=lf_type Wperiod
@@ -331,10 +331,10 @@ marked_variable:
 | IDENTIFIER
     { Position($startpos, $endpos), Var $1 }
 
-uParm: vars=nonempty_list(marked_variable) Colon KUlevel eqns=preceded(Semicolon,marked_uEquation)*
+uParm: vars=nonempty_list(marked_variable) Ulevel eqns=preceded(Semicolon,marked_uEquation)*
     { UParm (UContext (vars,eqns)) }
 
-tParm: vars=nonempty_list(marked_variable) Colon Type 
+tParm: vars=nonempty_list(marked_variable) Type 
     { TParm vars }
 
 oParm: vars=nonempty_list(marked_variable) Colon t=ts_expr 

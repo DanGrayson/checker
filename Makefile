@@ -1,4 +1,4 @@
-TSFILES = rules.ts test.ts test2.ts
+TSFILES = rules.ts demo.ts test.ts test2.ts test3.ts
 
 CHECKER_EXE = checker.byte
 BARE_CHECKER = OCAMLRUNPARAM=$(RUN) ./$(CHECKER_EXE)

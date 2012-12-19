@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-Variable T : Type.
+Variable T Type.
 Definition TT := T ;; $a.
-Variable u0 u1 u2 : Ulevel ; [next](u0) <= u1; [next](u1) < u2.
-Variable T' U V X Y : Type.
+Variable u0 u1 u2 Ulevel ; [next](u0) <= u1; [next](u1) < u2.
+Variable T' U V X Y Type.
 Axiom t0: T.
 Axiom x0 : X.
 Axiom f : T⟶T.
@@ -79,11 +79,11 @@ Check LF (U_type u1).
 
 Check LF El_type.
 
-Definition foo (u : Ulevel) (t : [U]([next](u))) := *t;; (El_type ([next] u) t $a).
+Definition foo (u Ulevel) (t : [U]([next](u))) := *t;; (El_type ([next] u) t $a).
 
-Definition A (u : Ulevel) (t : [U](u)) := *t;; (El_type u t $a).
+Definition A (u Ulevel) (t : [U](u)) := *t;; (El_type u t $a).
 
-Definition C (u : Ulevel) (t : [U](u)) := *t;; (El_type $2 $1 $0).
+Definition C (u Ulevel) (t : [U](u)) := *t;; (El_type $2 $1 $0).
 
 End.
 
