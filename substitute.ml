@@ -46,7 +46,7 @@ and subst'' subl e =
       let args = subst_spine subl args in 
       match h with 
       | V v -> (
-	  try apply_args (List.assoc v subl) args
+	  try apply_args (new_pos pos (List.assoc v subl)) args
 	  with Not_found -> pos, APPLY(h,args))
       | FUN(f,t) -> raise NotImplemented
       | U _ | T _ | O _ | TAC _ -> pos, APPLY(h,args))

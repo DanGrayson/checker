@@ -30,6 +30,18 @@ Rule 13 cast :: ∏ o:oexp, ∏ T:texp, ∏ U:texp,
 
      [ o : T ] ⟶ [ T = U ] ⟶ [ o : U  ].
 
+Rule 13.2 cast2 :: 
+
+     (T : (T:texp) * [ T Type ]) ->
+
+     (U : (U:texp) * [ U Type ]) ->
+
+     [ T_1 = U_1 ] -> 
+
+     (o : (o:oexp) * [ o : T_1 ]) ->
+
+     (e : Singleton( o_1 : oexp )) * [ e : U_1  ].
+
 Rule 14 oeqcast :: ∏ x:oexp, ∏ y:oexp, ∏ T:texp, ∏ U:texp,
 
      [ x = y : T ] ⟶ [ T = U ] ⟶ [ x = y : U ].
@@ -162,6 +174,16 @@ Rule 31 forall_type :: ∏ M1:uexp, ∏ M2:uexp, ∏ o1:oexp, ∏ o2:oexp ⟶ oe
 
      [ ( [∀] M1 M2 o1 o2 ) : ([U] ( [max] M1 M2 )) ].
 
+Rule 31.2 forall :: 
+
+     (M1:uexp) -> (M2:uexp) ->
+
+     (o1 : (o1:oexp) * [ o1 : ([U] M1) ]) ->
+
+     (o2 : (o2:oexp -> oexp) * ( (x:oexp) -> [ x : ([El] o1_1) ] -> [ (o2 x) : ([U] M2) ] )) ->
+
+     [ ( [∀] M1 M2 o1_1 o2_1 ) : ([U] ( [max] M1 M2 )) ].
+
 Rule 32 El_forall_reduction :: ∏ M1 : uexp, ∏ M2 : uexp, ∏ o1 : oexp, ∏ o2 : oexp ⟶ oexp,
 
      [ o1 : ([U] M1) ] ⟶
@@ -169,6 +191,16 @@ Rule 32 El_forall_reduction :: ∏ M1 : uexp, ∏ M2 : uexp, ∏ o1 : oexp, ∏ 
      (∏ x: oexp, [ x : ([El] o1) ] ⟶ [ (o2 x) : ([U] M2) ]) ⟶
 
      [ ([El] ([∀] M1 M2 o1 o2)) = ([∏] ([El] o1) (x ⟼ ([El] (o2 x)))) ].
+
+Rule 32.1 El_forall :: 
+
+     (M1 : uexp) -> (M2 : uexp) ->
+
+     (o1 : (o1 : oexp) * hastype o1 ([U] M1)) ->
+
+     (o2 : (o2 : oexp -> oexp) * ( (x : (x:oexp) * hastype x ([El] o1_1) ) -> hastype (o2 x_1) ([U] M2))) ->
+
+     tequal ([El] ([∀] M1 M2 o1_1 o2_1)) ([∏] ([El] o1_1) (x ⟼ ([El] (o2_1 x)))) .
 
 Rule 100 teq_empty_eta :: ∏ T:texp, ∏ T':texp, ∏ a:oexp,
 

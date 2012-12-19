@@ -21,6 +21,15 @@ Theorem compose0' (u:Ulevel) (T U V:[U](u)) (g:*U -> *V) (f:*T -> *U) (t:*T) : *
 
 End.
 
+Theorem compose0' (u:Ulevel)
+			(T U V:[U](u)) 
+			(g : *[∀;x](u,u,U,V))
+			(f : *[∀;x](u,u,T,U)) (t:*T) : *V ;;
+
+	 (ev (El u U) (El u V) (cast2 (El u (forall u u U V)) _ _ g) (ev (El u T) (El u U) f t)).
+
+End.
+
 # dependent version like this?:
 
 Theorem id (T:Type) (U:T -> Type) (g: forall (t:T), U t) (t:T) : U t .
