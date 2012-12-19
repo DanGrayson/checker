@@ -186,7 +186,7 @@ In TS format code, how would we call beta_reduction, given that it would
 be an LF definition of type
 
    (T:texp) -> (istype T) ->
-   (U:oexp->texp) -> ((x:oexp) -> U x) ->
+   (U:oexp->texp) -> ((x:oexp) -> istype (U x)) ->
    (t:oexp) -> (hastype t T)
    (b:oexp->oexp) -> ((x:oexp) -> hastype (b x) (U x)) -> 
    (oqual ([ev] ( [lambda] T f ) t U) (f t) (U t)).
@@ -208,7 +208,15 @@ We can say:
 
        	  means
 
-       (T:texp) -> (istype T) -> ...
+       ((T:texp) * istype T) -> ...
+
+and
+
+       [ t : T |- U Type ] => ... 
+
+       	  means
+
+       (U:oexp->texp) * ((t:T_1) * hastype t T_1 -> istype (t\\U)) -> ...
 
 and
 
@@ -216,23 +224,31 @@ and
 
        	  means
 
-       (o:oexp) -> (T:texp) -> (istype T) -> (hastype o T) -> ...
+       ((o:oexp) * (hastype o T)) -> ...
 
 and
 
-       [ |- T = T' ] => ... 
+       [ t : T |- o : U ] => ... 
 
        	  means
 
-       (T:texp) -> (T':texp) -> (istype T) -> (istype T') -> (tequal T T') -> ...
+       (o:oexp->oexp) * ((t:T_1) * hastype t T_1 -> hastype o (t\\U)) -> ...
+
+and
+
+       [ T = T' ] => ... 
+
+       	  means
+
+       tequal T T' -> ...
 
 and 
 
-       [ |- o = o' : T ] => ... 
+       [ o = o' : T ] => ... 
 
        	   means
 
-       (o:oexp) -> (o:oexp) -> (T:texp) -> (istype T) -> (oequal o o' T) -> ...
+       oequal o o' T -> ...
 
 -----------------------------------------------------------------------------
 
@@ -278,7 +294,7 @@ for an alternative to putting unicode into files.
 Definition parameters:
 
 
-TS format		LF translation
+coq format		LF translation
 
 T : Type		((T:texp) * (istype T))
 

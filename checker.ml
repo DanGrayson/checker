@@ -6,7 +6,7 @@ let show_rules = false
 
 let try_normalization = false
 
-let env_limit = Some 6
+let env_limit = Some 9
 
 open Error
 open Variables
