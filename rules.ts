@@ -24,77 +24,31 @@ Rule 16 u_hastype { ⊢ M Ulevel } ⊢ [u](M) : [U]([next](M)).
 
 Rule 17 El_istype { ⊢ M Ulevel } { ⊢ o : [U](M) } ⊢ [El](o) Type.
 
-Rule 18 El_u_reduction  { ⊢ M Ulevel } [ [El]([u](M)) = [U](M) ].
+Rule 18 El_u_reduction { ⊢ M Ulevel } [ [El]([u](M)) = [U](M) ].
 
-Rule 19 El_eq :: ∏ M:uexp, ∏ x:oexp, ∏ y:oexp, 
+Rule 19 El_eq { ⊢ M Ulevel } { |- x : [U](M) } { |- y : [U](M) } [ x = y : [U](M) ] ⇒ [ [El](x) = [El](y) ].
 
-     [ x = y : ([U] M) ] ⇒ [ ([El] x) = ([El] y) ].
+Rule 20 El_eq_reflect { ⊢ M Ulevel } { |- x : [U](M) } { |- y : [U](M) } [ [El](x) = [El](y) ] ⇒ [ x = y : [U](M) ].
 
-Rule 20 El_eq_reflect :: ∏ M:uexp, ∏ x:oexp, ∏ y:oexp, 
+Rule 21 ∏_istype { |- T Type } { _ : T |- U Type } |- [∏](T,U) Type .
 
-     [ x : ([U] M) ] ⇒ [ y : ([U] M) ] ⇒ 
+Rule 22.1 ∏_eq1 { |- T Type } { |- T' Type } { _ : T |- U Type } [ T = T' ] => [ [∏](T,U) = [∏](T',U) ].
 
-     [ ([El] x) = ([El] y) ] ⇒ [ x = y : ([U] M) ].
+Rule 22.2 ∏_eq2 { |- T Type } { _ : T |- U Type } { _ : T |- U' Type } ( { |- x : T } [ U/x = U'/x ] ) => [ [∏](T,U) = [∏](T,U') ].
 
-Rule 21 ∏_istype :: ∏ T:texp, ∏ U : oexp ⇒ texp,
+Rule 23 λ_hastype { |- T Type } { _ : T |- U Type } { x : T |- o : U/x } |- [λ](T,o) : [∏](T,U).
 
-     (∏ x:oexp, [ x : T ] ⇒ [ (U x) Type ]) ⇒ [ ([∏] T U) Type ].
+Rule 24.1 λ_equality1 { |- T Type } { |- T' Type } { _ : T |- U Type } { x : T |- o : U/x }
 
-Rule 22 ∏_eq :: ∏ T:texp, ∏ T':texp, ∏ U : oexp ⇒ texp, ∏ U' : oexp ⇒ texp, 
+     			[ T = T' ] => [ [λ](T,o) = [λ](T',o) : [∏](T,U) ].
 
-     [ T = T' ] ⇒
+Rule 24.2 λ_equality2 { |- T Type } { _ : T |- U Type } { _ : T |- U' Type } { x : T |- o : U/x }  { x : T |- o' : U/x } 
 
-     (∏ x:oexp, [ x : T ] ⇒ [ (U x) = (U' x)])
+     			( { |- x : T } [ o/x = o'/x : U/x ] ) => [ [λ](T,o) = [λ](T,o') : [∏](T,U) ].
 
-     ⇒ [ ([∏] T U) = ([∏] T' U')  ].
+Rule 25 ev_hastype { |- T Type } { _ : T |- U Type } { |- f : [∏](T,U) } { |- o : T } |- [ev](f,o,U) : U/o.
 
-Rule 23 λ_hastype :: ∏ T:texp, ∏ U:oexp ⇒ texp, ∏ o:oexp ⇒ oexp,
-
-     [ T Type ] ⇒
-
-     (∏ x:oexp, [ x : T ] ⇒ [ (o x) : (U x) ]) ⇒
-
-     [ ([λ] T o) : ([∏] T U) ].
-
-Rule 24 λ_equality :: ∏ T:texp, ∏ T':texp, ∏ U:oexp ⇒ texp, ∏ o:oexp ⇒ oexp, ∏ o':oexp ⇒ oexp,
-
-     [ T = T' ] ⇒
-
-     (∏ x:oexp, [ x : T ] ⇒ [ (o x) = (o' x) : (U x) ]) ⇒
-
-     [ ([λ] T o) = ([λ] T o') : ([∏] T U) ].
-
-Rule 25 ev_hastype :: ∏ T : texp, ∏ U : oexp ⇒ texp, ∏ f : oexp, ∏ o : oexp,
-
-     [ f : ([∏] T U) ] ⇒ 
-
-     [ o : T ] ⇒ 
-
-     [ ([ev] f o U) : (U o)].
-
-Rule 25.2 ev_hastype2 :: 
-
-     (T : (T':texp) × istype T') ->
-
-     (U : (U':oexp ⇒ texp) × (t : (t':oexp) × hastype t' T₁) -> istype (U' t₁)) ->
-
-     (f : (f':oexp) × hastype f' ([∏] T₁ U₁)) ->
-
-     (o : (o':oexp) × hastype o' T₁) ->
-
-     (e: Singleton(([ev] f₁ o₁ U₁) : oexp)) × hastype e (U₁ o₁).
-
-Rule 25.3 ev ::   # non-dependent version
-
-     (T : (T':texp) × istype T') ->
-
-     (U : (U':texp) × istype U') ->
-
-     (f : (f':oexp) × hastype f' ([∏] T₁ (_ ⊢> U₁))) ->
-
-     (o : (o':oexp) × hastype o' T₁) ->
-
-     (e: Singleton(([ev] f₁ o₁ (_ ⊢> U₁)) : oexp)) × hastype e U₁.
+Rule 25.1 ev { |- T Type } { |- U Type } { |- f : [∏;_](T,U) } { |- o : T } |- [ev;_](f,o,U) : U.  # non-dependent version
 
 Rule 26 ev_eq :: ∏ T : texp, ∏ U : oexp ⇒ texp, ∏ f : oexp, ∏ o : oexp,
 

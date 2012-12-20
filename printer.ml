@@ -131,7 +131,7 @@ let var_chooser x subs occurs_in e =
         let w = Var (name ^ (if i = 0 then "'" else string_of_int i)) in
         if var_tester w subs occurs_in e then w, (x,w) :: subs
         else repeat (i+1)
-      in repeat 0
+      in repeat 1			(*omit the "'" case*)
   | _ -> x, subs
 
 let occurs_in_list occurs_in x args = List.exists (occurs_in x) args

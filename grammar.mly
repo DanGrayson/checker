@@ -20,18 +20,23 @@ let app (hd,reversed_args) arg = (hd, ARG(arg,reversed_args))
 
 let fix1 pos v t = Substitute.subst_type (v,pi1 (var_to_lf_pos pos v)) t
 
-let apply_binder pos c v t1 t2 u = 
+let apply_binder pos (c:(var marked * lf_expr) list) v t1 t2 u = 
   let (vpos,v) = v in
   let u = fix1 vpos v u in
   let w = newfresh v in
   let ww = var_to_lf_pos vpos w in
-  let t1 = List.fold_left (fun t1 (v,t) -> with_pos vpos (unmark (oexp @-> t1))) t1 c in
-  let ww = List.fold_left (fun ww (v,t) -> Substitute.apply_args ww (ARG(var_to_lf (*pos*) v,END))) ww c in
+  let t1 = List.fold_left (fun t1 (_,t) -> with_pos vpos (unmark (oexp @-> t1))) t1 c in
+  let ww = List.fold_left 
+      (fun ww (x,t) -> 
+	let (xpos,x) = x in 
+	Substitute.apply_args ww (ARG(var_to_lf (*pos*) x,END)))
+      ww c in
   let t2 = new_pos pos (t2 ww) in
   let t2 = List.fold_right (
-    fun (v,t) t2 -> 
-      let v' = newunused() in
-      with_pos pos (F_Pi(v, oexp, with_pos pos (F_Pi(v', hastype (var_to_lf (*pos*) v) t, t2))))
+    fun (x,t) t2 -> 
+      let (xpos,x) = x in 
+      let x' = newunused() in
+      with_pos pos (F_Pi(x, oexp, with_pos pos (F_Pi(x', hastype (var_to_lf (*pos*) x) t, t2))))
    ) c t2 in
   F_Pi(v, (pos, F_Sigma(w, t1, t2)), u)
 
@@ -437,7 +442,9 @@ context:
 | c= terminated( separated_list(
 		      Wcomma,
 		      separated_pair(
-		           variable, Colon, lf_expr_from_ts_syntax)),
+		           marked_variable_or_unused, 
+		           Colon,
+		           lf_expr_from_ts_syntax)),
 		 Turnstile)
     {c}
 
