@@ -418,6 +418,9 @@ unmarked_lf_type_from_ts_syntax:
 | Wlbracket x= lf_expr_from_ts_syntax Wequal y= lf_expr_from_ts_syntax Colon t= lf_expr_from_ts_syntax Wrbracket
     { unmark (object_equality x y t) }
 
+| Wlbracket a= lf_expr_from_ts_syntax Wtilde b= lf_expr_from_ts_syntax Ulevel Wrbracket
+    { F_APPLY(F_ulevel_equality, [a;b]) }
+
 | Wlbracket a= lf_expr_from_ts_syntax Wtilde b= lf_expr_from_ts_syntax Type Wrbracket
     { F_APPLY(F_type_uequality, [a;b]) }
 
@@ -456,14 +459,18 @@ lf_expr_from_ts_syntax:
 | tac= tactic_expr
     { (Position($startpos, $endpos), cite_tactic tac END) }
 
-| e = ts_expr
+| e= parenthesized(lf_expr_from_ts_syntax)
     { e }
+
+| e= unmarked_ts_expr
+    { Position($startpos, $endpos), e }
 
 | v= marked_variable_or_unused DoubleArrowFromBar body=lf_expr_from_ts_syntax
     { Position($startpos, $endpos), 
       let (pos,v) = v in
       let (v,body) = Substitute.subst_fresh pos (v,body) in 
       LAMBDA(v,body) }
+
 ts_expr:
 
 | unmarked_ts_expr
