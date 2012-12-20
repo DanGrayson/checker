@@ -21,6 +21,15 @@ Theorem compose0' (u Ulevel) (T U V:[U](u)) (g:*U -> *V) (f:*T -> *U) (t:*T) : *
 
 End.
 
+Theorem compose0' (u Ulevel)
+			(T U V:[U](u)) 
+			(g : *[∀;x](u,u,U,V))
+			(f : *[∀;x](u,u,T,U)) (t:*T) : *V ;;
+
+	 (ev (El u U) (El u V) (cast2 (El u (forall u u U (pair (_ |-> V _1) (_ |-> _ |-> V _2) ))) _ _ g) (ev (El u T) (El u U) f t)).
+
+End.
+
        compose0 = (T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ (ev U V g (ev T U f t)))
 
        compose0 : (T:(T0:texp) × istype T0) ⟶ 
@@ -53,16 +62,6 @@ Theorem compose0 :: [ T U V Type ] =>
 
 
 We have this code in two places.  We should just parse theorem parameters into the right thing, using the LF in TS syntax.
-
-
-End.
-
-Theorem compose0' (u Ulevel)
-			(T U V:[U](u)) 
-			(g : *[∀;x](u,u,U,V))
-			(f : *[∀;x](u,u,T,U)) (t:*T) : *V ;;
-
-	 (ev (El u U) (El u V) (cast2 (El u (forall u u U (pair (_ |-> V _1) (_ |-> _ |-> V _2) ))) _ _ g) (ev (El u T) (El u U) f t)).
 
 End.
 

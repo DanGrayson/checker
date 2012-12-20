@@ -6,13 +6,6 @@ open Names
 open Helpers
 open Definitions
 
-let add_sigma pos v t t' u =
-  let v' = newfresh v in
-  if not (!sigma_mode) then 
-    F_Pi(v, t, (pos, F_Pi(v', new_pos pos (t' (var_to_lf v)), u)))
-  else
-    F_Pi(v, (pos, F_Sigma(v', t, t' (var_to_lf v'))), u)
-
 let add_single v t u = F_Pi(v, t, u)
 
 let add_definition e t =
@@ -24,6 +17,23 @@ let car (hd,reversed_args) = (hd, CAR reversed_args)
 let cdr (hd,reversed_args) = (hd, CDR reversed_args)
 
 let app (hd,reversed_args) arg = (hd, ARG(arg,reversed_args))
+
+let fix1 pos v t = Substitute.subst_type (v,pi1 (var_to_lf_pos pos v)) t
+
+let apply_binder pos c v t1 t2 u = 
+  let (vpos,v) = v in
+  let u = fix1 vpos v u in
+  let w = newfresh v in
+  let ww = var_to_lf_pos vpos w in
+  let t1 = List.fold_left (fun t1 (v,t) -> with_pos vpos (unmark (oexp @-> t1))) t1 c in
+  let ww = List.fold_left (fun ww (v,t) -> Substitute.apply_args ww (ARG(var_to_lf (*pos*) v,END))) ww c in
+  let t2 = new_pos pos (t2 ww) in
+  let t2 = List.fold_right (
+    fun (v,t) t2 -> 
+      let v' = newunused() in
+      with_pos pos (F_Pi(v, oexp, with_pos pos (F_Pi(v', hastype (var_to_lf (*pos*) v) t, t2))))
+   ) c t2 in
+  F_Pi(v, (pos, F_Sigma(w, t1, t2)), u)
 
 %}
 %start command ts_exprEof
@@ -45,9 +55,9 @@ let app (hd,reversed_args) arg = (hd, ARG(arg,reversed_args))
   ArrowFromBar Wequal Colonequal Wunderscore WRule Wgreaterequal Wgreater
   Wlessequal Wless Semicolon Ulevel Kumax Type KPi Klambda KSigma WCheck
   Definition WShow WEnd WVariable WAlpha Weof WCheckUniverses Wtilde Singleton
-  Axiom Wdollar LF LFtype LFtypeTS TS Kpair K_1 K_2 Wtimes DoubleBackslash
+  Axiom Wdollar LF TS Kpair K_1 K_2 Wtimes DoubleBackslash
   Turnstile DoubleArrow DoubleColon Backslash DoubleArrowFromBar
-  DoubleSemicolon Theorem
+  DoubleSemicolon Theorem Wlbrace Wrbrace
 
 (* precedences, lowest first *)
 
@@ -236,6 +246,8 @@ tactic_expr:
 command: c=command0 
   { Position($startpos, $endpos), c }
 
+dotted_number: n=separated_nonempty_list(Wperiod,NUMBER) {n}
+
 command0:
 | Weof
     { raise Eof }
@@ -244,10 +256,10 @@ command0:
 | WVariable vars=nonempty_list(IDENTIFIER) Ulevel eqns=preceded(Semicolon,uEquation)* Wperiod
     { Toplevel.UVariable (vars,eqns) }
 
-| WRule num=separated_nonempty_list(Wperiod,NUMBER) name=IDENTIFIER DoubleColon t=lf_type Wperiod
+| WRule num= dotted_number name=IDENTIFIER DoubleColon t=lf_type Wperiod
     { Toplevel.Rule (num,name,t) }
 
-| WRule num=separated_nonempty_list(Wperiod,NUMBER) name=IDENTIFIER Colon t=lf_type_from_ts_syntax Wperiod
+| WRule num= dotted_number name=IDENTIFIER t=lf_type_from_ts_syntax Wperiod
     { Toplevel.Rule (num,name,t) }
 
 | Axiom v=IDENTIFIER Colon t=ts_expr Wperiod
@@ -256,19 +268,16 @@ command0:
 | Axiom LF v=IDENTIFIER Colon t=lf_type Wperiod
     { Toplevel.AxiomLF(v,t) }
 
-| Axiom LFtypeTS v=IDENTIFIER Colon t=lf_type_from_ts_syntax Wperiod
-    { Toplevel.AxiomLF(v,t) }
-
 | WCheck TS o=ts_expr Wperiod
     { Toplevel.CheckTS o }
 
 | WCheck LF e=lf_expr Wperiod
     { Toplevel.CheckLF e }
 
-| WCheck LFtype e=lf_type Wperiod
+| WCheck Colon e= lf_type_from_ts_syntax Wperiod
     { Toplevel.CheckLFtype e }
 
-| WCheck LFtypeTS e= lf_type_from_ts_syntax Wperiod
+| WCheck DoubleColon e=lf_type Wperiod
     { Toplevel.CheckLFtype e }
 
 | WCheckUniverses Wperiod
@@ -373,10 +382,10 @@ parm:
 ts_exprEof: a=ts_expr Weof {a}
 
 lf_type_from_ts_syntax:
-| Wlparen t= lf_type_from_ts_syntax Wrparen 
-    { t }
-| unmarked_lf_type_from_ts_syntax
-    { Position($startpos, $endpos), $1 }
+| Wlparen t= unmarked_lf_type_from_ts_syntax Wrparen
+    { Position($startpos, $endpos), t }
+| t= unmarked_lf_type_from_ts_syntax
+    { Position($startpos, $endpos), t }
 
 unmarked_lf_type_from_ts_syntax:
 | f=lf_type_constant
@@ -387,39 +396,37 @@ unmarked_lf_type_from_ts_syntax:
    { F_Pi(newunused(),a,b) }
 
 (* judgments *)
+
+| Wlbracket x= lf_expr_from_ts_syntax Colon t= lf_expr_from_ts_syntax Wrbracket
+    { unmark (hastype x t) }
+
 | Wlbracket x= lf_expr_from_ts_syntax Wequal y= lf_expr_from_ts_syntax Colon t= lf_expr_from_ts_syntax Wrbracket
     { unmark (object_equality x y t) }
-| Wlbracket Colonequal x= lf_expr_from_ts_syntax Colon t= lf_expr_from_ts_syntax Wrbracket
+
+| Colonequal x= lf_expr_from_ts_syntax Colon t= lf_expr_from_ts_syntax
     { add_definition x t }
 
 (* introduction of parameters *)
-| Wlbracket 
-    c= separated_list(Wcomma,separated_pair(variable,Colon,lf_expr_from_ts_syntax))
-    Turnstile v= marked_variable Type Wrbracket
-    DoubleArrow u= lf_type_from_ts_syntax
-    { ignore c;
-      let (vpos,v) = v in
-      let pos = Position($startpos, $endpos) in
-      let u = Substitute.subst_type (v,pi1 (var_to_lf_pos vpos v)) u in
-      add_sigma pos v texp istype u }
 
-| Wlbracket
-    c= separated_list(Wcomma,separated_pair(variable,Colon,lf_expr_from_ts_syntax))
-    Turnstile v= variable Ulevel Wrbracket
-    DoubleArrow u= lf_type_from_ts_syntax
-    { 
-      if c <> [] then $syntaxerror;
-      add_single v uexp u }
+| Wlbrace c= context v= variable Ulevel Wrbrace u= lf_type_from_ts_syntax
+    %prec Reduce_binder
+    { if c <> [] then $syntaxerror; add_single v uexp u }
 
-| Wlbracket 
-    c= separated_list(Wcomma,separated_pair(variable,Colon,lf_expr_from_ts_syntax))
-    Turnstile v= marked_variable Colon t= lf_expr_from_ts_syntax Wrbracket
-    DoubleArrow u= lf_type_from_ts_syntax
-    { ignore c;
-      let (vpos,v) = v in
-      let pos = Position($startpos, $endpos) in
-      let u = Substitute.subst_type (v,pi1 (var_to_lf_pos vpos v)) u in
-      add_sigma pos v oexp (fun o -> hastype o t) u }
+| Wlbrace c= context v= marked_variable Type Wrbrace u= lf_type_from_ts_syntax
+    %prec Reduce_binder
+    { let pos = Position($startpos, $endpos) in apply_binder pos c v texp istype u }
+
+| Wlbrace c= context v= marked_variable Colon t= lf_expr_from_ts_syntax Wrbrace u= lf_type_from_ts_syntax
+    %prec Reduce_binder
+    { let pos = Position($startpos, $endpos) in apply_binder pos c v oexp (fun o -> hastype o t) u }
+
+context:
+| c= terminated( separated_list(
+		      Wcomma,
+		      separated_pair(
+		           variable, Colon, lf_expr_from_ts_syntax)),
+		 Turnstile)
+    {c}
 
 lf_expr_from_ts_syntax:
 
@@ -501,20 +508,7 @@ unmarked_ts_expr:
 | Kumax Wlparen u=ts_expr Wcomma v=ts_expr Wrparen
     { APPLY(U U_max, u**v**END)  }
 | label=tsterm_head args=arglist
-    {
-     let args = list_to_spine args in
-     match label with
-     | V _ -> APPLY(label,args)
-     | _ -> (
-         match head_to_vardist label with
-         | None -> APPLY(label,args)
-         | Some (n,_) ->
-             if n = 0 then APPLY(label,args)
-             else
-               raise (MarkedError
-                        ( Position($startpos, $endpos),
-                          "expected " ^ string_of_int n ^ " variable" ^ if n != 1 then "s" else "")))
-   }
+    { APPLY(label,list_to_spine args) }
 | name=CONSTANT_SEMI vars=separated_list(Wcomma,marked_variable_or_unused) Wrbracket args=arglist
     {
      let label = 

@@ -23,7 +23,7 @@ let newfresh =
   let genctr = ref 0 in 
   let newgen x = (
     incr genctr;
-    if !genctr = genctr_trap then raise DebugMe;
+    if !genctr = genctr_trap then (trap(); raise DebugMe);
     if !genctr < 0 then raise GensymCounterOverflow;
     VarGen (!genctr, x)) in
   fun v -> match v with 

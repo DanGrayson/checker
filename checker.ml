@@ -253,9 +253,10 @@ let toplevel() =
   (try
     Arg.parse 
       (Arg.align
-	 [("--debug" , Arg.Set debug_mode, " Turn on debug mode");
-	  ("--sigma", Arg.Set sigma_mode, " Turn on sigma mode");
-	  ("--no-sigma", Arg.Clear sigma_mode, " Turn off sigma mode")])
+	 [
+	  ("--debug" , Arg.Set debug_mode, " Turn on debug mode");
+	  ("--no-debug" , Arg.Clear debug_mode, " Turn off debug mode");
+	])
       (fun filename -> env := parse_file !env filename)
       ("usage: " ^ (Filename.basename Sys.argv.(0)) ^ " [option|filename] ...");
   with FileFinished -> ());

@@ -78,16 +78,12 @@ let hast_s pos v t = sigma (pos,v,oexp) (hast pos v t)
 
 let hast_1 pos v t = [pos, v,hast_s pos v t]
 
-let ist_12 pos v = if not (!sigma_mode) then ist_2 pos v else ist_1 pos v
-
-let hast_12 pos v = if not (!sigma_mode) then hast_2 pos v else hast_1 pos v
-
 let augment uvars ueqns tvars o_vartypes = List.flatten (
   List.flatten [
   List.map (fun (pos,x)    -> [pos,x,uexp]) uvars;
   List.map (fun (pos,(l,r)) -> [pos, newfresh (Var "u"), ulevel_equality l r]) ueqns;
-  List.map (fun (pos,x) -> ist_12 pos x) tvars;
-  List.map (fun ((pos,x),t) -> hast_12 pos x t) o_vartypes ])
+  List.map (fun (pos,x) -> ist_1 pos x) tvars;
+  List.map (fun ((pos,x),t) -> hast_1 pos x t) o_vartypes ])
 
 let is_uexp t =
   match unmark t with
@@ -95,9 +91,7 @@ let is_uexp t =
   | _ -> false
 
 let make_subs vartypes = 
-  if not (!sigma_mode) 
-  then []
-  else List.flatten (
+  List.flatten (
     List.map 
       (fun (pos,v,t) -> 
 	if is_uexp t then []
@@ -110,22 +104,13 @@ let tDefinition dpos name (UContext (uvars,ueqns),tvars,o_vartypes) t d1 =
   let pos = get_pos t in
   let vartypes = augment uvars ueqns tvars o_vartypes in
   let name0 = Var name in
-  let name1 = VarDefined(name,1) in
   let j = term_or_default_tactic pos d1 in
   let subs = make_subs vartypes in
   let vartypes = map_subs subs vartypes in
   let t = subst_l subs t in
-  let r = List.map (wrap vartypes) 
-      (
-       if not (!sigma_mode) 
-       then
-	 [ (name0, pos, t, texp); (name1, pos, j, istype (apply pos name0 vartypes)) ]
-       else 
-	 let tj = pos, CONS(t,j) in 
-	 let v = newfresh (Var "T") in
-	 [ ( name0, pos, tj, ist_s pos v ) ]
-      ) in
-  r
+  let tj = pos, CONS(t,j) in 
+  let v = newfresh (Var "T") in
+  List.map (wrap vartypes) [ ( name0, pos, tj, ist_s pos v ) ]
 
 let theorem dpos name (UContext(uvars,ueqns),tvars,o_vartypes) (t:lf_expr) d1 =
   let pos = get_pos t in
@@ -135,38 +120,21 @@ let theorem dpos name (UContext(uvars,ueqns),tvars,o_vartypes) (t:lf_expr) d1 =
   let subs = make_subs vartypes in
   let vartypes = map_subs subs vartypes in
   let t = subst_l subs t in
-  let r = List.map (wrap vartypes) 
-      (
-       if not (!sigma_mode)
-       then
-	 raise NotImplemented
-       else
-	 let v = newfresh (Var "o") in
-	 [ ( name0, pos, oj , hast_s pos v t ) ]
-      ) in
-  r
+  let v = newfresh (Var "o") in
+  List.map (wrap vartypes) [ ( name0, pos, oj , hast_s pos v t ) ]
 
 let oDefinition dpos name (UContext(uvars,ueqns),tvars,o_vartypes) o (t:lf_expr) d1 =
   let pos = get_pos o in
   let vartypes = augment uvars ueqns tvars o_vartypes in
   let name0 = Var name in
-  let name1 = VarDefined(name,1) in
   let j = term_or_default_tactic dpos d1 in
   let subs = make_subs vartypes in
   let vartypes = map_subs subs vartypes in
   let o = subst_l subs o in
   let t = subst_l subs t in
-  let r = List.map (wrap vartypes) 
-      (
-       if not (!sigma_mode)
-       then
-	 [ (name0, dpos, o, oexp); (name1, dpos, j, hastype (apply pos name0 vartypes) t) ]
-       else
-	 let oj = dpos, CONS(o, j ) in
-	 let v = newfresh (Var "o") in
-	 [ ( name0, dpos, oj , hast_s pos v t ) ]
-      ) in
-  r
+  let oj = dpos, CONS(o, j ) in
+  let v = newfresh (Var "o") in
+  List.map (wrap vartypes) [ ( name0, dpos, oj , hast_s pos v t ) ]
 
 let teqDefinition dpos _ _ _ _ = raise (Unimplemented "teqDefinition")
 

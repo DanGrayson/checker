@@ -6,15 +6,15 @@
 
 Variable T Type.
 
-Check LFtype (T:texp) × (istype T) .
+Check :: (T:texp) × (istype T) .
 Axiom LF o : oexp.
-Check LFtype oexp -> oexp.
+Check :: oexp -> oexp.
 
 Axiom t : T.
 
 Definition compose1 (T U V Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;; (
        # LF syntax
-       ev_hastype U (_ ⟼ V) g ([ev] f t (_ ⟼ U)) $a (ev_hastype T (_ ⟼ U) f t $a $a)).
+       ev_hastype U_1 (_ ⟼ V_1) g_1 ([ev] f_1 t_1 (_ ⟼ U_1)) $a (ev_hastype T_1 (_ ⟼ U_1) f_1 t_1 $a $a)).
 
 Definition compose1' (T U V Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;
        # new TS syntax
@@ -29,7 +29,7 @@ Definition compose2' (T U V Type) (g:U⟶V) (f:T⟶U) := [lambda;t](T,g(f t)) : 
       [λ_hastype](T, _ ⟾ V, t ⟾ g (f t), $a, t ⟾ _ ⟾ [ev_hastype](U, _ ⟾ V, g, f t, $a, [ev_hastype](T, _ ⟾ U, f, t, $a, $a))).
 
 
-Definition A (u Ulevel; u=u) (t : [U](u)) := [El](t);; (El_type u $a $0).
+Definition A (u Ulevel; u=u) (t : [U](u)) := [El](t);; (El_type u _ _).
 
 Definition A'(u Ulevel; u=u) (t : [U](u)) := [El](t); [El_type](u, $a, $0).
 

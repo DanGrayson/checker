@@ -74,7 +74,7 @@ Check TS λ f:X⟶T, λ y:X, f y.
 Check TS U_type.
 Check TS [Pi;x](T,T).
 
-Check LFtype ∏ x:oexp, ∏ y:oexp, ∏ T:texp, ∏ U:texp, [ x = y : T ]⟶[ T = U ]⟶[ x = y : U ].
+Check :: ∏ x:oexp, ∏ y:oexp, ∏ T:texp, ∏ U:texp, [ x = y : T ]⟶[ T = U ]⟶[ x = y : U ].
 Check LF (U_type u1).
 
 Check LF El_type.

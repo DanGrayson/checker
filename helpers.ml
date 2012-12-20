@@ -18,6 +18,7 @@ let reverse_spine a =
   in repeat END a
 
 let rec join_args a b =
+  if b = END then a else
   match a with
   | ARG(x,a) -> ARG(x,join_args a b)
   | CAR a -> CAR(join_args a b)

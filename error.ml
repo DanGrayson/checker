@@ -1,10 +1,8 @@
 (** Exceptions, experiments, error message handling, and source code positions. *)
 
-let sigma_mode = ref false		(* status of our sigma type experiment *)
-
 let debug_mode = ref false
 
-let nowhere_trap = 0
+let internal_location_trap = 0
 
 let genctr_trap = 0
 
@@ -72,7 +70,7 @@ let seepos pos = Printf.fprintf stderr "%s: ... debugging ...\n%!" (errfmt pos)
 
 let no_pos i = 
   incr nowhere_ctr;
-  if !nowhere_ctr = nowhere_trap then raise DebugMe;
+  if !nowhere_ctr = internal_location_trap then (trap(); raise DebugMe);
   Nowhere(i, !nowhere_ctr)
 let nowhere i x = (no_pos i,x)
 let nopos i = errfmt (no_pos i)
