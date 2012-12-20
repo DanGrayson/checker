@@ -12,6 +12,8 @@ Check :: oexp -> oexp.
 
 Axiom t : T.
 
+End.
+
 Definition compose1 (T U V Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;; (
        # LF syntax
        ev_hastype U_1 (_ ⟼ V_1) g_1 ([ev] f_1 t_1 (_ ⟼ U_1)) $a (ev_hastype T_1 (_ ⟼ U_1) f_1 t_1 $a $a)).

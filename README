@@ -35,9 +35,7 @@ New syntactic class:
 
 New operators for TS format:
 
-    \		right associative		alternative LF form for LF application
-
-    \\		right associative		TS form for TS substitution, translated
+    /		left associative		TS form for TS substitution, translated
     					    	to LF application. 
 
     |->		right associative		TS arrow form for TS lambda and LF form

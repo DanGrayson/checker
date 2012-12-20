@@ -109,8 +109,7 @@ rule expr_tokens = parse
   | ( '|' '-' '>' | "⟼" ) { ArrowFromBar }
   | ( '|' '=' '>' | "⟾" ) { DoubleArrowFromBar }
 
-  | '\\'       { Backslash }
-  | '\\' '\\'  { DoubleBackslash }
+  | '/'       { Slash }
 
   | ':'     { Colon } 
   | ':' ':' { DoubleColon }

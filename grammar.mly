@@ -51,13 +51,12 @@ let apply_binder pos c v t1 t2 u =
 
   (* tokens *)
 
-  Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod Colon Wstar Arrow
-  ArrowFromBar Wequal Colonequal Wunderscore WRule Wgreaterequal Wgreater
+  Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod Colon Wstar
+  Arrow ArrowFromBar Wequal Colonequal Wunderscore WRule Wgreaterequal Wgreater
   Wlessequal Wless Semicolon Ulevel Kumax Type KPi Klambda KSigma WCheck
   Definition WShow WEnd WVariable WAlpha Weof WCheckUniverses Wtilde Singleton
-  Axiom Wdollar LF TS Kpair K_1 K_2 Wtimes DoubleBackslash
-  Turnstile DoubleArrow DoubleColon Backslash DoubleArrowFromBar
-  DoubleSemicolon Theorem Wlbrace Wrbrace
+  Axiom Wdollar LF TS Kpair K_1 K_2 Wtimes Slash Turnstile DoubleArrow
+  DoubleColon DoubleArrowFromBar DoubleSemicolon Theorem Wlbrace Wrbrace
 
 (* precedences, lowest first *)
 
@@ -80,24 +79,22 @@ let apply_binder pos c v t1 t2 u =
 
   (* we want  [*f x] to be [*(f x)]  and  [*x->y] to be [( *x )->y]  *)
   Reduce_star
-
-%right
-
-  (* product type *)
-  (* we want [a * b * c] to be [a * (b * c)], by analogy with [a -> b] *)
-  (* we want [a * b -> c] to be [(a * b) -> c] *)
-
-  Wtimes
   Wstar
 
 %right
 
-  (* substitution *)
-  (* we want [x\\y\\f] to be [x\\(y\\f)] *)
-  (* we want [x\y\f] to be [x\(y\f)] *)
+  (* product type *)
+  (** we want [a ** b ** c] to be [a ** (b ** c)], by analogy with [a -> b] **)
+  (** we want [a ** b -> c] to be [(a ** b) -> c] **)
 
-  DoubleBackslash
-  Backslash
+  Wtimes
+
+%left
+
+  (* substitution *)
+  (* we want [f/x/y] to be [(f/x)/y] *)
+
+  Slash
 
 %nonassoc
 
@@ -130,14 +127,10 @@ unmarked_lf_type:
 | KSigma v=variable Colon a=lf_type Wcomma b=lf_type
     %prec Reduce_binder
     { F_Sigma(v,a,b) }
-| Wlparen v=variable Colon a=lf_type Wrparen Wtimes b=lf_type
-    { F_Sigma(v,a,b) }
 | a=lf_type Wtimes b=lf_type
     { F_Sigma(newunused(),a,b) }
-| Wlparen v=variable Colon a=lf_type Wrparen Wstar b=lf_type
+| Wlparen v=variable Colon a=lf_type Wrparen Wtimes b=lf_type
     { F_Sigma(v,a,b) }
-| a=lf_type Wstar b=lf_type
-    { F_Sigma(newunused(),a,b) }
 | Wlparen v=variable Colon a=lf_type Wrparen Arrow b=lf_type
    { F_Pi(v,a,b) }
 | a=lf_type Arrow b=lf_type
@@ -390,12 +383,29 @@ lf_type_from_ts_syntax:
 unmarked_lf_type_from_ts_syntax:
 | f=lf_type_constant
     { F_APPLY(f,[]) }
+
 | Wlparen v=variable Colon a= lf_type_from_ts_syntax Wrparen DoubleArrow b= lf_type_from_ts_syntax
-   { F_Pi(v,a,b) }
+    { F_Pi(v,a,b) }
+
 | a= lf_type_from_ts_syntax DoubleArrow b= lf_type_from_ts_syntax
-   { F_Pi(newunused(),a,b) }
+    { F_Pi(newunused(),a,b) }
+
+| Wlparen v=variable Colon a= lf_type_from_ts_syntax Wrparen Wtimes b= lf_type_from_ts_syntax
+    { F_Sigma(v,a,b) }
+
+| a= lf_type_from_ts_syntax Wtimes b= lf_type_from_ts_syntax
+    { F_Sigma(newunused(),a,b) }
 
 (* judgments *)
+
+| Turnstile x= lf_expr_from_ts_syntax Colon t= lf_expr_from_ts_syntax
+    { add_definition x t }
+
+| Turnstile a= lf_expr_from_ts_syntax Type
+    { F_APPLY(F_istype, [a]) }
+
+| Wlbracket a= lf_expr_from_ts_syntax Wequal b= lf_expr_from_ts_syntax Wrbracket
+    { F_APPLY(F_type_equality, [a;b]) }
 
 | Wlbracket x= lf_expr_from_ts_syntax Colon t= lf_expr_from_ts_syntax Wrbracket
     { unmark (hastype x t) }
@@ -403,8 +413,11 @@ unmarked_lf_type_from_ts_syntax:
 | Wlbracket x= lf_expr_from_ts_syntax Wequal y= lf_expr_from_ts_syntax Colon t= lf_expr_from_ts_syntax Wrbracket
     { unmark (object_equality x y t) }
 
-| Colonequal x= lf_expr_from_ts_syntax Colon t= lf_expr_from_ts_syntax
-    { add_definition x t }
+| Wlbracket a= lf_expr_from_ts_syntax Wtilde b= lf_expr_from_ts_syntax Type Wrbracket
+    { F_APPLY(F_type_uequality, [a;b]) }
+
+| Wlbracket a= lf_expr_from_ts_syntax Wtilde b= lf_expr_from_ts_syntax Wrbracket
+    { F_APPLY(F_object_uequality, [a;b]) }
 
 (* introduction of parameters *)
 
@@ -430,8 +443,8 @@ context:
 
 lf_expr_from_ts_syntax:
 
-| arg= lf_expr_from_ts_syntax Backslash f= lf_expr_from_ts_syntax
-    { Substitute.apply_args f (arg ** END) }
+| f=lf_expr_from_ts_syntax Slash o=lf_expr_from_ts_syntax
+    { Substitute.apply_args f (o ** END) }
 
 | tac= tactic_expr
     { (Position($startpos, $endpos), cite_tactic tac END) }
@@ -444,10 +457,6 @@ lf_expr_from_ts_syntax:
       let (pos,v) = v in
       let (v,body) = Substitute.subst_fresh pos (v,body) in 
       LAMBDA(v,body) }
-
-| o=lf_expr_from_ts_syntax DoubleBackslash f=lf_expr_from_ts_syntax
-    { Substitute.apply_args f (o ** END) }
-
 ts_expr:
 
 | unmarked_ts_expr
