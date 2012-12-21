@@ -1,36 +1,39 @@
 
-Theorem id0 { |- T Type } { |- t:T } : T ;; (_ |-> t |-> t).
+Theorem id0 { ⊢ T Type, t:T } : T ;; (_ ⟼ t ⟼ t).
 
-Theorem id0' { |- u Ulevel } { |- T:[U](u) } { |- t:*T } : *T ;;
+Theorem id0' { ⊢ u Ulevel, T:[U](u), t:*T } : *T ;; (_ ⟼ _ ⟼ t ⟼ t).
 
-		(_ |-> _ |-> t |-> t).
+Theorem id0'' { ⊢ u Ulevel, T:[U](u), t:*T } : *T ; _ ⟾ _ ⟾ t ⟾ t.
 
-Definition id1 (T Type) (t:T) := t : T ;; t₂.
+Theorem id1 { ⊢ T Type, t:T} ⊢ t : T ; _ ⟾ t ⟾ t.
 
-Definition id1' (u Ulevel) (T:[U](u)) (t:*T) := t : *T ;; t₂.
+Theorem id1' { ⊢ u Ulevel, T:[U](u), t:*T } ⊢ t : *T ;; (_ ⟼ _ ⟼ t ⟼ t).
 
-Theorem id2 { |- T Type } { |- U Type } { |- f:T->U } : T->U ;;
+Theorem id1'' { ⊢ u Ulevel, T:[U](u), t:*T } ⊢ t : *T ; _ ⟾ _ ⟾ t ⟾ t.
 
-		(_ |-> _ |-> f |-> f).
+Theorem id2 { ⊢ T U Type, f:T⟶U } : T⟶U ;;
 
-Theorem id2' { |- u Ulevel } { |- T:[U](u) }{ |- U:[U](u) } { |- f:*T->*U } : *T->*U ;;
+		(_ ⟼ _ ⟼ f ⟼ f).
 
-		(_ |->_ |-> _ |-> f |-> f).
+Theorem id2' { ⊢ u Ulevel, T:[U](u) }{ ⊢ U:[U](u), f:*T⟶*U } : *T⟶*U ;;
 
-Theorem id3 { |- T Type } { |- U Type } { |- f:T->U } { |- t:T } : U ;; (T |-> U |-> f |-> t |-> (ev T U f t)).
+		(_ ⟼_ ⟼ _ ⟼ f ⟼ f).
 
-Theorem id3' { |- u Ulevel } { |- T:[U](u) }{ |- U:[U](u) } { |- f:*T->*U } { |- t:*T} : *U ;;
+Theorem id3 { ⊢ T Type, U Type, f:T⟶U, t:T } : U ;; (T ⟼ U ⟼ f ⟼ t ⟼ (ev T U f t)).
 
-		( u |-> T |-> U |-> f |-> t |-> (ev (El_istype u T) (El_istype u U) f t)).
+Check LF ev_hastype.
 
-Theorem compose0  { |- T Type } { |- U Type } { |- V Type } { |- g:U->V } { |- f:T->U } { |- t:T } : V ;;
+Theorem id3' { ⊢ u Ulevel, T:[U](u) }{ ⊢ U:[U](u), f:*T⟶*U, t:*T} : *U ;;
+		( u ⟼ T ⟼ U ⟼ f ⟼ t ⟼ 
+			(ev (El_istype u T) (El_istype u U) f t)).
 
-		(T |-> U |-> V |-> g |-> f |-> t |-> (ev U V g (ev T U f t))).
+Theorem compose0  { ⊢ T Type, U Type, V Type, g:U⟶V, f:T⟶U, t:T } : V ;;
 
-Theorem compose0' { |- u Ulevel } { |- T:[U](u) } { |- U:[U](u) } { |- V:[U](u) }
-		  { |- g:*U -> *V } { |- f:*T -> *U } { |- t:*T } : *V ;; 
+		(T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ (ev U V g (ev T U f t))).
 
-		(u |-> T |-> U |-> V |-> g |-> f |-> t |-> (ev (El_istype u U) (El_istype u V) g (ev (El_istype u T) (El_istype u U) f t))).
+Theorem compose0' { ⊢ u Ulevel, T:[U](u), U:[U](u), V:[U](u), g:*U ⟶ *V, f:*T ⟶ *U, t:*T } : *V ;; 
+
+		(u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ (ev (El_istype u U) (El_istype u V) g (ev (El_istype u T) (El_istype u U) f t))).
 
 End.
 
@@ -39,7 +42,7 @@ Theorem compose0' (u Ulevel)
 			(g : *[∀;x](u,u,U,V))
 			(f : *[∀;x](u,u,T,U)) (t:*T) : *V ;;
 
-	 (ev (El u U) (El u V) (cast2 (El u (forall u u U (pair (_ |-> V _1) (_ |-> _ |-> V _2) ))) _ _ g) (ev (El u T) (El u U) f t)).
+	 (ev (El u U) (El u V) (cast2 (El u (forall u u U (pair (_ ⟼ V _1) (_ ⟼ _ ⟼ V _2) ))) _ _ g) (ev (El u T) (El u U) f t)).
 
 End.
 
@@ -58,8 +61,8 @@ In new syntax it would be:
 Theorem compose0 :: [ T Type ] =>
    		    [ U Type ] =>
    		    [ V Type ] =>
-		    [ g : U -> V ] =>
-		    [ f : T -> U ] =>
+		    [ g : U ⟶ V ] =>
+		    [ f : T ⟶ U ] =>
 		    [ t : T ] =>
 		    ?
 
@@ -68,8 +71,8 @@ and it could be abbreviated to
 Theorem compose0 :: [ T U V Type ] =>
    		    [ U Type ] =>
    		    [ V Type ] =>
-		    [ g : U -> V ] =>
-		    [ f : T -> U ] =>
+		    [ g : U ⟶ V ] =>
+		    [ f : T ⟶ U ] =>
 		    [ t : T ] =>
 		    ?
 
@@ -80,14 +83,14 @@ End.
 
 # dependent version like this?:
 
-Theorem id (T Type) (U:T -> Type) (g: forall (t:T), U t) (t:T) : U t .
+Theorem id (T Type) (U:T ⟶ Type) (g: forall (t:T), U t) (t:T) : U t .
 
 # or like this?:
 
-Theorem id (T Type) (t:T |- U Type) (g: forall (t:T), t\\U) (t:T) : t\\U .
+Theorem id (T Type) (t:T ⊢ U Type) (g: forall (t:T), t\\U) (t:T) : t\\U .
 
 
-Definition compose0 (T U V Type) (g:U -> V) (f:T -> U) (t:T) := g(f t) : V ;; (ev U V g (ev T U f t)).
+Definition compose0 (T U V Type) (g:U ⟶ V) (f:T ⟶ U) (t:T) := g(f t) : V ;; (ev U V g (ev T U f t)).
 
 End.
 
@@ -98,7 +101,7 @@ End.
 #       [ev_hastype](U, _ ⟾ V, g, f t, $a, [ev_hastype](T, _ ⟾ U, f, t, $a, $a)).
 
 
-# Definition compose1 (T U V Type) (f:T->U) (g:U->V) := _ : T->V ; _.
+# Definition compose1 (T U V Type) (f:T⟶U) (g:U⟶V) := _ : T⟶V ; _.
 
 # =	(T ⟼ _ ⟼ U ⟼ _ ⟼ V ⟼ _ ⟼ f ⟼ _ ⟼ g ⟼ _ ⟼ (pair (?1) (?2)))
 # 
@@ -118,22 +121,22 @@ End.
 # ...       
 
 
-Definition compose1 (T U V Type) (f:T->U) (g:U->V) := lambda x:T, (g (f x)) : T->V ; _.
+Definition compose1 (T U V Type) (f:T⟶U) (g:U⟶V) := lambda x:T, (g (f x)) : T⟶V ; _.
 
-Definition compose1 (T U V Type) (f:T->U) (g:U->V) := lambda x:T, _ : T->V ; _.
+Definition compose1 (T U V Type) (f:T⟶U) (g:U⟶V) := lambda x:T, _ : T⟶V ; _.
 
-Definition compose1 (T U V Type) (f:T->U) (g:U->V) := lambda x:T, (g (f _)) : T->V ; _.
+Definition compose1 (T U V Type) (f:T⟶U) (g:U⟶V) := lambda x:T, (g (f _)) : T⟶V ; _.
 
 
 End.
 
 Definition compose2 (T U V Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V.
 
-Definition compose3 (T U V Type) (f:T->U) (g:U->V) := lambda x:T, (g (f _)) : T->V.
+Definition compose3 (T U V Type) (f:T⟶U) (g:U⟶V) := lambda x:T, (g (f _)) : T⟶V.
 
 # in coq it looks like this:
 
-# Definition compose1 (T U V Type) (g:U -> V) (f:T -> U) (t:T) : V.
+# Definition compose1 (T U V Type) (g:U ⟶ V) (f:T ⟶ U) (t:T) : V.
 # Proof.
 #  apply g. apply f. assumption.
 # Qed.

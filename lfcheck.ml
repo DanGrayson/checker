@@ -367,7 +367,7 @@ and type_synthesis (surr:surrounding) (env:context) (m:lf_expr) : lf_expr * lf_t
   | CONS(x,y) ->
       let x',t = type_synthesis surr env x in
       let y',u = type_synthesis surr env y in (pos,CONS(x',y')), (pos,F_Sigma(newunused(),t,u))
-  | APPLY(head,args) -> (
+  | APPLY(head,args) ->
       match head with
       | TAC _ -> err env pos "tactic found in context where no type advice is available"
       | _ -> ();
@@ -395,9 +395,10 @@ and type_synthesis (surr:surrounding) (env:context) (m:lf_expr) : lf_expr * lf_t
         | _, CDR _ -> err env pos "pi2 expected a pair"
        )
       in
-      let (args',t) = repeat 0 env head_type args_passed args
-      in (pos,APPLY(head,args')), t
-     )
+      let (args',t) = repeat 0 env head_type args_passed args in
+      let e = pos, APPLY(head,args') in
+      let t = with_pos_of t (F_Singleton(e,t)) in (* this isn't quite like the algorithm in the paper, but it seems to work *)
+      e,t
 
 let type_validity (env:context) (t:lf_type) : lf_type =
   (* assume the kinds of constants, and the types in them, have been checked *)
