@@ -120,7 +120,7 @@ let ts_axiomCommand env pos name t =
   if show_rules then ( printf "        : %a\n%!" _e t );
   let v = Var name in
   ensure_new_name env pos v;
-  ts_bind (v,t) env
+  ts_bind pos (v,t) env
 
 let lf_axiomCommand env pos name t =
   if show_rules then ( printf "\nAxiom LF %s: %a\n%!" name  _t t );

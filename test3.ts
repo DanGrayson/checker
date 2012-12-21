@@ -1,25 +1,36 @@
 
 Theorem id0 { |- T Type } { |- t:T } : T ;; (_ |-> t |-> t).
 
-End.
+Theorem id0' { |- u Ulevel } { |- T:[U](u) } { |- t:*T } : *T ;;
 
-Theorem id0' (u Ulevel) (T:[U](u)) (t:*T) : *T ;; t .
+		(_ |-> _ |-> t |-> t).
 
 Definition id1 (T Type) (t:T) := t : T ;; t₂.
 
 Definition id1' (u Ulevel) (T:[U](u)) (t:*T) := t : *T ;; t₂.
 
-Theorem id2 (T U Type) (f:T->U) : T->U ;; f.
+Theorem id2 { |- T Type } { |- U Type } { |- f:T->U } : T->U ;;
 
-Theorem id2' (u Ulevel) (T U:[U](u)) (f:*T->*U) : *T->*U ;; f.
+		(_ |-> _ |-> f |-> f).
 
-Theorem id3 (T U Type) (f:T->U) (t:T) : U ;; (ev T U f t).
+Theorem id2' { |- u Ulevel } { |- T:[U](u) }{ |- U:[U](u) } { |- f:*T->*U } : *T->*U ;;
 
-Theorem id3' (u Ulevel) (T U:[U](u)) (f:*T->*U) (t:*T) : *U ;; (ev (El u T) (El u U) f t).
+		(_ |->_ |-> _ |-> f |-> f).
 
-Theorem compose0 (T U V Type) (g:U -> V) (f:T -> U) (t:T) : V ;; (ev U V g (ev T U f t)).
+Theorem id3 { |- T Type } { |- U Type } { |- f:T->U } { |- t:T } : U ;; (T |-> U |-> f |-> t |-> (ev T U f t)).
 
-Theorem compose0' (u Ulevel) (T U V:[U](u)) (g:*U -> *V) (f:*T -> *U) (t:*T) : *V ;; (ev (El u U) (El u V) g (ev (El u T) (El u U) f t)).
+Theorem id3' { |- u Ulevel } { |- T:[U](u) }{ |- U:[U](u) } { |- f:*T->*U } { |- t:*T} : *U ;;
+
+		( u |-> T |-> U |-> f |-> t |-> (ev (El_istype u T) (El_istype u U) f t)).
+
+Theorem compose0  { |- T Type } { |- U Type } { |- V Type } { |- g:U->V } { |- f:T->U } { |- t:T } : V ;;
+
+		(T |-> U |-> V |-> g |-> f |-> t |-> (ev U V g (ev T U f t))).
+
+Theorem compose0' { |- u Ulevel } { |- T:[U](u) } { |- U:[U](u) } { |- V:[U](u) }
+		  { |- g:*U -> *V } { |- f:*T -> *U } { |- t:*T } : *V ;; 
+
+		(u |-> T |-> U |-> V |-> g |-> f |-> t |-> (ev (El_istype u U) (El_istype u V) g (ev (El_istype u T) (El_istype u U) f t))).
 
 End.
 

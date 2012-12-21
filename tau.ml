@@ -20,7 +20,10 @@ let rec tau (pos:position) (env:context) e : lf_expr =
   | APPLY(h,args) -> with_pos pos (
       match h with
       | TAC _ -> raise NotImplemented
-      | V v -> raise NotImplemented
+      | V v -> 
+	  printf " tau - not implemented - e = %a\n%!" _e e;
+	  print_context (Some 10) stdout env;
+	  raise NotImplemented
       | FUN _ -> raise NotImplemented
       | U uh -> raise (TypeCheckingFailure(env, [pos, "a u-expression doesn't have a type"]))
       | T th -> raise (TypeCheckingFailure(env, [pos, "a t-expression doesn't have a type"]))
@@ -45,7 +48,7 @@ let rec tau (pos:position) (env:context) e : lf_expr =
           | O_lambda -> (
               match args with 
               | ARG(t,ARG((_,LAMBDA(x,o)),END)) ->
-                  Helpers.make_T_Pi t (x, tau pos (ts_bind (x,t) env) o)
+                  Helpers.make_T_Pi t (x, tau pos (ts_bind pos (x,t) env) o)
               | _ -> raise (TypeCheckingFailure(env, [pos, "[lambda] with malformed branches: " ^ lf_expr_to_string e])))
           | O_forall -> (
               match args with 

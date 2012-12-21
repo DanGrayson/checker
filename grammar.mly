@@ -462,7 +462,9 @@ unmarked_ts_judgment:
 	{ add_definition x t }
 
     | Turnstile a= ts_expr Type
-	{ F_APPLY(F_istype, [a]) }
+	{ let v = Var "t" in
+	  let pos = get_pos a in
+	  F_Sigma(v, with_pos pos (F_Singleton(a,texp)), with_pos pos (F_APPLY(F_istype, [var_to_lf_pos pos v]))) }
 
     | Wlbracket a= ts_expr Wequal b= ts_expr Wrbracket
 	{ F_APPLY(F_type_equality, [a;b]) }

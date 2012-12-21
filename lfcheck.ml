@@ -25,19 +25,19 @@ exception TermEquivalenceFailure
 exception TypeEquivalenceFailure
 exception SubtypeFailure
 
-let abstraction1 (env:context) = function
-  | ARG(t,ARG((_,LAMBDA(x, _)),_)) -> ts_bind (x,t) env
+let abstraction1 pos (env:context) = function
+  | ARG(t,ARG((_,LAMBDA(x, _)),_)) -> ts_bind pos (x,t) env
   | _ -> env
 
-let abstraction2 (env:context) = function
-  | ARG(_,ARG(_,ARG(n,ARG((_,LAMBDA(x,_)),_)))) -> ts_bind (x,(get_pos n, make_T_El n)) env
+let abstraction2 pos (env:context) = function
+  | ARG(_,ARG(_,ARG(n,ARG((_,LAMBDA(x,_)),_)))) -> ts_bind pos (x,(get_pos n, make_T_El n)) env
   | _ -> env
 
-let abstraction3 (env:context) = function
+let abstraction3 pos (env:context) = function
   | ARG(f,ARG(_,ARG((_,LAMBDA(x, _)),_))) -> 
       let tf = tau env f in (
       match unmark tf with
-      | APPLY(T T_Pi, ARG(t, _)) -> ts_bind (x,t) env
+      | APPLY(T T_Pi, ARG(t, _)) -> ts_bind pos (x,t) env
       | _ -> env)
   | _ -> env
 
@@ -50,10 +50,11 @@ let ts_binders = [
 ]
 
 let apply_ts_binder env i e =
+  let pos = get_pos e in
   match unmark e with
   | APPLY(h,args) -> (
       try
-        (List.assoc (h,i) ts_binders) env args
+        (List.assoc (h,i) ts_binders) pos env args
       with
         Not_found -> env)
   | _ -> raise Internal

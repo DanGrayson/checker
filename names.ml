@@ -87,9 +87,9 @@ let def_bind v (pos:position) o t (env:context) =
   ensure_new_name env pos v;
   (v, (pos,F_Singleton(o,t))) :: env
 
-let ts_bind (v,t) env = 
-  (newfresh (Var "h") , hastype (var_to_lf v) t) :: 
-  (v,oexp) ::
+let ts_bind pos (v,t) env = 
+  let v' = newfresh v in
+  (v, with_pos pos (F_Sigma(v', oexp, new_pos pos (hastype (var_to_lf v') t)))) ::
   env
 
 let new_hole = 

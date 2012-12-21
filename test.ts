@@ -7,6 +7,9 @@ Variable T' U V X Y Type.
 Axiom t0: T.
 Axiom x0 : X.
 Axiom f : T⟶T.
+
+Check LF x0.
+
 Check TS f t0.
 
 Axiom 你好 : T⟶T.
