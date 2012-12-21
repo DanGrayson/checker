@@ -24,17 +24,13 @@ let lf_expr_head_table = [
   O O_J, "J"  ; O O_rr0, "rr0"  ; O O_rr1, "rr1" 
 ]
 
+let expr_head_to_string h = List.assoc h lf_expr_head_table
+
 let lf_expr_heads = List.map fst lf_expr_head_table
 
 let swap (x,y) = (y,x)
 
 let lf_expr_head_strings = List.map swap lf_expr_head_table
-
-let uhead_to_string h = List.assoc (U h) lf_expr_head_table
-
-let thead_to_string h = List.assoc (T h) lf_expr_head_table
-
-let ohead_to_string h = List.assoc (O h) lf_expr_head_table
 
 let tactic_to_string : tactic_expr -> string = function
   | Tactic_hole n -> "?" ^ string_of_int n

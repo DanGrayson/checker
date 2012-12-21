@@ -87,7 +87,7 @@ let rec occurs_in_kind w = function
 *)
 
 (*
-  Example of pretty printing:
+  Example of pretty printing of variables:
 
   x$111 |-> ... x$111 ... x$222 ... x2 ...
 
@@ -136,120 +136,152 @@ let var_chooser x subs occurs_in e =
 
 let occurs_in_list occurs_in x args = List.exists (occurs_in x) args
 
-let paren k = if String.contains k ' ' then "(" ^ k ^ ")" else k
+(* these precedences mirror those in grammar.mly: *)
+type associativity = RIGHT | LEFT | NONASSOC
+type precedence = int * associativity
+type smart_string = precedence * string
+let bottom_prec = 0,NONASSOC
+let colon_prec = bottom_prec
+let comma_prec = bottom_prec
+let binder_prec = 10,RIGHT
+let arrow_prec = 20,RIGHT
+let star_prec = 30,NONASSOC
+let times_prec = 40,RIGHT
+let slash_prec = 50,LEFT
+let start_prec = 60,NONASSOC
+let apply_prec = 70,NONASSOC
+let list_prec = 80,LEFT
+let spine_prec = 90,LEFT
+let subscript_prec = 100,LEFT
+let top_prec = 100,NONASSOC
+type choice = REDUCE | SHIFT | NEITHER
 
-let p1 k = if String.contains k ' ' then "(π₁ (" ^ k ^ "))" else k ^ "₁"
+let choose (production:precedence) (token:precedence) =
+  (* this algorithm mirrors the behavior of yacc and menhir *)
+  let (p,_) = production in
+  let (t,a) = token in
+  if p > t then REDUCE else
+  if p < t then SHIFT else
+    match a with
+    | RIGHT -> SHIFT
+    | LEFT -> REDUCE
+    | NONASSOC -> NEITHER
 
-let p2 k = if String.contains k ' ' then "(π₂ (" ^ k ^ "))" else k ^ "₂"
+(* to decide whether to parenthesize while printing something like
 
-let rec spine_application_to_string p_arg head_string args = 
-  args_fold (fun accu arg -> accu ^ " " ^ p_arg arg) p1 p2 head_string args
+       a op1 b     op     c op2 d
 
-let spine_to_string p_arg args = 
-  args_fold
-    (fun accu arg -> accu ^ ";" ^ p_arg arg)
-    (fun accu -> accu ^ ";π₁")
-    (fun accu -> accu ^ ";π₂")
-    "" args
+    where op1,op,op2 have precedences p1,p,p2:
 
-let target_paren target k = if target || (not (String.contains k ' ')) then k else "(" ^ k ^ ")"
+   choose p1 p = SHIFT       (a op1 b)
+   choose p1 p = REDUCE       a op1 b
+   
+   choose p p2 = SHIFT        c op2 d
+   choose p p2 = REDUCE      (c op2 d)
 
-let rec list_application_to_string p_hd p_arg (h,args) = 
+*)
+
+let paren_left p (p1,s) = if choose p1 p = REDUCE then s else "(" ^ s ^ ")"
+
+let paren_right p (p2,s) = if choose p p2 = SHIFT then s else "(" ^ s ^ ")"
+
+let mark_top s = top_prec, s
+
+let rec list_application_to_string p_hd p_arg (head,args) : smart_string = 
   List.fold_left
-    (fun accu arg -> accu ^ " " ^ p_arg arg)
-    (p_hd h)
-    args
+    (fun accu arg -> list_prec, paren_left list_prec accu ^ " " ^ paren_right list_prec (p_arg arg))
+    (p_hd head) args
 
-let rec lf_expr_to_string_with_subs' subs e =   (* would be better to implement parsing precedences *)
-  match unmark e with
-  | LAMBDA(x,body) -> 
-      let w,subs = var_chooser x subs occurs_in_expr body in
-      let s = lf_expr_to_string_with_subs' subs body in
-      concat [vartostring w;" ⟼ ";s]
-  | _  -> lf_expr_to_string_with_subs subs e
+let p1 k = subscript_prec, paren_left subscript_prec k ^ "₁"
 
-and lf_head_to_string_with_subs subs h =
+let p2 k = subscript_prec, paren_left subscript_prec k ^ "₂"
+
+let rec application_to_lf_string p_arg head args : smart_string = 
+  args_fold 
+    (fun accu arg -> list_prec, paren_left list_prec accu ^ " " ^ paren_right list_prec (p_arg arg))
+    p1 p2
+    head args
+
+let rec lf_head_to_string_with_subs subs h : string =
   match h with
   | V v -> vartostring (var_sub subs v)
-  | U _ | T _ | O _ -> "[" ^ List.assoc h lf_expr_head_table ^ "]"
+  | U _ | T _ | O _ -> "[" ^ expr_head_to_string h ^ "]"
   | TAC tac -> tactic_to_string tac
   | FUN(f,t) ->
       let f = lf_expr_to_string_with_subs subs f in
       let t = lf_type_to_string_with_subs subs t in
-      concat["(";f;" : ";t;")"]
+      concat["("; paren_left colon_prec f; " : "; paren_right colon_prec t; ")"]
 
-and lf_expr_to_string_with_subs subs e = 
+and lf_expr_to_string_with_subs subs e : smart_string = 
   match unmark e with
   | LAMBDA(x,body) -> 
       let w,subs = var_chooser x subs occurs_in_expr body in
-      let s = lf_expr_to_string_with_subs' subs body in
-      concat ["(";vartostring (var_sub subs w);" ⟼ ";s;")"]
+      let s = lf_expr_to_string_with_subs subs body in
+      arrow_prec, concat [vartostring (var_sub subs w);" ⟼ ";paren_right arrow_prec s]
   | CONS(x,y) -> 
       let x = lf_expr_to_string_with_subs subs x in
       let y = lf_expr_to_string_with_subs subs y in
-      concat ["(pair ";x;" ";y;")"]
-  | APPLY(V v,END) -> vartostring (var_sub subs v)
-  | APPLY(TAC tac,END) -> tactic_to_string tac
+      top_prec, concat ["(pair ";paren_left list_prec x;" ";paren_left list_prec y;")"]
   | APPLY(h,args) -> 
-      let h = lf_head_to_string_with_subs subs h in (* don't add a space to h here *)
-      let r = spine_application_to_string (lf_expr_to_string_with_subs subs) h args in
-      paren r
+      let h = top_prec, lf_head_to_string_with_subs subs h in
+      application_to_lf_string (lf_expr_to_string_with_subs subs) h args
 
-and dependent_sub subs prefix infix target (v,t,u) =
+and dependent_sub subs prefix infix infix_prec (v,t,u) =
   let used = occurs_in_type v u in
   let w,subs = var_chooser v subs occurs_in_type u in
-  let u = lf_type_to_string_with_subs' true subs u in
-  let t = lf_type_to_string_with_subs' used subs t in
-  let k = (
-    if used then 
-      concat ["("; vartostring w; ":"; t; ")"; infix ; u]
-    else
-      concat [t; infix ; u]) in
-  target_paren target k
+  let u = lf_type_to_string_with_subs subs u in
+  let t = lf_type_to_string_with_subs subs t in
+  infix_prec, 
+  (
+   if used then 
+     concat ["("; vartostring w; ":"; paren_right colon_prec t; ")"]
+   else
+     paren_left infix_prec t
+  ) 
+  ^ infix 
+  ^ paren_right infix_prec u
 
-and lf_type_to_string_with_subs' target subs (_,t) = match t with
-  | F_Pi   (v,t,u) -> dependent_sub subs "∏ " " ⟶ " target (v,t,u)
-  | F_Sigma(v,t,u) -> dependent_sub subs "Σ " " × " target (v,t,u)
+and lf_type_to_string_with_subs subs (_,t) : smart_string = match t with
+  | F_Pi   (v,t,u) -> dependent_sub subs "∏ " " ⟶ " arrow_prec (v,t,u)
+  | F_Sigma(v,t,u) -> dependent_sub subs "Σ " " × " times_prec (v,t,u)
   | F_Singleton(x,t) -> 
       let x = lf_expr_to_string_with_subs subs x in
       let t = lf_type_to_string_with_subs subs t in
-      concat ["Singleton(";x;" : ";t;")"]
+      top_prec, concat ["Singleton(";paren_left colon_prec x;" : ";paren_right colon_prec t;")"]
   | F_APPLY(hd,args) -> 
-      let k = list_application_to_string lf_type_head_to_string (lf_expr_to_string_with_subs subs) (hd,args) in
-      target_paren target k
-
-and lf_type_to_string_with_subs subs t = lf_type_to_string_with_subs' true subs t
-
+      list_application_to_string (mark_top <<- lf_type_head_to_string) (lf_expr_to_string_with_subs subs) (hd,args)
 
 let rec lf_kind_to_string_with_subs subs = function
-  | K_type -> "type"
+  | K_type -> top_prec, "type"
   | K_Pi(v,t,k) -> 
       let used = occurs_in_kind v k in
       let w,subs = var_chooser v subs occurs_in_kind k in
       let prefix = "∏ " in
       let infix = " ⟶ " in
-      let t = lf_type_to_string_with_subs' false subs t in
+      let infix_prec = arrow_prec in
+      let t = lf_type_to_string_with_subs subs t in
       let k = lf_kind_to_string_with_subs subs k in
       if used then
-        concat ["(";prefix; vartostring v; ":"; t; ") "; k]
+        binder_prec, concat ["(";prefix; vartostring v; ":"; paren_right colon_prec t; ") "; paren_right binder_prec k]
       else
-        concat [t; infix; k]
+        infix_prec, concat [paren_left infix_prec t; infix; paren_right infix_prec k]
 
-let lf_expr_to_string = lf_expr_to_string_with_subs []
+let spine_to_string args = paren_left bottom_prec (
+  args_fold
+    (fun accu arg -> spine_prec, paren_left spine_prec accu ^ ";" ^ paren_right spine_prec (lf_expr_to_string_with_subs [] arg))
+    (fun accu -> spine_prec, paren_left spine_prec accu ^ ";π₁")
+    (fun accu -> spine_prec, paren_left spine_prec accu ^ ";π₂")
+    (top_prec,"") args)
 
-let lf_type_to_string = lf_type_to_string_with_subs []
+let lf_expr_to_string e = paren_right bottom_prec (lf_expr_to_string_with_subs [] e)
 
-let lf_type_to_string' target = lf_type_to_string_with_subs' target []
+let lf_type_to_string t = paren_right bottom_prec (lf_type_to_string_with_subs [] t)
 
-let lf_kind_to_string = lf_kind_to_string_with_subs []
+let lf_kind_to_string k = paren_right bottom_prec (lf_kind_to_string_with_subs [] k)
 
 (** Printing of TS terms in TS format. *)
 
-(** For LF expressions that are not TS terms, print [$$] and then the expression in LF format. *)
-
-let lf_expr_p e = "$$" ^ lf_expr_to_string e
-
-let lf_atomic_p e = "$$" ^ lf_expr_to_string e
+let lf_expr_p e = raise NotImplemented
 
 let locate f x =                        (* find the index of the element of the list x for which f is true *)
   let rec repeat i x =
@@ -275,58 +307,70 @@ let ends_in_paren s = s.[String.length s - 1] = '('
 
 let lf_head_to_string h = lf_head_to_string_with_subs [] h
 
-let rec paren_args_to_string hd args = (
+let rec application_to_ts_string hd args = top_prec, (
   args_fold
     (fun accu arg -> 
-      (if (ends_in_paren accu) then accu else accu ^ ",") ^ ts_expr_to_string arg)
-    (fun accu -> "[π₁](" ^ accu ^ ")")
+      (if (ends_in_paren accu) then accu else accu ^ ",") ^ paren_right comma_prec (ts_expr_to_string arg))
+    (fun accu -> "[π₁](" ^ accu ^ ")")	(* doesn't correspond to our parser *)
     (fun accu -> "[π₂](" ^ accu ^ ")")
     (hd ^ "(")
     args) ^ ")"
 
-and ts_expr_to_string e = 
-  (* 
-     We assume [oe] is a well typed LF expression of type uexp, texp, or oexp.
-     That ensures that the number of branches, the number of lambdas in each branch, and
-     the o-t-u identity of each branch is correct.
-   *)
+and lf_atomic_p h args = application_to_ts_string (lf_head_to_string h) args
+
+and ts_expr_to_string e : smart_string = 
   match unmark e with 
-  | CONS _ | LAMBDA _ -> lf_expr_p e            (* normally this branch will not be used *)
-  | APPLY(V v,END) -> vartostring v
+  | CONS(x,y) -> 
+      let x = ts_expr_to_string x in
+      let y = ts_expr_to_string y in
+      top_prec, concat ["(pair ";paren_left list_prec x;" ";paren_left list_prec y;")"] (* does not correspond to our parser *)
+  | LAMBDA(v,body) -> arrow_prec, vartostring v ^ " ⟾ " ^ paren_right arrow_prec (ts_expr_to_string body)
+  | APPLY(V v,END) -> top_prec, vartostring v
   | APPLY(h,args) -> 
       match h with
       | T T_Pi -> (
           match args with
           | ARG(t1,ARG((_,LAMBDA(x, t2)),END)) -> 
               if false
-              then concat ["(";ts_expr_to_string t1;" ⟶ ";ts_expr_to_string t2;")"]
-              else concat ["[" ^ lf_head_to_string h ^ ";";vartostring x;"](";ts_expr_to_string t1;",";ts_expr_to_string t2;")"]
-          | _ -> lf_atomic_p e)
+              then arrow_prec, concat [paren_left arrow_prec (ts_expr_to_string t1);" ⟶ ";paren_right arrow_prec (ts_expr_to_string t2)]
+              else top_prec, concat ["[" ^ expr_head_to_string h ^ ";";vartostring x;"](";
+				     paren_left comma_prec (ts_expr_to_string t1);",";
+				     paren_right comma_prec (ts_expr_to_string t2);")"]
+          | _ -> lf_atomic_p h args)
       | T T_Sigma -> (
           match args with ARG(t1,ARG((_,LAMBDA(x, t2)),END)) -> 
-            "[" ^ lf_head_to_string h ^ ";" ^ vartostring x ^ "]" ^
-            "(" ^ ts_expr_to_string t1 ^ "," ^ ts_expr_to_string t2 ^ ")"
-          | _ -> lf_atomic_p e)
+            top_prec, "[" ^ expr_head_to_string h ^ ";" ^ vartostring x ^ "]" ^
+            "(" ^ paren_left comma_prec (ts_expr_to_string t1) ^ "," ^ paren_right comma_prec (ts_expr_to_string t2) ^ ")"
+          | _ -> lf_atomic_p h args)
       | O O_ev -> (
           match args with 
           | ARG(f,ARG(o,ARG((_,LAMBDA(x, t)),END))) ->
-              "[ev;" ^ vartostring x ^ "](" ^ ts_expr_to_string f ^ "," ^ ts_expr_to_string o ^ "," ^ ts_expr_to_string t ^ ")"
+              top_prec, "[ev;" ^ vartostring x ^ "](" ^ 
+	      paren_left comma_prec (ts_expr_to_string f) ^ "," ^ 
+	      paren_left comma_prec (ts_expr_to_string o) ^ "," ^ 
+	      paren_left comma_prec (ts_expr_to_string t) ^ ")"
           | ARG(f,ARG(o,END)) ->
-              "[ev;_](" ^ ts_expr_to_string f ^ "," ^ ts_expr_to_string o ^ ")"
-          | _ -> lf_atomic_p e)
+              top_prec, "[ev;_](" ^ 
+	      paren_left comma_prec (ts_expr_to_string f) ^ "," ^ 
+	      paren_left comma_prec (ts_expr_to_string o) ^ ")"
+          | _ -> lf_atomic_p h args)
       | O O_lambda -> (
           match args with 
           | ARG(t,ARG((_,LAMBDA(x,o)),END)) ->
-              "[λ;" (* lambda *) ^ vartostring x ^ "](" ^ ts_expr_to_string t ^ "," ^ ts_expr_to_string o ^ ")"
-          | _ -> lf_atomic_p e)
+              top_prec, "[λ;" (* lambda *) ^ vartostring x ^ "](" ^ 
+	      paren_left comma_prec (ts_expr_to_string t) ^ "," ^ 
+	      paren_left comma_prec (ts_expr_to_string o) ^ ")"
+          | _ -> lf_atomic_p h args)
       | O O_forall -> (
           match args with 
           | ARG(u,ARG(u',ARG(o,ARG((_,LAMBDA(x,o')),END)))) ->
-              "[forall;" ^ vartostring x ^ "](" ^ 
-              ts_expr_to_string u ^ "," ^ ts_expr_to_string u' ^ "," ^ 
-              ts_expr_to_string o ^ "," ^ ts_expr_to_string o' ^ ")"
-          | _ -> lf_atomic_p e)
-      | _ -> paren_args_to_string (lf_head_to_string h) args
+              top_prec, "[forall;" ^ vartostring x ^ "](" ^ 
+              paren_left comma_prec (ts_expr_to_string u) ^ "," ^ 
+	      paren_left comma_prec (ts_expr_to_string u') ^ "," ^ 
+              paren_left comma_prec (ts_expr_to_string o) ^ "," ^ 
+	      paren_left comma_prec (ts_expr_to_string o') ^ ")"
+          | _ -> lf_atomic_p h args)
+      | _ -> lf_atomic_p h args
 
 (** Printing functions for definitions, provisional. *)
 
@@ -338,7 +382,9 @@ let parmstostring = function
             (String.concat " " (List.map (vartostring <<- snd) uexp_parms));
             ":Univ";
             (String.concat "" (List.map 
-                                 (fun (pos,(u,v)) -> concat ["; "; ts_expr_to_string u; "="; ts_expr_to_string v]) 
+                                 (fun (pos,(u,v)) -> concat ["; "; 
+							     paren_left bottom_prec (ts_expr_to_string u); "="; 
+							     paren_right bottom_prec (ts_expr_to_string v)]) 
                                  ueqns));
             ")"]
       else [];
@@ -348,7 +394,8 @@ let parmstostring = function
             ":Type)"]
       else [];
       List.flatten (List.map 
-                      (fun (v,t) -> ["(";vartostring v; ":"; ts_expr_to_string t;")"])
+                      (fun (v,t) -> ["(";vartostring v; ":"; 
+				     paren_right colon_prec (ts_expr_to_string t);")"])
                       oexp_parms)
     ]
 
@@ -361,10 +408,14 @@ let ulevel_context_to_string (UContext(uexp_parms,ueqns)) =
             (String.concat " " (List.map (vartostring <<- snd) uexp_parms));
             ":Univ";
             (String.concat "" (List.map 
-                                 (fun (pos,(u,v)) -> concat ["; "; ts_expr_to_string u; "="; ts_expr_to_string v]) 
+                                 (fun (pos,(u,v)) -> concat ["; "; 
+							     paren_left bottom_prec (ts_expr_to_string u); "="; 
+							     paren_left bottom_prec (ts_expr_to_string v)]) 
                                  ueqns));
             ]
       else [] ]
+
+let ts_expr_to_string e = paren_left bottom_prec (ts_expr_to_string e)
 
 exception Limit
 
@@ -386,7 +437,7 @@ let _ts file x = output_string file (ts_expr_to_string x)
 
 let _tac file tac = output_string file (tactic_to_string tac)
 
-let _s file x = output_string file (spine_to_string lf_expr_to_string x)
+let _s file x = output_string file (spine_to_string x)
 
 let _e file x = output_string file (lf_expr_to_string x)
 

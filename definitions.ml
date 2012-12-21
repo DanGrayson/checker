@@ -160,6 +160,7 @@ let defCommand env defs =
       let tm'' = Lfcheck.term_normalization env tm' tp' in
       if not (Alpha.UEqual.term_equiv empty_uContext tm' tm'') then
       printf "       %a = %a [normalized]\n%!" _v v  _e tm'';
+      printf "       %a = %a [normalized, TS format]\n%!" _v v  _ts tm'';
       let tp'' = Lfcheck.type_normalization env tp' in
       if not (Alpha.UEqual.type_equiv empty_uContext tp' tp'') then
       printf "       %a : %a [normalized]\n%!" _v v  _t tp'';
