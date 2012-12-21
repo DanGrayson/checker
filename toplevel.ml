@@ -15,7 +15,7 @@ type command' =
   | Variable of string list
   | Alpha of lf_expr * lf_expr
   | TDefinition of (position * string * Definitions.parm list * lf_expr * lf_expr option)
-  | Theorem of (position * string * Definitions.parm list * lf_expr * lf_expr option)
+  | Theorem of (position * string * lf_expr * lf_type)
   | ODefinition of (position * string * Definitions.parm list * lf_expr * lf_expr * lf_expr option)
   | TeqDefinition of (position * string * Definitions.parm list * lf_expr * lf_expr)
   | OeqDefinition of (position * string * Definitions.parm list * lf_expr * lf_expr * lf_expr)

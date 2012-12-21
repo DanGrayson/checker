@@ -57,12 +57,12 @@ rule expr_tokens = parse
 
 (* command tokens *)
 
-  | "Check" space "Universes" { WCheckUniverses }
+  | "Check" space "Universes" { CheckUniverses }
   | "LF" { LF }
   | "TS" { TS }
-  | "Check" { WCheck }
+  | "Check" { Check }
   | "Axiom" { Axiom }
-  | "Rule" { WRule }
+  | "Rule" { Rule }
   | "Alpha" { WAlpha }
   | "Variable" { WVariable }
   | "Definition" { Definition }
@@ -80,17 +80,17 @@ rule expr_tokens = parse
 
 (* punctuation *)
 
-  | ';' ';'  { DoubleSemicolon }
+  | ";;"  { DoubleSemicolon }
   | ';'  { Semicolon }
   | ','  { Wcomma }
   | '~'  { Wtilde }
   | '='  { Wequal }
-  | '>' '='  { Wgreaterequal }
+  | ">="  { Wgreaterequal }
   | '>' { Wgreater }
-  | '<' '='  { Wlessequal }
+  | "<="  { Wlessequal }
   | '_' { Wunderscore }
   | '<' { Wless }
-  | ':' '='  { Colonequal }
+  | ":="  { Colonequal }
   | '.'  { Wperiod }
   | '('  { Wlparen }
   | ')'  { Wrparen }
@@ -103,16 +103,16 @@ rule expr_tokens = parse
 
 (* LF-TS punctuation pairs *)
 
-  | (     '-' '>' | "⟶" ) { Arrow        }
-  | (     '=' '>' | "⇒" ) { DoubleArrow }
+  | ( "->" | "⟶" ) { Arrow        }
+  | ( "=>" | "⇒" ) { DoubleArrow }
 
-  | ( '|' '-' '>' | "⟼" ) { ArrowFromBar }
-  | ( '|' '=' '>' | "⟾" ) { DoubleArrowFromBar }
+  | ( "|->" | "⟼" ) { ArrowFromBar }
+  | ( "|=>" | "⟾" ) { DoubleArrowFromBar }
 
   | '/'       { Slash }
 
   | ':'     { Colon } 
-  | ':' ':' { DoubleColon }
+  | "::" { DoubleColon }
 
 (* TS punctuation *)
 
@@ -136,8 +136,8 @@ rule expr_tokens = parse
   | "Singleton" { Singleton }
   | "Σ" { KSigma }
   | "Sigma" { KSigma }
-  | "×" { Wtimes }
-  | "**" { Wtimes }
+  | "×" { Times }
+  | "**" { Times }
 
   | "pair" { Kpair }
 

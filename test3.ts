@@ -1,5 +1,7 @@
 
-Theorem id0 (T Type) (t:T) : T ;; t.
+Theorem id0 { |- T Type } { |- t:T } : T ;; (_ |-> t |-> t).
+
+End.
 
 Theorem id0' (u Ulevel) (T:[U](u)) (t:*T) : *T ;; t .
 

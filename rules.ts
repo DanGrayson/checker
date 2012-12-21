@@ -66,11 +66,11 @@ Rule 3.4.26 ev_eq { ⊢ T Type }
 
 	      { ⊢ o : T } { ⊢ o' : T } 
 
-	      ( { ⊢ x : T } [ U/x = U'/x ] ) ⇒
-
 	      [ f = f' : [∏](T,U) ] ⇒ 
 
 	      [ o = o' : T ] ⇒ 
+
+	      ( { ⊢ x : T } [ U/x = U'/x ] ) ⇒
 
 	      [ [ev](f,o,U) = [ev](f',o',U') : U/o ].
 

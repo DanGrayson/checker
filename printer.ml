@@ -183,7 +183,7 @@ and lf_expr_to_string_with_subs subs e =
   | LAMBDA(x,body) -> 
       let w,subs = var_chooser x subs occurs_in_expr body in
       let s = lf_expr_to_string_with_subs' subs body in
-      concat ["(";vartostring (var_sub subs x);" ⟼ ";s;")"]
+      concat ["(";vartostring (var_sub subs w);" ⟼ ";s;")"]
   | CONS(x,y) -> 
       let x = lf_expr_to_string_with_subs subs x in
       let y = lf_expr_to_string_with_subs subs y in

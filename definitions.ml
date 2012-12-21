@@ -171,9 +171,8 @@ let tDefCommand env (pos,name,parms,t,d1) =
   let defs = tDefinition pos name (fixParmList parms) t d1 in
   defCommand env defs
 
-let theoremCommand env (pos,name,parms,t,d1) = 
-  let defs = theorem pos name (fixParmList parms) t d1 in
-  defCommand env defs
+let theoremCommand env (pos,name,deriv,thm) = 
+  defCommand env [ Var name, pos, deriv, thm ]
 
 let oDefCommand env (pos,name,parms,o,t,d1) = 
   let defs = oDefinition pos name (fixParmList parms) o t d1 in
