@@ -74,8 +74,8 @@ and apply_args (head:lf_expr) args =
     | LAMBDA(v,body) -> (
         match args with
         | ARG(x,args) -> repeat (subst [(v,x)] body) args
-        | CAR args -> raise (GeneralError "pi1 expected a pair")
-	| CDR args -> raise (GeneralError "pi2 expected a pair")
+        | CAR args -> raise (GeneralError "pi1 expected a pair (1)")
+	| CDR args -> raise (GeneralError "pi2 expected a pair (1)")
         | END -> head)
   in repeat head args
 

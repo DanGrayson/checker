@@ -138,11 +138,14 @@ let occurs_in_list occurs_in x args = List.exists (occurs_in x) args
 
 (* these precedences mirror those in grammar.mly: *)
 type associativity = RIGHT | LEFT | NONASSOC
+let assoc_to_string = function RIGHT -> "RIGHT" | LEFT -> "LEFT" | NONASSOC -> "NONASSOC"
 type precedence = int * associativity
+let prec_to_string (i,a) = "(" ^ string_of_int i ^ "," ^ assoc_to_string a ^ ")"
 type smart_string = precedence * string
 let bottom_prec = 0,NONASSOC
-let colon_prec = bottom_prec
-let comma_prec = bottom_prec
+let spine_prec = 5,LEFT
+let colon_prec = 7,NONASSOC
+let comma_prec = 8,NONASSOC
 let binder_prec = 10,RIGHT
 let arrow_prec = 20,RIGHT
 let star_prec = 30,NONASSOC
@@ -151,9 +154,27 @@ let slash_prec = 50,LEFT
 let start_prec = 60,NONASSOC
 let apply_prec = 70,NONASSOC
 let list_prec = 80,LEFT
-let spine_prec = 90,LEFT
-let subscript_prec = 100,LEFT
-let top_prec = 100,NONASSOC
+let top_level = 100
+let subscript_prec = top_level,LEFT
+let top_prec = top_level,NONASSOC
+
+    (* 
+
+       We still need to arrange for all the parentheses in expressions like these:
+
+	   ([ev] f o (_ |-> U))
+
+	   ([ev] f ([ev] g t _) _)
+
+	   _ |-> ([ev] g t _)
+
+       and none here:
+
+	   _ |-> _ |-> T
+
+     *)
+
+
 type choice = REDUCE | SHIFT | NEITHER
 
 let choose (production:precedence) (token:precedence) =
@@ -175,9 +196,11 @@ let choose (production:precedence) (token:precedence) =
 
    choose p1 p = SHIFT       (a op1 b)
    choose p1 p = REDUCE       a op1 b
+   choose p1 p = NEITHER     (a op1 b)
    
    choose p p2 = SHIFT        c op2 d
    choose p p2 = REDUCE      (c op2 d)
+   choose p p2 = NEITHER     (c op2 d)
 
 *)
 
@@ -185,7 +208,11 @@ let paren_left p (p1,s) = if choose p1 p = REDUCE then s else "(" ^ s ^ ")"
 
 let paren_right p (p2,s) = if choose p p2 = SHIFT then s else "(" ^ s ^ ")"
 
+let paren_always (p,s) = "(" ^ s ^ ")"
+
 let mark_top s = top_prec, s
+
+let make_top ((i,a),s) = top_prec, if i = top_level then s else "(" ^ s ^ ")"
 
 let rec list_application_to_string p_hd p_arg (head,args) : smart_string = 
   List.fold_left
@@ -196,11 +223,12 @@ let p1 k = subscript_prec, paren_left subscript_prec k ^ "₁"
 
 let p2 k = subscript_prec, paren_left subscript_prec k ^ "₂"
 
-let rec application_to_lf_string p_arg head args : smart_string = 
+let application_to_lf_string p_arg head args : smart_string =
+  make_top (
   args_fold 
-    (fun accu arg -> list_prec, paren_left list_prec accu ^ " " ^ paren_right list_prec (p_arg arg))
+    (fun accu arg -> spine_prec, paren_left spine_prec accu ^ " " ^ paren_right spine_prec (p_arg arg))
     p1 p2
-    head args
+    head args)
 
 let rec lf_head_to_string_with_subs subs h : string =
   match h with
@@ -221,6 +249,7 @@ and lf_expr_to_string_with_subs subs e : smart_string =
   | CONS(x,y) -> 
       let x = lf_expr_to_string_with_subs subs x in
       let y = lf_expr_to_string_with_subs subs y in
+      (* printf " printing pair: prec x = %s, prec y = %s\n\t x = %s\n\t y = %s\n%!" (prec_to_string (fst x)) (prec_to_string (fst y)) (snd x) (snd y); *)
       top_prec, concat ["(pair ";paren_left list_prec x;" ";paren_left list_prec y;")"]
   | APPLY(h,args) -> 
       let h = top_prec, lf_head_to_string_with_subs subs h in

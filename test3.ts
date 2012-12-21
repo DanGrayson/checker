@@ -1,18 +1,3 @@
-Check LF ∏_istype.
-
-Theorem compose0'' { |- u Ulevel, T U V : [U](u),
-			g : *[∀;x](u,u,U,V), 
-			f : *[∀;x](u,u,T,U), t:*T }
-
-		 : *V ;;
-
-		 u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 
-		 (ev (El_istype u U) (El_istype u V) 
-		 	(cast (El_istype u (forall u u U V)) 
-			      (∏_istype (El_istype u U) (El_istype u V))
-			      _ g) (ev (El_istype u T) (El_istype u U) f t)).
-
-End.
 
 Theorem id0 { ⊢ T Type, t:T } : T ;; _ ⟼ t ⟼ t.
 
@@ -30,22 +15,35 @@ Theorem id2 { ⊢ T U Type, f:T⟶U } : T⟶U ;; _ ⟼ _ ⟼ f ⟼ f.
 
 Theorem id2' { ⊢ u Ulevel, T:[U](u) }{ ⊢ U:[U](u), f:*T⟶*U } : *T⟶*U ;; _ ⟼_ ⟼ _ ⟼ f ⟼ f.
 
-Theorem id3 { ⊢ T Type, U Type, f:T⟶U, t:T } : U ;; T ⟼ U ⟼ f ⟼ t ⟼ (ev T U f t).
-
-Check LF ev_hastype.
+Theorem id3 { ⊢ T Type, U Type, f:T⟶U, t:T } : U ;; T ⟼ U ⟼ f ⟼ t ⟼ (ev_hastype T U f t).
 
 Theorem id3' { ⊢ u Ulevel, T:[U](u) }{ ⊢ U:[U](u), f:*T⟶*U, t:*T} : *U ;;
-		u ⟼ T ⟼ U ⟼ f ⟼ t ⟼ (ev (El_istype u T) (El_istype u U) f t).
+		u ⟼ T ⟼ U ⟼ f ⟼ t ⟼ (ev_hastype (El_istype u T) (El_istype u U) f t).
 
 Theorem compose0  { ⊢ T Type, U Type, V Type, g:U⟶V, f:T⟶U, t:T } : V ;;
-		T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ (ev U V g (ev T U f t)).
+		T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ (ev_hastype U V g (ev_hastype T U f t)).
 
 Theorem compose0' { ⊢ u Ulevel, T:[U](u), U:[U](u), V:[U](u), g:*U ⟶ *V, f:*T ⟶ *U, t:*T } : *V ;; 
-		u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ (ev (El_istype u U) (El_istype u V) g (ev (El_istype u T) (El_istype u U) f t)).
+		u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ (ev_hastype (El_istype u U) (El_istype u V) g (ev_hastype (El_istype u T) (El_istype u U) f t)).
+
+Theorem compose0'' { |- u Ulevel, T U V : [U](u), g : *[∀;x](u,u,U,V), f : *[∀;x](u,u,T,U), t:*T } : *V 
+	;;
+		 u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 
+		 (ev_hastype (El_istype u U) (El_istype u V) 
+		 	(cast (El_istype u (forall u u U V)) 
+			      (∏_istype (El_istype u U) (El_istype u V))
+			      g 
+			      (El_forall_reduction u u U V))
+			(ev_hastype (El_istype u T) (El_istype u U) 
+		 	(cast (El_istype u (forall u u T U)) 
+			      (∏_istype (El_istype u T) (El_istype u U))
+			      f
+			      (El_forall_reduction u u T U))
+			t)).
 
 End.
 
-       compose0 = (T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ (ev U V g (ev T U f t)))
+       compose0 = (T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ (ev_hastype U V g (ev_hastype T U f t)))
 
        compose0 : (T:(T0:texp) × istype T0) ⟶ 
        		  (U:(U0:texp) × istype U0) ⟶ 
@@ -89,15 +87,15 @@ Theorem id (T Type) (U:T ⟶ Type) (g: forall (t:T), U t) (t:T) : U t .
 Theorem id (T Type) (t:T ⊢ U Type) (g: forall (t:T), t\\U) (t:T) : t\\U .
 
 
-Definition compose0 (T U V Type) (g:U ⟶ V) (f:T ⟶ U) (t:T) := g(f t) : V ;; (ev U V g (ev T U f t)).
+Definition compose0 (T U V Type) (g:U ⟶ V) (f:T ⟶ U) (t:T) := g(f t) : V ;; (ev_hastype U V g (ev_hastype T U f t)).
 
 End.
 
 #Definition compose0 (T U V Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;; (
-#       ev_hastype U (_ ⟼ V) g ([ev] f t (_ ⟼ U)) $a (ev_hastype T (_ ⟼ U) f t $a $a)).
+#       ev_hastype_hastype U (_ ⟼ V) g ([ev_hastype] f t (_ ⟼ U)) $a (ev_hastype_hastype T (_ ⟼ U) f t $a $a)).
 
 #Definition compose0' (T U V Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;
-#       [ev_hastype](U, _ ⟾ V, g, f t, $a, [ev_hastype](T, _ ⟾ U, f, t, $a, $a)).
+#       [ev_hastype_hastype](U, _ ⟾ V, g, f t, $a, [ev_hastype_hastype](T, _ ⟾ U, f, t, $a, $a)).
 
 
 # Definition compose1 (T U V Type) (f:T⟶U) (g:U⟶V) := _ : T⟶V ; _.

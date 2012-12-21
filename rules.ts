@@ -16,7 +16,7 @@ Rule 3.4.11 oeqsymm { ⊢ T Type, x : T, y : T } [ x = y : T ] ⇒ [ y = x : T ]
 
 Rule 3.4.12 oeqtrans { ⊢ T Type, x : T, y : T, z : T } [ x = y : T ] ⇒ [ y = z : T ] ⇒ [ x = z : T ].
 
-Rule 3.4.13 cast { ⊢ T U Type, o : T } [ T = U ] ⇒ [ o : U ].
+Rule 3.4.13 cast { ⊢ T U Type, o : T } [ T = U ] ⇒ ⊢ o : U.
 
 Rule 3.4.14 oeqcast { ⊢ T U Type, x : T, y : T } [ x = y : T ] ⇒ [ T = U ] ⇒ [ x = y : U ].
 
@@ -35,10 +35,6 @@ Rule 3.4.20 El_eq_reflect { ⊢ M Ulevel, x : [U](M), y : [U](M) } [ *x = *y ] �
 Rule 3.4.21 ∏_istype { ⊢ T Type } { _ : T ⊢ U Type } ⊢ [∏](T,U) Type .
 
 Rule 3.4.22 ∏_eq { ⊢ T T' Type } { _ : T ⊢ U U' Type } [ T = T' ] ⇒ ( { ⊢ x : T } [ U/x = U'/x ] ) ⇒ [ [∏](T,U) = [∏](T',U') ].
-
-Rule 3.4.22.1 ∏_eq1 { ⊢ T T' Type } { _ : T ⊢ U Type } [ T = T' ] ⇒ [ [∏](T,U) = [∏](T',U) ].
-
-Rule 3.4.22.2 ∏_eq2 { ⊢ T Type } { _ : T ⊢ U U' Type } ( { ⊢ x : T } [ U/x = U'/x ] ) ⇒ [ [∏](T,U) = [∏](T,U') ].
 
 Rule 3.4.23 λ_hastype { ⊢ T Type } { _ : T ⊢ U Type } { x : T ⊢ o : U/x } ⊢ [λ](T,o) : [∏](T,U).
 
@@ -59,8 +55,6 @@ Rule 3.4.24.2 λ_equality2 { ⊢ T Type } { x : T ⊢ U U' Type, o o' : U/x }
 			[ [λ](T,o) = [λ](T,o') : [∏](T,U) ].
 
 Rule 3.4.25 ev_hastype { ⊢ T Type } { _ : T ⊢ U Type } { ⊢ f : [∏](T,U), o : T } ⊢ f o : U/o.
-
-Rule 3.4.25.1 ev { ⊢ T U Type, f : T -> U, o : T } ⊢ f o : U.  # non-dependent version
 
 Rule 3.4.26 ev_eq { ⊢ T Type, o o' : T } { _ : T ⊢ U U' Type } { ⊢ f f' : [∏](T,U) } 
 

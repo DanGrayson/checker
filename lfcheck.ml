@@ -129,9 +129,9 @@ let rec natural_type (env:context) (x:lf_expr) : lf_type =
         | ARG(x,args), F_Pi(v,a,b) -> repeat (i+1) args (subst_type (v,x) b)
         | ARG _, _ -> err env pos "at least one argument too many"
         | CAR args, F_Sigma(v,a,b) -> repeat (i+1) args a
-        | CAR _, _ -> err env pos "pi1 expected a pair"
+        | CAR _, _ -> err env pos "pi1 expected a pair (2)"
         | CDR args, F_Sigma(v,a,b) -> repeat (i+1) args b
-        | CDR _, _ -> err env pos "pi2 expected a pair"
+        | CDR _, _ -> err env pos "pi2 expected a pair (2)"
         | END, F_Pi(v,a,b) -> errmissingarg env pos a
         | END, t -> t
       in nowhere 5 (repeat 0 args t)
@@ -206,7 +206,7 @@ let rec term_equivalence (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : uni
       | _ -> raise Internal)
   | F_APPLY(j,args) ->
       if j == F_uexp then (
-	printf "warning: ulevel comparison judged true: %a = %a\n%!" _e x _e y;
+	if !debug_mode then printf "warning: ulevel comparison judged true: %a = %a\n%!" _e x _e y;
        )
       else (
 	let x = head_normalization env x in
@@ -410,8 +410,8 @@ and type_synthesis (surr:surrounding) (env:context) (m:lf_expr) : lf_expr * lf_t
             (CDR args', t)
         | t, END -> END, (pos,t)
         | _, ARG(arg,_) -> err env (get_pos arg) "extra argument"
-        | _, CAR _ -> err env pos "pi1 expected a pair"
-        | _, CDR _ -> err env pos "pi2 expected a pair"
+        | _, CAR _ -> err env pos "pi1 expected a pair (3)"
+        | _, CDR _ -> err env pos "pi2 expected a pair (3)"
        )
       in
       let (args',t) = repeat 0 env head_type args_passed args in
@@ -521,8 +521,8 @@ and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_type =
               | END -> raise (TypeCheckingFailure (env, [
                                                     pos , "expected "^string_of_int (num_args t)^" more arguments";
                                                     (get_pos t0), (" using:\n\t"^lf_head_to_string head^" : "^lf_type_to_string t0)]))
-              | CAR args -> err env pos "pi1 expected a pair"
-              | CDR args -> err env pos "pi2 expected a pair"
+              | CAR args -> err env pos "pi1 expected a pair (4)"
+              | CDR args -> err env pos "pi2 expected a pair (4)"
               | ARG(x, args) ->
                   let b = subst_type (v,x) b in
                   let x = term_normalization env x a in
@@ -546,8 +546,8 @@ and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_type =
           | F_APPLY _ -> (
               match args with
               | END -> (t,END)
-              | CAR args -> err env pos "pi1 expected a pair"
-              | CDR args -> err env pos "pi2 expected a pair"
+              | CAR args -> err env pos "pi1 expected a pair (5)"
+              | CDR args -> err env pos "pi2 expected a pair (5)"
               | ARG(x,args) -> err env (get_pos x) "unexpected argument"))
         in repeat t0 args_passed args
       in ((pos,APPLY(head,args)), t))
