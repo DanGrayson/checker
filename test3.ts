@@ -1,39 +1,32 @@
 
-Theorem id0 { ⊢ T Type, t:T } : T ;; (_ ⟼ t ⟼ t).
+Theorem id0 { ⊢ T Type, t:T } : T ;; _ ⟼ t ⟼ t.
 
-Theorem id0' { ⊢ u Ulevel, T:[U](u), t:*T } : *T ;; (_ ⟼ _ ⟼ t ⟼ t).
+Theorem id0' { ⊢ u Ulevel, T:[U](u), t:*T } : *T ;; _ ⟼ _ ⟼ t ⟼ t.
 
 Theorem id0'' { ⊢ u Ulevel, T:[U](u), t:*T } : *T ; _ ⟾ _ ⟾ t ⟾ t.
 
 Theorem id1 { ⊢ T Type, t:T} ⊢ t : T ; _ ⟾ t ⟾ t.
 
-Theorem id1' { ⊢ u Ulevel, T:[U](u), t:*T } ⊢ t : *T ;; (_ ⟼ _ ⟼ t ⟼ t).
+Theorem id1' { ⊢ u Ulevel, T:[U](u), t:*T } ⊢ t : *T ;; _ ⟼ _ ⟼ t ⟼ t.
 
 Theorem id1'' { ⊢ u Ulevel, T:[U](u), t:*T } ⊢ t : *T ; _ ⟾ _ ⟾ t ⟾ t.
 
-Theorem id2 { ⊢ T U Type, f:T⟶U } : T⟶U ;;
+Theorem id2 { ⊢ T U Type, f:T⟶U } : T⟶U ;; _ ⟼ _ ⟼ f ⟼ f.
 
-		(_ ⟼ _ ⟼ f ⟼ f).
+Theorem id2' { ⊢ u Ulevel, T:[U](u) }{ ⊢ U:[U](u), f:*T⟶*U } : *T⟶*U ;; _ ⟼_ ⟼ _ ⟼ f ⟼ f.
 
-Theorem id2' { ⊢ u Ulevel, T:[U](u) }{ ⊢ U:[U](u), f:*T⟶*U } : *T⟶*U ;;
-
-		(_ ⟼_ ⟼ _ ⟼ f ⟼ f).
-
-Theorem id3 { ⊢ T Type, U Type, f:T⟶U, t:T } : U ;; (T ⟼ U ⟼ f ⟼ t ⟼ (ev T U f t)).
+Theorem id3 { ⊢ T Type, U Type, f:T⟶U, t:T } : U ;; T ⟼ U ⟼ f ⟼ t ⟼ (ev T U f t).
 
 Check LF ev_hastype.
 
 Theorem id3' { ⊢ u Ulevel, T:[U](u) }{ ⊢ U:[U](u), f:*T⟶*U, t:*T} : *U ;;
-		( u ⟼ T ⟼ U ⟼ f ⟼ t ⟼ 
-			(ev (El_istype u T) (El_istype u U) f t)).
+		u ⟼ T ⟼ U ⟼ f ⟼ t ⟼ (ev (El_istype u T) (El_istype u U) f t).
 
 Theorem compose0  { ⊢ T Type, U Type, V Type, g:U⟶V, f:T⟶U, t:T } : V ;;
-
-		(T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ (ev U V g (ev T U f t))).
+		T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ (ev U V g (ev T U f t)).
 
 Theorem compose0' { ⊢ u Ulevel, T:[U](u), U:[U](u), V:[U](u), g:*U ⟶ *V, f:*T ⟶ *U, t:*T } : *V ;; 
-
-		(u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ (ev (El_istype u U) (El_istype u V) g (ev (El_istype u T) (El_istype u U) f t))).
+		u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ (ev (El_istype u U) (El_istype u V) g (ev (El_istype u T) (El_istype u U) f t)).
 
 End.
 

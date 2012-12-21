@@ -65,7 +65,6 @@ rule expr_tokens = parse
   | "Rule" { Rule }
   | "Alpha" { WAlpha }
   | "Variable" { WVariable }
-  | "Definition" { Definition }
   | "Theorem" { Theorem }
   | "End" { WEnd }
   | "Show" { WShow }
@@ -90,7 +89,6 @@ rule expr_tokens = parse
   | "<="  { Wlessequal }
   | '_' { Wunderscore }
   | '<' { Wless }
-  | ":="  { Colonequal }
   | '.'  { Wperiod }
   | '('  { Wlparen }
   | ')'  { Wrparen }
@@ -116,7 +114,7 @@ rule expr_tokens = parse
 
 (* TS punctuation *)
 
-  | ( '|' '-' | "⊢" ) { Turnstile }
+  | ( "|-" | "⊢" ) { Turnstile }
 
 (* tokens common to LF and TS *)
 

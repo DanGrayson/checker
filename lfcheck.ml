@@ -34,11 +34,15 @@ let abstraction2 pos (env:context) = function
   | _ -> env
 
 let abstraction3 pos (env:context) = function
-  | ARG(f,ARG(_,ARG((_,LAMBDA(x, _)),_))) -> 
-      let tf = tau env f in (
-      match unmark tf with
-      | APPLY(T T_Pi, ARG(t, _)) -> ts_bind pos (x,t) env
-      | _ -> env)
+  | ARG(f,ARG(_,ARG((_,LAMBDA(x, _)),_))) -> (
+      try
+	let tf = tau env f in (
+	match unmark tf with
+	| APPLY(T T_Pi, ARG(t, _)) -> ts_bind pos (x,t) env
+	| _ -> env)
+      with NotImplemented ->
+	printf "warning: abstraction3: \"tau\" not implemented for %a\n%!" _e f;
+	env)
   | _ -> env
 
 let ts_binders = [

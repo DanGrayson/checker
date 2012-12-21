@@ -38,7 +38,7 @@ Rule 3.4.22 ∏_eq { ⊢ T T' Type } { _ : T ⊢ U U' Type } [ T = T' ] ⇒ ( { 
 
 Rule 3.4.22.1 ∏_eq1 { ⊢ T T' Type } { _ : T ⊢ U Type } [ T = T' ] ⇒ [ [∏](T,U) = [∏](T',U) ].
 
-Rule 3.4.22.2 ∏_eq2 { ⊢ T Type } { _ : T ⊢ U Type } { _ : T ⊢ U' Type } ( { ⊢ x : T } [ U/x = U'/x ] ) ⇒ [ [∏](T,U) = [∏](T,U') ].
+Rule 3.4.22.2 ∏_eq2 { ⊢ T Type } { _ : T ⊢ U U' Type } ( { ⊢ x : T } [ U/x = U'/x ] ) ⇒ [ [∏](T,U) = [∏](T,U') ].
 
 Rule 3.4.23 λ_hastype { ⊢ T Type } { _ : T ⊢ U Type } { x : T ⊢ o : U/x } ⊢ [λ](T,o) : [∏](T,U).
 
@@ -48,11 +48,11 @@ Rule 3.4.24 λ_equality { ⊢ T T' Type } { _ : T ⊢ U U' Type } { x : T ⊢ o 
 
 			[ [λ](T,o) = [λ](T',o') : [∏](T,U) ].
 
-Rule 3.4.24.1 λ_equality1 { ⊢ T T' Type } { _ : T ⊢ U Type } { x : T ⊢ o : U/x }
+Rule 3.4.24.1 λ_equality1 { ⊢ T T' Type } { x : T ⊢ U Type, o : U/x }
 
      			[ [λ](T,o) = [λ](T',o) : [∏](T,U) ].
 
-Rule 3.4.24.2 λ_equality2 { ⊢ T Type } { _ : T ⊢ U U' Type } { x : T ⊢ o : U/x }  { x : T ⊢ o' : U/x } 
+Rule 3.4.24.2 λ_equality2 { ⊢ T Type } { x : T ⊢ U U' Type, o o' : U/x } 
 
      			( { ⊢ x : T } [ o/x = o'/x : U/x ] ) ⇒ 
 
@@ -62,7 +62,7 @@ Rule 3.4.25 ev_hastype { ⊢ T Type } { _ : T ⊢ U Type } { ⊢ f : [∏](T,U),
 
 Rule 3.4.25.1 ev { ⊢ T U Type, f : T -> U, o : T } ⊢ f o : U.  # non-dependent version
 
-Rule 3.4.26 ev_eq { ⊢ T Type } { _ : T ⊢ U U' Type } { ⊢ f f' : [∏](T,U), o o' : T } 
+Rule 3.4.26 ev_eq { ⊢ T Type, o o' : T } { _ : T ⊢ U U' Type } { ⊢ f f' : [∏](T,U) } 
 
 	      [ f = f' : [∏](T,U) ] ⇒ [ o = o' : T ] ⇒ ( { ⊢ x : T } [ U/x = U'/x ] ) ⇒
 
@@ -70,7 +70,7 @@ Rule 3.4.26 ev_eq { ⊢ T Type } { _ : T ⊢ U U' Type } { ⊢ f f' : [∏](T,U)
 
 # should make it possible to omit third branch of U here:
 
-Rule 3.4.27 beta_reduction { ⊢ T Type } { _ : T ⊢ U Type } { x : T ⊢ o2 : U/x } { ⊢ o1 : T } [ [ev]([λ](T,o2),o1,U) = o2/o1 : U/o1 ].
+Rule 3.4.27 beta_reduction { ⊢ T Type, o1 : T } { x : T ⊢ U Type, o2 : U/x } [ [ev]([λ](T,o2),o1,U) = o2/o1 : U/o1 ].
 
 Rule 3.4.28 eta_reduction { ⊢ T Type } { _ : T ⊢ U Type } { ⊢ f : [∏](T,U) } [ [λ;x](T,[ev](f,x,U)) = f : [∏](T,U) ].
 

@@ -59,9 +59,9 @@ let apply_binder pos (c:(var marked * lf_expr) list) v t1 t2 u =
   (* tokens *)
 
   Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod Colon Wstar
-  Arrow ArrowFromBar Wequal Colonequal Wunderscore Rule Wgreaterequal Wgreater
+  Arrow ArrowFromBar Wequal Wunderscore Rule Wgreaterequal Wgreater
   Wlessequal Wless Semicolon Ulevel Kumax Type KPi Klambda KSigma Check
-  Definition WShow WEnd WVariable WAlpha Weof CheckUniverses Wtilde Singleton
+  WShow WEnd WVariable WAlpha Weof CheckUniverses Wtilde Singleton
   Axiom Wdollar LF TS Kpair K_1 K_2 Times Slash Turnstile DoubleArrow
   DoubleColon DoubleArrowFromBar DoubleSemicolon Theorem Wlbrace Wrbrace
 
@@ -99,11 +99,12 @@ let apply_binder pos (c:(var marked * lf_expr) list) v t1 t2 u =
 %left
 
   (* substitution *)
+
   (* we want [f/x/y] to be [(f/x)/y] *)
 
   Slash
 
-%nonassoc
+%right
 
   (* These are the tokens that can begin a TS-expression, and
      thus might be involved in the decision about reducing an application: *)
@@ -113,9 +114,11 @@ let apply_binder pos (c:(var marked * lf_expr) list) v t1 t2 u =
 
 %nonassoc
 
-  (* We want [f x y] to reduce to [(f x) y] *)
-
   Reduce_application
+
+  (* We want [f -> (f,END) -> (f)] unless there is another expr coming. *)
+
+  (* In LF mode, we want [f x y z -> (f,x::END) y z -> (f,(y::x::END)) -> (f,(z::y::x::END)) -> (f x y z)] *)
 
 %%
 
@@ -195,55 +198,40 @@ lf_expr:
 
 unmarked_lf_expr:
 
-    | e= unmarked_atomic_term
-	{ e  }
-
-    | e= lf_lambda_expression
-	{ e }
+    | e= parenthesized(unmarked_lf_expr) {e}
 
     | Wlparen Kpair a= lf_expr b= lf_expr Wrparen
 	{ CONS(a, b) }
 
-lf_lambda_expression:
-
-    | Wlparen Klambda v= marked_variable_or_unused Wcomma body= lf_expr Wrparen
+    | Klambda v= marked_variable_or_unused Wcomma body= lf_expr
 	{ 
 	  let (pos,v) = v in
 	  let (v,body) = Substitute.subst_fresh pos (v,body) in 
 	  LAMBDA(v,body) }
 
-    | Wlparen v= marked_variable_or_unused ArrowFromBar body= lf_lambda_expression_body Wrparen
+    | v= marked_variable_or_unused ArrowFromBar body= lf_expr
 	{ 
 	  let (pos,v) = v in
 	  let (v,body) = Substitute.subst_fresh pos (v,body) in 
 	  LAMBDA(v,body) }
-
-lf_lambda_expression_body:
-
-    | e= lf_expr
-	{ e }
-
-    | v= marked_variable_or_unused ArrowFromBar body= lf_lambda_expression_body
-	{ Position($startpos, $endpos), 
-	  let (pos,v) = v in
-	  let (v,body) = Substitute.subst_fresh pos (v,body) in 
-	  LAMBDA(v,body) }
-
-unmarked_atomic_term:
 
     | empty_hole {$1}
 
-    | hd_args= lf_expr_head
-	{let (hd,args) = hd_args in
-	 let args = reverse_spine args in
-	 APPLY(hd,args) }
+    | head_and_args = short_head_and_reversed_spine
+	{ let (hd,args) = head_and_args in APPLY(hd,reverse_spine args) }
 
-    | Wlparen hd_args= lf_expr_head_and_reversed_spine Wrparen
-	{let (hd,args) = hd_args in
-	 let args = reverse_spine args in
-	 APPLY(hd,args) }
+    | Wlparen head_and_args= lf_expr_head_and_reversed_spine Wrparen
+	{ let (hd,args) = head_and_args in APPLY(hd,reverse_spine args) }
 
-lf_expr_head:
+lf_expr_head_and_reversed_spine:
+
+    | head_and_args= lf_expr_head_and_reversed_spine arg= lf_expr
+	{ app head_and_args arg }
+
+    | head_and_args= short_head_and_reversed_spine arg= lf_expr
+	{ app head_and_args arg }
+
+short_head_and_reversed_spine:
 
     | tsterm_head
 	{ $1, END }
@@ -251,27 +239,14 @@ lf_expr_head:
     | variable
 	{ V $1, END }
 
+    | head_and_args= variable K_1	(* we need a way to write ( ... )_1 *)
+    	{ car (V head_and_args, END) }
+
+    | head_and_args= variable K_2
+    	{ cdr (V head_and_args, END) }
+
     | tac= tactic_expr
 	{ TAC tac, END }
-
-    | hd_args= lf_expr_head K_1
-	{ car hd_args }
-
-    | hd_args= lf_expr_head K_2
-	{ cdr hd_args }
-
-    | Wlparen hd_args= lf_expr_head_and_reversed_spine Wrparen K_1
-	{ car hd_args }
-
-    | Wlparen hd_args= lf_expr_head_and_reversed_spine Wrparen K_2
-	{ cdr hd_args }
-
-lf_expr_head_and_reversed_spine:
-
-    | lf_expr_head {$1}
-
-    | hd_args= lf_expr_head_and_reversed_spine arg= lf_expr
-	{ app hd_args arg }
 
 tactic_expr:
 
@@ -281,11 +256,11 @@ tactic_expr:
     | Wdollar index= NUMBER
 	{ Tactic_index index }
 
-command: c= command0 { Position($startpos, $endpos), c }
-
 dotted_number: n= separated_nonempty_list(Wperiod,NUMBER) {n}
 
-command0:
+command: c= unmarked_command { Position($startpos, $endpos), c }
+
+unmarked_command:
 
     | Weof
 	{ raise Eof }
@@ -295,9 +270,6 @@ command0:
 
     | WVariable vars= nonempty_list(IDENTIFIER) Ulevel eqns= preceded(Semicolon,uEquation)* Wperiod
 	{ Toplevel.UVariable (vars,eqns) }
-
-    | Rule num= dotted_number name= IDENTIFIER DoubleColon t= lf_type Wperiod
-	{ Toplevel.Rule (num,name,t) }
 
     | Rule num= dotted_number name= IDENTIFIER t= ts_judgment Wperiod
 	{ Toplevel.Rule (num,name,t) }
@@ -326,19 +298,6 @@ command0:
     | WAlpha e1= ts_expr Wequal e2= ts_expr Wperiod
 	{ Toplevel.Alpha (e1, e2) }
 
-    | Definition name= IDENTIFIER parms= parmList Colonequal o= ts_expr Colon t= ts_expr DoubleSemicolon d1= lf_expr Wperiod 
-	{ 
-	  let pos = Position($startpos, $endpos) in
-	  Toplevel.ODefinition (pos,name, parms, o, t, Some d1) }
-    | Definition name= IDENTIFIER parms= parmList Colonequal o= ts_expr Colon t= ts_expr Semicolon d1= ts_expr Wperiod 
-	{ 
-	  let pos = Position($startpos, $endpos) in
-	  Toplevel.ODefinition (pos,name, parms, o, t, Some d1) }
-    | Definition name= IDENTIFIER parms= parmList Colonequal o= ts_expr Colon t= ts_expr Wperiod 
-	{ 
-	  let pos = Position($startpos, $endpos) in
-	  Toplevel.ODefinition (pos,name, parms, o, t, None) }
-
     | Theorem name= IDENTIFIER thm= ts_judgment DoubleSemicolon deriv= lf_expr Wperiod 
 	{ 
 	  let pos = Position($startpos, $endpos) in
@@ -348,29 +307,6 @@ command0:
 	{ 
 	  let pos = Position($startpos, $endpos) in
 	  Toplevel.Theorem (pos, name, deriv, thm) }
-
-    | Definition name= IDENTIFIER parms= parmList Colonequal t= ts_expr DoubleSemicolon d1= lf_expr Wperiod 
-	{ 
-	  let pos = Position($startpos, $endpos) in
-	  Toplevel.TDefinition (pos,name, parms, t, Some d1) }
-    | Definition name= IDENTIFIER parms= parmList Colonequal t= ts_expr Semicolon d1= ts_expr Wperiod 
-	{ 
-	  let pos = Position($startpos, $endpos) in
-	  Toplevel.TDefinition (pos,name, parms, t, Some d1) }
-    | Definition name= IDENTIFIER parms= parmList Colonequal t= ts_expr Wperiod 
-	{ 
-	  let pos = Position($startpos, $endpos) in
-	  Toplevel.TDefinition (pos,name, parms, t, None) }
-
-    | Definition name= IDENTIFIER parms= parmList Colonequal t1= ts_expr Wequal t2= ts_expr Wperiod 
-	{ 
-	  let pos = Position($startpos, $endpos) in
-	  Toplevel.TeqDefinition (pos,name, parms, t1, t2) }
-
-    | Definition name= IDENTIFIER parms= parmList Colonequal o1= ts_expr Wequal o2= ts_expr Colon t= ts_expr Wperiod 
-	{ 
-	  let pos = Position($startpos, $endpos) in
-	  Toplevel.OeqDefinition (pos,name, parms, o1, o2, t) }
 
     | WShow Wperiod 
 	{ Toplevel.Show None }
@@ -385,20 +321,6 @@ marked_variable:
 
     | IDENTIFIER
 	{ Position($startpos, $endpos), Var $1 }
-
-uParm: vars= nonempty_list(marked_variable) Ulevel eqns= preceded(Semicolon,marked_uEquation)*
-    { UParm (UContext (vars,eqns)) }
-
-tParm: vars= nonempty_list(marked_variable) Type 
-    { TParm vars }
-
-oParm: vars= nonempty_list(marked_variable) Colon t= ts_expr 
-    { OParm (List.map (fun s -> (s,t)) vars) }
-
-marked_uEquation:
-
-    | uEquation
-	{ Position($startpos, $endpos), $1 }
 
 uEquation:
 
@@ -420,16 +342,6 @@ uEquation:
 parenthesized(X): x= delimited(Wlparen,X,Wrparen) {x}
 
 list_of_parenthesized(X): list(parenthesized(X)) {$1}
-
-parmList: list_of_parenthesized(parm) {$1}
-
-parm:
-
-    | uParm { $1 } 
-
-    | tParm { $1 }
-
-    | oParm { $1 } 
 
 ts_exprEof: a= ts_expr Weof {a}
 
@@ -570,16 +482,10 @@ ts_expr:
 
 unmarked_ts_expr:
 
-    | v= separated_nonempty_list(Wcomma,marked_variable_or_unused) DoubleArrowFromBar body= ts_expr
-	{ 
-	  let pos = get_pos body in
-	  let r = List.fold_right
-	      (fun v body ->
-		let (pos,v) = v in
-		let (v,body) = Substitute.subst_fresh pos (v,body) in 
-		with_pos pos (LAMBDA(v,body)))
-	      v body in
-	  unmark r }
+    | v= marked_variable_or_unused DoubleArrowFromBar body= ts_expr
+	{ let (pos,v) = v in
+	  let (v,body) = Substitute.subst_fresh pos (v,body) in 
+	  LAMBDA(v,body) }
 
     | tac= tactic_expr
 	{ cite_tactic tac END }

@@ -1,4 +1,4 @@
-(** Top level code. *)
+(** Top level code. *) 
 
 let debug = false
 
@@ -129,6 +129,29 @@ let lf_axiomCommand env pos name t =
   ensure_new_name env pos v;
   (v,t) :: env
 
+let defCommand env defs = 
+  List.fold_left
+    (fun env (v, pos, tm, tp) -> 
+      printf "Define %a = %a\n" _v v  _e tm;
+      flush stdout;
+      printf "       %a : %a\n%!" _v v  _t tp;
+      let tp' = Lfcheck.type_validity env tp in
+      if not (Alpha.UEqual.type_equiv empty_uContext tp tp') then
+      printf "       %a : %a [after tactics]\n%!" _v v  _t tp';
+      let tm' = Lfcheck.type_check env tm tp in
+      if not (Alpha.UEqual.term_equiv empty_uContext tm tm') then
+      printf "       %a = %a [after tactics]\n%!" _v v  _e tm';
+      let tm'' = Lfcheck.term_normalization env tm' tp' in
+      if not (Alpha.UEqual.term_equiv empty_uContext tm' tm'') then
+      printf "       %a = %a [normalized]\n%!" _v v  _e tm'';
+      printf "       %a = %a [normalized, TS format]\n%!" _v v  _ts tm'';
+      let tp'' = Lfcheck.type_normalization env tp' in
+      if not (Alpha.UEqual.type_equiv empty_uContext tp' tp'') then
+      printf "       %a : %a [normalized]\n%!" _v v  _t tp'';
+      def_bind v pos tm' tp' env
+    ) 
+    env defs
+
 let is_can x = (function (APPLY _) -> true | _ -> false) (unmark x)
 
 let checkLFCommand env pos x =
@@ -167,7 +190,7 @@ let checkTSCommand env x =
    )
 
 let alphaCommand env (x,y) =
-  printf "\nAlpha      : %s\n" (if (Alpha.UEqual.term_equiv Definitions.emptyUContext x y) then "true" else "false");
+  printf "\nAlpha      : %s\n" (if (Alpha.UEqual.term_equiv (UContext ([],[])) x y) then "true" else "false");
   printf "           : %a\n" _ts x;
   printf "           : %a\n" _ts y;
   flush stdout
@@ -198,11 +221,7 @@ let process_command env lexbuf =
     | Toplevel.CheckLFtype x -> checkLFtypeCommand env x; env
     | Toplevel.CheckTS x -> checkTSCommand env x; env
     | Toplevel.Alpha (x,y) -> alphaCommand env (x,y); env
-    | Toplevel.TDefinition defs -> tDefCommand env defs
-    | Toplevel.ODefinition defs -> oDefCommand env defs
-    | Toplevel.Theorem defs -> theoremCommand env defs
-    | Toplevel.TeqDefinition defs -> teqDefCommand env defs
-    | Toplevel.OeqDefinition defs -> oeqDefCommand env defs
+    | Toplevel.Theorem (pos,name,deriv,thm) -> defCommand env [ Var name, pos, deriv, thm ]
     | Toplevel.Show n -> show_command env n; env
     | Toplevel.CheckUniverses -> checkUniversesCommand env pos; env
     | Toplevel.End -> error_summary pos; raise StopParsingFile

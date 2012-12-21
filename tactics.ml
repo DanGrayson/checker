@@ -41,14 +41,21 @@ let ev3 (surr:surrounding) env pos t =
   (* This code was formerly a part of the file fillin.ml, removed. *)
   match surr with 
   | (_, (pos,APPLY( O O_ev, ARG(f,_))), _) :: _ -> (
-      let tf = tau env f in
-      match unmark tf with
-      | APPLY(T T_Pi, ARG(_,ARG(t,END))) -> TacticSuccess t
-      | _ -> raise (TypeCheckingFailure(
-		    env, [
-		    get_pos f,
-		    "expected a TS function:\n    " ^ ts_expr_to_string f ^
-		    "\n  : " ^ ts_expr_to_string tf ])))
+      try
+	let tf = 
+	  tau env f 
+	in (
+	match unmark tf with
+	| APPLY(T T_Pi, ARG(_,ARG(t,END))) -> TacticSuccess t
+	| _ -> raise (TypeCheckingFailure(
+		      env, [
+		      get_pos f,
+		      "expected a TS function:\n    " ^ ts_expr_to_string f ^
+		      "\n  : " ^ ts_expr_to_string tf ])))
+	  
+      with NotImplemented ->
+	printf "warning: ev3: \"tau\" not implemented for %a\n%!" _e f;
+	TacticFailure)
   | (i,e,t) :: _ ->
       let i = match i with Some i -> i | None -> -1 in
       printf "ev3 ( %d , %a ) ?\n%!" i _e (e);
@@ -58,10 +65,13 @@ let ev3 (surr:surrounding) env pos t =
       raise Internal
 
 let default surr env pos t = 
-  printf "Default tactic:\n";
-  printf "   hole of type %a\n%!" _t t;
-  show_surroundings surr;
-  TacticFailure
+  match unmark t with
+  | F_Singleton(e,_) -> TacticSuccess e
+  | F_APPLY((F_hastype|F_istype),_) -> assumption surr env pos t
+  | _ -> 
+      printf "Default tactic failure in hole of type %a\n%!" _t t;
+      show_surroundings surr;
+      TacticFailure
 
 let _ = 
   add_tactic "ev3" ev3;

@@ -1,12 +1,4 @@
 
-Rule 17 El_type :: ∏ M:uexp, ∏ o:oexp,
-
-     [ o : ([U] M) ] ⟶ [ ([El] o) Type ].
-
-Definition A (u Ulevel; u=u) (t : [U](u)) := [El](t);; (El_type u $a $0).
-
-Check LF [A.1].			# sigma mode off for this
-
 End.
 
 

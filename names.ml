@@ -59,6 +59,8 @@ let string_to_type_constant = List.map swap lf_type_constant_table
 
 let var_to_lf v = nowhere 1 (APPLY(V v,END))
 
+let marked_var_to_lf (pos,v) = pos, APPLY(V v,END)
+
 let var_to_lf_pos pos v = with_pos pos (APPLY(V v,END))
 
 let fetch_type env pos v = 
