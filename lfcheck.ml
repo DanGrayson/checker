@@ -153,7 +153,7 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
   | APPLY(h,args) -> (
       match h with
       | TAC _ -> raise Internal
-      | (O _|T _|U _) -> raise Not_found (* we know the constants in our signature don't involve singleton types *)
+      | (O _|T _) -> raise Not_found (* we know the constants in our signature don't involve singleton types *)
       | FUN(f,t) -> (
 	  (* merge this case with the case below ??? *)
 	  if true then raise NotImplemented;
@@ -205,13 +205,17 @@ let rec term_equivalence (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : uni
             (subst_type (v,var_to_lf w) b)
       | _ -> raise Internal)
   | F_APPLY(j,args) ->
-      let x = head_normalization env x in
-      let y = head_normalization env y in
-      if !debug_mode then printf "\t new x=%a\n\t new y=%a\n%!" _e x _e y;
-      let t' = path_equivalence env x y in
-      if !debug_mode then printf "\t new t'=%a\n\n%!" _t t';
-      subtype env t' t			(* this was not spelled out in the paper, which concerned base types only *)
-  );
+      if j == F_uexp then (
+	printf "warning: ulevel comparison judged true: %a = %a\n%!" _e x _e y;
+       )
+      else (
+	let x = head_normalization env x in
+	let y = head_normalization env y in
+	if !debug_mode then printf "\t new x=%a\n\t new y=%a\n%!" _e x _e y;
+	let t' = path_equivalence env x y in
+	if !debug_mode then printf "\t new t'=%a\n\n%!" _t t';
+	subtype env t' t			(* this was not spelled out in the paper, which concerned base types only *)
+	  ));
   if !debug_mode then printf " term_equivalence okay\n%!"
 
 and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
@@ -222,9 +226,7 @@ and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
   (
   match x,y with
   | (xpos,APPLY(head,args)), (ypos,APPLY(head',args')) -> (
-      if not (head = head') then (
-	if !debug_mode then printf " path_equivalence failure\n%!";
-	raise TermEquivalenceFailure);
+      if head <> head' then raise TermEquivalenceFailure;
       let t = head_to_type env xpos head in
       let rec repeat t args_passed args args' =
 	if !debug_mode then printf " path_equivalence repeat, head type = %a, args_passed = %a\n\targs = %a\n\targs' = %a\n%!" _t t _s args_passed _s args _s args';
@@ -358,7 +360,20 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
       try
         subtype env s t;
         e
-      with SubtypeFailure -> mismatch_term_type env e0 s t
+      with SubtypeFailure -> 
+	if not (is_product_type env s) && (is_product_type env t) then (
+	  (* now we may try a tactic to salvage the type checking: if a function was demanded, and we don't have one,
+	     we make one from e that ignores its one parameter and returns e *)
+	  let e = with_pos (get_pos e) (LAMBDA(newunused(), e)) in
+	  type_check surr env e t)
+	else mismatch_term_type env e0 s t
+
+and is_product_type env t = 
+  match unmark t with 
+  | F_Pi _ -> true
+  | F_Singleton(_,t) -> is_product_type env t
+  | F_Sigma _ -> false
+  | F_APPLY _ -> false    
 
 and type_synthesis (surr:surrounding) (env:context) (m:lf_expr) : lf_expr * lf_type =
   (* assume nothing *)

@@ -1,3 +1,18 @@
+Check LF ∏_istype.
+
+Theorem compose0'' { |- u Ulevel, T U V : [U](u),
+			g : *[∀;x](u,u,U,V), 
+			f : *[∀;x](u,u,T,U), t:*T }
+
+		 : *V ;;
+
+		 u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 
+		 (ev (El_istype u U) (El_istype u V) 
+		 	(cast (El_istype u (forall u u U V)) 
+			      (∏_istype (El_istype u U) (El_istype u V))
+			      _ g) (ev (El_istype u T) (El_istype u U) f t)).
+
+End.
 
 Theorem id0 { ⊢ T Type, t:T } : T ;; _ ⟼ t ⟼ t.
 
@@ -27,15 +42,6 @@ Theorem compose0  { ⊢ T Type, U Type, V Type, g:U⟶V, f:T⟶U, t:T } : V ;;
 
 Theorem compose0' { ⊢ u Ulevel, T:[U](u), U:[U](u), V:[U](u), g:*U ⟶ *V, f:*T ⟶ *U, t:*T } : *V ;; 
 		u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ (ev (El_istype u U) (El_istype u V) g (ev (El_istype u T) (El_istype u U) f t)).
-
-End.
-
-Theorem compose0' (u Ulevel)
-			(T U V:[U](u)) 
-			(g : *[∀;x](u,u,U,V))
-			(f : *[∀;x](u,u,T,U)) (t:*T) : *V ;;
-
-	 (ev (El u U) (El u V) (cast2 (El u (forall u u U (pair (_ ⟼ V _1) (_ ⟼ _ ⟼ V _2) ))) _ _ g) (ev (El u T) (El u U) f t)).
 
 End.
 
@@ -138,5 +144,5 @@ Definition compose3 (T U V Type) (f:T⟶U) (g:U⟶V) := lambda x:T, (g (f _)) : 
 
 
 #   Local Variables:
-#   compile-command: "make run3 "
+#   compile-command: "make run3  DEBUG=no"
 #   End:

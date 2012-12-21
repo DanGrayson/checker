@@ -25,6 +25,14 @@ let rec join_args a b =
   | CDR a -> CDR(join_args a b)
   | END -> b
 
+let rec args_compare expr_compare a b =
+  match (a,b) with
+  | ARG(x,a), ARG(y,b) -> expr_compare x y && args_compare expr_compare a b
+  | CAR a, CAR b -> args_compare expr_compare a b
+  | CDR a, CDR b -> args_compare expr_compare a b
+  | END, END -> true
+  | _ -> false
+
 let rec list_to_spine = function
   | x :: a -> x ** list_to_spine a
   | [] -> END

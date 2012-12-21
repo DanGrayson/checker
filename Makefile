@@ -1,8 +1,14 @@
 TSFILES = rules.ts demo.ts test.ts test2.ts test3.ts
 
 CHECKER_EXE = checker.byte
-BARE_CHECKER = OCAMLRUNPARAM=$(RUN) ./$(CHECKER_EXE)
-CHECKER = $(BARE_CHECKER) rules.ts
+BARE_CHECKER := OCAMLRUNPARAM=$(RUN) ./$(CHECKER_EXE)
+CHECKER := $(BARE_CHECKER) rules.ts
+
+DEBUG = no
+ifeq "$(DEBUG)" "yes"
+BARE_CHECKER += --debug
+CHECKER += --debug
+endif
 
 BFLAGS = -cflags -g,-annot -lflags -g -yaccflag -v -menhir 'menhir --explain'
 BFLAGS += -use-menhir
@@ -60,7 +66,7 @@ lc:; wc -l $(SRCFILES) rules.ts
 rules:$(CHECKER_EXE) rules.ts ; $(CHECKER)
 run:  $(CHECKER_EXE) rules.ts test.ts ; $(CHECKER) test.ts
 run2: $(CHECKER_EXE) test2.ts ; $(BARE_CHECKER) test2.ts
-run3: $(CHECKER_EXE) test3.ts ; $(BARE_CHECKER) rules.ts test3.ts
+run3: $(CHECKER_EXE) test3.ts ; $(CHECKER) test3.ts
 demo: $(CHECKER_EXE) rules.ts test.ts ; $(CHECKER) demo.ts
 debug:
 	ocamlbuild $(BFLAGS) checker.byte 

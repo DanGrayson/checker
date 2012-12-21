@@ -19,7 +19,7 @@ let show_subs (subl : (var * lf_expr) list) =
 let spy_counter = ref 0
 
 let spy p subber subl e = 
-  if !debug_mode then (
+  if false && !debug_mode then (
     let n = !spy_counter in
     incr spy_counter;
     show_subs subl;
