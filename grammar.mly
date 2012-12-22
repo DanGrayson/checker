@@ -63,7 +63,7 @@ let apply_binder pos (c:(var marked * lf_expr) list) v t1 t2 u =
   Wlessequal Wless Semicolon Ulevel Kumax Type KPi Klambda KSigma Check
   WShow WEnd WVariable WAlpha Weof CheckUniverses Wtilde Singleton
   Wdollar LF TS Kpair K_1 K_2 Times Slash Turnstile DoubleArrow
-  DoubleArrowFromBar DoubleSemicolon Theorem Wlbrace Wrbrace
+  DoubleArrowFromBar ColonColonEqual ColonEqual Theorem Wlbrace Wrbrace
 
 (* precedences, lowest first *)
 
@@ -292,12 +292,12 @@ unmarked_command:
     | WAlpha e1= ts_expr Wequal e2= ts_expr Wperiod
 	{ Toplevel.Alpha (e1, e2) }
 
-    | Theorem name= IDENTIFIER thm= ts_judgment DoubleSemicolon deriv= lf_expr Wperiod 
+    | Theorem name= IDENTIFIER thm= ts_judgment ColonColonEqual deriv= lf_expr Wperiod 
 	{ 
 	  let pos = Position($startpos, $endpos) in
 	  Toplevel.Theorem (pos, name, deriv, thm) }
 
-    | Theorem name= IDENTIFIER thm= ts_judgment Semicolon deriv= ts_expr Wperiod 
+    | Theorem name= IDENTIFIER thm= ts_judgment ColonEqual deriv= ts_expr Wperiod 
 	{ 
 	  let pos = Position($startpos, $endpos) in
 	  Toplevel.Theorem (pos, name, deriv, thm) }
@@ -365,6 +365,11 @@ unmarked_ts_judgment:
 	{ F_Sigma(newunused(),a,b) }
 
 (* base judgments *)
+
+    | Type
+	{ let pos = Position($startpos, $endpos) in
+	  let v = Var "t" in
+	  F_Sigma(v, texp, with_pos pos (F_APPLY(F_istype, [var_to_lf_pos pos v]))) }
 
     | Colon t= ts_expr
 	{ let v = Var "o" in

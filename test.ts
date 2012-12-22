@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 
 Variable T Type.
-Theorem TT |- T Type ;; (pair _ _).
+Theorem TT |- T Type ::= (pair _ _).
 Variable u0 u1 u2 Ulevel ; [next](u0) <= u1; [next](u1) < u2.
 Variable T' U V X Y Type.
-Rule t0: T.
-Rule x0 : X.
-Rule f : T⟶T.
+Axiom t0: T.
+Axiom x0 : X.
+Axiom f : T⟶T.
 
 Check LF x0.
 
 # Check TS f t0.
 
-Rule 你好 : T⟶T.
+Axiom 你好 : T⟶T.
 
 Check Universes.
 
-Rule A |- T Type.
+Axiom A |- T Type.
 
 Check LF (λ x, ([ev] f x (λ y, T))).
 Check LF (x⟼([ev] f x (λ y, T))).
@@ -72,15 +72,15 @@ Check TS [Pi;x](T,T).
 Check : LF ∏ x:oexp, ∏ y:oexp, ∏ T:texp, ∏ U:texp, [ x = y : T ]⟶[ T = U ]⟶[ x = y : U ].
 Check LF (U_istype u1).
 
-Check LF El_istype.
+Check LF El.
 
-Theorem foo { ⊢ u Ulevel, t : [U]([next](u)) } ⊢ *t Type ;; u |-> t |-> (El_istype ([next] u) t).
+Theorem foo { ⊢ u Ulevel, t : [U]([next](u)) } ⊢ *t Type ::= u |-> t |-> (El ([next] u) t).
 
-Theorem fot { ⊢ u Ulevel, t : [U]([next](u)) } ⊢ *t Type ;; u |-> t |-> (El_istype ([next] u) t).
+Theorem fot { ⊢ u Ulevel, t : [U]([next](u)) } ⊢ *t Type ::= u |-> t |-> (El ([next] u) t).
 
-Theorem B   { ⊢ u Ulevel, t : [U](u        ) } ⊢ *t Type ;; u |-> t |-> (El_istype u t).
+Theorem B   { ⊢ u Ulevel, t : [U](u        ) } ⊢ *t Type ::= u |-> t |-> (El u t).
 
-Theorem C { ⊢ u Ulevel, t : [U](u) } ⊢ *t Type ;; u |-> t |-> (El_istype $1 $0).
+Theorem C { ⊢ u Ulevel, t : [U](u) } ⊢ *t Type ::= u |-> t |-> (El $1 $0).
 
 Check : LF texp ** oexp .
 Check LF      (pair ([U] u0) ([u] u0)).
