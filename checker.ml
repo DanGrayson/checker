@@ -198,9 +198,10 @@ let show_command env n =
 
 let process_command env lexbuf = 
   let c = 
-    try 
+    try
       Grammar.command Tokens.expr_tokens lexbuf
-    with e -> raise (WithPosition(lexbuf_position lexbuf,e)) in
+    with e -> raise (WithPosition(lexbuf_position lexbuf,e))
+  in
   match c with (pos,c) ->
     match c with
     | Toplevel.UVariable (uvars,eqns) -> ubind env uvars eqns
@@ -215,20 +216,17 @@ let process_command env lexbuf =
     | Toplevel.CheckUniverses -> checkUniversesCommand env pos; env
     | Toplevel.End -> error_summary pos; raise StopParsingFile
 
-let read_eval_command env lexbuf =
-  let rec repeat env =
+let read_eval_command context lexbuf = 
+  let rec repeat context = 
     try 
       repeat (
       try
-	process_command env lexbuf
-      with e -> handle_exception (lexbuf_position lexbuf) e
-     )
-    with 
-    | Error_Handled -> 
-	repeat env
-    | StopParsingFile -> 
-	env
-  in repeat env
+	process_command context lexbuf
+      with e -> handle_exception (lexbuf_position lexbuf) e )
+    with
+    | Error_Handled -> repeat context
+    | StopParsingFile -> context
+  in repeat context
 
 let parse_file env filename =
   let lexbuf = Lexing.from_channel (open_in filename) in
@@ -280,10 +278,10 @@ let toplevel() =
 let _ = try
   toplevel()
 with
-| NotImplemented ->
-    fprintf stderr "error: feature not implemented\n%!"
-| Internal ->
-    fprintf stderr "error: internal error\n%!"
+(* | NotImplemented -> *)
+(*     fprintf stderr "error: feature not implemented\n%!" *)
+(* | Internal -> *)
+(*     fprintf stderr "error: internal error\n%!" *)
 | Internal_expr e ->
     fprintf stderr "%a: internal error: %a\n%!" _pos_of e  _e e
 | Unimplemented_expr e ->

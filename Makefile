@@ -1,7 +1,9 @@
 TSFILES = rules.ts demo.ts test.ts test2.ts test3.ts
 
-CHECKER_EXE = checker.byte
-CHECKER_EXE = checker.native
+CODE = native
+CODE = byte
+
+CHECKER_EXE = checker.$(CODE)
 BARE_CHECKER := OCAMLRUNPARAM=$(RUN) time ./$(CHECKER_EXE)
 CHECKER := $(BARE_CHECKER) rules.ts
 
@@ -71,7 +73,7 @@ demo: $(CHECKER_EXE) rules.ts test.ts ; $(CHECKER) demo.ts
 debug:
 	ocamlbuild $(BFLAGS) checker.byte 
 	@ echo "enter:"
-	@ echo "  set arg rules.ts test.ts"
+	@ echo "  set arg rules.ts demo.ts"
 	@ echo "  goto 10000"
 	@ echo "  break Error.trap"
 	@ echo "  run"

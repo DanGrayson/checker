@@ -52,7 +52,11 @@ Check : TS { |- u v Ulevel }       [ u ~ v Ulevel ].    # ulevel equivalence for
 
 # Sample theorems demonstrating the syntax.
 
-Theorem Pt Type ::= Pt_istype .
+Check LF Pt_istype.
+
+Definition Pt Type ::= Pt_istype .
+
+Check LF Pt.
 
 Theorem compose1  { ⊢ T Type, U Type, V Type, g:U⟶V, f:T⟶U, t:T } : V ::=
                 T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 
@@ -62,20 +66,33 @@ Theorem compose2 { ⊢ u Ulevel, T:[U](u), U:[U](u), V:[U](u), g:*U ⟶ *V, f:*T
                 u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 
                 (ev (El u U) (El u V) g (ev (El u T) (El u U) f t)).
 
-Theorem compose3 { |- u Ulevel, T U V : [U](u), g : *[∀;x](u,u,U,V), f : *[∀;x](u,u,T,U), t:*T } : *V ::=
+Derived Rule A { |- u Ulevel, T U : [U](u), f : *[∀;x](u,u,T,U) } : [Pi;_](*T,*U) ::=
+                 u ⟼ T ⟼ U ⟼ f ⟼ 
+		 (cast (El u (forall u u T U)) 
+                       (∏i (El u T) (El u U))
+                       (El_forall_reduction u u T U)
+		       f).
+
+Theorem compose3 { |- u Ulevel, T U V : [U](u), g : *[∀;x](u,u,U,V), f : *[∀;x](u,u,T,U), t: *T } : *V ::=
                  u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 
-                 (ev (El u U) (El u V) 
-                        (cast (El u (forall u u U V)) 
-                              (∏_i (El u U) (El u V))
-                              (El_forall_reduction u u U V) g)
-                        (ev (El u T) (El u U) 
-                        (cast (El u (forall u u T U)) 
-                              (∏_i (El u T) (El u U))
-                              (El_forall_reduction u u T U) f)
-                        t)).
+                 (ev (El u U) (El u V) (A u U V g) (ev (El u T) (El u U) (A u T U f) t)).
 
 End.
 
+Theorem compose4 { |- u Ulevel, T U V : [U](u), g : *[∀;x](u,u,U,V), f : *[∀;x](u,u,T,U) } : *T -> *V ::=
+                 u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ 
+		 t ⟼ (ev (El u U) (El u V) (A u U V g) (ev (El u T) (El u U) (A u T U f) t)).
+
+End.
+
+Theorem A' { |- u Ulevel, T U : [U](u), f : *[∀;x](u,u,T,U) } : [Pi](*T,*U) ::=  # <-- bug here 
+                 u ⟼ T ⟼ U ⟼ f ⟼ 
+		 (cast (El u (forall u u T U)) 
+                             (∏i (El u T) (El u U))
+                             (El_forall_reduction u u T U) f).
+
+
+#
 #   Local Variables:
 #   compile-command: "make demo "
 #   End:

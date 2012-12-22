@@ -263,7 +263,7 @@ command: c= unmarked_command { Position($startpos, $endpos), c }
 unmarked_command:
 
     | Weof
-	{ raise Eof }
+	{ trap(); raise Eof }
 
     | WVariable vars= nonempty_list(IDENTIFIER) Type Wperiod
 	{ Toplevel.Variable vars }

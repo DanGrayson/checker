@@ -74,12 +74,16 @@ let mismatch_type env pos t pos' t' =
          pos , "expected type " ^ lf_type_to_string t;
          pos', "to match      " ^ lf_type_to_string t']))
 
-let mismatch_term_type env e s t =
+let mismatch_term_type env e t =
+  raise (TypeCheckingFailure (env, [
+               get_pos e, "expected term\n\t" ^ lf_expr_to_string e;
+               get_pos t, "to be compatible with type\n\t" ^ lf_type_to_string t]))
+
+let mismatch_term_type_type env e s t =
   raise (TypeCheckingFailure (env, [
                get_pos e, "expected term\n\t" ^ lf_expr_to_string e;
                get_pos s, "of type\n\t" ^ lf_type_to_string s;
                get_pos t, "to be compatible with type\n\t" ^ lf_type_to_string t]))
-
 
 let mismatch_term_t env pos x pos' x' t = 
   raise (TypeCheckingFailure (env, [
@@ -203,7 +207,9 @@ let rec term_equivalence (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : uni
             (subst (t,var_to_lf w) x)   (* with deBruijn indices, this will go away *)
             (subst (u,var_to_lf w) y) 
             (subst_type (v,var_to_lf w) b)
-      | _ -> raise Internal)
+      | _ -> 
+	  printf "%a: term_equivalence expected two lambda expressions, but got\n%a: x=%a\n%a: y=%a\n%!" _pos_of x _pos_of x _e x _pos_of y _e y;
+	  raise Internal)
   | F_APPLY(j,args) ->
       if j == F_uexp then (
 	if !debug_mode then printf "warning: ulevel comparison judged true: %a = %a\n%!" _e x _e y;
@@ -323,7 +329,7 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
   (* assume t has been verified to be a type *)
   (* see figure 13, page 716 [EEST] *)
   (* we modify the algorithm to return a possibly modified expression e, with holes filled in by tactics *)
-  (* We hard code one tactic:
+  (* We hard code this tactic:
        Fill in holes of the form [ ([ev] f o _) ] by using [tau] to compute the type that ought to go there. *)
   let pos = get_pos t in 
   match unmark e0, unmark t with
@@ -344,7 +350,7 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
       let surr = (None,e0,Some t) :: surr in
       let body = type_check surr ((v,a) :: env) body (subst_type (w,var_to_lf v) b) in
       pos, LAMBDA(v,body)
-  | LAMBDA _, _ -> err env pos "did not expect a lambda expression here"
+  | LAMBDA _, _ -> mismatch_term_type env e0 t
  
   | _, F_Sigma(w,a,b) -> (* The published algorithm omits this, correctly, but we want to
                             give advice to tactics for filling holes in [p], so we try type-directed
@@ -366,7 +372,7 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
 	     we make one from e that ignores its one parameter and returns e *)
 	  let e = with_pos (get_pos e) (LAMBDA(newunused(), e)) in
 	  type_check surr env e t)
-	else mismatch_term_type env e0 s t
+	else mismatch_term_type_type env e0 s t
 
 and is_product_type env t = 
   match unmark t with 

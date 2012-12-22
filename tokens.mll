@@ -64,9 +64,17 @@ rule expr_tokens = parse
   | "Axiom" { Rule }
   | "Alpha" { WAlpha }
   | "Variable" { WVariable }
-  | "Theorem" { Theorem }
   | "End" { WEnd }
   | "Show" { WShow }
+
+(* various synonyms of "Theorem" *)
+
+  | "Theorem" { Theorem }
+  | "Definition" { Theorem }
+  | "Lemma" { Theorem }
+  | "Proposition" { Theorem }
+  | "Corollary" { Theorem }
+  | "Derived" space "Rule" { Theorem }
 
 (* white space, comments *)
 
