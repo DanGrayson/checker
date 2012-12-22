@@ -62,8 +62,8 @@ let apply_binder pos (c:(var marked * lf_expr) list) v t1 t2 u =
   Arrow ArrowFromBar Wequal Wunderscore Rule Wgreaterequal Wgreater
   Wlessequal Wless Semicolon Ulevel Kumax Type KPi Klambda KSigma Check
   WShow WEnd WVariable WAlpha Weof CheckUniverses Wtilde Singleton
-  Axiom Wdollar LF TS Kpair K_1 K_2 Times Slash Turnstile DoubleArrow
-  DoubleColon DoubleArrowFromBar DoubleSemicolon Theorem Wlbrace Wrbrace
+  Wdollar LF TS Kpair K_1 K_2 Times Slash Turnstile DoubleArrow
+  DoubleArrowFromBar DoubleSemicolon Theorem Wlbrace Wrbrace
 
 (* precedences, lowest first *)
 
@@ -271,14 +271,8 @@ unmarked_command:
     | WVariable vars= nonempty_list(IDENTIFIER) Ulevel eqns= preceded(Semicolon,uEquation)* Wperiod
 	{ Toplevel.UVariable (vars,eqns) }
 
-    | Rule num= dotted_number name= IDENTIFIER t= ts_judgment Wperiod
+    | Rule num= option(dotted_number) name= IDENTIFIER t= ts_judgment Wperiod
 	{ Toplevel.Rule (num,name,t) }
-
-    | Axiom v= IDENTIFIER Colon t= ts_expr Wperiod
-	{ Toplevel.AxiomTS(v,t) }
-
-    | Axiom LF v= IDENTIFIER Colon t= lf_type Wperiod
-	{ Toplevel.AxiomLF(v,t) }
 
     | Check TS o= ts_expr Wperiod
 	{ Toplevel.CheckTS o }
@@ -286,11 +280,11 @@ unmarked_command:
     | Check LF e= lf_expr Wperiod
 	{ Toplevel.CheckLF e }
 
-    | Check Colon e= ts_judgment Wperiod
-	{ Toplevel.CheckLFtype e }
+    | Check Colon TS t= ts_judgment Wperiod
+	{ Toplevel.CheckLFtype t }
 
-    | Check DoubleColon e= lf_type Wperiod
-	{ Toplevel.CheckLFtype e }
+    | Check Colon LF t= lf_type Wperiod
+	{ Toplevel.CheckLFtype t }
 
     | CheckUniverses Wperiod
 	{ Toplevel.CheckUniverses }
@@ -384,6 +378,9 @@ unmarked_ts_judgment:
 	{ let v = Var "t" in
 	  let pos = get_pos a in
 	  F_Sigma(v, with_pos pos (F_Singleton(a,texp)), with_pos pos (F_APPLY(F_istype, [var_to_lf_pos pos v]))) }
+
+    | Wlbracket a= ts_expr Type Wrbracket
+	{ F_APPLY(F_istype, [a]) }
 
     | Wlbracket a= ts_expr Wequal b= ts_expr Wrbracket
 	{ F_APPLY(F_type_equality, [a;b]) }

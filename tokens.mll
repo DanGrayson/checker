@@ -61,7 +61,6 @@ rule expr_tokens = parse
   | "LF" { LF }
   | "TS" { TS }
   | "Check" { Check }
-  | "Axiom" { Axiom }
   | "Rule" { Rule }
   | "Alpha" { WAlpha }
   | "Variable" { WVariable }
@@ -109,10 +108,9 @@ rule expr_tokens = parse
 
   | '/'       { Slash }
 
-  | ':'     { Colon } 
-  | "::" { DoubleColon }
-
 (* TS punctuation *)
+
+  | ':'     { Colon } 
 
   | ( "|-" | "⊢" ) { Turnstile }
 

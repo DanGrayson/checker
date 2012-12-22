@@ -5,9 +5,7 @@ open Variables
 open Typesystem
 
 type command' = 
-  | AxiomTS of string * lf_expr
-  | AxiomLF of string * lf_type
-  | Rule of int list * string * lf_type
+  | Rule of (int list) option * string * lf_type
   | CheckLF of lf_expr
   | CheckLFtype of lf_type
   | CheckTS of lf_expr

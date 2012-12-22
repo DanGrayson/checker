@@ -57,8 +57,8 @@ New operators for TS format:
     |-		non-associative			TS format for introducing the local
     						context for a judgment.  Unicode: ⊢
 
-    [ ... |- ... ] =>				TS form corresponding to two parameters
-    						in an LF Pi type.  Translated to ( ... ) -> . 
+    { ... |- ... } =>				TS form corresponding to two parameters
+    						in an LF Pi type.
 
 Examples:
 
@@ -67,38 +67,38 @@ Examples:
     f[t/x]                  LF evaluation in traditional form, not a good notation,
     			    because x should be considered bound in f 
 
-    t\\f                    LF evaluation in TS form, proposed
+    f/t                     LF evaluation in TS form
 
 
 
     lambda x, b             the LF lambda in LF form
 
-    x |-> b                   the LF lambda in LF form
+    x |-> b                 the LF lambda in LF form
 
-    x |=> b                   the LF lambda in TS form, proposed
+    x |=> b                 the LF lambda in TS form
 
 
 
-    [lambda;x](f,o,U)       the TS lambda, in full TS form, to be revised
+    [lambda;x](f,o,U)       the TS lambda, in full TS form
 
-    [lambda](f,o,x=>U)       the TS lambda, in full TS form, proposed
+    [lambda](f,o,x|=>U)     the TS lambda, in full TS form, an alternative
 
     lambda x:T, o           the TS lambda, in abbreviated TS form
 
-    (x:T) |-> o               the TS lambda, in abbreviated TS form, proposed as an
+    (x:T) |-> o             the TS lambda, in abbreviated TS form, proposed as an
     			    alternative 
 
-    ([lambda] f o (x|->U))    the TS lambda, in full LF form
+    ([lambda] f o (x|->U))  the TS lambda, in full LF form
 
 
 
-    [ev;x](f, t, U)         TS evaluation in full TS form, to be revised
+    [ev;x](f, t, U)         TS evaluation in full TS form
 
-    [ev](f, t, x |=> U)       TS evaluation in full TS form, proposed
+    [ev](f, t, x |=> U)     TS evaluation in full TS form
 
     f t                     TS evaluation in abbreviated TS form
 
-    ([ev] f t (x |-> U))      TS evaluation in LF form
+    ([ev] f t (x |-> U))    TS evaluation in LF form
 
 
 
@@ -108,38 +108,39 @@ Examples:
 
     [Pi;x](T,U)             the TS Pi in TS full form, to be revised
 
-    [Pi](T,x |=> U)           the TS Pi in TS full form, proposed
+    [Pi](T,x |=> U)         the TS Pi in TS full form, proposed
 
-    ([Pi] T (x |-> U)         the TS Pi in LF form
+    ([Pi] T (x |-> U)       the TS Pi in LF form
 
 
 
     A -> B                  LF function type in LF form
 
-    A => B                   LF function type in TS form, proposed
+    A => B                  LF function type in TS form
 
-    (x:T) -> U              the LF Pi in LF form, proposed as an alternative
+    (x:T) -> U              the LF Pi in LF form
 
     Pi x:T, U               the LF Pi in LF form
 
-    [ T Type ] => ...       proposed TS form for the LF type that corresponds to
-
-		  		(T:texp) * (istype T) -> ...
-
-    [ b:U ] => ...          proposed TS form for LF type
-
-				(b:oexp) -> (hastype b U) -> ...
 
 
-    [ x:T |- U Type] => ...   proposed TS form notation for LF
+    { |- T Type } ...       TS form for the LF type (T:(T1:texp) × istype T1) ⟶  ...
 
-				(U : oexp->texp) -> ((x:oexp) -> (h:hastype x T) ->
-				(istype (U x))) -> ... 
+    { |-  b:U } ...         TS form for the LF type
+
+    				(b : ((b:oexp) × hastype b T₁) ⟶ ...
+
+    { x:T |- U Type } ...   TS form notation for LF
+
+    				(U : (U:oexp ⟶ texp) × 
+				     ((x:oexp) ⟶ hastype x T₁ ⟶
+    				                 istype (U x))) 
+				 -> ... 
 
 
-    [ x:T |- b:U ] => ...     proposed TS form notation for LF type
+    { x:T |- b:U } ...     TS form notation for LF type
 
-				 (b : oexp->oexp) -> ((x:oexp) -> (hastype x T) ->
+				 ( b : ((b : oexp->oexp) -> ((x:oexp) -> (hastype x T) ->
 				 (hastype (b x) (U x))) -> ... 
 
 				 In other words, we think of b as introducing a pair of
@@ -148,105 +149,6 @@ Examples:
 
 				    (b : Sigma b' : oexp -> oexp, (x:oexp) -> 
 				    (hastype x T) -> (hastype (b' x) (U x))) -> ... 
-
-
-A rule in LF notation, currently parsable by the program:
-
-Rule 27 beta_reduction :: Pi T : texp, Pi U : oexp -> texp, Pi t : oexp, Pi f : oexp -> oexp,
-
-     [ t : T ] -> 
-
-     (Pi x:oexp, [ x : T ] -> [ (f x) : (U x) ]) ->
-
-     [ ([ev] ( [lambda] T f ) t U) = (f t) : (U t) ].
-
-the same rule in the proposed TS notation:
-
-Rule 27 beta_reduction :
-
-     [ |- T Type ] =>
-
-     [ x : T |- U Type ] =>
-
-     [ |- t : T ] =>
-
-     [ x : T |- b : U ] =>
-
-     [ (lambda x:T, b) t = t\\b : t\\U ].
-
-The last line above could be expanded to 
-
-     [ [ev]( [lambda](T, x |=> b), t, t\\U ) = t\\b : t\\U ].
-
-by the type checker, or written that way in full form.
-
-In TS format code, how would we call beta_reduction, given that it would
-be an LF definition of type
-
-   (T:texp) -> (istype T) ->
-   (U:oexp->texp) -> ((x:oexp) -> istype (U x)) ->
-   (t:oexp) -> (hastype t T)
-   (b:oexp->oexp) -> ((x:oexp) -> hastype (b x) (U x)) -> 
-   (oqual ([ev] ( [lambda] T f ) t U) (f t) (U t)).
-
-?  We'd like to call it with just 4 parameters, instead of 8:
-
-   beta_reduction T x t b.
-
-So it looks like a definition call in TS format has to always multiply the number of
-parameters by 2, or use Sigma types, and something in the syntax has to distinguish it
-from the TS evaluation of TS expressions, represented by [ev].
-
-It'd better be returning just one thing, so we can pass the result into another 
-expression!
-
-We can say:
-
-       [ |- T Type ] => ... 
-
-       	  means
-
-       ((T:texp) * istype T) -> ...
-
-and
-
-       [ t : T |- U Type ] => ... 
-
-       	  means
-
-       (U:oexp->texp) * ((t:T_1) * hastype t T_1 -> istype (t\\U)) -> ...
-
-and
-
-       [ |- o : T ] => ... 
-
-       	  means
-
-       ((o:oexp) * (hastype o T)) -> ...
-
-and
-
-       [ t : T |- o : U ] => ... 
-
-       	  means
-
-       (o:oexp->oexp) * ((t:T_1) * hastype t T_1 -> hastype o (t\\U)) -> ...
-
-and
-
-       [ T = T' ] => ... 
-
-       	  means
-
-       tequal T T' -> ...
-
-and 
-
-       [ o = o' : T ] => ... 
-
-       	   means
-
-       oequal o o' T -> ...
 
 -----------------------------------------------------------------------------
 
@@ -315,3 +217,43 @@ http://www.cs.cmu.edu/~fp/courses/lp/lectures/06-unif.pdf
 Higher-order pattern unification
 http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.190.4789
 
+-----------------------------------------------------------------------------
+
+We need a pretty printer that can make something like this:
+
+compose0'' = u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 
+	     (pair 
+	     	([ev] g₁ ([ev] f₁ t₁ (_ ⟼ ([El] U₁))) (_ ⟼ ([El] V₁))) 
+		(ev_hastype 
+		  (pair ([El] U₁) (El_istype u (pair U₁ U₂))₂) 
+		  (pair (_ ⟼ ([El] V₁)) (_ ⟼ _ ⟼ (El_istype u (pair V₁ V₂))₂)) 
+		  (pair g₁ (cast
+		  	     (pair 
+		  		([El] ([∀] u u U₁ (_ ⟼ V₁)) 
+				(El_istype 
+					u 
+					(pair ([∀] u u U₁ (_ ⟼ V₁)) 
+					      (forall u u (pair U₁ U₂) (pair (_ ⟼ V₁) (_ ⟼ _ ⟼ V₂)))₂))₂) 
+		   	     (pair ([∏] ([El] U₁) (_ ⟼ ([El] V₁))) 
+			           (∏_istype (pair ([El] U₁) (El_istype u (pair U₁ U₂))₂) 
+				   	     (pair (_ ⟼ ([El] V₁)) (_ ⟼ _ ⟼ (El_istype u (pair V₁ V₂))₂)))₂) 
+			     (pair g₁ g₂) 
+			     (El_forall_reduction u u (pair U₁ U₂) (pair (_ ⟼ V₁) (_ ⟼ _ ⟼ V₂))))₂) 
+		  (pair ([ev] f₁ t₁ (_ ⟼ ([El] U₁)))
+		        (ev_hastype 
+			    (pair ([El] T₁) (El_istype u (pair T₁ T₂))₂)
+			    (pair (_ ⟼ ([El] U₁)) (_ ⟼ _ ⟼ (El_istype u (pair U₁ U₂))₂)) 
+			    (pair f₁ 
+			          (cast (pair ([El] ([∀] u u T₁ (_ ⟼ U₁))) 
+				  	      (El_istype 
+					      	u 
+					      	(pair 
+						  ([∀] u u T₁ (_ ⟼ U₁)) 
+						  (forall u u (pair T₁ T₂)
+						  	      (pair (_ ⟼ U₁) (_ ⟼ _ ⟼ U₂)))₂))₂) 
+				        (pair ([∏] ([El] T₁) (_ ⟼ ([El] U₁)))
+					      (∏_istype (pair ([El] T₁) (El_istype u (pair T₁ T₂))₂) 
+					      	        (pair (_ ⟼ ([El] U₁)) (_ ⟼ _ ⟼ (El_istype u (pair U₁ U₂))₂)))₂) 
+					(pair f₁ f₂) 
+					(El_forall_reduction u u (pair T₁ T₂) (pair (_ ⟼ U₁) (_ ⟼ _ ⟼ U₂))))₂) 
+			    (pair t₁ t₂))₂))₂)

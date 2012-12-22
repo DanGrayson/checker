@@ -1,7 +1,8 @@
 TSFILES = rules.ts demo.ts test.ts test2.ts test3.ts
 
 CHECKER_EXE = checker.byte
-BARE_CHECKER := OCAMLRUNPARAM=$(RUN) ./$(CHECKER_EXE)
+CHECKER_EXE = checker.native
+BARE_CHECKER := OCAMLRUNPARAM=$(RUN) time ./$(CHECKER_EXE)
 CHECKER := $(BARE_CHECKER) rules.ts
 
 DEBUG = no
@@ -19,7 +20,7 @@ BFLAGS += -use-menhir
 # BFLAGS += -verbose 0
 SRCFILES =					\
 	error.ml				\
-	variables.ml \
+	variables.ml				\
 	typesystem.ml				\
 	names.ml				\
 	helpers.ml				\
@@ -32,7 +33,6 @@ SRCFILES =					\
 	tau.ml tau.mli				\
 	lfcheck.ml				\
 	tactics.ml				\
-	definitions.ml				\
 	grammar.mly				\
 	tokens.mll				\
 	toplevel.ml				\

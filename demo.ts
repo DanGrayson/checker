@@ -1,110 +1,83 @@
 # -*- coding: utf-8 -*-
 
-# idea:
-# Axiom LF car : Notation( (x |-> (pi1 x)) ).
+# All the base judgments, and what would satisfy them as evidence.
+# The binders are present in order to produce well-formed types.
+# ( Here "with" means a satisfactory term would be a pair. )
 
+Check : TS (T:texp) =>             [ T Type ].		# a proof that T is a type
 
-Variable T Type.
+Check : TS (T:texp) =>             |- T Type.		# T with a proof that T is a type
 
-Check :: (T:texp) × (istype T) .
-Axiom LF o : oexp.
-Check :: oexp -> oexp.
+Check : TS (T:texp) => (t:oexp) => [ t : T ].		# a proof that t has type T
 
-Axiom t : T.
+Check : TS (T:texp) => (t:oexp) => |- t : T.		# t with a proof that t has type T
 
-End.
+Check : TS (T:texp) =>             : T.			# an o-expression with a proof that it has type T
 
-Definition compose1 (T U V Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;; (
-       # LF syntax
-       ev_hastype U_1 (_ ⟼ V_1) g_1 ([ev] f_1 t_1 (_ ⟼ U_1)) $a (ev_hastype T_1 (_ ⟼ U_1) f_1 t_1 $a $a)).
+Check : TS (T:texp) => (U:texp) => [ T = U ].		# a proof that T = U (type equality)
 
-Definition compose1' (T U V Type) (g:U⟶V) (f:T⟶U) (t:T) := g(f t) : V ;
-       # new TS syntax
-       [ev_hastype](U, _ ⟾ V, g, f t, $a, [ev_hastype](T, _ ⟾ U, f, t, $a, $a)).
+Check : TS (T:texp) => (t:oexp) 
+                    => (u:oexp) => [ t = u : T ].	# a proof that t = u : T (object equality)
 
-Definition compose2 (T U V Type) (g:U⟶V) (f:T⟶U) := [lambda;t](T,g(f t)) : T ⟶ V ;;
-      # LF syntax
-      (λ_hastype T (_ ⟼ V) (t ⟼ ([ev] g ([ev] f t (_ ⟼ U)) (_ ⟼ V)) ) $a (t ⟼ _ ⟼ (ev_hastype U (_ ⟼ V) g ([ev] f t (_ ⟼ U)) $a (ev_hastype T (_ ⟼ U) f t $a $a )))).
+# Here are the base judgments again, but this time with binders for pairs.  For example,
+# { |- T Type } denotes a parameter T whose value is a t-expression with a proof that it is a type.
 
-Definition compose2' (T U V Type) (g:U⟶V) (f:T⟶U) := [lambda;t](T,g(f t)) : T ⟶ V ;
-      # new TS syntax
-      [λ_hastype](T, _ ⟾ V, t ⟾ g (f t), $a, t ⟾ _ ⟾ [ev_hastype](U, _ ⟾ V, g, f t, $a, [ev_hastype](T, _ ⟾ U, f, t, $a, $a))).
+Check : TS { |- T Type }        [ T Type ].		# T with a proof that T is a type
 
+Check : TS { |- T Type }        |- T Type.		# T with a proof that T is a type
 
-Definition A (u Ulevel; u=u) (t : [U](u)) := [El](t);; (El_type u _ _).
+Check : TS { |- T Type, t:T }   [ t : T ].		# a proof that t has type T
 
-Definition A'(u Ulevel; u=u) (t : [U](u)) := [El](t); [El_type](u, $a, $0).
+Check : TS { |- T Type, t:T }   |- t : T.		# t with a proof that t has type T
 
-Variable u1 Ulevel.
+Check : TS { |- T Type }        : T.			# an o-expression with a proof that it has type T
 
-Definition C := [u](u1) : [U]([next](u1));; (u_univ $a).
+Check : TS { |- T U Type }      [ T = U ].		# a proof that T = U (type equality)
 
-Definition B (u Ulevel) (t : [U](u)) := [El](t);; (El_type u $a $0).
+Check : TS { |- T Type, t u:T } [ t = u : T ].		# a proof that t = u : T (object equality)
 
-Check LF (B ([next] u1) ([u] u1) (u_univ u1)).
+# Here are the judgments involving ulevel equality:
 
-Check LF ∏_istype.
+Check : TS (t:oexp) => (u:oexp) => [ t ~ u ].		# ulevel equivalence for o-expressions
+Check : TS (T:texp) => (U:texp) => [ T ~ U Type ].	# ulevel equivalence for t-expressions
+Check : TS (u:uexp) => (v:uexp) => [ u ~ v Ulevel ].	# ulevel equivalence for u-expressions
 
-Definition E (u1 u2 u3 Ulevel)(K Type) := K⟶K;; (∏_istype $a (_ ⟼ $a) (_ ⟼ _ ⟼ $a) ).
+Check : TS { |- T Type, t u:T } [ t ~ u ].		# ulevel equivalence for o-expressions
+Check : TS { |- T U Type }      [ T ~ U Type ].		# ulevel equivalence for t-expressions
+Check : TS { |- u v Ulevel }    [ u ~ v Ulevel ].	# ulevel equivalence for u-expressions
 
-Definition E'(u1 u2 u3 Ulevel)(K Type) := K⟶K; [∏_istype]($a, _ ⟾ $a, _ ⟾ _ ⟾ $a).
+# Sample theorems demonstrating the syntax.
 
-Check LF beta_reduction.
+Theorem compose1  { ⊢ T Type, U Type, V Type, g:U⟶V, f:T⟶U, t:T } : V ;;
+		T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 
+		(ev_hastype U V g (ev_hastype T U f t)).
 
-End.
+Theorem compose2 { ⊢ u Ulevel, T:[U](u), U:[U](u), V:[U](u), g:*U ⟶ *V, f:*T ⟶ *U, t:*T } : *V ;; 
+		u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 
+		(ev_hastype (El_istype u U)
+			    (El_istype u V) 
+			    g 
+			    (ev_hastype 
+			    	(El_istype u T) 
+				(El_istype u U) 
+				f 
+				t)).
 
-Check LFtypeTS
-
-     [ |- T Type ] =>
-
-     [ x : T |- U Type ] =>
-
-     [ |- t : T ] =>
-
-     [ x : T |- b : U ] =>
-
-     [ (lambda x:T, b) t = t\\b : t\\U ].   # here's where the error is
-
-End.
-
-Check :  (with sigma on)
-
-	(T:(T0:texp) * (istype T0)) -> 
-	(U:(U0:texp) * (istype U0)) -> 
-	(t:(t0:oexp) * (hastype t0 (pi1 T))) -> 
-	(b:(b0:oexp) * (hastype b0 (pi1 U))) -> 
-	(oequal ([ev] ([λ] T (x ⟼ b)) t $ev3) (b t) (U t))
-
-Check : (with sigma off)
-	
-	(T:texp) ⟶ (istype T) ⟶ 
-	(U:texp) ⟶ (istype U) ⟶ 
-	(t:oexp) ⟶ (hastype t T) ⟶ 
-	(b:oexp) ⟶ (hastype b U) ⟶ 
-	(oequal ([ev] ([λ] T (x ⟼ b)) t $ev3) (b t) (U t))
-
-should be
-
-	(T:(T0:texp) * (istype T0)) -> 
-	(U:(U0:oexp -> texp) * (istype U0)) -> 
-	(t:(t0:oexp) * (hastype t0 (pi1 T))) -> 
-	(b:(b0:oexp -> oexp) * ((t':(t0:oexp) * (hastype t0 (pi1 T))) => (hastype ((pi1 b0) t') ((pi1 U) t')))) -> 
-	(oequal ([ev] ([λ] (pi1 T) (pi1 b)) (pi1 t) $ev3) ((pi1 b) (pi1 t)) ((pi1 U) (pi1 t)))
-
-compare to
-
-    beta_reduction : 
-
-    	(T:texp) -> 
-	(U:oexp -> texp) -> 
-	(t:oexp) -> 
-	(f:oexp -> oexp) -> 
-	(hastype t T) -> 
-	((t':oexp) -> (hastype t' T) -> (hastype (f t') (U t'))) -> 
-	(oequal ([ev] ([λ] T f) t U) (f t) (U t))
+Theorem compose3 { |- u Ulevel, T U V : [U](u), g : *[∀;x](u,u,U,V), f : *[∀;x](u,u,T,U), t:*T } : *V ;;
+		 u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 
+		 (ev_hastype (El_istype u U) (El_istype u V) 
+		 	(cast (El_istype u (forall u u U V)) 
+			      (∏_istype (El_istype u U) (El_istype u V))
+			      g 
+			      (El_forall_reduction u u U V))
+			(ev_hastype (El_istype u T) (El_istype u U) 
+		 	(cast (El_istype u (forall u u T U)) 
+			      (∏_istype (El_istype u T) (El_istype u U))
+			      f
+			      (El_forall_reduction u u T U))
+			t)).
 
 End.
-
 
 #   Local Variables:
 #   compile-command: "make demo "

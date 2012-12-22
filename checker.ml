@@ -25,7 +25,6 @@ end
 exception Error_Handled
 exception FileFinished
 exception StopParsingFile
-exception Debugging
 exception WithPosition of position * exn
 
 let raise_switch ex1 ex2 = raise (if debug then ex1 else ex2)
@@ -113,14 +112,6 @@ let add_tVars env tvars =
 	 )
       )
       env
-
-let ts_axiomCommand env pos name t = 
-  if show_rules then ( printf "\nAxiom TS %s: %a\n%!" name  _ts t );
-  let t = Lfcheck.type_check env t texp in
-  if show_rules then ( printf "        : %a\n%!" _e t );
-  let v = Var name in
-  ensure_new_name env pos v;
-  ts_bind pos (v,t) env
 
 let lf_axiomCommand env pos name t =
   if show_rules then ( printf "\nAxiom LF %s: %a\n%!" name  _t t );
@@ -215,8 +206,6 @@ let process_command env lexbuf =
     | Toplevel.UVariable (uvars,eqns) -> ubind env uvars eqns
     | Toplevel.Variable tvars -> add_tVars env tvars
     | Toplevel.Rule (num,name,t) -> lf_axiomCommand env pos name t
-    | Toplevel.AxiomLF (name,t) -> lf_axiomCommand env pos name t
-    | Toplevel.AxiomTS (name,t) -> ts_axiomCommand env pos name t
     | Toplevel.CheckLF x -> checkLFCommand env pos x; env
     | Toplevel.CheckLFtype x -> checkLFtypeCommand env x; env
     | Toplevel.CheckTS x -> checkTSCommand env x; env
@@ -291,10 +280,12 @@ let toplevel() =
 let _ = try
   toplevel()
 with
-| Internal_expr e as ex ->
-    fprintf stderr "%a: internal error: %a\n%!" _pos_of e  _e e;
-    raise ex
-| Unimplemented_expr e as ex ->
-    fprintf stderr "%a: unimplemented feature: %a\n%!" _pos_of e  _e e;
-    raise ex
+| NotImplemented ->
+    fprintf stderr "error: feature not implemented\n%!"
+| Internal ->
+    fprintf stderr "error: internal error\n%!"
+| Internal_expr e ->
+    fprintf stderr "%a: internal error: %a\n%!" _pos_of e  _e e
+| Unimplemented_expr e ->
+    fprintf stderr "%a: unimplemented feature: %a\n%!" _pos_of e  _e e
 

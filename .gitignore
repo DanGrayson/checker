@@ -2,6 +2,7 @@ checker
 TAGS
 _build
 *.byte
+*.native
 checker.docdir
 checker.odocl
 tmp
