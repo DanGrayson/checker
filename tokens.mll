@@ -61,7 +61,7 @@ rule expr_tokens = parse
   | "LF" { LF }
   | "TS" { TS }
   | "Check" { Check }
-  | "Axiom" { Rule }
+  | "Axiom" { Axiom }
   | "Alpha" { WAlpha }
   | "Variable" { WVariable }
   | "End" { WEnd }

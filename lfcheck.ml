@@ -11,6 +11,8 @@
 
 *)
 
+let auto_intro_mode = ref true
+
 open Error
 open Variables
 open Typesystem
@@ -367,8 +369,8 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
         subtype env s t;
         e
       with SubtypeFailure -> 
-	if not (is_product_type env s) && (is_product_type env t) then (
-	  (* now we may try a tactic to salvage the type checking: if a function was demanded, and we don't have one,
+	if !auto_intro_mode && not (is_product_type env s) && (is_product_type env t) then (
+	  (* now we try a tactic to salvage the type checking: if a function was demanded, and we don't have one,
 	     we make one from e that ignores its one parameter and returns e *)
 	  let e = with_pos (get_pos e) (LAMBDA(newunused(), e)) in
 	  type_check surr env e t)

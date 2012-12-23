@@ -206,7 +206,7 @@ let process_command env lexbuf =
     match c with
     | Toplevel.UVariable (uvars,eqns) -> ubind env uvars eqns
     | Toplevel.Variable tvars -> add_tVars env tvars
-    | Toplevel.Rule (num,name,t) -> lf_axiomCommand env pos name t
+    | Toplevel.Axiom (num,name,t) -> lf_axiomCommand env pos name t
     | Toplevel.CheckLF x -> checkLFCommand env pos x; env
     | Toplevel.CheckLFtype x -> checkLFtypeCommand env x; env
     | Toplevel.CheckTS x -> checkTSCommand env x; env
@@ -262,6 +262,8 @@ let toplevel() =
 	 [
 	  ("--debug" , Arg.Set debug_mode, " Turn on debug mode");
 	  ("--no-debug" , Arg.Clear debug_mode, " Turn off debug mode");
+	  ("--auto-intro" , Arg.Set Lfcheck.auto_intro_mode, " Turn on auto_intro mode");
+	  ("--no-auto-intro" , Arg.Clear Lfcheck.auto_intro_mode, " Turn off auto_intro mode");
 	])
       (fun filename -> env := parse_file !env filename)
       ("usage: " ^ (Filename.basename Sys.argv.(0)) ^ " [option|filename] ...");

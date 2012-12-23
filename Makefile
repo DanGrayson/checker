@@ -5,6 +5,7 @@ CODE = byte
 
 CHECKER_EXE = checker.$(CODE)
 BARE_CHECKER := OCAMLRUNPARAM=$(RUN) time ./$(CHECKER_EXE)
+# BARE_CHECKER +=  --no-auto-intro
 CHECKER := $(BARE_CHECKER) rules.ts
 
 DEBUG = no

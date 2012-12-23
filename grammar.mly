@@ -59,7 +59,7 @@ let apply_binder pos (c:(var marked * lf_expr) list) v t1 t2 u =
   (* tokens *)
 
   Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod Colon Wstar
-  Arrow ArrowFromBar Wequal Wunderscore Rule Wgreaterequal Wgreater
+  Arrow ArrowFromBar Wequal Wunderscore Axiom Wgreaterequal Wgreater
   Wlessequal Wless Semicolon Ulevel Kumax Type KPi Klambda KSigma Check
   WShow WEnd WVariable WAlpha Weof CheckUniverses Wtilde Singleton
   Wdollar LF TS Kpair K_1 K_2 Times Slash Turnstile DoubleArrow
@@ -271,8 +271,11 @@ unmarked_command:
     | WVariable vars= nonempty_list(IDENTIFIER) Ulevel eqns= preceded(Semicolon,uEquation)* Wperiod
 	{ Toplevel.UVariable (vars,eqns) }
 
-    | Rule num= option(dotted_number) name= IDENTIFIER t= ts_judgment Wperiod
-	{ Toplevel.Rule (num,name,t) }
+    | Axiom num= option(dotted_number) name= IDENTIFIER t= ts_judgment Wperiod
+	{ Toplevel.Axiom (num,name,t) }
+
+    | Axiom LF num= option(dotted_number) name= IDENTIFIER t= lf_type Wperiod
+	{ Toplevel.Axiom (num,name,t) }
 
     | Check TS o= ts_expr Wperiod
 	{ Toplevel.CheckTS o }

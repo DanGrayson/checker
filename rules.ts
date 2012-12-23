@@ -54,7 +54,7 @@ Axiom 3.4.24.2 λ_equality2 { ⊢ T Type } { x : T ⊢ U U' Type, o o' : U/x }
 
 			[ [λ](T,o) = [λ](T,o') : [∏](T,U) ].
 
-Axiom 3.4.25 ev { ⊢ T Type } { _ : T ⊢ U Type } { ⊢ f : [∏](T,U), o : T } ⊢ f o : U/o.
+Axiom 3.4.25 ev { ⊢ T Type } { _ : T ⊢ U Type } { ⊢ f : [∏](T,U), o : T } ⊢ [ev](f,o,U) : U/o.
 
 Axiom 3.4.26 ev_eq { ⊢ T Type, o o' : T } { _ : T ⊢ U U' Type } { ⊢ f f' : [∏](T,U) } 
 
@@ -81,8 +81,6 @@ Axiom 3.4.32 El_forall_reduction { ⊢ M1 M2 Ulevel, o1 : [U](M1) } { _ : *o1 �
           [ (*[∀](M1,M2,o1,o2)) = ([∏;x](*o1,[El](o2/x))) ].		# parser doesn't let us use *(o2/x); fix
 
 Axiom 5.3.1 Pt_istype ⊢ [Pt]() Type. 
-
-Check LF Pt_istype.
 
 Axiom 5.3.2 tt_hastype ⊢ [tt]() : [Pt](). 
 

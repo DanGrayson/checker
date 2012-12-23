@@ -77,13 +77,23 @@ Theorem compose3 { |- u Ulevel, T U V : [U](u), g : *[∀;x](u,u,U,V), f : *[∀
                  u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 
                  (ev (El u U) (El u V) (A u U V g) (ev (El u T) (El u U) (A u T U f) t)).
 
-End.
+Check LF λ_hastype.
 
 Theorem compose4 { |- u Ulevel, T U V : [U](u), g : *[∀;x](u,u,U,V), f : *[∀;x](u,u,T,U) } : *T -> *V ::=
                  u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ 
-		 t ⟼ (ev (El u U) (El u V) (A u U V g) (ev (El u T) (El u U) (A u T U f) t)).
+		 (λ_hastype 
+			    (El u T) (El u V) 
+			    (compose3 u T U V g f) # <--- problem here
+			    ).
 
 End.
+
+	need:
+
+	(o:oexp ⟶ oexp) × ((x:oexp) ⟶ 
+				hastype x (El u (pair T₁ T₂))₁ ⟶ 
+				hastype (o x) (El u (pair V₁ V₂))₁)
+
 
 Theorem A' { |- u Ulevel, T U : [U](u), f : *[∀;x](u,u,T,U) } : [Pi](*T,*U) ::=  # <-- bug here 
                  u ⟼ T ⟼ U ⟼ f ⟼ 
