@@ -285,13 +285,12 @@ let rec lf_kind_to_string_with_subs subs = function
   | K_Pi(v,t,k) -> 
       let used = occurs_in_kind v k in
       let w,subs = var_chooser v subs occurs_in_kind k in
-      let prefix = "∏ " in
       let infix = " ⟶ " in
       let infix_prec = arrow_prec in
       let t = lf_type_to_string_with_subs subs t in
       let k = lf_kind_to_string_with_subs subs k in
       if used then
-        binder_prec, concat ["(";prefix; vartostring v; ":"; paren_right colon_prec t; ") "; paren_right binder_prec k]
+        binder_prec, concat ["(";vartostring w; ":"; paren_right colon_prec t; ")";infix; paren_right binder_prec k]
       else
         infix_prec, concat [paren_left infix_prec t; infix; paren_right infix_prec k]
 
