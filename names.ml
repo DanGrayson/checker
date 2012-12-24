@@ -47,8 +47,8 @@ let lf_type_constant_table = [
   F_ulevel_equality, "uequal" ;
   F_type_equality, "tequal" ;
   F_object_equality, "oequal" ;
-  F_type_uequality, "t-uequal" ;
-  F_object_uequality, "o-uequal"
+  F_type_uequality, "tuequal" ;
+  F_object_uequality, "ouequal"
 ]
 
 let lf_type_head_to_string h = List.assoc h lf_type_constant_table
