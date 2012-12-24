@@ -16,19 +16,6 @@ let show_subs (subl : (var * lf_expr) list) =
   printf " subs =\n";
   List.iter (fun (v,e) -> printf "   %a => %a\n" _v v _e e) subl
 
-let spy_counter = ref 0
-
-let spy p subber subl e = 
-  if false && !debug_mode then (
-    let n = !spy_counter in
-    incr spy_counter;
-    show_subs subl;
-    printf " in  %d = %a\n%!" n p e;
-    let e = subber subl e in
-    printf " out %d = %a\n%!" n p e;
-    e)
-  else subber subl e
-
 let rec subst_list (subl : (var * lf_expr) list) es = List.map (subst subl) es
 
 and subst_spine subl = function
@@ -37,9 +24,7 @@ and subst_spine subl = function
   | CDR a -> CDR(subst_spine subl a)
   | END -> END
 
-and subst subl e = spy _e subst'' subl e
-
-and subst'' subl e = 
+and subst subl e = 
   let pos = get_pos e in
   match unmark e with 
   | APPLY(h,args) -> (
@@ -81,9 +66,7 @@ and apply_args (head:lf_expr) args =
 
 and subst_type_list (subl : (var * lf_expr) list) ts = List.map (subst_type subl) ts
 
-and subst_type subl t = spy _t subst_type'' subl t
-
-and subst_type'' (subl : (var * lf_expr) list) (pos,t) = 
+and subst_type (subl : (var * lf_expr) list) (pos,t) = 
   (pos,
    match t with
    | F_Pi(v,a,b) ->
@@ -104,9 +87,7 @@ and subst_type_fresh pos subl (v,t) =
 
 let rec subst_kind_list (subl : (var * lf_expr) list) ts = List.map (subst_kind subl) ts
 
-and subst_kind subl k = spy _k subst_kind'' subl k
-
-and subst_kind'' (subl : (var * lf_expr) list) k = 
+and subst_kind (subl : (var * lf_expr) list) k = 
    match k with
    | K_type -> K_type
    | K_Pi(v,a,b) -> 
