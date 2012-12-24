@@ -453,7 +453,7 @@ let type_validity (env:context) (t:lf_type) : lf_type =
             | K_type, x :: args -> err env pos "at least one argument too many";
             | K_Pi(v,a,kind'), x :: args -> 
                 let x' = type_check [] env x a in
-                x' :: repeat ((v,a) :: env) kind' args
+                x' :: repeat env (subst_kind (v,x') kind') args
             | K_Pi(_,a,_), [] -> errmissingarg env pos a
           in 
           let args' = repeat env kind args in
