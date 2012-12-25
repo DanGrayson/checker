@@ -42,21 +42,20 @@ Check : TS { |- T Type, t u:T } [ t = u : T ].          # a proof that t = u : T
 
 # Here are the judgments involving ulevel equality:
 
-Check : TS (t:oexp) => (u:oexp) => [ t ~ u ].           # ulevel equivalence for o-expressions
+Check : TS (T:texp) => (t:oexp) => 
+      		       (u:oexp) => [ t ~ u : T ].       # ulevel equivalence for o-expressions
 Check : TS (T:texp) => (U:texp) => [ T ~ U Type ].      # ulevel equivalence for t-expressions
 Check : TS (u:uexp) => (v:uexp) => [ u ~ v Ulevel ].    # ulevel equivalence for u-expressions
 
-Check : TS { |- T Type, t u:T }    [ t ~ u ].           # ulevel equivalence for o-expressions
+Check : TS { |- T Type, t u:T }    [ t ~ u : T ].       # ulevel equivalence for o-expressions
 Check : TS { |- T U Type }         [ T ~ U Type ].      # ulevel equivalence for t-expressions
 Check : TS { |- u v Ulevel }       [ u ~ v Ulevel ].    # ulevel equivalence for u-expressions
 
 # Sample theorems demonstrating the syntax.
 
-Check LF Pt_istype.
-
 Definition Pt Type ::= Pt_istype .
 
-Check LF Pt.
+Check LF ev.
 
 Theorem compose1  { ⊢ T Type, U Type, V Type, g:U⟶V, f:T⟶U, t:T } : V ::=
                 T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 
@@ -77,7 +76,9 @@ Theorem compose3 { |- u Ulevel, T U V : [U](u), g : *[∀;x](u,u,U,V), f : *[∀
                  u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 
                  (ev (El u U) (El u V) (A u U V g) (ev (El u T) (El u U) (A u T U f) t)).
 
-Check LF λ_hastype.
+End.
+
+# Check LF λ_hastype.
 
 Theorem compose4 { |- u Ulevel, T U V : [U](u), g : *[∀;x](u,u,U,V), f : *[∀;x](u,u,T,U) } : *T -> *V ::=
                  u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ 

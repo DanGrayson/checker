@@ -5,14 +5,12 @@ open Typesystem
 open Names
 open Helpers
 open Definitions
+open Printer
+open Printf
 
 type binder_judgment = ULEV | IST | HAST of lf_expr
 
 let add_single v t u = F_Pi(v, t, u)
-
-let add_definition e t =
-  let v = newfresh (Var "e") in
-  F_Sigma(v, with_pos_of e (F_Singleton(e,oexp)), hastype (var_to_lf v) t)
 
 let car (hd,reversed_args) = (hd, CAR reversed_args)
 
@@ -153,29 +151,28 @@ unmarked_lf_type:
        { F_Pi(v,a,b) }
 
     | a= lf_type Arrow b= lf_type
-       { F_Pi(newunused(),a,b) }
+       { unmark (a @-> b) }
 
     | Singleton Wlparen x= lf_expr Colon t= lf_type Wrparen
 	{ F_Singleton(x,t) }
 
-    | Wlbracket a= lf_expr Type Wrbracket
-	{ F_APPLY(F_istype, [a]) }
+    | Wlbracket t= lf_expr Type Wrbracket
+	{ unmark (istype t) }
 
-    | Wlbracket a= lf_expr Colon b= lf_expr Wrbracket
-	{ F_APPLY(F_hastype, [a;b]) }
+    | Wlbracket a= lf_expr Colon t= lf_expr Wrbracket
+	{ unmark (hastype a t) }
 
-    | Wlbracket a= lf_expr Wequal b= lf_expr Colon c= lf_expr Wrbracket
-	{ F_APPLY(F_object_equality, [a;b;c]) }
+    | Wlbracket a= lf_expr Wequal b= lf_expr Colon t= lf_expr Wrbracket
+	{ unmark (object_equality a b t) }
 
-    | Wlbracket a= lf_expr Wequal b= lf_expr Wrbracket
-	{ F_APPLY(F_type_equality, [a;b]) }
+    | Wlbracket t= lf_expr Wequal u= lf_expr Wrbracket
+	{ unmark (type_equality t u) }
 
+    | Wlbracket t= lf_expr Wtilde u= lf_expr Type Wrbracket
+	{ unmark (type_uequality t u) }
 
-    | Wlbracket a= lf_expr Wtilde b= lf_expr Type Wrbracket
-	{ F_APPLY(F_type_uequality, [a;b]) }
-
-    | Wlbracket a= lf_expr Wtilde b= lf_expr Wrbracket
-	{ F_APPLY(F_object_uequality, [a;b]) }
+    | Wlbracket a= lf_expr Wtilde b= lf_expr Colon t= lf_expr Wrbracket
+	{ unmark (object_uequality a b t) }
 
 lf_type_constant:
 
@@ -359,7 +356,7 @@ unmarked_ts_judgment:
 	{ F_Pi(v,a,b) }
 
     | a= ts_judgment DoubleArrow b= ts_judgment
-	{ F_Pi(newunused(),a,b) }
+	{ unmark (a @-> b) }
 
     | Wlparen v= variable Colon a= ts_judgment Wrparen Times b= ts_judgment
 	{ F_Sigma(v,a,b) }
@@ -380,7 +377,7 @@ unmarked_ts_judgment:
 	  F_Sigma(v, oexp, with_pos pos (F_APPLY(F_hastype, [var_to_lf_pos pos v; t]))) }
 
     | Turnstile x= ts_expr Colon t= ts_expr
-	{ add_definition x t }
+	{ unmark (this_object_of_type (get_pos x) x t) }
 
     | Turnstile a= ts_expr Type
 	{ let v = Var "t" in
@@ -388,10 +385,10 @@ unmarked_ts_judgment:
 	  F_Sigma(v, with_pos pos (F_Singleton(a,texp)), with_pos pos (F_APPLY(F_istype, [var_to_lf_pos pos v]))) }
 
     | Wlbracket a= ts_expr Type Wrbracket
-	{ F_APPLY(F_istype, [a]) }
+	{ unmark (istype a) }
 
     | Wlbracket a= ts_expr Wequal b= ts_expr Wrbracket
-	{ F_APPLY(F_type_equality, [a;b]) }
+	{ unmark (type_equality a b) }
 
     | Wlbracket x= ts_expr Colon t= ts_expr Wrbracket
 	{ unmark (hastype x t) }
@@ -400,13 +397,13 @@ unmarked_ts_judgment:
 	{ unmark (object_equality x y t) }
 
     | Wlbracket a= ts_expr Wtilde b= ts_expr Ulevel Wrbracket
-	{ F_APPLY(F_ulevel_equality, [a;b]) }
+	{ unmark (ulevel_equality a b) }
 
     | Wlbracket a= ts_expr Wtilde b= ts_expr Type Wrbracket
-	{ F_APPLY(F_type_uequality, [a;b]) }
+	{ unmark (type_uequality a b) }
 
-    | Wlbracket a= ts_expr Wtilde b= ts_expr Wrbracket
-	{ F_APPLY(F_object_uequality, [a;b]) }
+    | Wlbracket a= ts_expr Wtilde b= ts_expr Colon t= ts_expr Wrbracket
+	{ unmark (object_uequality a b t) } 
 
 (* introduction of parameters *)
 
@@ -440,12 +437,10 @@ binder_judgment:
 
 context:
 
-    | c= terminated( separated_list(
-			  Wcomma,
+    | c= terminated( separated_list( Wcomma,
 			  separated_pair(
-			       marked_variable_or_unused, 
-			       Colon,
-			       ts_expr)),
+			       marked_variable_or_unused,
+			       Colon, ts_expr)),
 		     Turnstile)
 	{c}
 
@@ -541,10 +536,7 @@ unmarked_ts_expr:
 	 let label = 
 	   try List.assoc name Names.lf_expr_head_strings
 	   with Not_found -> 
-	     Printf.fprintf stderr "%s: unknown term constant [%s]\n" 
-	       (errfmt (Position($startpos, $endpos)))
-	       name;
-	     flush stderr;
+	     Printf.fprintf stderr "%s: unknown term constant [%s]\n%!" (errfmt (Position($startpos, $endpos))) name;
 	     $syntaxerror
 	 in
 	 match head_to_vardist label with

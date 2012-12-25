@@ -138,15 +138,16 @@ let uexp = F_uexp @@ []
 let texp = F_texp @@ []
 let oexp = F_oexp @@ []
 
-let ( @-> ) a b = nowhere 4 (F_Pi(newunused(), a, b))
+let arrow a b = nowhere 4 (F_Pi(newunused(), a, b))
+let ( @-> ) = arrow
 
-let istype t = F_istype @@ [t]
-let hastype o t = F_hastype @@ [o;t]
-let ulevel_equality u u' = F_ulevel_equality @@ [u;u']
-let type_uequality t t' = F_type_uequality @@ [t;t']
-let type_equality t t' = F_type_equality @@ [t;t']
-let object_similariy o o' t = F_object_uequality @@ [o;o';t]
-let object_equality o o' t = F_object_equality @@ [o;o';t]
+let istype t = F_istype @@ [t]				     (* t Type *)
+let hastype o t = F_hastype @@ [o;t]			     (* o : t *)
+let ulevel_equality u u' = F_ulevel_equality @@ [u;u']	     (* u ~ u' *)
+let type_uequality t t' = F_type_uequality @@ [t;t']	     (* t ~ t' *)
+let type_equality t t' = F_type_equality @@ [t;t']	     (* t = t' *)
+let object_uequality o o' t = F_object_uequality @@ [o;o';t] (* o ~ o' : t *)
+let object_equality o o' t = F_object_equality @@ [o;o';t]   (* o = o' : t *)
 
 let texp1 = oexp @-> texp
 let texp2 = oexp @-> oexp @-> texp
@@ -226,17 +227,48 @@ type lf_kind =
 
 let ( @@-> ) a b = K_Pi(newunused(), a, b)
 
+let some_type () = 
+  let v = newfresh (Var "T") in
+  nowhere 123 (F_Sigma(v,texp,istype (nowhere 124 (APPLY(V v,END)))))
+
+let some_object_of_type t = 
+  let v = newfresh (Var "x") in
+  nowhere 125 (F_Sigma(v,oexp,hastype (nowhere 126 (APPLY(V v,END))) t))
+
+let this_object_of_type pos o t = 
+  let v = newfresh (Var "x") in
+  with_pos pos (F_Sigma(v,with_pos pos (F_Singleton(o,oexp)),hastype (nowhere 126 (APPLY(V v,END))) t))
+
+let k_pi t k =
+  let v = newfresh (Var "T") in
+  let v' = nowhere 126 (APPLY(V v,END)) in
+  K_Pi(v,t,k v')
+
+let istype_type = texp @@-> K_type
+
+let hastype_type = oexp @@-> texp @@-> K_type
+
+let type_equality_type = texp @@-> texp @@-> K_type
+
+let object_equality_type = oexp @@-> oexp @@-> texp @@-> K_type
+
+let ulevel_equality_type = uexp @@-> uexp @@-> K_type
+
+let type_uequality_type = texp @@-> texp @@-> K_type
+
+let object_uequality_type = oexp @@-> oexp @@-> texp @@-> K_type
+
 let tfhead_to_kind = function
   | F_uexp -> K_type
   | F_texp -> K_type
   | F_oexp -> K_type
-  | F_istype -> texp @@-> K_type
-  | F_hastype -> oexp @@-> texp @@-> K_type
-  | F_ulevel_equality -> uexp @@-> uexp @@-> K_type
-  | F_type_equality -> texp @@-> texp @@-> K_type
-  | F_object_equality -> oexp @@-> oexp @@-> texp @@-> K_type
-  | F_type_uequality -> texp @@-> texp @@-> K_type
-  | F_object_uequality -> oexp @@-> oexp @@-> K_type
+  | F_istype -> istype_type
+  | F_hastype -> hastype_type
+  | F_ulevel_equality -> ulevel_equality_type
+  | F_type_equality -> type_equality_type
+  | F_object_equality -> object_equality_type
+  | F_type_uequality -> type_uequality_type
+  | F_object_uequality -> object_uequality_type
 
 type oSubs = (var * lf_expr) list
 

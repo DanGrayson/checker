@@ -9,14 +9,6 @@ let cite_tactic tac args = APPLY(TAC tac, args)
 
 let ( ** ) x s = ARG(x,s)		(* right associative *)
 
-let reverse_spine a =
-  let rec repeat r = function
-  | ARG(x,a) -> repeat (ARG(x,r)) a
-  | CAR a -> repeat (CAR r) a
-  | CDR a -> repeat (CDR r) a
-  | END -> r
-  in repeat END a
-
 let rec join_args a b =
   if b = END then a else
   match a with
@@ -24,6 +16,17 @@ let rec join_args a b =
   | CAR a -> CAR(join_args a b)
   | CDR a -> CDR(join_args a b)
   | END -> b
+
+let join_args_rev a b =
+  let rec repeat a b =
+    match a with
+    | ARG(x,a) -> repeat a (ARG(x,b))
+    | CAR a -> repeat a (CAR b)
+    | CDR a -> repeat a (CDR b)
+    | END -> b
+in repeat a b
+
+let reverse_spine a = join_args_rev a END
 
 let rec args_compare expr_compare a b =
   match (a,b) with
@@ -46,14 +49,6 @@ let rec exists_in_spine p args =
 let rec args_length = function
   | CAR a | CDR a | ARG(_,a) -> 1 + args_length a
   | END -> 0
-
-let rec args_equal eq args args' =
-  match (args,args') with
-  | ARG(x,args), ARG(x',args') -> eq x x' && args_equal eq args args'
-  | CAR args, CAR args' -> args_equal eq args args'
-  | CDR args, CDR args' -> args_equal eq args args'
-  | END, END -> true
-  | _ -> false
 
 let args_fold f pi1 pi2 accu args = (* it's fold_left, which is the only direction that makes sense *)
   let rec repeat accu args =

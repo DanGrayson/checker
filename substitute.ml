@@ -16,15 +16,15 @@ let show_subs (subl : (var * lf_expr) list) =
   printf " subs =\n";
   List.iter (fun (v,e) -> printf "   %a => %a\n" _v v _e e) subl
 
-let rec subst_list (subl : (var * lf_expr) list) es = List.map (subst subl) es
+let rec subst_list (subl : (var * lf_expr) list) es = List.map (subst_expr subl) es
 
 and subst_spine subl = function
-  | ARG(x,a) -> ARG(subst subl x, subst_spine subl a)
+  | ARG(x,a) -> ARG(subst_expr subl x, subst_spine subl a)
   | CAR a -> CAR(subst_spine subl a)
   | CDR a -> CDR(subst_spine subl a)
   | END -> END
 
-and subst subl e = 
+and subst_expr subl e = 
   let pos = get_pos e in
   match unmark e with 
   | APPLY(h,args) -> (
@@ -35,14 +35,14 @@ and subst subl e =
 	  with Not_found -> pos, APPLY(h,args))
       | FUN(f,t) -> raise NotImplemented
       | U _ | T _ | O _ | TAC _ -> pos, APPLY(h,args))
-  | CONS(x,y) -> pos, CONS(subst subl x,subst subl y)
+  | CONS(x,y) -> pos, CONS(subst_expr subl x,subst_expr subl y)
   | LAMBDA(v, body) -> 
       let (v,body) = subst_fresh pos subl (v,body) in
       pos, LAMBDA(v, body)
 
 and subst_fresh pos subl (v,e) =
   let (v',subl) = fresh pos v subl in
-  let e' = subst subl e in
+  let e' = subst_expr subl e in
   v', e'
 
 and apply_args (head:lf_expr) args =
@@ -58,7 +58,7 @@ and apply_args (head:lf_expr) args =
         | END -> head)
     | LAMBDA(v,body) -> (
         match args with
-        | ARG(x,args) -> repeat (subst [(v,x)] body) args
+        | ARG(x,args) -> repeat (subst_expr [(v,x)] body) args
         | CAR args -> raise (GeneralError "pi1 expected a pair (1)")
 	| CDR args -> raise (GeneralError "pi2 expected a pair (1)")
         | END -> head)
@@ -78,7 +78,7 @@ and subst_type (subl : (var * lf_expr) list) (pos,t) =
        let (v,b) = subst_type_fresh pos subl (v,b) in
        F_Sigma(v,a,b)
    | F_APPLY(label,args) -> F_APPLY(label, subst_list subl args)
-   | F_Singleton(e,t) -> F_Singleton( subst subl e, subst_type subl t ))
+   | F_Singleton(e,t) -> F_Singleton( subst_expr subl e, subst_type subl t ))
 
 and subst_type_fresh pos subl (v,t) =
   let (v,subl) = fresh pos v subl in
@@ -98,13 +98,13 @@ and subst_kind_fresh pos subl (v,t) =
   let (v,subl) = fresh pos v subl in
   v, subst_kind subl t  
 
-let subst_l subs e = if subs = [] then e else subst subs e
+let subst_l subs e = if subs = [] then e else subst_expr subs e
 
 let subst_type_l subs t = if subs = [] then t else subst_type subs t
 
 let preface subber (v,x) e = subber [(v,x)] e
 
-let subst = preface subst
+let subst_expr = preface subst_expr
 
 let subst_type = preface subst_type
 

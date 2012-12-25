@@ -11,7 +11,7 @@
 
 *)
 
-let auto_intro_mode = ref true
+let auto_intro_mode = ref false
 
 open Error
 open Variables
@@ -206,8 +206,8 @@ let rec term_equivalence (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : uni
           let w = newfresh (Var "v") in
           term_equivalence
             ((w,a) :: env)
-            (subst (t,var_to_lf w) x)   (* with deBruijn indices, this will go away *)
-            (subst (u,var_to_lf w) y) 
+            (subst_expr (t,var_to_lf w) x)   (* with deBruijn indices, this will go away *)
+            (subst_expr (u,var_to_lf w) y) 
             (subst_type (v,var_to_lf w) b)
       | _ -> 
 	  printf "%a: term_equivalence expected two lambda expressions, but got\n%a: x=%a\n%a: y=%a\n%!" _pos_of x _pos_of x _e x _pos_of y _e y;
@@ -365,6 +365,7 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
 
   | _, _  ->
       let (e,s) = type_synthesis surr env e0 in 
+      if !debug_mode then printf " type_check\n\t e = %a\n\t s = %a\n\t t = %a\n%!" _e e _t s _t t;
       try
         subtype env s t;
         e
@@ -372,6 +373,7 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
 	if !auto_intro_mode && not (is_product_type env s) && (is_product_type env t) then (
 	  (* now we try a tactic to salvage the type checking: if a function was demanded, and we don't have one,
 	     we make one from e that ignores its one parameter and returns e *)
+	  if !debug_mode then printf " type_check auto_intro:\n\t e = %a\n\t s = %a\n\t t = %a\n%!" _e e _t s _t t;
 	  let e = with_pos (get_pos e) (LAMBDA(newunused(), e)) in
 	  type_check surr env e t)
 	else mismatch_term_type_type env e0 s t

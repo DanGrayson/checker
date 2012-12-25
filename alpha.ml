@@ -34,9 +34,9 @@ module Make(Ueq: Universe.Equivalence) : S = struct
 	  in term_eq alpha body body'
       | APPLY(h,args), APPLY(h',args') -> (
 	  match (h,h') with
-	  | V t, V t' -> testalpha t t' alpha && Helpers.args_equal (term_eq alpha) args args'
+	  | V t, V t' -> testalpha t t' alpha && Helpers.args_compare (term_eq alpha) args args'
 	  | U _, U _ -> uequiv ulevel_context x y
-	  | _ -> h = h' && Helpers.args_equal (term_eq alpha) args args')
+	  | _ -> h = h' && Helpers.args_compare (term_eq alpha) args args')
       | CONS(x,y), CONS(x',y') ->
 	  term_eq alpha x x' && term_eq alpha y y'
       | _,_ -> false

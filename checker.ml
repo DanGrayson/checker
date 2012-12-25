@@ -126,16 +126,20 @@ let defCommand env defs =
       printf "Define %a = %a\n" _v v  _e tm;
       flush stdout;
       printf "       %a : %a\n%!" _v v  _t tp;
+      if !debug_mode then printf "       %a : calling type_validity:\n%!" _v v;
       let tp' = Lfcheck.type_validity env tp in
       if not (Alpha.UEqual.type_equiv empty_uContext tp tp') then
       printf "       %a : %a [after tactics]\n%!" _v v  _t tp';
+      if !debug_mode then printf "       %a : calling type_check:\n%!" _v v;
       let tm' = Lfcheck.type_check env tm tp in
       if not (Alpha.UEqual.term_equiv empty_uContext tm tm') then
       printf "       %a = %a [after tactics]\n%!" _v v  _e tm';
+      if !debug_mode then printf "       %a : calling term_normalization:\n%!" _v v;
       let tm'' = Lfcheck.term_normalization env tm' tp' in
       if not (Alpha.UEqual.term_equiv empty_uContext tm' tm'') then
       printf "       %a = %a [normalized]\n%!" _v v  _e tm'';
       printf "       %a = %a [normalized, TS format]\n%!" _v v  _ts tm'';
+      if !debug_mode then printf "       %a : calling type_normalization:\n%!" _v v;
       let tp'' = Lfcheck.type_normalization env tp' in
       if not (Alpha.UEqual.type_equiv empty_uContext tp' tp'') then
       printf "       %a : %a [normalized]\n%!" _v v  _t tp'';

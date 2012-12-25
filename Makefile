@@ -5,7 +5,6 @@ CODE = byte
 
 CHECKER_EXE = checker.$(CODE)
 BARE_CHECKER := OCAMLRUNPARAM=$(RUN) time ./$(CHECKER_EXE)
-# BARE_CHECKER +=  --no-auto-intro
 CHECKER := $(BARE_CHECKER) rules.ts
 
 DEBUG = no
@@ -69,8 +68,8 @@ lc:; wc -l $(SRCFILES) rules.ts
 rules:$(CHECKER_EXE) rules.ts ; $(CHECKER)
 run:  $(CHECKER_EXE) rules.ts test.ts ; $(CHECKER) test.ts
 run2: $(CHECKER_EXE) test2.ts ; $(BARE_CHECKER) test2.ts
-run3: $(CHECKER_EXE) test3.ts ; $(CHECKER) test3.ts
-demo: $(CHECKER_EXE) rules.ts test.ts ; $(CHECKER) demo.ts
+run3: $(CHECKER_EXE) test3.ts ; $(CHECKER) --auto-intro test3.ts
+demo: $(CHECKER_EXE) rules.ts test.ts ; $(CHECKER) --auto-intro demo.ts
 debug:
 	ocamlbuild $(BFLAGS) checker.byte 
 	@ echo "enter:"

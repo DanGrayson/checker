@@ -43,7 +43,7 @@ let rec tau (pos:position) (env:context) e : lf_expr =
           | O_ev -> (
               match args with 
               | ARG(f,ARG(o,ARG((_,LAMBDA(x,t)),END))) ->
-                  unmark (Substitute.subst (x,o) t)
+                  unmark (Substitute.subst_expr (x,o) t)
               | _ -> raise (TypeCheckingFailure(env, [pos, "[ev] with malformed branches"])))
           | O_lambda -> (
               match args with 
