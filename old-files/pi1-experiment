@@ -1,0 +1,69 @@
+
+exception Syntax
+
+let rec fix_spine v n extra_args = function
+  | ARG(x,a) -> ARG(fix_expr v n extra_args x, fix_spine v n extra_args a)
+  | CAR a -> CAR(fix_spine v n extra_args a)
+  | CDR a -> CDR(fix_spine v n extra_args a)
+  | END -> END
+
+and fix_expr v n extra_args e =
+  (* We assume extra_args contains no variables for capture.  Typically extra_args is (CAR END). *)
+  let pos = get_pos e in
+  match unmark e with 
+  | APPLY(h,args) -> (
+      let args = fix_spine v n extra_args args in 
+      match h with 
+      | V v' -> (
+	  if v = v' then (
+	    if not (n = args_length args) then (
+	      Printf.fprintf stderr "%s: expected all substitutions to be made\n%!" (errfmt pos);
+	      raise Syntax;
+	      );
+	    pos, APPLY(h,join_args args extra_args))
+	  else pos, APPLY(h,args))
+      | FUN(f,t) -> raise NotImplemented
+      | U _ | T _ | O _ | TAC _ -> pos, APPLY(h,args))
+  | CONS(x,y) -> pos, CONS(fix_expr v n extra_args x,fix_expr v n extra_args y)
+  | LAMBDA(w, body) -> 
+      let body = fix_expr v n extra_args body in
+      pos, LAMBDA(w, body)
+
+and fix_type v n extra_args t = 
+  (* We assume extra_args contains no variables for capture.  Typically extra_args is (CAR END). *)
+  get_pos t,
+   match unmark t with
+   | F_Pi(w,a,b) ->
+       let a = fix_type v n extra_args a in
+       let b = fix_type v n extra_args b in
+       F_Pi(w,a,b)
+   | F_Sigma(w,a,b) -> 
+       let a = fix_type v n extra_args a in
+       let b = fix_type v n extra_args b in
+       F_Sigma(w,a,b)
+   | F_APPLY(label,args) -> F_APPLY(label, List.map (fix_expr v n extra_args) args)
+   | F_Singleton(e,t) -> F_Singleton( fix_expr v n extra_args e, fix_type v n extra_args t )
+
+let fix1 pos v n t = 
+  printf " fix1 %a %d %a\n%!" _v v n _t t;
+  let t = fix_type v n (CAR END) t in
+  printf "         -> %a\n%!" _t t;
+  t
+
+let apply_binder pos (context:(var marked * lf_expr) list) v t1 t2 rhs = 
+  (* t1,t2 = texp,(fun t -> istype t) or oexp,(fun o -> hastype o t) *)
+  let (vpos,v) = v in
+  let rhs = fix1 vpos v (List.length context) rhs in
+  let v' = newfresh v in
+  let lhs = with_pos vpos (F_Sigma(v',t1,t2 (var_to_lf_pos vpos v'))) in
+  let lhs = List.fold_right (
+    fun (x,t) lhs -> 
+      let (xpos,x) = x in 
+      if not (is_unused_var x) && not (occurs_in_type x lhs) then 
+	printf "%a: warning: unused variable %a, could be replaced by \"_\"\n%!" _pos xpos _v x;
+      let x = newfresh x in
+      let x' = var_to_lf_pos xpos x in
+      let xbinder = with_pos pos (F_Sigma(x, oexp, hastype x' t)) in
+      with_pos pos (F_Pi(newunused(), xbinder, lhs))
+   ) context lhs in
+  F_Pi(v, lhs, rhs)

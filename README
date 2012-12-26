@@ -332,55 +332,61 @@ Here cc is 'p1 a'.
 
 Idea:  start with this system:
 
-	ulevel : type.
+        judged_expression : kind.
 
-	next : ulevel -> ulevel.
+        judged_expression_judgment : kind.
 
-	atype : type.
+	a_type : judged_expression.
 
-	oboftype : atype -> type.
+	obj_of_type : a_type -> judged_expression.
 
-	type_equal : atype -> atype -> type.
+	judged_type_equal : a_type -> a_type -> judged_expression_judgment.
 
-	obj_equal : (T:atype) -> oboftype T -> oboftype T -> type.
+	judged_obj_equal : (T:a_type) -> obj_of_type T -> obj_of_type T -> judged_expression_judgment.
 
-	Pi_istype :  (T:atype) -> ( oboftype T -> atype ) -> atype.
+	Pi_istype :  (T:a_type) -> ( obj_of_type T -> a_type ) -> a_type.
 
-	U_istype : ulevel -> atype.
+	U_istype : uexp -> a_type.
 
-	u_hastype  : (M:ulevel) -> oboftype (U_istype (next M)).
+	u_hastype  : (M:uexp) -> obj_of_type (U_istype (next M)).
 
-	El_istype : (M:ulevel) -> oboftype (U_istype M) -> atype.
+	El_istype : (M:uexp) -> obj_of_type (U_istype M) -> a_type.
 
-	El_u_reduction : (M:ulevel) -> type_equal (El_istype (u_hastype M)) (U_istype M).
+	El_u_reduction : (M:uexp) -> judged_type_equal (El_istype M (u_hastype M)) (U_istype M).
 
-	lambda_hastype : (T:atype) -> (U : oboftype T -> atype) -> (body : (t:oboftype T) -> oboftype (U t)) -> oboftype (Pi_istype T U).
+	lambda_hastype : (T:a_type) -> (U : obj_of_type T -> a_type) -> (body : (t:obj_of_type T) -> obj_of_type (U t)) -> obj_of_type (Pi_istype T U).
 
-	ev_hastype : (T:atype) -> (U : oboftype T -> atype) -> (f : (Pi_istype T U)) -> (o : oboftype T)
+	ev_hastype : (T:a_type) -> (U : obj_of_type T -> a_type) -> (f : obj_of_type (Pi_istype T U)) -> (o : obj_of_type T)
 
-				    -> oboftype (U o).
+				    -> obj_of_type (U o).
 
-	beta_reduction : (T:atype) -> (o1 : oboftype T) -> (U : oboftype T -> atype) -> (o2 : (t:oboftype T) -> oboftype (U t)) 
+	beta_reduction : (T:a_type) -> (o1 : obj_of_type T) -> (U : obj_of_type T -> a_type) -> (o2 : (t:obj_of_type T) -> obj_of_type (U t)) 
 
-				   -> obj_equal (U o1) (ev_hastype T U (lambda_hastype T U o2) o1) (o2 o1).
+				   -> judged_obj_equal (U o1) (ev_hastype T U (lambda_hastype T U o2) o1) (o2 o1).
 
 To relate it to TS we re-define the basics as follows, in terms of LF:
 
-   	    texp : type
+        expression : kind.
 
-	    oexp : type
+	uexp : expression
 
-	    istype : texp -> type
+	texp : expression
 
-	    hastype : oexp -> texp -> type
+	oexp : expression
 
-	    atype := (T:texp) * istype T
+        judgment : kind.
 
-	    oboftype := (t:oexp) * hastype t T
+	istype : texp -> judgment
 
-	    type_equal := T -> U -> tequal T_1 U_1
+	hastype : oexp -> texp -> judgment
 
-	    obj_equal := T -> t -> t' -> oequal t_1 t'_1 T_1
+	a_type := (T:texp) * istype T
+
+	obj_of_type := (t:oexp) * hastype t T
+
+	type_equal := T -> U -> tequal T_1 U_1
+
+	judged_obj_equal := T -> t -> t' -> oequal t_1 t'_1 T_1
 
 and we even redefine *all* of the arrows above by mapping them *not* to function types
 between sigma types, but to "pi1-relative" function types between sigma types.  Thus

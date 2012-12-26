@@ -18,9 +18,25 @@ Theorem id2' { ⊢ u Ulevel, T:[U](u) }{ ⊢ U:[U](u), f:*T⟶*U } : *T⟶*U ::=
 Theorem id3 { ⊢ T Type, U Type, f:T⟶U, t:T } : U ::= T ⟼ U ⟼ f ⟼ t ⟼ (ev T U f t).
 
 Theorem id3' { ⊢ u Ulevel, T:[U](u) }{ ⊢ U:[U](u), f:*T⟶*U, t:*T} : *U ::=
-		u ⟼ T ⟼ U ⟼ f ⟼ t ⟼ (ev (El u T) (El u U) f t).
+		u ⟼ T ⟼ U ⟼ f ⟼ t ⟼ (ev (El_istype u T) (El_istype u U) f t).
 
 End.
+
+Check LF λ_hastype.
+
+Theorem modus_ponens { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 
+	T |-> U |-> V |-> 
+	(λ_hastype (∏i T U)
+		   (∏i (∏i U V) (∏i T V))
+		   _).  # ?
+End.
+		   T : texp,  Ti : istype T
+		   U : texp,  Ui : istype U
+		   V : texp,  Vi : istype V
+		   f : oexp,  fh : hastype f ([Pi;t](T,U))
+		   g : oexp,  gh : hastype f ([Pi;u](U,V))
+		   let gf := [λ](T,t |-> [ev](g, [ev](f, t)))
+
 
 #   Local Variables:
 #   compile-command: "make run3  DEBUG=no"

@@ -271,7 +271,7 @@ unmarked_command:
     | Axiom num= option(dotted_number) name= IDENTIFIER t= ts_judgment Wperiod
 	{ Toplevel.Axiom (num,name,t) }
 
-    | Axiom LF num= option(dotted_number) name= IDENTIFIER t= lf_type Wperiod
+    | Axiom LF num= option(dotted_number) name= IDENTIFIER Colon t= lf_type Wperiod
 	{ Toplevel.Axiom (num,name,t) }
 
     | Check TS o= ts_expr Wperiod

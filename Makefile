@@ -1,4 +1,4 @@
-TSFILES = rules.ts demo.ts test.ts test2.ts test3.ts
+TSFILES = rules.ts demo.ts test.ts test2.ts test3.ts test4.ts
 
 CODE = native
 CODE = byte
@@ -53,7 +53,7 @@ RUN = -b
 %.cmx: %.mll; ocamlbuild $(BFLAGS) $*.cmx
 %.cmx: %.mly; ocamlbuild $(BFLAGS) $*.cmx
 
-all: TAGS demo run run2 run3 doc
+all: TAGS demo run run2 run3 run4 doc
 build: $(CHECKER_EXE)
 checker.byte checker.native: $(SRCFILES); ocamlbuild $(BFLAGS) $@
 doc: checker.odocl $(SRCFILES)
@@ -69,6 +69,7 @@ rules:$(CHECKER_EXE) rules.ts ; $(CHECKER)
 run:  $(CHECKER_EXE) rules.ts test.ts ; $(CHECKER) test.ts
 run2: $(CHECKER_EXE) test2.ts ; $(BARE_CHECKER) test2.ts
 run3: $(CHECKER_EXE) test3.ts ; $(CHECKER) --auto-intro test3.ts
+run4: $(CHECKER_EXE) test3.ts ; $(CHECKER) --auto-intro test4.ts
 demo: $(CHECKER_EXE) rules.ts test.ts ; $(CHECKER) --auto-intro demo.ts
 debug:
 	ocamlbuild $(BFLAGS) checker.byte 

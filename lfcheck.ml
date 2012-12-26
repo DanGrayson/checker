@@ -9,6 +9,8 @@
 
   We probably don't handle types such as [Pi x:A, Singleton(B)] well.
 
+  We should implement hash consing so the alpha equivalence testing doesn't slow things down too much.
+
 *)
 
 let auto_intro_mode = ref false
@@ -43,7 +45,7 @@ let abstraction3 pos (env:context) = function
 	| APPLY(T T_Pi, ARG(t, _)) -> ts_bind pos (x,t) env
 	| _ -> env)
       with NotImplemented ->
-	printf "warning: abstraction3: \"tau\" not implemented for %a\n%!" _e f;
+	printf "%a: warning: abstraction3: \"tau\" not implemented for %a\n%!" _pos_of f _e f;
 	env)
   | _ -> env
 
@@ -65,7 +67,7 @@ let apply_ts_binder env i e =
         Not_found -> env)
   | _ -> raise Internal
 
-let try_alpha = false (* turning this on could slow things down a lot before we implement hash codes *)
+let try_alpha = true
 
 let err env pos msg = raise (TypeCheckingFailure (env, [pos, msg]))
 
@@ -292,7 +294,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
           | K_Pi(v,t,k), x :: args, x' :: args' ->
               term_equivalence env x x' t;
               repeat (subst_kind (v,x) k) args args'
-          | K_type, [], [] -> ()
+          | ( K_expression | K_judgment | K_judged_expression | K_judged_expression_judgment ), [], [] -> ()
           | _ -> raise Internal
         in repeat k args args'
     | _ -> raise TypeEquivalenceFailure
@@ -451,8 +453,8 @@ let type_validity (env:context) (t:lf_type) : lf_type =
           let kind = tfhead_to_kind head in
           let rec repeat env kind (args:lf_expr list) = 
             match kind, args with 
-            | K_type, [] -> []
-            | K_type, x :: args -> err env pos "at least one argument too many";
+            | ( K_expression | K_judgment | K_judged_expression | K_judged_expression_judgment ), [] -> []
+            | ( K_expression | K_judgment | K_judged_expression | K_judged_expression_judgment ), x :: args -> err env pos "at least one argument too many";
             | K_Pi(v,a,kind'), x :: args -> 
                 let x' = type_check [] env x a in
                 x' :: repeat env (subst_kind (v,x') kind') args
@@ -579,8 +581,8 @@ let rec type_normalization (env:context) (t:lf_type) : lf_type =
       let args =
         let rec repeat env kind (args:lf_expr list) = 
           match kind, args with 
-          | K_type, [] -> []
-          | K_type, x :: args -> err env pos "too many arguments"
+          | ( K_expression | K_judgment | K_judged_expression | K_judged_expression_judgment ), [] -> []
+          | ( K_expression | K_judgment | K_judged_expression | K_judged_expression_judgment ), x :: args -> err env pos "too many arguments"
           | K_Pi(v,a,kind'), x :: args ->
               term_normalization env x a ::
               repeat ((v,a) :: env) kind' args

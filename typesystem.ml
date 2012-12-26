@@ -56,7 +56,10 @@ type lf_type_head =
   | F_ulevel_equality
   | F_type_uequality			(* written with ~ in the paper *)
   | F_object_uequality			(* written with ~ in the paper *)
-
+  | F_a_type
+  | F_obj_of_type
+  | F_judged_type_equal
+  | F_judged_obj_equal
 
     (** The type [lf_expr_head] accommodates the variables of LF, and the constants of
         LF, which in turn include the labels of TS, the inference rules of TS,
@@ -141,13 +144,17 @@ let oexp = F_oexp @@ []
 let arrow a b = nowhere 4 (F_Pi(newunused(), a, b))
 let ( @-> ) = arrow
 
-let istype t = F_istype @@ [t]				     (* t Type *)
-let hastype o t = F_hastype @@ [o;t]			     (* o : t *)
-let ulevel_equality u u' = F_ulevel_equality @@ [u;u']	     (* u ~ u' *)
-let type_uequality t t' = F_type_uequality @@ [t;t']	     (* t ~ t' *)
-let type_equality t t' = F_type_equality @@ [t;t']	     (* t = t' *)
-let object_uequality o o' t = F_object_uequality @@ [o;o';t] (* o ~ o' : t *)
-let object_equality o o' t = F_object_equality @@ [o;o';t]   (* o = o' : t *)
+let istype t = F_istype @@ [t]				       (* t Type *)
+let hastype o t = F_hastype @@ [o;t]			       (* o : t *)
+let ulevel_equality u u' = F_ulevel_equality @@ [u;u']	       (* u ~ u' *)
+let type_uequality t t' = F_type_uequality @@ [t;t']	       (* t ~ t' *)
+let type_equality t t' = F_type_equality @@ [t;t']	       (* t = t' *)
+let object_uequality o o' t = F_object_uequality @@ [o;o';t]   (* o ~ o' : t *)
+let object_equality o o' t = F_object_equality @@ [o;o';t]     (* o = o' : t *)
+let a_type = F_a_type @@ []				       (* |- T Type *)
+let obj_of_type t = F_obj_of_type @@ [t]			       (* |- x : T *)
+let judged_type_equal t u = F_judged_type_equal @@ [t;u]       (* |- T = U *)
+let judged_obj_equal t x y = F_judged_obj_equal @@ [t;x;y]     (* |- x = y : T *)
 
 let texp1 = oexp @-> texp
 let texp2 = oexp @-> oexp @-> texp
@@ -222,7 +229,10 @@ let head_to_vardist = function
 
     Notation: constructors starting with "K_" refer to kinds of LF. *)
 type lf_kind =
-  | K_type
+  | K_expression
+  | K_judgment
+  | K_judged_expression
+  | K_judged_expression_judgment
   | K_Pi of var * lf_type * lf_kind
 
 let ( @@-> ) a b = K_Pi(newunused(), a, b)
@@ -244,31 +254,48 @@ let k_pi t k =
   let v' = nowhere 126 (APPLY(V v,END)) in
   K_Pi(v,t,k v')
 
-let istype_type = texp @@-> K_type
+let istype_kind = texp @@-> K_judgment
 
-let hastype_type = oexp @@-> texp @@-> K_type
+let hastype_kind = oexp @@-> texp @@-> K_judgment
 
-let type_equality_type = texp @@-> texp @@-> K_type
+let type_equality_kind = texp @@-> texp @@-> K_judgment
 
-let object_equality_type = oexp @@-> oexp @@-> texp @@-> K_type
+let object_equality_kind = oexp @@-> oexp @@-> texp @@-> K_judgment
 
-let ulevel_equality_type = uexp @@-> uexp @@-> K_type
+let ulevel_equality_kind = uexp @@-> uexp @@-> K_judgment
 
-let type_uequality_type = texp @@-> texp @@-> K_type
+let type_uequality_kind = texp @@-> texp @@-> K_judgment
 
-let object_uequality_type = oexp @@-> oexp @@-> texp @@-> K_type
+let object_uequality_kind = oexp @@-> oexp @@-> texp @@-> K_judgment
+
+let a_type_kind = K_judged_expression
+
+let obj_of_type_kind = a_type @@-> K_judged_expression
+
+let judged_kind_equal_kind = a_type @@-> a_type @@-> K_judged_expression_judgment
+
+let var_to_lf v = nowhere 1 (APPLY(V v,END))
+
+let judged_obj_equal_kind = 
+  let t = newfresh (Var "T") in
+  let tt = var_to_lf t in
+  K_Pi(t, a_type, obj_of_type tt @@-> obj_of_type tt @@-> K_judged_expression_judgment)
 
 let tfhead_to_kind = function
-  | F_uexp -> K_type
-  | F_texp -> K_type
-  | F_oexp -> K_type
-  | F_istype -> istype_type
-  | F_hastype -> hastype_type
-  | F_ulevel_equality -> ulevel_equality_type
-  | F_type_equality -> type_equality_type
-  | F_object_equality -> object_equality_type
-  | F_type_uequality -> type_uequality_type
-  | F_object_uequality -> object_uequality_type
+  | F_uexp -> K_expression
+  | F_texp -> K_expression
+  | F_oexp -> K_expression
+  | F_istype -> istype_kind
+  | F_hastype -> hastype_kind
+  | F_ulevel_equality -> ulevel_equality_kind
+  | F_type_equality -> type_equality_kind
+  | F_object_equality -> object_equality_kind
+  | F_type_uequality -> type_uequality_kind
+  | F_object_uequality -> object_uequality_kind
+  | F_a_type -> a_type_kind
+  | F_obj_of_type -> obj_of_type_kind
+  | F_judged_type_equal -> judged_kind_equal_kind
+  | F_judged_obj_equal -> judged_obj_equal_kind
 
 type oSubs = (var * lf_expr) list
 

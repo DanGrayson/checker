@@ -48,7 +48,18 @@ let lf_type_constant_table = [
   F_type_equality, "tequal" ;
   F_object_equality, "oequal" ;
   F_type_uequality, "tuequal" ;
-  F_object_uequality, "ouequal"
+  F_object_uequality, "ouequal";
+  F_a_type, "a_type";
+  F_obj_of_type, "obj_of_type";
+  F_judged_type_equal, "judged_type_equal";
+  F_judged_obj_equal, "judged_obj_equal"
+]
+
+let lf_kind_constant_table = [
+  K_expression, "expression";
+  K_judgment, "judgment";
+  K_judged_expression, "judged_expression";
+  K_judged_expression_judgment, "judged_expression_judgment"
 ]
 
 let lf_type_head_to_string h = List.assoc h lf_type_constant_table
@@ -56,8 +67,6 @@ let lf_type_head_to_string h = List.assoc h lf_type_constant_table
 let lf_type_heads = List.map fst lf_type_constant_table
 
 let string_to_type_constant = List.map swap lf_type_constant_table
-
-let var_to_lf v = nowhere 1 (APPLY(V v,END))
 
 let marked_var_to_lf (pos,v) = pos, APPLY(V v,END)
 
