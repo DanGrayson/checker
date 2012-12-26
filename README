@@ -327,3 +327,72 @@ component.  Can we use singleton types to get the compatibility?  As here:
    	p' : (a : (a':A) × B) ⟶ (c:Singleton(cc:C) × D)
 
 Here cc is 'p1 a'.
+
+-----------------------------------------------------------------------------
+
+Idea:  start with this system:
+
+	ulevel : type.
+
+	next : ulevel -> ulevel.
+
+	atype : type.
+
+	oboftype : atype -> type.
+
+	type_equal : atype -> atype -> type.
+
+	obj_equal : (T:atype) -> oboftype T -> oboftype T -> type.
+
+	Pi_istype :  (T:atype) -> ( oboftype T -> atype ) -> atype.
+
+	U_istype : ulevel -> atype.
+
+	u_hastype  : (M:ulevel) -> oboftype (U_istype (next M)).
+
+	El_istype : (M:ulevel) -> oboftype (U_istype M) -> atype.
+
+	El_u_reduction : (M:ulevel) -> type_equal (El_istype (u_hastype M)) (U_istype M).
+
+	lambda_hastype : (T:atype) -> (U : oboftype T -> atype) -> (body : (t:oboftype T) -> oboftype (U t)) -> oboftype (Pi_istype T U).
+
+	ev_hastype : (T:atype) -> (U : oboftype T -> atype) -> (f : (Pi_istype T U)) -> (o : oboftype T)
+
+				    -> oboftype (U o).
+
+	beta_reduction : (T:atype) -> (o1 : oboftype T) -> (U : oboftype T -> atype) -> (o2 : (t:oboftype T) -> oboftype (U t)) 
+
+				   -> obj_equal (U o1) (ev_hastype T U (lambda_hastype T U o2) o1) (o2 o1).
+
+To relate it to TS we re-define the basics as follows, in terms of LF:
+
+   	    texp : type
+
+	    oexp : type
+
+	    istype : texp -> type
+
+	    hastype : oexp -> texp -> type
+
+	    atype := (T:texp) * istype T
+
+	    oboftype := (t:oexp) * hastype t T
+
+	    type_equal := T -> U -> tequal T_1 U_1
+
+	    obj_equal := T -> t -> t' -> oequal t_1 t'_1 T_1
+
+and we even redefine *all* of the arrows above by mapping them *not* to function types
+between sigma types, but to "pi1-relative" function types between sigma types.  Thus
+the re-interpreted type of Pi_istype is (with -> and * at the same parsing precedence
+and right associative)
+
+	Pi_istype : (T:texp) -> (U : oexp -> texp) ->
+
+     		    (P:texp) * istype T -> ( (t:oexp) -> hastype t T -> istype U t ) -> istype P.
+
+	and then we relate them to TS by defining
+
+	    [Pi] := T -> U -> (Pi_istype T U)_1
+
+	and so on.
