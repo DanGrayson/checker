@@ -65,7 +65,7 @@ let apply_ts_binder env i e =
         (List.assoc (h,i) ts_binders) pos env args
       with
         Not_found -> env)
-  | _ -> raise Internal
+  | _ -> internal ()
 
 let try_alpha = true
 
@@ -125,7 +125,7 @@ let apply_tactic surr env pos t = function
       TacticSuccess (var_to_lf_pos pos v)
 
 let rec natural_type (env:context) (x:lf_expr) : lf_type =
-  if true then raise Internal;          (* this function is unused, because "unfold" below does what we need for weak head reduction *)
+  if true then internal ();          (* this function is unused, because "unfold" below does what we need for weak head reduction *)
   (* assume nothing *)
   (* see figure 9 page 696 [EEST] *)
   let pos = get_pos x in 
@@ -160,7 +160,7 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
   match unmark x with
   | APPLY(h,args) -> (
       match h with
-      | TAC _ -> raise Internal
+      | TAC _ -> internal ()
       | (O _|T _) -> raise Not_found (* we know the constants in our signature don't involve singleton types *)
       | FUN(f,t) -> (
 	  (* merge this case with the case below ??? *)
@@ -180,10 +180,10 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
 	    | F_Sigma(v,a,b), CAR args -> repeat a (CAR args_passed) args
 	    | F_Sigma(v,a,b), CDR args -> repeat (subst_car_passed_term v pos head args_passed b) (CDR args_passed) args
 	    | _, END -> raise Not_found
-	    | _, _ -> raise Internal in
+	    | _, _ -> internal () in
 	  repeat t args_passed args
      )
-  | CONS _ | LAMBDA _ -> raise Internal	(* head reduction is not defined for pairs or functions *)
+  | CONS _ | LAMBDA _ -> internal ()	(* head reduction is not defined for pairs or functions *)
 
 let rec head_normalization (env:context) (x:lf_expr) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
@@ -213,7 +213,7 @@ let rec term_equivalence (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : uni
             (subst_type (v,var_to_lf w) b)
       | _ -> 
 	  printf "%a: term_equivalence expected two lambda expressions, but got\n%a: x=%a\n%a: y=%a\n%!" _pos_of x _pos_of x _e x _pos_of y _e y;
-	  raise Internal)
+	  internal ())
   | F_APPLY(j,args) ->
       if j == F_uexp then (
 	if !debug_mode then printf "warning: ulevel comparison judged true: %a = %a\n%!" _e x _e y;
@@ -295,7 +295,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
               term_equivalence env x x' t;
               repeat (subst_kind (v,x) k) args args'
           | ( K_expression | K_judgment | K_judged_expression | K_judged_expression_judgment ), [], [] -> ()
-          | _ -> raise Internal
+          | _ -> internal ()
         in repeat k args args'
     | _ -> raise TypeEquivalenceFailure
   with TermEquivalenceFailure -> raise TypeEquivalenceFailure
@@ -490,21 +490,21 @@ let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
   let (pos,t0) = t in
   match t0 with 
-  | F_Pi(v,a,b) -> (
-      match unmark x with
-      | LAMBDA(w,body) ->
-          let b    = subst_type (v,var_to_lf w) b in
-          let body = term_normalization ((w,a) :: env) body b in
-          pos, LAMBDA(w,body)
-      | _ -> raise Internal)
+  | F_Pi(v,a,b) ->
+      let env = (v,a) :: env in
+      let v' = var_to_lf v in 
+      let value = apply_args x (ARG(v',END)) in
+      let body = term_normalization env value b in
+      pos, LAMBDA(v,body)
   | F_Sigma(v,a,b) ->
       let pos = get_pos x in
       let p = x in
       let x = pi1 p in
       let y = pi2 p in
-      pos, CONS(
-           term_normalization env x a,
-           term_normalization env y (subst_type (v,x) b))
+      let x = term_normalization env x a in
+      let b = subst_type (v,x) b in
+      let y = term_normalization env y b in
+      pos, CONS(x,y)
   | F_APPLY _
   | F_Singleton _ ->
       let x = head_normalization env x in
@@ -543,7 +543,7 @@ and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_type =
           | F_Singleton _ -> 
 	      if !debug_mode then printf "\tbad type t = %a\n%!" _t t;
 	      print_context (Some 5) stdout env;
-	      raise Internal (* x was head normalized, so any definition of head should have been unfolded *)
+	      internal () (* x was head normalized, so any definition of head should have been unfolded *)
           | F_Sigma(v,a,b) -> (
               match args with 
               | END -> (t,END)
