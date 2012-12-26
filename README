@@ -385,14 +385,16 @@ To relate it to TS we re-define the basics as follows, in terms of LF:
 and we even redefine *all* of the arrows above by mapping them *not* to function types
 between sigma types, but to "pi1-relative" function types between sigma types.  Thus
 the re-interpreted type of Pi_istype is (with -> and * at the same parsing precedence
-and right associative)
+and right associative):
 
 	Pi_istype : (T:texp) -> (U : oexp -> texp) ->
 
      		    (P:texp) * istype T -> ( (t:oexp) -> hastype t T -> istype U t ) -> istype P.
 
-	and then we relate them to TS by defining
+We relate that to TS by defining
 
-	    [Pi] := T -> U -> (Pi_istype T U)_1
+	    [Pi] := T |-> U |-> (Pi_istype T U)_1
 
-	and so on.
+and so on.
+
+How do we redefine application?
