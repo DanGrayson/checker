@@ -70,7 +70,26 @@ Theorem LF compose1' : (T:texp) -> (U:texp) -> (V:texp) -> (f:oexp) -> (g:oexp) 
               T' ⟼ U' ⟼ V' ⟼ f' ⟼ g' ⟼ t' ⟼ 
 	           # This proof is longer here because compose1' takes all the expressions first, but ev takes its arguments in pairs.
 		   # Thus it would help if theorems and axioms had the same calling convention.
- 	      	   (ev (U,U') (V,V') (g,g') (ev (T,T') (U,U') (f,f') (t,t')))_2).
+ 	      	   (ev (U,U') (V,V') (g,g') (ev (T,T') (U,U') (f,f') (t,t')) CDR)
+		   ).
+
+# Here is a version of ev that takes its expression arguments first:
+Axiom LF 3.4.25 ev' : (T:texp) -> (U:oexp->texp) -> (f:oexp) -> (o:oexp) -> (e:Singleton(([ev] f o U):oexp)) ** 
+      		(T':istype T) -> (U': (t':oexp) -> hastype t' T -> istype (U t')) ->
+		(f' : hastype f ([Pi] T U)) -> (o' : hastype o T) -> hastype e (U o).
+
+# So now we try using ev' instead of ev to prove compose1' again.  Note that we don't have to use [ev],
+# but the normalized form of the proof term has ([ev] g ([ev] f t (_ ⟼ U)) (_ ⟼ V)) as its first component.
+Theorem LF compose1'' : (T:texp) -> (U:texp) -> (V:texp) -> (f:oexp) -> (g:oexp) -> (t:oexp) -> (v:oexp) ×
+			(T':istype T) -> (U':istype U) -> (V':istype V) -> 
+			(f':hastype f ([Pi] T (_ |-> U))) -> 
+			(g':hastype g ([Pi] U (_ |-> V))) -> 
+			(t':hastype t T) -> 
+			hastype v V := 
+        T ⟼ U ⟼ V ⟼ f ⟼ g ⟼ t ⟼ 
+	(pair (ev' U V g (ev' T U f t CAR) CAR) 
+              T' ⟼ U' ⟼ V' ⟼ f' ⟼ g' ⟼ t' ⟼ 
+ 	      (ev' U V g (ev' T U f t CAR) CDR U' V' g' (ev' T U f t CDR T' U' f' t'))).
 
 # compose1 is no use in proving the following theorem, because the first thing we need is the TS term of type oexp ⟶ oexp,
 # so we use compose1' instead.  That illustrates what's wrong with our theorem syntax.
@@ -86,7 +105,7 @@ Theorem compose2 { ⊢ u Ulevel, T:[U](u), U:[U](u), V:[U](u), g:*U ⟶ *V, f:*T
                 u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 
                 (ev (El_istype u U) (El_istype u V) g (ev (El_istype u T) (El_istype u U) f t)).
 
-Derived Rule A { |- u Ulevel, T U : [U](u), f : *[∀;x](u,u,T,U) } : [Pi;_](*T,*U) ::=
+Lemma A { |- u Ulevel, T U : [U](u), f : *[∀;x](u,u,T,U) } : [Pi;_](*T,*U) ::=
                  u ⟼ T ⟼ U ⟼ f ⟼ 
 		 (cast (El_istype u (forall u u T U)) 
                        (∏i (El_istype u T) (El_istype u U))

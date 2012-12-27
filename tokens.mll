@@ -150,6 +150,8 @@ rule expr_tokens = parse
   | "₂" { K_2 }
   | "_1" { K_1 }
   | "_2" { K_2 }
+  | "CAR" { K_CAR }
+  | "CDR" { K_CDR }
 
 (* variable names *)
 

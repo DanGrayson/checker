@@ -56,12 +56,12 @@ let apply_binder pos (c:(var marked * lf_expr) list) v t1 t2 u =
 
   (* tokens *)
 
-  Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod Colon Star
-  Arrow ArrowFromBar Wequal Wunderscore Axiom Wgreaterequal Wgreater
-  Wlessequal Wless Semicolon Ulevel Kumax Type KPi Klambda KSigma Check
-  WShow WEnd WVariable WAlpha Weof CheckUniverses Wtilde Singleton
-  Wdollar LF TS Kpair K_1 K_2 Times Slash Turnstile DoubleArrow
-  DoubleArrowFromBar ColonColonEqual ColonEqual Theorem Wlbrace Wrbrace
+  Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod Colon Star Arrow
+  ArrowFromBar Wequal Wunderscore Axiom Wgreaterequal Wgreater Wlessequal Wless
+  Semicolon Ulevel Kumax Type KPi Klambda KSigma Check WShow WEnd WVariable
+  WAlpha Weof CheckUniverses Wtilde Singleton Wdollar LF TS Kpair K_1 K_2 K_CAR
+  K_CDR Times Slash Turnstile DoubleArrow DoubleArrowFromBar ColonColonEqual
+  ColonEqual Theorem Wlbrace Wrbrace
 
 (* precedences, lowest first *)
 
@@ -216,6 +216,18 @@ lf_expr_head_and_reversed_spine:
 
     | head_and_args= short_head_and_reversed_spine arg= lf_expr
 	{ app head_and_args arg }
+
+    | head_and_args= lf_expr_head_and_reversed_spine K_CAR
+	{ car head_and_args }
+
+    | head_and_args= short_head_and_reversed_spine K_CAR
+	{ car head_and_args }
+
+    | head_and_args= lf_expr_head_and_reversed_spine K_CDR
+	{ cdr head_and_args }
+
+    | head_and_args= short_head_and_reversed_spine K_CDR
+	{ cdr head_and_args }
 
 short_head_and_reversed_spine:
 
