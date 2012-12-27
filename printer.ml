@@ -335,12 +335,14 @@ let ends_in_paren s = s.[String.length s - 1] = '('
 
 let lf_head_to_string h = lf_head_to_string_with_subs [] h
 
+let possible_comma accu = if (ends_in_paren accu) then accu else accu ^ ","
+
 let rec application_to_ts_string hd args = top_prec, (
   args_fold
     (fun accu arg -> 
-      (if (ends_in_paren accu) then accu else accu ^ ",") ^ paren_right comma_prec (ts_expr_to_string arg))
-    (fun accu -> "(" ^ accu ^ ")_1")	(*not right*)
-    (fun accu -> "(" ^ accu ^ ")_2")
+    possible_comma accu ^ paren_right comma_prec (ts_expr_to_string arg))
+    (fun accu -> possible_comma accu ^ "CAR")	(*not right*)
+    (fun accu -> possible_comma accu ^ "CDR")
     (hd ^ "(")
     args) ^ ")"
 

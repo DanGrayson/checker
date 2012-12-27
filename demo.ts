@@ -68,7 +68,9 @@ Theorem LF compose1' : (T:texp) -> (U:texp) -> (V:texp) -> (f:oexp) -> (g:oexp) 
         T ⟼ U ⟼ V ⟼ f ⟼ g ⟼ t ⟼ 
 	(pair ([ev] g ([ev] f t U) V) 
               T' ⟼ U' ⟼ V' ⟼ f' ⟼ g' ⟼ t' ⟼ 
- 	      	   (ev (pair U U') (pair V V') (pair g g') (ev (pair T T') (pair U U') (pair f f') (pair t t')))_2).
+	           # This proof is longer here because compose1' takes all the expressions first, but ev takes its arguments in pairs.
+		   # Thus it would help if theorems and axioms had the same calling convention.
+ 	      	   (ev (U,U') (V,V') (g,g') (ev (T,T') (U,U') (f,f') (t,t')))_2).
 
 # compose1 is no use in proving the following theorem, because the first thing we need is the TS term of type oexp ⟶ oexp,
 # so we use compose1' instead.  That illustrates what's wrong with our theorem syntax.
@@ -105,8 +107,8 @@ Theorem compose3 { |- u Ulevel, T U V : [U](u), g : *[∀;x](u,u,U,V), f : *[∀
 #	need:
 #
 #	(o:oexp ⟶ oexp) × ((x:oexp) ⟶ 
-#				hastype x (El_istype u (pair T₁ T₂))₁ ⟶ 
-#				hastype (o x) (El_istype u (pair V₁ V₂))₁)
+#				hastype x (El_istype u (T₁,T₂))₁ ⟶ 
+#				hastype (o x) (El_istype u (V₁,V₂))₁)
 
 
 #Theorem A' { |- u Ulevel, T U : [U](u), f : *[∀;x](u,u,T,U) } : [Pi](*T,*U) ::=  # <-- bug here 

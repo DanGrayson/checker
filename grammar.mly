@@ -186,6 +186,9 @@ unmarked_lf_expr:
     | Wlparen Kpair a= lf_expr b= lf_expr Wrparen
 	{ CONS(a, b) }
 
+    | Wlparen a= lf_expr Wcomma b= lf_expr Wrparen
+	{ CONS(a, b) }
+
     | Klambda v= marked_variable_or_unused Wcomma body= lf_expr
 	{ 
 	  let (pos,v) = v in
