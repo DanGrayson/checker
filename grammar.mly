@@ -56,7 +56,7 @@ let apply_binder pos (c:(var marked * lf_expr) list) v t1 t2 u =
 
   (* tokens *)
 
-  Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod Colon Wstar
+  Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod Colon Star
   Arrow ArrowFromBar Wequal Wunderscore Axiom Wgreaterequal Wgreater
   Wlessequal Wless Semicolon Ulevel Kumax Type KPi Klambda KSigma Check
   WShow WEnd WVariable WAlpha Weof CheckUniverses Wtilde Singleton
@@ -67,40 +67,22 @@ let apply_binder pos (c:(var marked * lf_expr) list) v t1 t2 u =
 
 %right
 
-  (* we want [lambda x, lambda y, b] to be [lambda x, (lambda y, b)] *)
-  (* we want [lambda x, f b] to be [lambda x, (f b)] *)
   Reduce_binder
 
 %right
 
-  (* function type *)
-  (* we want [a -> b -> c] to be [a -> (b -> c)] *)
-
-  DoubleArrowFromBar
-  DoubleArrow
-  Arrow
+  DoubleArrowFromBar			(* TS notation for LF lambda *)
+  DoubleArrow				(* function type *)
+  Arrow					(* function type *)
+  Times					(* product type *)
 
 %nonassoc
 
-  (* we want  [*f x] to be [*(f x)]  and  [*x->y] to be [( *x )->y]  *)
-  Reduce_star
-  Wstar
-
-%right
-
-  (* product type *)
-  (** we want [a ** b ** c] to be [a ** (b ** c)], by analogy with [a -> b] **)
-  (** we want [a ** b -> c] to be [(a ** b) -> c] **)
-
-  Times
+  Star					(* [El] *)
 
 %left
 
-  (* substitution *)
-
-  (* we want [f/x/y] to be [(f/x)/y] *)
-
-  Slash
+  Slash					(* substitution *)
 
 %right
 
@@ -512,8 +494,7 @@ unmarked_ts_expr:
 	%prec Reduce_binder
 	{ make_O_lambda t (x,o) }
 
-    | Wstar o= ts_expr
-	%prec Reduce_star
+    | Star o= ts_expr
 	{ make_T_El o }
 
     | KPi x= variable Colon t1= ts_expr Wcomma t2= ts_expr

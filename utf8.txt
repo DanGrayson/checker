@@ -1,0 +1,15 @@
+-*- coding: utf-8 -*-
+
+a palette of utf8-encoded characters
+
+	⟶
+	×
+	⇒
+	⟼
+	⟾
+	⊢
+	∏
+	Σ
+	λ
+	₁
+	₂

@@ -55,15 +55,29 @@ Check : TS { |- u v Ulevel }       [ u ~ v Ulevel ].    # ulevel equivalence for
 
 Definition Pt Type ::= Pt_istype .
 
-Check LF ev.
-
-Theorem compose1  { ⊢ T Type, U Type, V Type, g:U⟶V, f:T⟶U, t:T } : V ::=
-                T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 
+Theorem compose1  { ⊢ T Type, U Type, V Type, f:T⟶U, g:U⟶V, t:T } : V ::=
+                T ⟼ U ⟼ V ⟼ f ⟼ g ⟼ t ⟼ 
                 (ev U V g (ev T U f t)).
 
-# Theorem compose1a { ⊢ T Type, U Type, V Type, g:U⟶V, f:T⟶U } : T->V ::=
-#                 T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ 
-# 		(λ_hastype T V _ ).  # compose1 is no use in filling this hole, because the first thing we need is the TS term of type oexp ⟶ oexp!
+Theorem LF compose1' : (T:texp) -> (U:texp) -> (V:texp) -> (f:oexp) -> (g:oexp) -> (t:oexp) -> (v:oexp) ×
+			(T':istype T) -> (U':istype U) -> (V':istype V) -> 
+			(f':hastype f ([Pi] T (_ |-> U))) -> 
+			(g':hastype g ([Pi] U (_ |-> V))) -> 
+			(t':hastype t T) -> 
+			(v:oexp) × hastype v V := 
+        T ⟼ U ⟼ V ⟼ f ⟼ g ⟼ t ⟼ 
+	(pair ([ev] g ([ev] f t U) V) 
+              T' ⟼ U' ⟼ V' ⟼ f' ⟼ g' ⟼ t' ⟼ 
+ 	      	   (ev (pair U U') (pair V V') (pair g g') (ev (pair T T') (pair U U') (pair f f') (pair t t')))).
+
+# compose1 is no use in filling the hole in the following theorem, because the first thing we need is the TS term of type oexp ⟶ oexp,
+# but we should be able to use compose1'.  That should illustrate what's wrong with our theorem syntax.
+# A theorem should be a term of TS, possibly parametrized, together with a derivation of its type.
+#Theorem compose1a { ⊢ T Type, U Type, V Type, g:U⟶V, f:T⟶U } : T->V ::=
+#                  T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ 
+#		  (λ_hastype 
+#			     T V _ ).
+#
 
 Theorem compose2 { ⊢ u Ulevel, T:[U](u), U:[U](u), V:[U](u), g:*U ⟶ *V, f:*T ⟶ *U, t:*T } : *V ::= 
                 u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 
@@ -80,32 +94,26 @@ Theorem compose3 { |- u Ulevel, T U V : [U](u), g : *[∀;x](u,u,U,V), f : *[∀
                  u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 
                  (ev (El_istype u U) (El_istype u V) (A u U V g) (ev (El_istype u T) (El_istype u U) (A u T U f) t)).
 
-End.
-
-# Check LF λ_hastype.
-
-Theorem compose4 { |- u Ulevel, T U V : [U](u), g : *[∀;x](u,u,U,V), f : *[∀;x](u,u,T,U) } : *T -> *V ::=
-                 u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ 
-		 (λ_hastype 
-			    (El_istype u T) (El_istype u V) 
-			    (compose3 u T U V g f) # <--- problem here
-			    ).
-
-End.
-
-	need:
-
-	(o:oexp ⟶ oexp) × ((x:oexp) ⟶ 
-				hastype x (El_istype u (pair T₁ T₂))₁ ⟶ 
-				hastype (o x) (El_istype u (pair V₁ V₂))₁)
+#Theorem compose4 { |- u Ulevel, T U V : [U](u), g : *[∀;x](u,u,U,V), f : *[∀;x](u,u,T,U) } : *T -> *V ::=
+#                 u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ 
+#		 (λ_hastype 
+#			    (El_istype u T) (El_istype u V) 
+#			    (compose3 u T U V g f) # <--- same problem here
+#			    ).
+#
+#	need:
+#
+#	(o:oexp ⟶ oexp) × ((x:oexp) ⟶ 
+#				hastype x (El_istype u (pair T₁ T₂))₁ ⟶ 
+#				hastype (o x) (El_istype u (pair V₁ V₂))₁)
 
 
-Theorem A' { |- u Ulevel, T U : [U](u), f : *[∀;x](u,u,T,U) } : [Pi](*T,*U) ::=  # <-- bug here 
-                 u ⟼ T ⟼ U ⟼ f ⟼ 
-		 (cast (El_istype u (forall u u T U)) 
-                             (∏i (El_istype u T) (El_istype u U))
-                             (El_istype_forall_reduction u u T U) f).
-
+#Theorem A' { |- u Ulevel, T U : [U](u), f : *[∀;x](u,u,T,U) } : [Pi](*T,*U) ::=  # <-- bug here 
+#                 u ⟼ T ⟼ U ⟼ f ⟼ 
+#		 (cast (El_istype u (forall u u T U)) 
+#                             (∏i (El_istype u T) (El_istype u U))
+#                             (El_istype_forall_reduction u u T U) f).
+#
 
 #
 #   Local Variables:

@@ -104,7 +104,7 @@ rule expr_tokens = parse
   | '['  { Wlbracket }
   | '}'  { Wrbrace }
   | '{'  { Wlbrace }
-  | '*'  { Wstar }			(* for [El] *)
+  | '*'  { Star }			(* for [El] *)
   | '$'  { Wdollar }
 
 (* LF-TS punctuation pairs *)
