@@ -10,27 +10,27 @@ Axiom LF El : (M:uexp) ⟶ obj_of_type (UU M) ⟶ type.
 
 Axiom LF El_u_reduction : (M:uexp) ⟶ type_equality (El M (u M)) (UU M).
 
-Axiom LF cast : (T:type) -> (UU:type) -> type_equality T UU -> obj_of_type T -> obj_of_type UU.
+Axiom LF cast : (T:type) -> (U:type) -> type_equality T U -> obj_of_type T -> obj_of_type U.
 
 Axiom LF forall : (M1:uexp) -> (M2:uexp) -> (o1 : obj_of_type (UU M1)) -> (o2 : obj_of_type (El M1 o1) -> obj_of_type (UU M2)) 
       		   -> obj_of_type (UU ([max] M1 M2)).
 
 Axiom LF lamb : (T:type) ⟶ 
-      		(UU : obj_of_type T ⟶ type) ⟶ 
-		(body : (t:obj_of_type T) ⟶ obj_of_type (UU t)) 
-	   ⟶ obj_of_type (pi T UU).
+      		(U : obj_of_type T ⟶ type) ⟶ 
+		(body : (t:obj_of_type T) ⟶ obj_of_type (U t)) 
+	   ⟶ obj_of_type (pi T U).
 
 Axiom LF ev : (T:type) ⟶ 
-      	      (UU : obj_of_type T ⟶ type) ⟶ 
-	      (f : obj_of_type (pi T UU)) ⟶ 
+      	      (U : obj_of_type T ⟶ type) ⟶ 
+	      (f : obj_of_type (pi T U)) ⟶ 
 	      (arg : obj_of_type T) 
-	   ⟶ obj_of_type (UU arg).
+	   ⟶ obj_of_type (U arg).
 
 Axiom LF beta_reduction : (T:type) ⟶ 
       			  (arg : obj_of_type T) ⟶ 
-			  (UU : obj_of_type T ⟶ type) ⟶ 
-			  (body : (t:obj_of_type T) ⟶ obj_of_type (UU t)) 
-             ⟶ object_equality (UU arg) (ev T UU (lamb T UU body) arg) (body arg).
+			  (U : obj_of_type T ⟶ type) ⟶ 
+			  (body : (t:obj_of_type T) ⟶ obj_of_type (U t)) 
+             ⟶ object_equality (U arg) (ev T U (lamb T U body) arg) (body arg).
 
 Theorem LF id0 : (T:type) ⟶ (t:obj_of_type T) ⟶ obj_of_type T := _ ⟼ t ⟼ t.
 
@@ -50,8 +50,8 @@ Definition LF arrow : (T:type) ⟶ (UU:type) ⟶ type := T ⟼ UU ⟼ (pi T (_ �
 Definition LF lamb1 : (T:type) ⟶ (UU:type) ⟶ (body : (t:obj_of_type T) ⟶ obj_of_type UU) ⟶ obj_of_type (arrow T UU) :=
 	   T ⟼ UU ⟼ body ⟼ (lamb T (_ ⟼ UU) body).
 
-Definition LF ev1 : (T:type) ⟶ (UU:type) ⟶ (f : obj_of_type (arrow T UU)) ⟶ (arg : obj_of_type T) ⟶ obj_of_type UU :=
-	   T ⟼ UU ⟼ f ⟼ arg ⟼ (ev T (_ ⟼ UU) f arg).
+Definition LF ev1 : (T:type) ⟶ (U:type) ⟶ (f : obj_of_type (arrow T U)) ⟶ (arg : obj_of_type T) ⟶ obj_of_type U :=
+	   T ⟼ U ⟼ f ⟼ arg ⟼ (ev T (_ ⟼ U) f arg).
 
 Theorem LF modus_ponens : (T:type) ⟶ (U:type) ⟶ (V:type) ⟶ obj_of_type (arrow (arrow T U) (arrow (arrow U V) (arrow T V))) :=
 	T ⟼ U ⟼ V ⟼ 
@@ -84,5 +84,5 @@ Theorem LF compose3 : (u:uexp) -> (T : obj_of_type (UU u)) -> (U : obj_of_type (
 		      (ev (El u U) (_ |-> (El u V)) (A u U V g) (ev (El u T) (_ |-> (El u U)) (A u T U f) t)) .
 
 #   Local Variables:
-#   compile-command: "make run4 "
+#   compile-command: "make -C .. run4 "
 #   End:
