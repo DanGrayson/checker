@@ -27,7 +27,7 @@ let newfresh =
     if !genctr < 0 then raise GensymCounterOverflow;
     VarGen (!genctr, x)) in
   fun v -> match v with 
-  | VarDefined _ -> raise Internal
+  | VarDefined _ -> internal ()
   | Var x | VarGen(_,x) -> newgen x
 
 let newunused () = newfresh (Var "_")

@@ -49,10 +49,10 @@ let lf_type_constant_table = [
   F_object_equality, "oequal" ;
   F_type_uequality, "tuequal" ;
   F_object_uequality, "ouequal";
-  F_a_type, "a_type";
+  F_a_type, "type";
   F_obj_of_type, "obj_of_type";
-  F_judged_type_equal, "judged_type_equal";
-  F_judged_obj_equal, "judged_obj_equal"
+  F_judged_type_equal, "type_equality";
+  F_judged_obj_equal, "object_equality"
 ]
 
 let lf_kind_constant_table = [
@@ -83,7 +83,7 @@ let head_to_type env pos = function
   | T h -> thead_to_lf_type h
   | O h -> ohead_to_lf_type h
   | V v -> fetch_type env pos v
-  | TAC _ -> raise Internal
+  | TAC _ -> internal ()
 
 let ensure_new_name env pos v =
   try let _ = List.assoc v env in

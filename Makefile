@@ -69,7 +69,7 @@ rules:$(CHECKER_EXE) rules.ts ; $(CHECKER)
 run:  $(CHECKER_EXE) rules.ts test.ts ; $(CHECKER) test.ts
 run2: $(CHECKER_EXE) test2.ts ; $(BARE_CHECKER) test2.ts
 run3: $(CHECKER_EXE) test3.ts ; $(CHECKER) --auto-intro test3.ts
-run4: $(CHECKER_EXE) test3.ts ; $(CHECKER) --auto-intro test4.ts
+run4: $(CHECKER_EXE) test3.ts ; $(BARE_CHECKER) test4.ts
 demo: $(CHECKER_EXE) rules.ts test.ts ; $(CHECKER) --auto-intro demo.ts
 debug:
 	ocamlbuild $(BFLAGS) checker.byte 

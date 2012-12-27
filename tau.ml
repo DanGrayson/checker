@@ -16,12 +16,12 @@ let rec tau (pos:position) (env:context) e : lf_expr =
 	with Not_found -> raise (TypeCheckingFailure(env, [pos, "variable not in TS context: " ^ vartostring v])) in
       match unmark t with
       | F_Sigma(_,_,(_,F_APPLY(F_hastype,[(_,APPLY(V v',END)); t]))) -> t
-      | _ -> raise Internal)
+      | _ -> internal ())
   | APPLY(h,args) -> with_pos pos (
       match h with
       | TAC _ -> raise NotImplemented
       | V v -> 
-	  printf " tau - not implemented - e = %a\n%!" _e e;
+	  printf "%a: tau: application of variables not implemented yet: e = %a\n%!" _pos_of e _e e;
 	  print_context (Some 10) stdout env;
 	  raise NotImplemented
       | FUN _ -> raise NotImplemented
@@ -47,8 +47,10 @@ let rec tau (pos:position) (env:context) e : lf_expr =
               | _ -> raise (TypeCheckingFailure(env, [pos, "[ev] with malformed branches"])))
           | O_lambda -> (
               match args with 
-              | ARG(t,ARG((_,LAMBDA(x,o)),END)) ->
-                  Helpers.make_T_Pi t (x, tau pos (ts_bind pos (x,t) env) o)
+              | ARG(t,ARG(o,END)) ->
+		  let x = newfresh (Var "x") in
+		  let x' = var_to_lf x in
+                  Helpers.make_T_Pi t (x, tau pos (ts_bind pos (x,t) env) (Substitute.apply_args o (ARG(x',END))))
               | _ -> raise (TypeCheckingFailure(env, [pos, "[lambda] with malformed branches: " ^ lf_expr_to_string e])))
           | O_forall -> (
               match args with 

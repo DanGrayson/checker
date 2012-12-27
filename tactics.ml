@@ -59,10 +59,10 @@ let ev3 (surr:surrounding) env pos t =
   | (i,e,t) :: _ ->
       let i = match i with Some i -> i | None -> -1 in
       printf "ev3 ( %d , %a ) ?\n%!" i _e (e);
-      raise Internal
+      internal ()
   | [] -> 
       printf "%a: ev3 ?\n%!" _pos pos;
-      raise Internal
+      internal ()
 
 let default surr env pos t = 
   match unmark t with

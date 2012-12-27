@@ -292,6 +292,11 @@ unmarked_command:
     | WAlpha e1= ts_expr Wequal e2= ts_expr Wperiod
 	{ Toplevel.Alpha (e1, e2) }
 
+    | Theorem LF name= IDENTIFIER Colon thm= lf_type ColonEqual deriv= lf_expr Wperiod 
+	{ 
+	  let pos = Position($startpos, $endpos) in
+	  Toplevel.Theorem (pos, name, deriv, thm) }
+
     | Theorem name= IDENTIFIER thm= ts_judgment ColonColonEqual deriv= lf_expr Wperiod 
 	{ 
 	  let pos = Position($startpos, $endpos) in

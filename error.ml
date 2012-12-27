@@ -44,12 +44,16 @@ let errfmt = function
 
 type 'a marked = position * 'a
 
+let internal () = 
+  trap();
+  raise Internal
+
 let min_pos p q =
-  if p.Lexing.pos_fname != q.Lexing.pos_fname then raise Internal;
+  if p.Lexing.pos_fname != q.Lexing.pos_fname then internal ();
   if p.Lexing.pos_cnum < q.Lexing.pos_cnum then p else q
 
 let max_pos p q =
-  if p.Lexing.pos_fname != q.Lexing.pos_fname then raise Internal;
+  if p.Lexing.pos_fname != q.Lexing.pos_fname then internal ();
   if p.Lexing.pos_cnum > q.Lexing.pos_cnum then p else q
 
 let merge_pos p q = 
