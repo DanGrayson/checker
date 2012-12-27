@@ -1,11 +1,11 @@
-TSFILES = rules.ts demo.ts test.ts test2.ts test3.ts test4.ts
+TSFILES = test/rules.ts test/demo.ts test/test.ts test/test2.ts test/test3.ts test/test4.ts
 
 CODE = native
 CODE = byte
 
 CHECKER_EXE = checker.$(CODE)
 BARE_CHECKER := OCAMLRUNPARAM=$(RUN) time ./$(CHECKER_EXE)
-CHECKER := $(BARE_CHECKER) rules.ts
+CHECKER := $(BARE_CHECKER) test/rules.ts
 
 DEBUG = no
 ifeq "$(DEBUG)" "yes"
@@ -64,13 +64,13 @@ clean::; ocamlbuild -clean
 TAGS: $(SRCFILES) $(TSFILES) scripts/ts.etags Makefile
 	( scripts/etags.ocaml $(SRCFILES) && etags --regex=@scripts/ts.etags $(TSFILES) -o - ) >$@
 clean::; rm -f TAGS checker.odocl .DS_Store
-lc:; wc -l $(SRCFILES) rules.ts
-rules:$(CHECKER_EXE) rules.ts ; $(CHECKER)
-run:  $(CHECKER_EXE) rules.ts test.ts ; $(CHECKER) test.ts
-run2: $(CHECKER_EXE) test2.ts ; $(BARE_CHECKER) test2.ts
-run3: $(CHECKER_EXE) test3.ts ; $(CHECKER) --auto-intro test3.ts
-run4: $(CHECKER_EXE) test3.ts ; $(BARE_CHECKER) test4.ts
-demo: $(CHECKER_EXE) rules.ts test.ts ; $(CHECKER) --auto-intro demo.ts
+lc:; wc -l $(SRCFILES) test/rules.ts
+rules:$(CHECKER_EXE) test/rules.ts ; $(CHECKER)
+run:  $(CHECKER_EXE) test/rules.ts test/test.ts ; $(CHECKER) test/test.ts
+run2: $(CHECKER_EXE) test/test2.ts ; $(BARE_CHECKER) test/test2.ts
+run3: $(CHECKER_EXE) test/test3.ts ; $(CHECKER) --auto-intro test/test3.ts
+run4: $(CHECKER_EXE) test/test3.ts ; $(BARE_CHECKER) test/test4.ts
+demo: $(CHECKER_EXE) test/rules.ts test/test.ts ; $(CHECKER) --auto-intro test/demo.ts
 debug:
 	ocamlbuild $(BFLAGS) checker.byte 
 	@ echo "enter:"
