@@ -64,20 +64,21 @@ Theorem LF compose1' : (T:texp) -> (U:texp) -> (V:texp) -> (f:oexp) -> (g:oexp) 
 			(f':hastype f ([Pi] T (_ |-> U))) -> 
 			(g':hastype g ([Pi] U (_ |-> V))) -> 
 			(t':hastype t T) -> 
-			(v:oexp) × hastype v V := 
+			hastype v V := 
         T ⟼ U ⟼ V ⟼ f ⟼ g ⟼ t ⟼ 
 	(pair ([ev] g ([ev] f t U) V) 
               T' ⟼ U' ⟼ V' ⟼ f' ⟼ g' ⟼ t' ⟼ 
- 	      	   (ev (pair U U') (pair V V') (pair g g') (ev (pair T T') (pair U U') (pair f f') (pair t t')))).
+ 	      	   (ev (pair U U') (pair V V') (pair g g') (ev (pair T T') (pair U U') (pair f f') (pair t t')))_2).
 
-# compose1 is no use in filling the hole in the following theorem, because the first thing we need is the TS term of type oexp ⟶ oexp,
-# but we should be able to use compose1'.  That should illustrate what's wrong with our theorem syntax.
-# A theorem should be a term of TS, possibly parametrized, together with a derivation of its type.
-#Theorem compose1a { ⊢ T Type, U Type, V Type, g:U⟶V, f:T⟶U } : T->V ::=
-#                  T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ 
-#		  (λ_hastype 
-#			     T V _ ).
-#
+# compose1 is no use in proving the following theorem, because the first thing we need is the TS term of type oexp ⟶ oexp,
+# so we use compose1' instead.  That illustrates what's wrong with our theorem syntax.
+Theorem compose1a { ⊢ T Type, U Type, V Type, g:U⟶V, f:T⟶U } : T->V ::=
+                  T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ 
+		  (λ_hastype 
+			     T V 
+			     (pair (t |-> (compose1' T_1 U_1 V_1 f_1 g_1 t)_1) 
+			           (t |-> t' |-> ((compose1' T_1 U_1 V_1 f_1 g_1 t)_2 T_2 U_2 V_2 f_2 g_2 t')))).
+
 
 Theorem compose2 { ⊢ u Ulevel, T:[U](u), U:[U](u), V:[U](u), g:*U ⟶ *V, f:*T ⟶ *U, t:*T } : *V ::= 
                 u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 

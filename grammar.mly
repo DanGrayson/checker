@@ -12,11 +12,11 @@ type binder_judgment = ULEV | IST | HAST of lf_expr
 
 let add_single v t u = F_Pi(v, t, u)
 
+let app (hd,reversed_args) arg = (hd, ARG(arg,reversed_args))
+
 let car (hd,reversed_args) = (hd, CAR reversed_args)
 
 let cdr (hd,reversed_args) = (hd, CDR reversed_args)
-
-let app (hd,reversed_args) arg = (hd, ARG(arg,reversed_args))
 
 let fix1 pos v t = Substitute.subst_type (v,pi1 (var_to_lf_pos pos v)) t
 
@@ -99,6 +99,10 @@ let apply_binder pos (c:(var marked * lf_expr) list) v t1 t2 u =
   (* We want [f -> (f,END) -> (f)] unless there is another expr coming. *)
 
   (* In LF mode, we want [f x y z -> (f,x::END) y z -> (f,(y::x::END)) -> (f,(z::y::x::END)) -> (f x y z)] *)
+
+%left
+
+  K_1 K_2
 
 %%
 
@@ -218,14 +222,20 @@ short_head_and_reversed_spine:
     | variable
 	{ V $1, END }
 
-    | head_and_args= variable K_1	(* we need a way to write ( ... )_1 *)
-    	{ car (V head_and_args, END) }
+    | head_and_args= short_head_and_reversed_spine K_1
+    	{ car head_and_args }
 
-    | head_and_args= variable K_2
-    	{ cdr (V head_and_args, END) }
+    | head_and_args= short_head_and_reversed_spine K_2
+    	{ cdr head_and_args }
 
     | tac= tactic_expr
 	{ TAC tac, END }
+
+    | head_and_args= parenthesized(lf_expr_head_and_reversed_spine) K_1
+    	{ car head_and_args }
+
+    | head_and_args= parenthesized(lf_expr_head_and_reversed_spine) K_2
+    	{ cdr head_and_args }
 
 tactic_expr:
 
@@ -473,6 +483,12 @@ unmarked_ts_expr:
 	{ let (pos,v) = v in
 	  let (v,body) = Substitute.subst_fresh pos (v,body) in 
 	  LAMBDA(v,body) }
+
+    | e= ts_expr K_1
+    	{ unmark ( Substitute.apply_args e (CAR END) ) }
+
+    | e= ts_expr K_2
+    	{ unmark ( Substitute.apply_args e (CDR END) ) }
 
     | tac= tactic_expr
 	{ cite_tactic tac END }

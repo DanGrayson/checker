@@ -45,24 +45,24 @@ and subst_fresh pos subl (v,e) =
   let e' = subst_expr subl e in
   v', e'
 
-and apply_args (head:lf_expr) args =
-  let rec repeat head args = 
-    let pos = get_pos head in
-    match unmark head with
-    | APPLY(head,brgs) -> (pos, APPLY(head, join_args brgs args))
+and apply_args e args =
+  let rec repeat e args = 
+    let pos = get_pos e in
+    match unmark e with
+    | APPLY(h,brgs) -> (pos, APPLY(h, join_args brgs args))
     | CONS(x,y) -> (
         match args with
         | ARG _ -> raise (GeneralError "too many arguments")
         | CAR args -> repeat x args
 	| CDR args -> repeat y args
-        | END -> head)
+        | END -> e)
     | LAMBDA(v,body) -> (
         match args with
         | ARG(x,args) -> repeat (subst_expr [(v,x)] body) args
         | CAR args -> raise (GeneralError "pi1 expected a pair (1)")
 	| CDR args -> raise (GeneralError "pi2 expected a pair (1)")
-        | END -> head)
-  in repeat head args
+        | END -> e)
+  in repeat e args
 
 and subst_type_list (subl : (var * lf_expr) list) ts = List.map (subst_type subl) ts
 
