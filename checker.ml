@@ -17,6 +17,8 @@ open Hash
 open Printf
 open Printer
 open Definitions
+open Lfcheck
+open Alpha.UEqual
 
 module Load = struct
   open Tactics
@@ -33,16 +35,14 @@ let error_summary pos =
   let n = !Tokens.error_count in
   if n > 0 
   then (
-    fprintf stderr "%s: %d error%s encountered, see messages above\n" (errfmt pos) n (if n == 1 then "" else "s");
-    flush stderr;
+    fprintf stderr "%s: %d error%s encountered, see messages above\n%!" (errfmt pos) n (if n == 1 then "" else "s");
     exit 1
    )
 
 let print_inconsistency lhs rhs = 
   Printf.fprintf stderr "%a: universe inconsistency:\n" _pos_of lhs;
   Printf.fprintf stderr "%a:         %a\n"  _pos_of lhs  _ts lhs;
-  Printf.fprintf stderr "%a:      != %a\n"  _pos_of rhs  _ts rhs;
-  flush stderr;
+  Printf.fprintf stderr "%a:      != %a\n%!"  _pos_of rhs  _ts rhs;
   Tokens.bump_error_count()
 
 let rec handle_exception pos0 e =
@@ -54,34 +54,28 @@ let rec handle_exception pos0 e =
       error_summary pos0;
       raise StopParsingFile
   | Failure s as ex -> 
-      fprintf stderr "%s: failure: %s\n" pos s;
-      flush stderr;
+      fprintf stderr "%s: failure: %s\n%!" pos s;
       Tokens.bump_error_count();
       raise_switch ex (Failure s)
   | GeneralError s as ex ->
-      fprintf stderr "%s: %s\n" pos s;
-      flush stderr;
+      fprintf stderr "%s: %s\n%!" pos s;
       Tokens.bump_error_count();
       raise_switch ex Error_Handled
   | Grammar.Error | Parsing.Parse_error as ex -> 
-      fprintf stderr "%s: syntax error\n" pos;
-      flush stderr;
+      fprintf stderr "%s: syntax error\n%!" pos;
       Tokens.bump_error_count();
       raise_switch ex Error_Handled
   | TypeCheckingFailure (env,ps) as ex -> 
-      List.iter (fun (pos,s) -> fprintf stderr "%s: %s\n" (errfmt pos) s) ps;
-      flush stderr;
+      List.iter (fun (pos,s) -> fprintf stderr "%s: %s\n%!" (errfmt pos) s) ps;
       print_context env_limit stderr env;
       Tokens.bump_error_count();
       raise_switch ex Error_Handled
   | MarkedError (p,s) as ex ->
-      fprintf stderr "%s: %s\n" (errfmt p) s;
-      flush stderr;
+      fprintf stderr "%s: %s\n%!" (errfmt p) s;
       Tokens.bump_error_count();
       raise_switch ex Error_Handled
   | Unimplemented s as ex ->
-      fprintf stderr "%s: feature not yet implemented: %s\n" pos s;
-      flush stderr;
+      fprintf stderr "%s: feature not yet implemented: %s\n%!" pos s;
       Tokens.bump_error_count();
       raise_switch ex Error_Handled
   | Universe.Inconsistency (lhs,rhs) as ex ->
@@ -123,26 +117,21 @@ let lf_axiomCommand env pos name t =
 let defCommand env defs = 
   List.fold_left
     (fun env (v, pos, tm, tp) -> 
-      printf "Define %a = %a\n" _v v  _e tm;
-      flush stdout;
+      printf "Define %a = %a\n%!" _v v  _e tm;
       printf "       %a : %a\n%!" _v v  _t tp;
-      if !debug_mode then printf "       %a : calling type_validity:\n%!" _v v;
-      let tp' = Lfcheck.type_validity env tp in
-      if not (Alpha.UEqual.type_equiv empty_uContext tp tp') then
+      let tp' = type_validity env tp in
+      if not (type_equiv empty_uContext tp tp') then
       printf "       %a : %a [after tactics]\n%!" _v v  _t tp';
-      if !debug_mode then printf "       %a : calling type_check:\n%!" _v v;
-      let tm' = Lfcheck.type_check env tm tp in
-      if not (Alpha.UEqual.term_equiv empty_uContext tm tm') then
-      printf "       %a = %a [after tactics]\n%!" _v v  _e tm';
-      if !debug_mode then printf "       %a : calling term_normalization:\n%!" _v v;
-      let tm'' = Lfcheck.term_normalization env tm' tp' in
-      if not (Alpha.UEqual.term_equiv empty_uContext tm' tm'') then
-      printf "       %a = %a [normalized]\n%!" _v v  _e tm'';
-      printf "       %a = %a [normalized, TS format]\n%!" _v v  _ts tm'';
-      if !debug_mode then printf "       %a : calling type_normalization:\n%!" _v v;
-      let tp'' = Lfcheck.type_normalization env tp' in
-      if not (Alpha.UEqual.type_equiv empty_uContext tp' tp'') then
-      printf "       %a : %a [normalized]\n%!" _v v  _t tp'';
+      let tm' = type_check env tm tp' in
+      if not (term_equiv empty_uContext tm tm') then (
+	printf "       %a = %a [after tactics]\n%!" _v v  _e tm');
+      let tm'' = term_normalization env tm' tp' in
+      if not (term_equiv empty_uContext tm' tm'') then (
+	printf "       %a = %a [normalized]\n%!" _v v  _e tm'';
+	printf "       %a = %a [normalized, TS format]\n%!" _v v  _ts tm'');
+      let tp'' = type_normalization env tp' in
+      if not (type_equiv empty_uContext tp' tp'') then (
+	printf "       %a : %a [normalized]\n%!" _v v  _t tp'');
       def_bind v pos tm' tp' env
     ) 
     env defs
@@ -170,25 +159,21 @@ let checkLFtypeCommand env t =
     printf "           : %a [after normalization]\n%!" _t t
 
 let checkTSCommand env x =
-  printf "\nCheck TS   : %a\n" _ts x;
-  flush stdout;
-  flush stdout;
+  printf "\nCheck TS   : %a\n%!" _ts x;
   let (x,t) = Lfcheck.type_synthesis env x in
   printf "     type :: %a\n" _t t;
   if unmark t = unmark oexp then (
     match unmark x with
     | LAMBDA _ ->
 	let ts = Tau.tau env x in
-	printf "      type : %a ?\n" _ts ts;
-	flush stdout
+	printf "      type : %a ?\n%!" _ts ts
     | _ -> ()
    )
 
 let alphaCommand env (x,y) =
   printf "\nAlpha      : %s\n" (if (Alpha.UEqual.term_equiv (UContext ([],[])) x y) then "true" else "false");
   printf "           : %a\n" _ts x;
-  printf "           : %a\n" _ts y;
-  flush stdout
+  printf "           : %a\n%!" _ts y
 
 let checkUniversesCommand env pos =
   try

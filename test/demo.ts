@@ -83,7 +83,7 @@ Axiom LF 3.4.25 ev' : (T:texp) -> (U:oexp->texp) -> (f:oexp) -> (o:oexp) -> (e:S
 Theorem LF compose1'' : (T:texp) -> (U:texp) -> (V:texp) -> (f:oexp) -> (g:oexp) -> (t:oexp) -> (v:oexp) ×
 			(T':istype T) -> (U':istype U) -> (V':istype V) -> 
 			(f':hastype f ([Pi] T U)) -> 
-			(g':hastype g ([Pi] U (_ |-> V))) -> 
+			(g':hastype g ([Pi] U V)) -> 
 			(t':hastype t T) -> 
 			hastype v V := 
         T ⟼ U ⟼ V ⟼ f ⟼ g ⟼ t ⟼ 
