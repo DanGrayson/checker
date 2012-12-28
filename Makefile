@@ -53,7 +53,7 @@ RUN = -b
 %.cmx: %.mll; ocamlbuild $(BFLAGS) $*.cmx
 %.cmx: %.mly; ocamlbuild $(BFLAGS) $*.cmx
 
-all: TAGS demo run run2 run3 run4 doc
+all: TAGS demo run run2 run3 run4 run5 doc
 build: $(CHECKER_EXE)
 checker.byte checker.native: $(SRCFILES); ocamlbuild $(BFLAGS) $@
 doc: checker.odocl $(SRCFILES)

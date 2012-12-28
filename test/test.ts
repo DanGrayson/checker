@@ -69,7 +69,7 @@ Check TS λ f:X⟶T, λ y:X, [ev;_](f,y,T).
 Check TS U_istype.
 Check TS [Pi;x](T,T).
 
-Check : LF ∏ x:oexp, ∏ y:oexp, ∏ T:texp, ∏ U:texp, [ x = y : T ]⟶[ T = U ]⟶[ x = y : U ].
+Check LF : ∏ x:oexp, ∏ y:oexp, ∏ T:texp, ∏ U:texp, [ x = y : T ]⟶[ T = U ]⟶[ x = y : U ].
 Check LF (U_istype u1).
 
 Check LF El_istype.
@@ -82,11 +82,11 @@ Theorem B   { ⊢ u Ulevel, t : [U](u        ) } ⊢ *t Type ::= u |-> t |-> (El
 
 Theorem C { ⊢ u Ulevel, t : [U](u) } ⊢ *t Type ::= u |-> t |-> (El_istype $1 $0).
 
-Check : LF texp ** oexp .
+Check LF : texp ** oexp .
 Check LF      (pair ([U] u0) ([u] u0)).
-Check : LF Sigma x: uexp, texp.
+Check LF : Sigma x: uexp, texp.
 Check LF      (pair u0 ([U] u0)).
-Check : LF Singleton ( (pair u0 ([U] u0)) :  (Sigma x: uexp, texp) ).
+Check LF : Singleton ( (pair u0 ([U] u0)) :  (Sigma x: uexp, texp) ).
 # Show.
 
 

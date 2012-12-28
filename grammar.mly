@@ -83,7 +83,8 @@ let pi1_relative_implication t u =
   let (q,f,k) = unbind u in
   match e with
   | Some (pos,e,ee) ->
-      let j = Substitute.subst_type (e,apply_vars (var_to_lf_pos pos e) (List.rev p)) j in
+      let fix t = Substitute.subst_type (e,apply_vars (var_to_lf_pos pos e) (List.rev p)) t in
+      let j = fix j in
       bind_pi (pos,e,(bind_pis p ee)) (bind_pis q (bind_sigma f (arrow (bind_pis p j) k)))
   | None -> raise NotImplemented
 
@@ -108,7 +109,7 @@ let pi1_relative_implication t u =
   Semicolon Ulevel Kumax Type KPi Klambda KSigma Check WShow WEnd WVariable
   WAlpha Weof CheckUniverses Wtilde Singleton Wdollar LF TS Kpair K_1 K_2 K_CAR
   K_CDR Times Slash Turnstile DoubleArrow DoubleArrowFromBar ColonColonEqual
-  ColonEqual Theorem LeftBrace RightBrace TurnstileDouble
+  ColonEqual Theorem LeftBrace RightBrace TurnstileDouble ColonColon
 
 (* precedences, lowest first *)
 
@@ -118,6 +119,7 @@ let pi1_relative_implication t u =
 
 %right
 
+  Turnstile
   TurnstileDouble
 
 %right
@@ -211,8 +213,17 @@ unmarked_lf_type:
     | LeftBracket a= lf_expr Wtilde b= lf_expr Colon t= lf_expr RightBracket
 	{ unmark (object_uequality a b t) }
 
-    | a= lf_type TurnstileDouble b= lf_type
+    | a= lf_type Turnstile b= lf_type
 	{ unmark (pi1_relative_implication a b) }
+
+    | v= marked_variable Type
+	{ let (pos,v) = v in F_Sigma(v,texp,istype (var_to_lf_pos pos v)) }
+
+    | v= marked_variable ColonColon t= lf_expr
+	{ let (pos,v) = v in F_Sigma(v,oexp,hastype (var_to_lf_pos pos v) t) }
+
+    | v= marked_variable ColonColonEqual e= lf_expr ColonColon t= lf_expr
+	{ let (pos,v) = v in F_Sigma(v,with_pos_of e (F_Singleton(e,oexp)),hastype (var_to_lf_pos pos v) t) }
 
 lf_type_constant:
 
@@ -341,10 +352,10 @@ unmarked_command:
     | Check LF e= lf_expr Wperiod
 	{ Toplevel.CheckLF e }
 
-    | Check Colon TS t= ts_judgment Wperiod
+    | Check TS Colon t= ts_judgment Wperiod
 	{ Toplevel.CheckLFtype t }
 
-    | Check Colon LF t= lf_type Wperiod
+    | Check LF Colon t= lf_type Wperiod
 	{ Toplevel.CheckLFtype t }
 
     | CheckUniverses Wperiod

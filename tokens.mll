@@ -121,6 +121,8 @@ rule expr_tokens = parse
 
   | ':'     { Colon } 
 
+  | "::"     { ColonColon }
+
   | ( "|-" | "⊢" ) { Turnstile }
 
   | ( "|=" | "⊨" ) { TurnstileDouble }
