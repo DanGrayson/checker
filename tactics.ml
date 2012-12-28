@@ -67,7 +67,7 @@ let ev3 (surr:surrounding) env pos t =
 let default surr env pos t = 
   match unmark t with
   | F_Singleton(e,_) -> TacticSuccess e
-  | F_APPLY((F_hastype|F_istype),_) -> assumption surr env pos t
+  | F_Apply((F_hastype|F_istype),_) -> assumption surr env pos t
   | _ -> 
       printf "Default tactic failure in hole of type %a\n%!" _t t;
       show_surroundings surr;

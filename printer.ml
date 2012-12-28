@@ -51,7 +51,7 @@ and lf_type_to_vars (_,t) = match t with
   | F_Pi   (v,t,u) -> dependent_vars (v,t,u)
   | F_Sigma(v,t,u) -> dependent_vars (v,t,u)
   | F_Singleton(x,t) -> lf_expr_to_vars x @ lf_type_to_vars t
-  | F_APPLY(hd,args) -> vars_in_list lf_expr_to_vars args
+  | F_Apply(hd,args) -> vars_in_list lf_expr_to_vars args
 
 let rec lf_kind_to_vars = function
   | K_expression | K_judgment | K_judged_expression | K_judged_expression_judgment -> []
@@ -75,7 +75,7 @@ and occurs_in_type w (_,t) = match t with
   | F_Pi   (v,t,u)
   | F_Sigma(v,t,u) -> occurs_in_type w t || w <> v && occurs_in_type w u
   | F_Singleton(e,t) -> occurs_in_expr w e || occurs_in_type w t
-  | F_APPLY(h,args) -> List.exists (occurs_in_expr w) args
+  | F_Apply(h,args) -> List.exists (occurs_in_expr w) args
 
 let rec occurs_in_kind w = function
   | K_expression | K_judgment | K_judged_expression | K_judged_expression_judgment -> false
@@ -277,7 +277,7 @@ and lf_type_to_string_with_subs subs (_,t) : smart_string = match t with
       let x = lf_expr_to_string_with_subs subs x in
       let t = lf_type_to_string_with_subs subs t in
       top_prec, concat ["Singleton(";paren_left colon_prec x;" : ";paren_right colon_prec t;")"]
-  | F_APPLY(hd,args) -> 
+  | F_Apply(hd,args) -> 
       list_application_to_string (mark_top <<- lf_type_head_to_string) (lf_expr_to_string_with_subs subs) (hd,args)
 
 let rec lf_kind_to_string_with_subs subs = function
@@ -470,6 +470,8 @@ let _tac file tac = output_string file (tactic_to_string tac)
 let _s file x = output_string file (spine_to_string x)
 
 let _e file x = output_string file (lf_expr_to_string x)
+
+let _l file x = List.iter (fun x -> printf " "; _e file x) x
 
 let _h file x = output_string file (lf_head_to_string x)
 

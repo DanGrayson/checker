@@ -15,7 +15,7 @@ let rec tau (pos:position) (env:context) e : lf_expr =
 	try List.assoc v env
 	with Not_found -> raise (TypeCheckingFailure(env, [pos, "variable not in TS context: " ^ vartostring v])) in
       match unmark t with
-      | F_Sigma(_,_,(_,F_APPLY(F_hastype,[(_,APPLY(V v',END)); t]))) -> t
+      | F_Sigma(_,_,(_,F_Apply(F_hastype,[(_,APPLY(V v',END)); t]))) -> t
       | _ -> internal ())
   | APPLY(h,args) -> with_pos pos (
       match h with

@@ -97,8 +97,8 @@ Theorem compose1a { ⊢ T Type, U Type, V Type, g:U⟶V, f:T⟶U } : T->V ::=
                   T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ 
 		  (λ_hastype 
 			     T V 
-			     (pair (t |-> (compose1' T_1 U_1 V_1 f_1 g_1 t)_1) 
-			           (t |-> t' |-> ((compose1' T_1 U_1 V_1 f_1 g_1 t)_2 T_2 U_2 V_2 f_2 g_2 t')))).
+			     (pair (t |-> (compose1' T_1 U_1 V_1 f_1 g_1 t CAR)) 
+			           (t |-> t' |-> (compose1' T_1 U_1 V_1 f_1 g_1 t CDR T_2 U_2 V_2 f_2 g_2 t')))).
 
 
 Theorem compose2 { ⊢ u Ulevel, T:[U](u), U:[U](u), V:[U](u), g:*U ⟶ *V, f:*T ⟶ *U, t:*T } : *V ::= 
@@ -137,7 +137,8 @@ Theorem compose3 { |- u Ulevel, T U V : [U](u), g : *[∀;x](u,u,U,V), f : *[∀
 #                             (El_istype_forall_reduction u u T U) f).
 #
 
-#
+Show.
+
 #   Local Variables:
 #   compile-command: "make -C .. demo "
 #   End:

@@ -47,7 +47,7 @@ let get_uvars =
 
 let get_ueqns =
   let rec get_ueqns accu = function
-  | (_, (pos,F_APPLY(F_ulevel_equality,[u; u']))) :: rest -> get_ueqns ((u,u') :: accu) rest
+  | (_, (pos,F_Apply(F_ulevel_equality,[u; u']))) :: rest -> get_ueqns ((u,u') :: accu) rest
   | _ :: rest -> get_ueqns accu rest 
   | [] -> List.rev accu
   in get_ueqns []
@@ -67,9 +67,8 @@ let ubind env uvars ueqns =
 module Equal = struct
   let term_equiv ulevel_context = 			(* structural equality *)
     let rec ueq a b = 
-      let (a,b) = (unmark a,unmark b) in
-      a == b || 
-      match (a,b) with 
+      unmark a == unmark b || 
+      match (unmark a,unmark b) with 
       | APPLY(V x,END), APPLY(V x',END) -> x = x'
       | APPLY(U U_next, ARG(x ,END)), APPLY(U U_next, ARG(x',END)) -> ueq x x'
       | APPLY(U U_max, ARG(x,ARG(y,END))), APPLY(U U_max, ARG(x',ARG(y',END))) -> ueq x x' && ueq y y'

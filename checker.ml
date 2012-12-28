@@ -18,7 +18,6 @@ open Printf
 open Printer
 open Definitions
 open Lfcheck
-open Alpha.UEqual
 
 module Load = struct
   open Tactics
@@ -120,17 +119,17 @@ let defCommand env defs =
       printf "Define %a = %a\n%!" _v v  _e tm;
       printf "       %a : %a\n%!" _v v  _t tp;
       let tp' = type_validity env tp in
-      if not (type_equiv empty_uContext tp tp') then
+      if not (Alpha.UEqual.type_equiv empty_uContext tp tp') then
       printf "       %a : %a [after tactics]\n%!" _v v  _t tp';
       let tm' = type_check env tm tp' in
-      if not (term_equiv empty_uContext tm tm') then (
+      if not (Alpha.UEqual.term_equiv empty_uContext tm tm') then (
 	printf "       %a = %a [after tactics]\n%!" _v v  _e tm');
       let tm'' = term_normalization env tm' tp' in
-      if not (term_equiv empty_uContext tm' tm'') then (
+      if not (Alpha.UEqual.term_equiv empty_uContext tm' tm'') then (
 	printf "       %a = %a [normalized]\n%!" _v v  _e tm'';
 	printf "       %a = %a [normalized, TS format]\n%!" _v v  _ts tm'');
       let tp'' = type_normalization env tp' in
-      if not (type_equiv empty_uContext tp' tp'') then (
+      if not (Alpha.UEqual.type_equiv empty_uContext tp' tp'') then (
 	printf "       %a : %a [normalized]\n%!" _v v  _t tp'');
       def_bind v pos tm' tp' env
     ) 
@@ -152,11 +151,13 @@ let checkLFCommand env pos x =
 
 let checkLFtypeCommand env t =
   printf "\nCheck      : %a\n%!" _t t;
-  let t = Lfcheck.type_validity env t in
-  printf "           : %a [after tactics]\n%!" _t t;
+  let t' = Lfcheck.type_validity env t in
+  if not (Alpha.UEqual.type_equiv empty_uContext t t') then
+    printf "           : %a [after tactics]\n%!" _t t';
   if try_normalization then
-    let t = Lfcheck.type_normalization env t in
-    printf "           : %a [after normalization]\n%!" _t t
+    let t'' = Lfcheck.type_normalization env t' in
+    if not (Alpha.UEqual.type_equiv empty_uContext t' t'') then
+      printf "           : %a [after normalization]\n%!" _t t''
 
 let checkTSCommand env x =
   printf "\nCheck TS   : %a\n%!" _ts x;

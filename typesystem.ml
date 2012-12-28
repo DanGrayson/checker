@@ -126,7 +126,7 @@ and lf_type = bare_lf_type marked
 and bare_lf_type =
   | F_Pi of var * lf_type * lf_type
   | F_Sigma of var * lf_type * lf_type
-  | F_APPLY of lf_type_head * lf_expr list
+  | F_Apply of lf_type_head * lf_expr list
   | F_Singleton of (lf_expr * lf_type)
 
 (** Tactics *)
@@ -135,7 +135,7 @@ and tactic_expr =
   | Tactic_name of string		(* represented by $foo *)
   | Tactic_index of int			(* represented by $n *)
 
-let ( @@ ) f x : lf_type = nowhere 3 (F_APPLY(f,x))
+let ( @@ ) f x : lf_type = nowhere 3 (F_Apply(f,x))
 
 let uexp = F_uexp @@ []
 let texp = F_texp @@ []

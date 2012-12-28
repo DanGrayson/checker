@@ -40,6 +40,53 @@ let apply_binder pos (c:(var marked * lf_expr) list) v t1 t2 u =
    ) c t2 in
   F_Pi(v, (pos, F_Sigma(w, t1, t2)), u)
 
+type binder = position * var * lf_type
+
+let rec bind_pis binders b =
+  match binders with
+  | [] -> b
+  | (pos,v,a) :: binders -> bind_pis binders (with_pos pos (F_Pi(v,a,b)))
+
+let apply_vars f binders =
+  Substitute.apply_args f (List.fold_right (fun (pos,v,a) accu -> (ARG(var_to_lf_pos pos v,accu))) binders END)
+
+let bind_pi binder b = bind_pis [binder] b
+
+ (** for a type p of the form (p_1:P_1) -> ... -> (p_n:P_n) -> (e:E) ** J we
+     return [p_n,P_n;...;p_1,P_n],(e,E),J. *)
+let unbind p : binder list * binder option * lf_type =
+  let rec repeat binders p =
+    match unmark p with
+    | F_Pi(v,a,b) -> repeat ((get_pos p,v,a) :: binders) b
+    | F_Sigma(v,a,b) -> binders, Some (get_pos p,v,a), b
+    | _ -> [], None, bind_pis binders p
+  in
+  repeat [] p
+
+let rec bind_sigma binder b =
+  match binder with
+  | Some (pos,v,a) -> with_pos pos (F_Sigma(v,a,b))
+  | None -> b
+
+ (** Suppose t has the form P -> (e:E) ** J and u has the form Q -> (f:F) ** K.
+     We think of an instance of t as providing a parametrized expression of
+     type P -> E together with a judgment of type J about the expression, and
+     similarly for u.  We return a new type describing a parametrized
+     expression of type (P->E)->(Q->F) together with a judgment about it, of
+     type (P->J)->K.  The resulting type looks like e:(P -> E) -> Q -> (f:F) **
+     (P -> J) -> K.  All this goes through if t has the form P_1 -> ... -> P_n
+     -> (e:E) ** J, and similarly for u, because we can rewrite it in terms of
+     P = P_1 ** ... ** P_n. We intend to use this as the basis for the
+     statement of all theorems and axioms. *)
+let pi1_relative_implication t u =
+  let (p,e,j) = unbind t in
+  let (q,f,k) = unbind u in
+  match e with
+  | Some (pos,e,ee) ->
+      let j = Substitute.subst_type (e,apply_vars (var_to_lf_pos pos e) (List.rev p)) j in
+      bind_pi (pos,e,(bind_pis p ee)) (bind_pis q (bind_sigma f (arrow (bind_pis p j) k)))
+  | None -> raise NotImplemented
+
 %}
 %start command ts_exprEof
 %type <Toplevel.command> command
@@ -56,18 +103,22 @@ let apply_binder pos (c:(var marked * lf_expr) list) v t1 t2 u =
 
   (* tokens *)
 
-  Wlparen Wrparen Wrbracket Wlbracket Wcomma Wperiod Colon Star Arrow
-  ArrowFromBar Wequal Wunderscore Axiom Wgreaterequal Wgreater Wlessequal Wless
+  Wlparen Wrparen RightBracket LeftBracket Wcomma Wperiod Colon Star Arrow
+  ArrowFromBar Wequal Wunderscore Axiom GreaterEqual Wgreater LessEqual Wless
   Semicolon Ulevel Kumax Type KPi Klambda KSigma Check WShow WEnd WVariable
   WAlpha Weof CheckUniverses Wtilde Singleton Wdollar LF TS Kpair K_1 K_2 K_CAR
   K_CDR Times Slash Turnstile DoubleArrow DoubleArrowFromBar ColonColonEqual
-  ColonEqual Theorem Wlbrace Wrbrace
+  ColonEqual Theorem LeftBrace RightBrace TurnstileDouble
 
 (* precedences, lowest first *)
 
 %right
 
   Reduce_binder
+
+%right
+
+  TurnstileDouble
 
 %right
 
@@ -117,7 +168,7 @@ lf_type:
 unmarked_lf_type:
 
     | f= lf_type_constant args= list(lf_expr)
-	{ F_APPLY(f,args) }
+	{ F_Apply(f,args) }
 
     | KPi v= variable Colon a= lf_type Wcomma b= lf_type
 	%prec Reduce_binder
@@ -142,23 +193,26 @@ unmarked_lf_type:
     | Singleton Wlparen x= lf_expr Colon t= lf_type Wrparen
 	{ F_Singleton(x,t) }
 
-    | Wlbracket t= lf_expr Type Wrbracket
+    | LeftBracket t= lf_expr Type RightBracket
 	{ unmark (istype t) }
 
-    | Wlbracket a= lf_expr Colon t= lf_expr Wrbracket
+    | LeftBracket a= lf_expr Colon t= lf_expr RightBracket
 	{ unmark (hastype a t) }
 
-    | Wlbracket a= lf_expr Wequal b= lf_expr Colon t= lf_expr Wrbracket
+    | LeftBracket a= lf_expr Wequal b= lf_expr Colon t= lf_expr RightBracket
 	{ unmark (object_equality a b t) }
 
-    | Wlbracket t= lf_expr Wequal u= lf_expr Wrbracket
+    | LeftBracket t= lf_expr Wequal u= lf_expr RightBracket
 	{ unmark (type_equality t u) }
 
-    | Wlbracket t= lf_expr Wtilde u= lf_expr Type Wrbracket
+    | LeftBracket t= lf_expr Wtilde u= lf_expr Type RightBracket
 	{ unmark (type_uequality t u) }
 
-    | Wlbracket a= lf_expr Wtilde b= lf_expr Colon t= lf_expr Wrbracket
+    | LeftBracket a= lf_expr Wtilde b= lf_expr Colon t= lf_expr RightBracket
 	{ unmark (object_uequality a b t) }
+
+    | a= lf_type TurnstileDouble b= lf_type
+	{ unmark (pi1_relative_implication a b) }
 
 lf_type_constant:
 
@@ -333,10 +387,10 @@ uEquation:
     | u= ts_expr Wequal v= ts_expr 
 	{ (u,v) }
 
-    | v= ts_expr Wgreaterequal u= ts_expr 
+    | v= ts_expr GreaterEqual u= ts_expr 
 	{ let pos = Position($startpos, $endpos) in (pos, make_U_max u v), v }
 
-    | u= ts_expr Wlessequal v= ts_expr 
+    | u= ts_expr LessEqual v= ts_expr 
 	{ let pos = Position($startpos, $endpos) in (pos, make_U_max u v), v }
 
     | v= ts_expr Wgreater u= ts_expr 
@@ -362,7 +416,7 @@ ts_judgment:
 unmarked_ts_judgment:
 
     | f= lf_type_constant
-	{ F_APPLY(f,[]) }
+	{ F_Apply(f,[]) }
 
     | Wlparen v= variable Colon a= ts_judgment Wrparen DoubleArrow b= ts_judgment
 	{ F_Pi(v,a,b) }
@@ -376,17 +430,20 @@ unmarked_ts_judgment:
     | a= ts_judgment Times b= ts_judgment
 	{ F_Sigma(newunused(),a,b) }
 
+    | a= ts_judgment TurnstileDouble b= ts_judgment
+	{ unmark (pi1_relative_implication a b) }
+
 (* base judgments *)
 
     | Type
 	{ let pos = Position($startpos, $endpos) in
 	  let v = Var "t" in
-	  F_Sigma(v, texp, with_pos pos (F_APPLY(F_istype, [var_to_lf_pos pos v]))) }
+	  F_Sigma(v, texp, with_pos pos (F_Apply(F_istype, [var_to_lf_pos pos v]))) }
 
     | Colon t= ts_expr
 	{ let v = Var "o" in
 	  let pos = get_pos t in
-	  F_Sigma(v, oexp, with_pos pos (F_APPLY(F_hastype, [var_to_lf_pos pos v; t]))) }
+	  F_Sigma(v, oexp, with_pos pos (F_Apply(F_hastype, [var_to_lf_pos pos v; t]))) }
 
     | Turnstile x= ts_expr Colon t= ts_expr
 	{ unmark (this_object_of_type (get_pos x) x t) }
@@ -394,32 +451,32 @@ unmarked_ts_judgment:
     | Turnstile a= ts_expr Type
 	{ let v = Var "t" in
 	  let pos = get_pos a in
-	  F_Sigma(v, with_pos pos (F_Singleton(a,texp)), with_pos pos (F_APPLY(F_istype, [var_to_lf_pos pos v]))) }
+	  F_Sigma(v, with_pos pos (F_Singleton(a,texp)), with_pos pos (F_Apply(F_istype, [var_to_lf_pos pos v]))) }
 
-    | Wlbracket a= ts_expr Type Wrbracket
+    | LeftBracket a= ts_expr Type RightBracket
 	{ unmark (istype a) }
 
-    | Wlbracket a= ts_expr Wequal b= ts_expr Wrbracket
+    | LeftBracket a= ts_expr Wequal b= ts_expr RightBracket
 	{ unmark (type_equality a b) }
 
-    | Wlbracket x= ts_expr Colon t= ts_expr Wrbracket
+    | LeftBracket x= ts_expr Colon t= ts_expr RightBracket
 	{ unmark (hastype x t) }
 
-    | Wlbracket x= ts_expr Wequal y= ts_expr Colon t= ts_expr Wrbracket
+    | LeftBracket x= ts_expr Wequal y= ts_expr Colon t= ts_expr RightBracket
 	{ unmark (object_equality x y t) }
 
-    | Wlbracket a= ts_expr Wtilde b= ts_expr Ulevel Wrbracket
+    | LeftBracket a= ts_expr Wtilde b= ts_expr Ulevel RightBracket
 	{ unmark (ulevel_equality a b) }
 
-    | Wlbracket a= ts_expr Wtilde b= ts_expr Type Wrbracket
+    | LeftBracket a= ts_expr Wtilde b= ts_expr Type RightBracket
 	{ unmark (type_uequality a b) }
 
-    | Wlbracket a= ts_expr Wtilde b= ts_expr Colon t= ts_expr Wrbracket
+    | LeftBracket a= ts_expr Wtilde b= ts_expr Colon t= ts_expr RightBracket
 	{ unmark (object_uequality a b t) } 
 
 (* introduction of parameters *)
 
-    | Wlbrace c= context vbj= separated_nonempty_list(Wcomma,pair(nonempty_list(marked_variable),binder_judgment)) Wrbrace u= ts_judgment
+    | LeftBrace c= context vbj= separated_nonempty_list(Wcomma,pair(nonempty_list(marked_variable),binder_judgment)) RightBrace u= ts_judgment
 	%prec Reduce_binder
 	{ 
 	  let pos = Position($startpos, $endpos) in
@@ -548,7 +605,7 @@ unmarked_ts_expr:
     | label= tsterm_head args= arglist
 	{ APPLY(label,list_to_spine args) }
 
-    | name= CONSTANT_SEMI vars= separated_list(Wcomma,marked_variable_or_unused) Wrbracket args= arglist
+    | name= CONSTANT_SEMI vars= separated_list(Wcomma,marked_variable_or_unused) RightBracket args= arglist
 	{
 	 let label = 
 	   try List.assoc name Names.lf_expr_head_strings

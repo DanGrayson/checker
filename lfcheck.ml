@@ -215,7 +215,7 @@ let rec term_equivalence (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : uni
       let xres = apply_args x (ARG(w',END)) in
       let yres = apply_args y (ARG(w',END)) in
       term_equivalence env xres yres b
-  | F_APPLY(j,args) ->
+  | F_Apply(j,args) ->
       if j == F_uexp then (
 	if !debug_mode then printf "warning: ulevel comparison judged true: %a = %a\n%!" _e x _e y;
        )
@@ -286,7 +286,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
         let d = subst_type (w, var_to_lf x) d in
         let env = (x, a) :: env in
         type_equivalence env b d
-    | F_APPLY(h,args), F_APPLY(h',args') ->
+    | F_Apply(h,args), F_Apply(h',args') ->
         (* Here we augment the algorithm in the paper to handle the type families of LF. *)
         if not (h = h') then raise TypeEquivalenceFailure;
         let k = tfhead_to_kind h in
@@ -335,7 +335,7 @@ let rec is_product_type env t =
   | F_Pi _ -> true
   | F_Singleton(_,t) -> is_product_type env t
   | F_Sigma _ -> false
-  | F_APPLY _ -> false    
+  | F_Apply _ -> false    
 
 let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : lf_expr = 
   (* assume t has been verified to be a type *)
@@ -450,7 +450,7 @@ let type_validity (env:context) (t:lf_type) : lf_type =
           let t = type_validity env t in
           let u = type_validity ((v,t) :: env) u in
           F_Sigma(v,t,u)
-      | F_APPLY(head,args) ->
+      | F_Apply(head,args) ->
           let kind = tfhead_to_kind head in
           let rec repeat env kind (args:lf_expr list) = 
             match kind, args with 
@@ -462,7 +462,7 @@ let type_validity (env:context) (t:lf_type) : lf_type =
             | K_Pi(_,a,_), [] -> errmissingarg env pos a
           in 
           let args' = repeat env kind args in
-          F_APPLY(head,args')
+          F_Apply(head,args')
       | F_Singleton(x,t) -> 
           let t = type_validity env t in
           let x = type_check [] env x t in                (* rule 46 *)
@@ -508,7 +508,7 @@ let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
       let b = subst_type (v,x) b in
       let y = term_normalization env y b in
       pos, CONS(x,y)
-  | F_APPLY _
+  | F_Apply _
   | F_Singleton _ ->
       let x = head_normalization env x in
       let (x,t) = path_normalization env x in
@@ -558,7 +558,7 @@ and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_type =
                   let (c,args) = repeat b (CDR args_passed) args in
                   (c, CDR args)
               | ARG(x,_) -> err env (get_pos x) "unexpected argument")
-          | F_APPLY _ -> (
+          | F_Apply _ -> (
               match args with
               | END -> (t,END)
               | CAR args -> err env pos "pi1 expected a pair (5)"
@@ -579,7 +579,7 @@ let rec type_normalization (env:context) (t:lf_type) : lf_type =
       let a' = type_normalization env a in
       let b' = type_normalization ((v,a) :: env) b in
       F_Sigma(v,a',b')
-  | F_APPLY(head,args) ->
+  | F_Apply(head,args) ->
       let kind = tfhead_to_kind head in
       let args =
         let rec repeat env kind (args:lf_expr list) = 
@@ -591,7 +591,7 @@ let rec type_normalization (env:context) (t:lf_type) : lf_type =
               repeat ((v,a) :: env) kind' args
           | K_Pi(_,a,_), [] -> errmissingarg env pos a
         in repeat env kind args
-      in F_APPLY(head,args)
+      in F_Apply(head,args)
   | F_Singleton(x,t) -> 
       F_Singleton( term_normalization env x t, type_normalization env t )
   in (pos,t)

@@ -92,18 +92,18 @@ rule expr_tokens = parse
   | ','  { Wcomma }
   | '~'  { Wtilde }
   | '='  { Wequal }
-  | ">="  { Wgreaterequal }
+  | ">="  { GreaterEqual }
   | '>' { Wgreater }
-  | "<="  { Wlessequal }
+  | "<="  { LessEqual }
   | '_' { Wunderscore }
   | '<' { Wless }
   | '.'  { Wperiod }
   | '('  { Wlparen }
   | ')'  { Wrparen }
-  | ']'  { Wrbracket }
-  | '['  { Wlbracket }
-  | '}'  { Wrbrace }
-  | '{'  { Wlbrace }
+  | ']'  { RightBracket }
+  | '['  { LeftBracket }
+  | '}'  { RightBrace }
+  | '{'  { LeftBrace }
   | '*'  { Star }			(* for [El] *)
   | '$'  { Wdollar }
 
@@ -122,6 +122,8 @@ rule expr_tokens = parse
   | ':'     { Colon } 
 
   | ( "|-" | "⊢" ) { Turnstile }
+
+  | ( "|=" | "⊨" ) { TurnstileDouble }
 
 (* tokens common to LF and TS *)
 
