@@ -24,6 +24,7 @@ open Substitute
 open Printf
 open Helpers
 open Tau
+open Printer
 
 exception TermEquivalenceFailure
 exception TypeEquivalenceFailure
@@ -180,7 +181,11 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
 	    | F_Sigma(v,a,b), CAR args -> repeat a (CAR args_passed) args
 	    | F_Sigma(v,a,b), CDR args -> repeat (subst_car_passed_term v pos head args_passed b) (CDR args_passed) args
 	    | _, END -> raise Not_found
-	    | _, _ -> internal () in
+	    | _ ->
+		printf "%a: head_reduction case not covered: h = %a\n%!" _pos pos _h head;
+		printf "%a: t = %a\n%!" _pos_of t _t t;
+		printf "%a: args = %a\n%!" _pos pos _s args;
+		internal () in
 	  repeat t args_passed args
      )
   | CONS _ | LAMBDA _ -> internal ()	(* head reduction is not defined for pairs or functions *)
@@ -202,18 +207,14 @@ let rec term_equivalence (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : uni
   | F_Sigma (v,a,b) -> 
       term_equivalence env (pi1 x) (pi1 y) a;
       term_equivalence env (pi2 x) (pi2 y) (subst_type (v,(pi1 x)) b)
-  | F_Pi (v,a,b) -> (
-      match unmark x, unmark y with
-      | LAMBDA(t,x), LAMBDA(u,y) ->
-          let w = newfresh (Var "v") in
-          term_equivalence
-            ((w,a) :: env)
-            (subst_expr (t,var_to_lf w) x)   (* with deBruijn indices, this will go away *)
-            (subst_expr (u,var_to_lf w) y) 
-            (subst_type (v,var_to_lf w) b)
-      | _ -> 
-	  printf "%a: term_equivalence expected two lambda expressions, but got\n%a: x=%a\n%a: y=%a\n%!" _pos_of x _pos_of x _e x _pos_of y _e y;
-	  internal ())
+  | F_Pi (v,a,b) ->
+      let w = newfresh v in		(* in case x or y contains v as a free variable *)
+      let w' = var_to_lf w in 
+      let b = subst_type (v,w') b in
+      let env = (w,a) :: env in
+      let xres = apply_args x (ARG(w',END)) in
+      let yres = apply_args y (ARG(w',END)) in
+      term_equivalence env xres yres b
   | F_APPLY(j,args) ->
       if j == F_uexp then (
 	if !debug_mode then printf "warning: ulevel comparison judged true: %a = %a\n%!" _e x _e y;
@@ -329,6 +330,13 @@ and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
     | _ -> type_equivalence env (tpos,t0) (upos,u0)
   with TypeEquivalenceFailure -> raise SubtypeFailure
 
+let rec is_product_type env t = 
+  match unmark t with 
+  | F_Pi _ -> true
+  | F_Singleton(_,t) -> is_product_type env t
+  | F_Sigma _ -> false
+  | F_APPLY _ -> false    
+
 let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : lf_expr = 
   (* assume t has been verified to be a type *)
   (* see figure 13, page 716 [EEST] *)
@@ -375,17 +383,10 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
 	if !auto_intro_mode && not (is_product_type env s) && (is_product_type env t) then (
 	  (* now we try a tactic to salvage the type checking: if a function was demanded, and we don't have one,
 	     we make one from e that ignores its one parameter and returns e *)
-	  if !debug_mode then printf " type_check auto_intro:\n\t e = %a\n\t s = %a\n\t t = %a\n%!" _e e _t s _t t;
-	  let e = with_pos (get_pos e) (LAMBDA(newunused(), e)) in
-	  type_check surr env e t)
+	  let e' = with_pos (get_pos e) (LAMBDA(newunused(), e)) in
+	  if !debug_mode then printf " type_check auto_intro:\n\t s = %a\n\t t = %a\n\t e = %a\n\t e' = %a\n%!" _t s _t t _e e _e e';
+	  type_check surr env e' t)
 	else mismatch_term_type_type env e0 s t
-
-and is_product_type env t = 
-  match unmark t with 
-  | F_Pi _ -> true
-  | F_Singleton(_,t) -> is_product_type env t
-  | F_Sigma _ -> false
-  | F_APPLY _ -> false    
 
 and type_synthesis (surr:surrounding) (env:context) (m:lf_expr) : lf_expr * lf_type =
   (* assume nothing *)
@@ -394,7 +395,7 @@ and type_synthesis (surr:surrounding) (env:context) (m:lf_expr) : lf_expr * lf_t
      and the synthesized type *)
   let pos = get_pos m in
   match unmark m with
-  | LAMBDA _ -> err env pos ("function has no type: "^lf_expr_to_string m)
+  | LAMBDA _ -> err env pos ("function has no type: " ^ lf_expr_to_string m)
   | CONS(x,y) ->
       let x',t = type_synthesis surr env x in
       let y',u = type_synthesis surr env y in (pos,CONS(x',y')), (pos,F_Sigma(newunused(),t,u))
@@ -491,10 +492,12 @@ let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
   let (pos,t0) = t in
   match t0 with 
   | F_Pi(v,a,b) ->
-      let env = (v,a) :: env in
-      let v' = var_to_lf v in 
-      let value = apply_args x (ARG(v',END)) in
-      let body = term_normalization env value b in
+      let w = newfresh v in		(* in case x contains v as a free variable *)
+      let w' = var_to_lf w in 
+      let b = subst_type (v,w') b in
+      let env = (w,a) :: env in
+      let result = apply_args x (ARG(w',END)) in
+      let body = term_normalization env result b in
       pos, LAMBDA(v,body)
   | F_Sigma(v,a,b) ->
       let pos = get_pos x in

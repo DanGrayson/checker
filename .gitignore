@@ -5,5 +5,4 @@ _build
 *.native
 checker.docdir
 checker.odocl
-tmp
 .DS_Store

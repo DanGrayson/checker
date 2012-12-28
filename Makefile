@@ -74,7 +74,7 @@ demo: $(CHECKER_EXE) test/rules.ts test/test.ts ; $(CHECKER) --auto-intro test/d
 debug:
 	ocamlbuild $(BFLAGS) checker.byte 
 	@ echo "enter:"
-	@ echo "  set arg rules.ts demo.ts"
+	@ echo "  set arg test/rules.ts --auto-intro test/demo.ts"
 	@ echo "  goto 10000"
 	@ echo "  break Error.trap"
 	@ echo "  run"

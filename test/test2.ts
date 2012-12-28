@@ -14,5 +14,5 @@ Check : TS { |- T Type } Type.
 End.
 
 #   Local Variables:
-#   compile-command: "make run2 "
+#   compile-command: "make -C .. run2 "
 #   End:

@@ -91,5 +91,5 @@ Check : LF Singleton ( (pair u0 ([U] u0)) :  (Sigma x: uexp, texp) ).
 
 
 #   Local Variables:
-#   compile-command: "make run "
+#   compile-command: "make -C .. run "
 #   End:

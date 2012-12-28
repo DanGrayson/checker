@@ -103,5 +103,5 @@ Axiom 201 jj_reduction { ⊢ M1 M2 M2' M3 Ulevel, o : [U](M1) }
 		[ M2 ~ M2' Ulevel ] ⇒ [  [j](M2',M3) ([j](M1,M2) o) =  [j](M1,M3) o : [U](M1) -> [U](M3) ].
 
 #   Local Variables:
-#   compile-command: "make rules "
+#   compile-command: "make -C .. rules "
 #   End:

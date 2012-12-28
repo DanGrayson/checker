@@ -4,11 +4,11 @@ Axiom LF pi : (T:type) ⟶ ( obj_of_type T ⟶ type ) ⟶ type.
 
 Axiom LF UU : uexp ⟶ type.
 
-Axiom LF u : (M:uexp) ⟶ obj_of_type (UU ([next] M)).
+Axiom LF uu : (M:uexp) ⟶ obj_of_type (UU ([next] M)).
 
 Axiom LF El : (M:uexp) ⟶ obj_of_type (UU M) ⟶ type.
 
-Axiom LF El_u_reduction : (M:uexp) ⟶ type_equality (El M (u M)) (UU M).
+Axiom LF El_u_reduction : (M:uexp) ⟶ type_equality (El M (uu M)) (UU M).
 
 Axiom LF cast : (T:type) -> (U:type) -> type_equality T U -> obj_of_type T -> obj_of_type U.
 
@@ -40,15 +40,15 @@ Theorem LF id3' : (u:uexp) ⟶ (T:obj_of_type (UU u)) ⟶ (T':obj_of_type (UU u)
 			   ⟶ (t:obj_of_type (El u T)) ⟶ obj_of_type (El u T') :=
 		u ⟼ T ⟼ T' ⟼ f ⟼ t ⟼ (ev (El u T) (_ ⟼ (El u T')) f t).
 
-Theorem LF make : (T:type) ⟶ (UU:type) ⟶ (f : obj_of_type T ⟶ obj_of_type UU) ⟶ obj_of_type (pi T (_ ⟼ UU)) := 
- 		T ⟼ UU ⟼ f ⟼ (lamb T (_ ⟼ UU) f ).
+Theorem LF make : (T:type) ⟶ (U:type) ⟶ (f : obj_of_type T ⟶ obj_of_type U) ⟶ obj_of_type (pi T (_ ⟼ U)) := 
+ 		T ⟼ U ⟼ f ⟼ (lamb T (_ ⟼ U) f ).
 
 # introduce non-dependent versions of pi, lamb, and ev:
 
-Definition LF arrow : (T:type) ⟶ (UU:type) ⟶ type := T ⟼ UU ⟼ (pi T (_ ⟼ UU)).
+Definition LF arrow : (T:type) ⟶ (U:type) ⟶ type := T ⟼ U ⟼ (pi T (_ ⟼ U)).
 
-Definition LF lamb1 : (T:type) ⟶ (UU:type) ⟶ (body : (t:obj_of_type T) ⟶ obj_of_type UU) ⟶ obj_of_type (arrow T UU) :=
-	   T ⟼ UU ⟼ body ⟼ (lamb T (_ ⟼ UU) body).
+Definition LF lamb1 : (T:type) ⟶ (U:type) ⟶ (body : (t:obj_of_type T) ⟶ obj_of_type U) ⟶ obj_of_type (arrow T U) :=
+	   T ⟼ U ⟼ body ⟼ (lamb T (_ ⟼ U) body).
 
 Definition LF ev1 : (T:type) ⟶ (U:type) ⟶ (f : obj_of_type (arrow T U)) ⟶ (arg : obj_of_type T) ⟶ obj_of_type U :=
 	   T ⟼ U ⟼ f ⟼ arg ⟼ (ev T (_ ⟼ U) f arg).

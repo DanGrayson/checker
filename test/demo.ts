@@ -82,7 +82,7 @@ Axiom LF 3.4.25 ev' : (T:texp) -> (U:oexp->texp) -> (f:oexp) -> (o:oexp) -> (e:S
 # but the normalized form of the proof term has ([ev] g ([ev] f t (_ ⟼ U)) (_ ⟼ V)) as its first component.
 Theorem LF compose1'' : (T:texp) -> (U:texp) -> (V:texp) -> (f:oexp) -> (g:oexp) -> (t:oexp) -> (v:oexp) ×
 			(T':istype T) -> (U':istype U) -> (V':istype V) -> 
-			(f':hastype f ([Pi] T (_ |-> U))) -> 
+			(f':hastype f ([Pi] T U)) -> 
 			(g':hastype g ([Pi] U (_ |-> V))) -> 
 			(t':hastype t T) -> 
 			hastype v V := 
@@ -139,5 +139,5 @@ Theorem compose3 { |- u Ulevel, T U V : [U](u), g : *[∀;x](u,u,U,V), f : *[∀
 
 #
 #   Local Variables:
-#   compile-command: "make demo "
+#   compile-command: "make -C .. demo "
 #   End:

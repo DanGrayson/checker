@@ -39,5 +39,5 @@ End.
 
 
 #   Local Variables:
-#   compile-command: "make run3  DEBUG=no"
+#   compile-command: "make -C .. run3 DEBUG=no"
 #   End:
