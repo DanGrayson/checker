@@ -62,10 +62,10 @@ rule expr_tokens = parse
   | "TS" { TS }
   | "Check" { Check }
   | "Axiom" { Axiom }
-  | "Alpha" { WAlpha }
-  | "Variable" { WVariable }
-  | "End" { WEnd }
-  | "Show" { WShow }
+  | "Alpha" { Alpha }
+  | "Variable" { Variable }
+  | "End" { End }
+  | "Show" { Show }
 
 (* various synonyms of "Theorem" *)
 
@@ -82,30 +82,30 @@ rule expr_tokens = parse
   | space { expr_tokens lexbuf }
   | '#' [ ^ '\n' ]* { expr_tokens lexbuf }
   | newline { Lexing.new_line lexbuf; expr_tokens lexbuf }
-  | eof { Weof }
+  | eof { EOF }
 
 (* punctuation *)
 
   | ":="  { ColonEqual }
   | "::="  { ColonColonEqual }
   | ';'  { Semicolon }
-  | ','  { Wcomma }
-  | '~'  { Wtilde }
-  | '='  { Wequal }
+  | ','  { Comma }
+  | '~'  { Tilde }
+  | '='  { Equal }
   | ">="  { GreaterEqual }
-  | '>' { Wgreater }
+  | '>' { Greater }
   | "<="  { LessEqual }
-  | '_' { Wunderscore }
-  | '<' { Wless }
-  | '.'  { Wperiod }
-  | '('  { Wlparen }
-  | ')'  { Wrparen }
+  | '_' { Underscore }
+  | '<' { Less }
+  | '.'  { Period }
+  | '('  { LeftParen }
+  | ')'  { RightParen }
   | ']'  { RightBracket }
   | '['  { LeftBracket }
   | '}'  { RightBrace }
   | '{'  { LeftBrace }
   | '*'  { Star }			(* for [El] *)
-  | '$'  { Wdollar }
+  | '$'  { Dollar }
 
 (* LF-TS punctuation pairs *)
 
@@ -129,10 +129,10 @@ rule expr_tokens = parse
 
 (* tokens common to LF and TS *)
 
-  | "Pi" { KPi }
-  | "lambda" { Klambda }
-  | "∏" { KPi }
-  | "λ" { Klambda }
+  | "Pi" { Pi }
+  | "lambda" { Lambda }
+  | "∏" { Pi }
+  | "λ" { Lambda }
 
 (* tokens of TS *)
 
@@ -143,8 +143,8 @@ rule expr_tokens = parse
 (* tokens of LF *)
 
   | "Singleton" { Singleton }
-  | "Σ" { KSigma }
-  | "Sigma" { KSigma }
+  | "Σ" { Sigma }
+  | "Sigma" { Sigma }
   | "×" { Times }
   | "**" { Times }
 
@@ -175,7 +175,7 @@ rule expr_tokens = parse
 
 
 and command_flush = parse
-  | eof { Weof }
+  | eof { EOF }
   | '#' [ ^ '\n' ]* { expr_tokens lexbuf }
   | newline { command_flush lexbuf }
   | _ { command_flush lexbuf }

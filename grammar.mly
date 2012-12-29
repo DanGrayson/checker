@@ -20,26 +20,6 @@ let cdr (hd,reversed_args) = (hd, CDR reversed_args)
 
 let fix1 pos v t = Substitute.subst_type (v,pi1 (var_to_lf_pos pos v)) t
 
-let apply_binder pos (c:(var marked * lf_expr) list) v t1 t2 u = 
-  let (vpos,v) = v in
-  let u = fix1 vpos v u in
-  let w = newfresh v in
-  let ww = var_to_lf_pos vpos w in
-  let t1 = List.fold_left (fun t1 (_,t) -> with_pos vpos (unmark (oexp @-> t1))) t1 c in
-  let ww = List.fold_left 
-      (fun ww (x,t) -> 
-	let (xpos,x) = x in 
-	Substitute.apply_args ww (ARG(var_to_lf (*pos*) x,END)))
-      ww c in
-  let t2 = new_pos pos (t2 ww) in
-  let t2 = List.fold_right (
-    fun (x,t) t2 -> 
-      let (xpos,x) = x in 
-      let x' = newunused() in
-      with_pos pos (F_Pi(x, oexp, with_pos pos (F_Pi(x', hastype (var_to_lf (*pos*) x) t, t2))))
-   ) c t2 in
-  F_Pi(v, (pos, F_Sigma(w, t1, t2)), u)
-
 type binder = position * var * lf_type
 
 let rec bind_pis binders b =
@@ -88,6 +68,16 @@ let pi1_relative_implication t u =
       bind_pi (pos,e,(bind_pis p ee)) (bind_pis q (bind_sigma f (arrow (bind_pis p j) k)))
   | None -> raise NotImplemented
 
+let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_type) (t2 : lf_expr -> lf_type) (u : lf_type) = 
+  (* syntax is { v_1 : T_1 , ... , v_n : T_n |- v Type } u  or  { v_1 : T_1 , ... , v_n : T_n |- v:T } u *)
+  (* t1 is texp or oexp; t2 is (fun t -> istype t) or (fun o -> hastype o t) *)
+  let (vpos,v) = v in
+  let c = List.map (fun ((vpos,v),t) -> vpos, F_Sigma(v,oexp,hastype (var_to_lf_pos pos v) t)) c in
+  let t = pos, F_Sigma(v,t1,t2 (var_to_lf_pos pos v)) in
+  let t = List.fold_right pi1_relative_implication c t in
+  let u = pi1_relative_implication t u in
+  unmark u
+
 %}
 %start command ts_exprEof
 %type <Toplevel.command> command
@@ -104,10 +94,10 @@ let pi1_relative_implication t u =
 
   (* tokens *)
 
-  Wlparen Wrparen RightBracket LeftBracket Wcomma Wperiod Colon Star Arrow
-  ArrowFromBar Wequal Wunderscore Axiom GreaterEqual Wgreater LessEqual Wless
-  Semicolon Ulevel Kumax Type KPi Klambda KSigma Check WShow WEnd WVariable
-  WAlpha Weof CheckUniverses Wtilde Singleton Wdollar LF TS Kpair K_1 K_2 K_CAR
+  LeftParen RightParen RightBracket LeftBracket Comma Period Colon Star Arrow
+  ArrowFromBar Equal Underscore Axiom GreaterEqual Greater LessEqual Less
+  Semicolon Ulevel Kumax Type Pi Lambda Sigma Check Show End Variable
+  Alpha EOF CheckUniverses Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_CAR
   K_CDR Times Slash Turnstile DoubleArrow DoubleArrowFromBar ColonColonEqual
   ColonEqual Theorem LeftBrace RightBrace TurnstileDouble ColonColon
 
@@ -142,8 +132,8 @@ let pi1_relative_implication t u =
   (* These are the tokens that can begin a TS-expression, and
      thus might be involved in the decision about reducing an application: *)
 
-  IDENTIFIER Wunderscore Wlparen Kumax CONSTANT_SEMI CONSTANT Klambda
-  KSigma KPi VARIABLE Wdollar
+  IDENTIFIER Underscore LeftParen Kumax CONSTANT_SEMI CONSTANT Lambda
+  Sigma Pi VARIABLE Dollar
 
 %nonassoc
 
@@ -164,7 +154,7 @@ lf_type:
     | t= unmarked_lf_type
 	{ Position($startpos, $endpos), t}
 
-    | Wlparen t= lf_type Wrparen 
+    | LeftParen t= lf_type RightParen 
 	{ t }
 
 unmarked_lf_type:
@@ -172,27 +162,27 @@ unmarked_lf_type:
     | f= lf_type_constant args= list(lf_expr)
 	{ F_Apply(f,args) }
 
-    | KPi v= variable Colon a= lf_type Wcomma b= lf_type
+    | Pi v= variable Colon a= lf_type Comma b= lf_type
 	%prec Reduce_binder
 	{ F_Pi(v,a,b) }
 
-    | KSigma v= variable Colon a= lf_type Wcomma b= lf_type
+    | Sigma v= variable Colon a= lf_type Comma b= lf_type
 	%prec Reduce_binder
 	{ F_Sigma(v,a,b) }
 
     | a= lf_type Times b= lf_type
 	{ F_Sigma(newunused(),a,b) }
 
-    | Wlparen v= variable Colon a= lf_type Wrparen Times b= lf_type
+    | LeftParen v= variable Colon a= lf_type RightParen Times b= lf_type
 	{ F_Sigma(v,a,b) }
 
-    | Wlparen v= variable Colon a= lf_type Wrparen Arrow b= lf_type
+    | LeftParen v= variable Colon a= lf_type RightParen Arrow b= lf_type
        { F_Pi(v,a,b) }
 
     | a= lf_type Arrow b= lf_type
        { unmark (a @-> b) }
 
-    | Singleton Wlparen x= lf_expr Colon t= lf_type Wrparen
+    | Singleton LeftParen x= lf_expr Colon t= lf_type RightParen
 	{ F_Singleton(x,t) }
 
     | LeftBracket t= lf_expr Type RightBracket
@@ -201,16 +191,16 @@ unmarked_lf_type:
     | LeftBracket a= lf_expr Colon t= lf_expr RightBracket
 	{ unmark (hastype a t) }
 
-    | LeftBracket a= lf_expr Wequal b= lf_expr Colon t= lf_expr RightBracket
+    | LeftBracket a= lf_expr Equal b= lf_expr Colon t= lf_expr RightBracket
 	{ unmark (object_equality a b t) }
 
-    | LeftBracket t= lf_expr Wequal u= lf_expr RightBracket
+    | LeftBracket t= lf_expr Equal u= lf_expr RightBracket
 	{ unmark (type_equality t u) }
 
-    | LeftBracket t= lf_expr Wtilde u= lf_expr Type RightBracket
+    | LeftBracket t= lf_expr Tilde u= lf_expr Type RightBracket
 	{ unmark (type_uequality t u) }
 
-    | LeftBracket a= lf_expr Wtilde b= lf_expr Colon t= lf_expr RightBracket
+    | LeftBracket a= lf_expr Tilde b= lf_expr Colon t= lf_expr RightBracket
 	{ unmark (object_uequality a b t) }
 
     | a= lf_type Turnstile b= lf_type
@@ -248,13 +238,13 @@ unmarked_lf_expr:
 
     | e= parenthesized(unmarked_lf_expr) {e}
 
-    | Wlparen Kpair a= lf_expr b= lf_expr Wrparen
+    | LeftParen Kpair a= lf_expr b= lf_expr RightParen
 	{ CONS(a, b) }
 
-    | Wlparen a= lf_expr Wcomma b= lf_expr Wrparen
+    | LeftParen a= lf_expr Comma b= lf_expr RightParen
 	{ CONS(a, b) }
 
-    | Klambda v= marked_variable_or_unused Wcomma body= lf_expr
+    | Lambda v= marked_variable_or_unused Comma body= lf_expr
 	{ 
 	  let (pos,v) = v in
 	  let (v,body) = Substitute.subst_fresh pos (v,body) in 
@@ -271,7 +261,7 @@ unmarked_lf_expr:
     | head_and_args = short_head_and_reversed_spine
 	{ let (hd,args) = head_and_args in APPLY(hd,reverse_spine args) }
 
-    | Wlparen head_and_args= lf_expr_head_and_reversed_spine Wrparen
+    | LeftParen head_and_args= lf_expr_head_and_reversed_spine RightParen
 	{ let (hd,args) = head_and_args in APPLY(hd,reverse_spine args) }
 
 lf_expr_head_and_reversed_spine:
@@ -319,73 +309,73 @@ short_head_and_reversed_spine:
 
 tactic_expr:
 
-    | Wdollar name= IDENTIFIER
+    | Dollar name= IDENTIFIER
 	{ Tactic_name name }
 
-    | Wdollar index= NUMBER
+    | Dollar index= NUMBER
 	{ Tactic_index index }
 
-dotted_number: n= separated_nonempty_list(Wperiod,NUMBER) {n}
+dotted_number: n= separated_nonempty_list(Period,NUMBER) {n}
 
 command: c= unmarked_command { Position($startpos, $endpos), c }
 
 unmarked_command:
 
-    | Weof
+    | EOF
 	{ trap(); raise Eof }
 
-    | WVariable vars= nonempty_list(IDENTIFIER) Type Wperiod
+    | Variable vars= nonempty_list(IDENTIFIER) Type Period
 	{ Toplevel.Variable vars }
 
-    | WVariable vars= nonempty_list(IDENTIFIER) Ulevel eqns= preceded(Semicolon,uEquation)* Wperiod
+    | Variable vars= nonempty_list(IDENTIFIER) Ulevel eqns= preceded(Semicolon,uEquation)* Period
 	{ Toplevel.UVariable (vars,eqns) }
 
-    | Axiom num= option(dotted_number) name= IDENTIFIER t= ts_judgment Wperiod
+    | Axiom num= option(dotted_number) name= IDENTIFIER t= ts_judgment Period
 	{ Toplevel.Axiom (num,name,t) }
 
-    | Axiom LF num= option(dotted_number) name= IDENTIFIER Colon t= lf_type Wperiod
+    | Axiom LF num= option(dotted_number) name= IDENTIFIER Colon t= lf_type Period
 	{ Toplevel.Axiom (num,name,t) }
 
-    | Check TS o= ts_expr Wperiod
+    | Check TS o= ts_expr Period
 	{ Toplevel.CheckTS o }
 
-    | Check LF e= lf_expr Wperiod
+    | Check LF e= lf_expr Period
 	{ Toplevel.CheckLF e }
 
-    | Check TS Colon t= ts_judgment Wperiod
+    | Check TS Colon t= ts_judgment Period
 	{ Toplevel.CheckLFtype t }
 
-    | Check LF Colon t= lf_type Wperiod
+    | Check LF Colon t= lf_type Period
 	{ Toplevel.CheckLFtype t }
 
-    | CheckUniverses Wperiod
+    | CheckUniverses Period
 	{ Toplevel.CheckUniverses }
 
-    | WAlpha e1= ts_expr Wequal e2= ts_expr Wperiod
+    | Alpha e1= ts_expr Equal e2= ts_expr Period
 	{ Toplevel.Alpha (e1, e2) }
 
-    | Theorem LF name= IDENTIFIER Colon thm= lf_type ColonEqual deriv= lf_expr Wperiod 
+    | Theorem LF name= IDENTIFIER Colon thm= lf_type ColonEqual deriv= lf_expr Period 
 	{ 
 	  let pos = Position($startpos, $endpos) in
 	  Toplevel.Theorem (pos, name, deriv, thm) }
 
-    | Theorem name= IDENTIFIER thm= ts_judgment ColonColonEqual deriv= lf_expr Wperiod 
+    | Theorem name= IDENTIFIER thm= ts_judgment ColonColonEqual deriv= lf_expr Period 
 	{ 
 	  let pos = Position($startpos, $endpos) in
 	  Toplevel.Theorem (pos, name, deriv, thm) }
 
-    | Theorem name= IDENTIFIER thm= ts_judgment ColonEqual deriv= ts_expr Wperiod 
+    | Theorem name= IDENTIFIER thm= ts_judgment ColonEqual deriv= ts_expr Period 
 	{ 
 	  let pos = Position($startpos, $endpos) in
 	  Toplevel.Theorem (pos, name, deriv, thm) }
 
-    | WShow Wperiod 
+    | Show Period 
 	{ Toplevel.Show None }
 
-    | WShow n= NUMBER Wperiod 
+    | Show n= NUMBER Period 
 	{ Toplevel.Show (Some n) }
 
-    | WEnd Wperiod
+    | End Period
 	{ Toplevel.End }
 
 marked_variable:
@@ -395,7 +385,7 @@ marked_variable:
 
 uEquation:
 
-    | u= ts_expr Wequal v= ts_expr 
+    | u= ts_expr Equal v= ts_expr 
 	{ (u,v) }
 
     | v= ts_expr GreaterEqual u= ts_expr 
@@ -404,21 +394,21 @@ uEquation:
     | u= ts_expr LessEqual v= ts_expr 
 	{ let pos = Position($startpos, $endpos) in (pos, make_U_max u v), v }
 
-    | v= ts_expr Wgreater u= ts_expr 
+    | v= ts_expr Greater u= ts_expr 
 	{ let pos = Position($startpos, $endpos) in (pos, make_U_max (pos, make_U_next u) v), v }
 
-    | u= ts_expr Wless v= ts_expr 
+    | u= ts_expr Less v= ts_expr 
 	{ let pos = Position($startpos, $endpos) in (pos, make_U_max (pos, make_U_next u) v), v }
 
-parenthesized(X): x= delimited(Wlparen,X,Wrparen) {x}
+parenthesized(X): x= delimited(LeftParen,X,RightParen) {x}
 
 list_of_parenthesized(X): list(parenthesized(X)) {$1}
 
-ts_exprEof: a= ts_expr Weof {a}
+ts_exprEof: a= ts_expr EOF {a}
 
 ts_judgment:
 
-    | Wlparen t= unmarked_ts_judgment Wrparen
+    | LeftParen t= unmarked_ts_judgment RightParen
 	{ Position($startpos, $endpos), t }
 
     | t= unmarked_ts_judgment
@@ -429,13 +419,13 @@ unmarked_ts_judgment:
     | f= lf_type_constant
 	{ F_Apply(f,[]) }
 
-    | Wlparen v= variable Colon a= ts_judgment Wrparen DoubleArrow b= ts_judgment
+    | LeftParen v= variable Colon a= ts_judgment RightParen DoubleArrow b= ts_judgment
 	{ F_Pi(v,a,b) }
 
     | a= ts_judgment DoubleArrow b= ts_judgment
 	{ unmark (a @-> b) }
 
-    | Wlparen v= variable Colon a= ts_judgment Wrparen Times b= ts_judgment
+    | LeftParen v= variable Colon a= ts_judgment RightParen Times b= ts_judgment
 	{ F_Sigma(v,a,b) }
 
     | a= ts_judgment Times b= ts_judgment
@@ -460,34 +450,34 @@ unmarked_ts_judgment:
 	{ unmark (this_object_of_type (get_pos x) x t) }
 
     | Turnstile a= ts_expr Type
-	{ let v = Var "t" in
+	{ let v = newfresh (Var "t") in
 	  let pos = get_pos a in
 	  F_Sigma(v, with_pos pos (F_Singleton(a,texp)), with_pos pos (F_Apply(F_istype, [var_to_lf_pos pos v]))) }
 
     | LeftBracket a= ts_expr Type RightBracket
 	{ unmark (istype a) }
 
-    | LeftBracket a= ts_expr Wequal b= ts_expr RightBracket
+    | LeftBracket a= ts_expr Equal b= ts_expr RightBracket
 	{ unmark (type_equality a b) }
 
     | LeftBracket x= ts_expr Colon t= ts_expr RightBracket
 	{ unmark (hastype x t) }
 
-    | LeftBracket x= ts_expr Wequal y= ts_expr Colon t= ts_expr RightBracket
+    | LeftBracket x= ts_expr Equal y= ts_expr Colon t= ts_expr RightBracket
 	{ unmark (object_equality x y t) }
 
-    | LeftBracket a= ts_expr Wtilde b= ts_expr Ulevel RightBracket
+    | LeftBracket a= ts_expr Tilde b= ts_expr Ulevel RightBracket
 	{ unmark (ulevel_equality a b) }
 
-    | LeftBracket a= ts_expr Wtilde b= ts_expr Type RightBracket
+    | LeftBracket a= ts_expr Tilde b= ts_expr Type RightBracket
 	{ unmark (type_uequality a b) }
 
-    | LeftBracket a= ts_expr Wtilde b= ts_expr Colon t= ts_expr RightBracket
+    | LeftBracket a= ts_expr Tilde b= ts_expr Colon t= ts_expr RightBracket
 	{ unmark (object_uequality a b t) } 
 
 (* introduction of parameters *)
 
-    | LeftBrace c= context vbj= separated_nonempty_list(Wcomma,pair(nonempty_list(marked_variable),binder_judgment)) RightBrace u= ts_judgment
+    | LeftBrace c= context vbj= separated_nonempty_list(Comma,pair(nonempty_list(marked_variable),binder_judgment)) RightBrace u= ts_judgment
 	%prec Reduce_binder
 	{ 
 	  let pos = Position($startpos, $endpos) in
@@ -517,7 +507,7 @@ binder_judgment:
 
 context:
 
-    | c= terminated( separated_list( Wcomma,
+    | c= terminated( separated_list( Comma,
 			  separated_pair(
 			       marked_variable_or_unused,
 			       Colon, ts_expr)),
@@ -531,16 +521,16 @@ tsterm_head:
 
 arglist:
 
-    | Wlparen a= separated_list(Wcomma,ts_expr) Wrparen
+    | LeftParen a= separated_list(Comma,ts_expr) RightParen
 	{a}
 
-(* it's tempting to include '_' (Wunderscore) as a variable but there would be an 
+(* it's tempting to include '_' (Underscore) as a variable but there would be an 
     ambiguity when looking at the start [ _ |-> x ] and [ _ ].  In the first case,
    it's an unused variable, and in the second case, it's an empty hole. *)
 
-empty_hole: Wunderscore { cite_tactic (Tactic_name "default") END }
+empty_hole: Underscore { cite_tactic (Tactic_name "default") END }
 
-unused_variable: Wunderscore { newunused() }
+unused_variable: Underscore { newunused() }
 
 variable_or_unused: variable {$1} | unused_variable {$1}
 
@@ -589,34 +579,34 @@ unmarked_ts_expr:
 	{ let pos = Position($startpos, $endpos) in 
 	  APPLY(O O_ev, f ** o ** (pos, cite_tactic (Tactic_name "ev3") END) ** END) }
 
-    | Klambda x= variable Colon t= ts_expr Wcomma o= ts_expr
+    | Lambda x= variable Colon t= ts_expr Comma o= ts_expr
 	%prec Reduce_binder
 	{ make_O_lambda t (x,o) }
 
     | Star o= ts_expr
 	{ make_T_El o }
 
-    | KPi x= variable Colon t1= ts_expr Wcomma t2= ts_expr
+    | Pi x= variable Colon t1= ts_expr Comma t2= ts_expr
 	%prec Reduce_binder
 	{ make_T_Pi t1 (x,t2) }
 
-    | Wlparen x= variable Colon t= ts_expr Wrparen Arrow u= ts_expr
+    | LeftParen x= variable Colon t= ts_expr RightParen Arrow u= ts_expr
 	{ make_T_Pi t (x,u) }
 
     | t= ts_expr Arrow u= ts_expr
 	{ make_T_Pi t (newunused(),u) }
 
-    | KSigma x= variable Colon t1= ts_expr Wcomma t2= ts_expr
+    | Sigma x= variable Colon t1= ts_expr Comma t2= ts_expr
 	%prec Reduce_binder
 	{ make_T_Sigma t1 (x,t2) }
 
-    | Kumax Wlparen u= ts_expr Wcomma v= ts_expr Wrparen
+    | Kumax LeftParen u= ts_expr Comma v= ts_expr RightParen
 	{ APPLY(U U_max, u**v**END)  }
 
     | label= tsterm_head args= arglist
 	{ APPLY(label,list_to_spine args) }
 
-    | name= CONSTANT_SEMI vars= separated_list(Wcomma,marked_variable_or_unused) RightBracket args= arglist
+    | name= CONSTANT_SEMI vars= separated_list(Comma,marked_variable_or_unused) RightBracket args= arglist
 	{
 	 let label = 
 	   try List.assoc name Names.lf_expr_head_strings

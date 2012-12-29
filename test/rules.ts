@@ -6,7 +6,7 @@ Variable uu0 Ulevel.
 
 Axiom 3.4.7 tsimeq { ⊢ T U Type } [ T ~ U Type ] ⇒ [ T = U ].
 
-Axiom 3.4.8 teqsymm { ⊢ T U Type } [ U = T ] ⇒ [ T = U ].
+Axiom 3.4.8 teqsymm { ⊢ T U Type } [ T = U ] ⇒ [ U = T ].
 
 Axiom 3.4.9 teqtrans { ⊢ T U V Type } [ T = U ] ⇒ [ U = V ] ⇒ [ T = V ].
 
@@ -32,13 +32,13 @@ Axiom 3.4.19 El_istype_eq { ⊢ M Ulevel, x : [U](M), y : [U](M) } [ x = y : [U]
 
 Axiom 3.4.20 El_istype_eq_reflect { ⊢ M Ulevel, x : [U](M), y : [U](M) } [ *x = *y ] ⇒ [ x = y : [U](M) ].
 
-Axiom 3.4.21 ∏i { ⊢ T Type } { _ : T ⊢ U Type } ⊢ [∏;t] (T,U/t) Type .
+Axiom 3.4.21 ∏i { ⊢ T Type } { t : T ⊢ U Type } ⊢ [∏;t] (T,U/t) Type .
 
-Axiom 3.4.22 ∏_eq { ⊢ T T' Type } { _ : T ⊢ U U' Type } [ T = T' ] ⇒ ( { ⊢ x : T } [ U/x = U'/x ] ) ⇒ [ [∏;t](T,U/t) = [∏;t](T',U'/t) ].
+Axiom 3.4.22 ∏_eq { ⊢ T T' Type } { t : T ⊢ U U' Type } [ T = T' ] ⇒ ( { ⊢ x : T } [ U/x = U'/x ] ) ⇒ [ [∏;t](T,U/t) = [∏;t](T',U'/t) ].
 
-Axiom 3.4.23 λ_hastype { ⊢ T Type } { _ : T ⊢ U Type } { x : T ⊢ o : U/x } ⊢ [λ](T,o) : [∏;t](T,U/t).
+Axiom 3.4.23 λ_hastype { ⊢ T Type } { x : T ⊢ U Type, o : U/x } ⊢ [λ](T,o) : [∏;t](T,U/t).
 
-Axiom 3.4.24 λ_equality { ⊢ T T' Type } { _ : T ⊢ U U' Type } { x : T ⊢ o o' : U/x }
+Axiom 3.4.24 λ_equality { ⊢ T T' Type } { x : T ⊢ U U' Type, o o' : U/x }
 
      			[ T = T' ] ⇒ ( { ⊢ x : T } [ o/x = o'/x : U/x ] ) ⇒ 
 
@@ -54,9 +54,9 @@ Axiom 3.4.24.2 λ_equality2 { ⊢ T Type } { x : T ⊢ U U' Type, o o' : U/x }
 
 			[ [λ](T,o) = [λ](T,o') : [∏;t](T,U/t) ].
 
-Axiom 3.4.25 ev { ⊢ T Type } { _ : T ⊢ U Type } { ⊢ f : [∏](T,U), o : T } ⊢ [ev;t](f,o,U/t) : U/o.
+Axiom 3.4.25 ev { ⊢ T Type } { t : T ⊢ U Type } { ⊢ f : [∏](T,U), o : T } ⊢ [ev;t](f,o,U/t) : U/o.
 
-Axiom 3.4.26 ev_eq { ⊢ T Type, o o' : T } { _ : T ⊢ U U' Type } { ⊢ f f' : [∏;t](T,U/t) } 
+Axiom 3.4.26 ev_eq { ⊢ T Type, o o' : T } { t : T ⊢ U U' Type } { ⊢ f f' : [∏;t](T,U/t) } 
 
 	      [ f = f' : [∏;t](T,U/t) ] ⇒ [ o = o' : T ] ⇒ ( { ⊢ x : T } [ U/x = U'/x ] ) ⇒
 
@@ -64,7 +64,7 @@ Axiom 3.4.26 ev_eq { ⊢ T Type, o o' : T } { _ : T ⊢ U U' Type } { ⊢ f f' :
 
 Axiom 3.4.27 beta_reduction { ⊢ T Type, o1 : T } { x : T ⊢ U Type, o2 : U/x } [ [ev;t]([λ;t](T,o2/t),o1,U/t) = o2/o1 : U/o1 ].
 
-Axiom 3.4.28 eta_reduction { ⊢ T Type } { _ : T ⊢ U Type } { ⊢ f : [∏;t](T,U/t) } [ [λ;x](T,[ev;t](f,x,U/t)) = f : [∏;t](T,U/t) ].
+Axiom 3.4.28 eta_reduction { ⊢ T Type } { t : T ⊢ U Type } { ⊢ f : [∏;t](T,U/t) } [ [λ;x](T,[ev;t](f,x,U/t)) = f : [∏;t](T,U/t) ].
 
 Axiom 3.4.29 j_type { ⊢ M1 M2 Ulevel } [ [max](M1,M2) ~ M2 Ulevel ] ⇒ [ [j](M1,M2) : [U](M1) -> [U](M2) ].
 
