@@ -55,33 +55,24 @@ Check TS : { |- u v Ulevel }       [ u ~ v Ulevel ].    # ulevel equivalence for
 
 Definition Pt2 Type ::= Pt.
 
-#Theorem compose1  { ⊢ T Type, U Type, V Type, f:T⟶U, g:U⟶V, t:T } : V ::=
-#                T ⟼ U ⟼ V ⟼ f ⟼ g ⟼ t ⟼ 
-#                (ev U V g (ev T U f t)).
+Theorem compose1 { ⊢ T Type, U Type, V Type, f:T⟶U, g:U⟶V, t:T } : V ::=
+        T ⟼ U ⟼ V ⟼ f ⟼ g ⟼ t ⟼ ((ev U V g (ev T U f t CAR) CAR), 
+        T' ⟼ U' ⟼ V' ⟼ f' ⟼ g' ⟼ t' ⟼ (ev U V g (ev T U f t CAR) CDR U' V' g' (ev T U f t CDR T' U' f' t'))).
 
+Theorem LF compose1' : T Type |- U Type |- V Type |- f :: ([Pi] T U) |- g :: ([Pi] U V) |- t :: T |- v :: V := 
+        T ⟼ U ⟼ V ⟼ f ⟼ g ⟼ t ⟼ ((ev U V g (ev T U f t CAR) CAR), 
+        T' ⟼ U' ⟼ V' ⟼ f' ⟼ g' ⟼ t' ⟼ (ev U V g (ev T U f t CAR) CDR U' V' g' (ev T U f t CDR T' U' f' t'))).
 
-# So now we try using ev instead of ev to prove compose1' again.  Note that we don't have to use [ev],
-# but the normalized form of the proof term has ([ev] g ([ev] f t (_ ⟼ U)) (_ ⟼ V)) as its first component.
-Theorem LF compose1'' : T Type |- U Type |- V Type |- f :: ([Pi] T U) |- g :: ([Pi] U V) |- t :: T |- v :: V := 
-        T ⟼ U ⟼ V ⟼ f ⟼ g ⟼ t ⟼ 
-	(pair (ev U V g (ev T U f t CAR) CAR) 
-              T' ⟼ U' ⟼ V' ⟼ f' ⟼ g' ⟼ t' ⟼ 
- 	      (ev U V g (ev T U f t CAR) CDR U' V' g' (ev T U f t CDR T' U' f' t'))).
+Theorem compose1a { ⊢ T Type, U Type, V Type, g:U⟶V, f:T⟶U } : T⟶V ::=
+        T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ ((λh T V (t ⟼ (compose1 T U V f g t CAR)) CAR),
+	T' ⟼ U' ⟼ V' ⟼ g' ⟼ f' ⟼ (λh T V (t ⟼ (compose1 T U V f g t CAR)) CDR T' V' (t ⟼ t' ⟼ (compose1 T U V f g t CDR T' U' V' f' g' t')))).
 
-# compose1 is no use in proving the following theorem, because the first thing we need is the TS term of type oexp ⟶ oexp,
-# so we use compose1' instead.  That illustrates what's wrong with our theorem syntax.
-#Theorem compose1a { ⊢ T Type, U Type, V Type, g:U⟶V, f:T⟶U } : T->V ::=
-#                  T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ 
-#		  (λ_hastype 
-#			     T V 
-#			     (pair (t |-> (compose1' T_1 U_1 V_1 f_1 g_1 t CAR)) 
-#			           (t |-> t' |-> (compose1' T_1 U_1 V_1 f_1 g_1 t CDR T_2 U_2 V_2 f_2 g_2 t')))).
-#
+Theorem compose2 { ⊢ u Ulevel, T:[U](u), U:[U](u), V:[U](u), g:*U ⟶ *V, f:*T ⟶ *U, t:*T } : *V ::= 
+         u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ ((ev (El u U CAR) (El u V CAR) g (ev (El u T CAR) (El u U CAR) f t CAR) CAR),
+         T' ⟼ U' ⟼ V' ⟼ g' ⟼ f' ⟼ t' ⟼ (ev (El u U CAR)    (El u V CAR   ) g  (ev (El u T CAR) (El u U CAR) f t CAR) CDR
+	 			  	    (El u U CDR U') (El u V CDR V') g' (ev (El u T CAR)   (El u U CAR) f t CDR
+					    					   (El u T CDR T')(El u U CDR U') f' t'))).
 
-#Theorem compose2 { ⊢ u Ulevel, T:[U](u), U:[U](u), V:[U](u), g:*U ⟶ *V, f:*T ⟶ *U, t:*T } : *V ::= 
-#                u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 
-#                (ev (El u U) (El u V) g (ev (El u T) (El u U) f t)).
-#
 #Lemma A { |- u Ulevel, T U : [U](u), f : *[∀;x](u,u,T,U) } : [Pi;_](*T,*U) ::=
 #                 u ⟼ T ⟼ U ⟼ f ⟼ 
 #		 (cast (El u (forall u u T U)) 
@@ -93,9 +84,9 @@ Theorem LF compose1'' : T Type |- U Type |- V Type |- f :: ([Pi] T U) |- g :: ([
 #                 u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 
 #                 (ev (El u U) (El u V) (A u U V g) (ev (El u T) (El u U) (A u T U f) t)).
 #
-#Theorem compose4 { |- u Ulevel, T U V : [U](u), g : *[∀;x](u,u,U,V), f : *[∀;x](u,u,T,U) } : *T -> *V ::=
+#Theorem compose4 { |- u Ulevel, T U V : [U](u), g : *[∀;x](u,u,U,V), f : *[∀;x](u,u,T,U) } : *T ⟶ *V ::=
 #                 u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ 
-#		 (λ_hastype 
+#		 (λh 
 #			    (El u T) (El u V) 
 #			    (compose3 u T U V g f) # <--- same problem here
 #			    ).

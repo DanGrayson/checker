@@ -33,11 +33,11 @@ Theorem id3' { ⊢ u Ulevel, T:[U](u) }{ ⊢ U:[U](u), f:*T⟶*U, t:*T} : *U ::=
 
 End.
 
-Check LF λ_hastype.
+Check LF λh.
 
 Theorem modus_ponens { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 
 	T |-> U |-> V |-> 
-	(λ_hastype (∏i T U)
+	(λh (∏i T U)
 		   (∏i (∏i U V) (∏i T V))
 		   _).  # ?
 End.

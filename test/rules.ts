@@ -36,7 +36,7 @@ Axiom 3.4.21 ∏i { ⊢ T Type } { t : T ⊢ U Type } ⊢ [∏;t] (T,U/t) Type .
 
 Axiom 3.4.22 ∏_eq { ⊢ T T' Type } { t : T ⊢ U U' Type } [ T = T' ] ⇒ ( { ⊢ x : T } [ U/x = U'/x ] ) ⇒ [ [∏;t](T,U/t) = [∏;t](T',U'/t) ].
 
-Axiom 3.4.23 λ_hastype { ⊢ T Type } { x : T ⊢ U Type, o : U/x } ⊢ [λ](T,o) : [∏;t](T,U/t).
+Axiom 3.4.23 λh { ⊢ T Type } { x : T ⊢ U Type, o : U/x } ⊢ [λ](T,o) : [∏;t](T,U/t).
 
 Axiom 3.4.24 λ_equality { ⊢ T T' Type } { x : T ⊢ U U' Type, o o' : U/x }
 
@@ -66,7 +66,7 @@ Axiom 3.4.27 beta_reduction { ⊢ T Type, o1 : T } { x : T ⊢ U Type, o2 : U/x 
 
 Axiom 3.4.28 eta_reduction { ⊢ T Type } { t : T ⊢ U Type } { ⊢ f : [∏;t](T,U/t) } [ [λ;x](T,[ev;t](f,x,U/t)) = f : [∏;t](T,U/t) ].
 
-Axiom 3.4.29 j_type { ⊢ M1 M2 Ulevel } [ [max](M1,M2) ~ M2 Ulevel ] ⇒ [ [j](M1,M2) : [U](M1) -> [U](M2) ].
+Axiom 3.4.29 jj { ⊢ M1 M2 Ulevel } [ [max](M1,M2) ~ M2 Ulevel ] ⇒ [ [j](M1,M2) : [U](M1) -> [U](M2) ].
 
 Axiom 3.4.30 El_j_reduction { ⊢ M1 M2 Ulevel, o : [U](M1) } 
 
