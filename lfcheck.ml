@@ -182,9 +182,8 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
 	    | F_Sigma(v,a,b), CDR args -> repeat (subst_car_passed_term v pos head args_passed b) (CDR args_passed) args
 	    | _, END -> raise Not_found
 	    | _ ->
-		printf "%a: head_reduction case not covered: h = %a\n%!" _pos pos _h head;
-		printf "%a: t = %a\n%!" _pos_of t _t t;
-		printf "%a: args = %a\n%!" _pos pos _s args;
+		printf "%a: head_reduction case not covered: head %a of type %a applied to args %a\n%!" _pos pos _h head _t t _s args;
+		print_context (Some 10) stdout env;
 		internal () in
 	  repeat t args_passed args
      )
@@ -318,7 +317,7 @@ and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
     | _, F_Singleton _ -> raise SubtypeFailure
     | F_Singleton a, _ -> 
         let (x,t) = strip_singleton a in
-        type_equivalence env t u
+        subtype env t u
     | F_Pi(x,a,b) , F_Pi(y,c,d) ->
         subtype env c a;                        (* contravariant *)
         let w = newfresh (Var "w") in
