@@ -606,6 +606,9 @@ unmarked_ts_expr:
     | label= tsterm_head args= arglist
 	{ APPLY(label,list_to_spine args) }
 
+    | LeftParen a= ts_expr Comma b= ts_expr RightParen
+	{ CONS(a,b) }
+
     | name= CONSTANT_SEMI vars= separated_list(Comma,marked_variable_or_unused) RightBracket args= arglist
 	{
 	 let label = 

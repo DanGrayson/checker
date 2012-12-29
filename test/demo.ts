@@ -53,7 +53,7 @@ Check TS : { |- u v Ulevel }       [ u ~ v Ulevel ].    # ulevel equivalence for
 
 # Sample theorems demonstrating the syntax.
 
-Definition Pt Type ::= Pt_istype .
+Definition Pt2 Type ::= Pt.
 
 #Theorem compose1  { ⊢ T Type, U Type, V Type, f:T⟶U, g:U⟶V, t:T } : V ::=
 #                T ⟼ U ⟼ V ⟼ f ⟼ g ⟼ t ⟼ 
@@ -80,38 +80,38 @@ Theorem LF compose1'' : T Type |- U Type |- V Type |- f :: ([Pi] T U) |- g :: ([
 
 #Theorem compose2 { ⊢ u Ulevel, T:[U](u), U:[U](u), V:[U](u), g:*U ⟶ *V, f:*T ⟶ *U, t:*T } : *V ::= 
 #                u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 
-#                (ev (El_istype u U) (El_istype u V) g (ev (El_istype u T) (El_istype u U) f t)).
+#                (ev (El u U) (El u V) g (ev (El u T) (El u U) f t)).
 #
 #Lemma A { |- u Ulevel, T U : [U](u), f : *[∀;x](u,u,T,U) } : [Pi;_](*T,*U) ::=
 #                 u ⟼ T ⟼ U ⟼ f ⟼ 
-#		 (cast (El_istype u (forall u u T U)) 
-#                       (∏i (El_istype u T) (El_istype u U))
-#                       (El_istype_forall_reduction u u T U)
+#		 (cast (El u (forall u u T U)) 
+#                       (∏i (El u T) (El u U))
+#                       (El_forall_reduction u u T U)
 #		       f).
 #
 #Theorem compose3 { |- u Ulevel, T U V : [U](u), g : *[∀;x](u,u,U,V), f : *[∀;x](u,u,T,U), t: *T } : *V ::=
 #                 u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 
-#                 (ev (El_istype u U) (El_istype u V) (A u U V g) (ev (El_istype u T) (El_istype u U) (A u T U f) t)).
+#                 (ev (El u U) (El u V) (A u U V g) (ev (El u T) (El u U) (A u T U f) t)).
 #
 #Theorem compose4 { |- u Ulevel, T U V : [U](u), g : *[∀;x](u,u,U,V), f : *[∀;x](u,u,T,U) } : *T -> *V ::=
 #                 u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ 
 #		 (λ_hastype 
-#			    (El_istype u T) (El_istype u V) 
+#			    (El u T) (El u V) 
 #			    (compose3 u T U V g f) # <--- same problem here
 #			    ).
 #
 #	need:
 #
 #	(o:oexp ⟶ oexp) × ((x:oexp) ⟶ 
-#				hastype x (El_istype u (T₁,T₂))₁ ⟶ 
-#				hastype (o x) (El_istype u (V₁,V₂))₁)
+#				hastype x (El u (T₁,T₂))₁ ⟶ 
+#				hastype (o x) (El u (V₁,V₂))₁)
 
 
 #Theorem A' { |- u Ulevel, T U : [U](u), f : *[∀;x](u,u,T,U) } : [Pi](*T,*U) ::=  # <-- bug here 
 #                 u ⟼ T ⟼ U ⟼ f ⟼ 
-#		 (cast (El_istype u (forall u u T U)) 
-#                             (∏i (El_istype u T) (El_istype u U))
-#                             (El_istype_forall_reduction u u T U) f).
+#		 (cast (El u (forall u u T U)) 
+#                             (∏i (El u T) (El u U))
+#                             (El_forall_reduction u u T U) f).
 #
 
 #   Local Variables:

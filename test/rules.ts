@@ -20,17 +20,17 @@ Axiom 3.4.13 cast { ⊢ T U Type } [ T = U ] ⇒ { ⊢ o : T } ⊢ o : U.
 
 Axiom 3.4.14 oeqcast { ⊢ T U Type, x : T, y : T } [ x = y : T ] ⇒ [ T = U ] ⇒ [ x = y : U ].
 
-Axiom 3.4.15 U_istype { ⊢ M Ulevel } ⊢ [U](M) Type.
+Axiom 3.4.15 UU { ⊢ M Ulevel } ⊢ [U](M) Type.
 
-Axiom 3.4.16 u_hastype { ⊢ M Ulevel } ⊢ [u](M) : [U]([next](M)).
+Axiom 3.4.16 uu { ⊢ M Ulevel } ⊢ [u](M) : [U]([next](M)).
 
-Axiom 3.4.17 El_istype { ⊢ M Ulevel, o : [U](M) } ⊢ *o Type.
+Axiom 3.4.17 El { ⊢ M Ulevel, o : [U](M) } ⊢ *o Type.
 
-Axiom 3.4.18 El_istype_u_reduction { ⊢ M Ulevel } [ *[u](M) = [U](M) ].
+Axiom 3.4.18 El_u_reduction { ⊢ M Ulevel } [ *[u](M) = [U](M) ].
 
-Axiom 3.4.19 El_istype_eq { ⊢ M Ulevel, x : [U](M), y : [U](M) } [ x = y : [U](M) ] ⇒ [ *x = *y ].
+Axiom 3.4.19 El_eq { ⊢ M Ulevel, x : [U](M), y : [U](M) } [ x = y : [U](M) ] ⇒ [ *x = *y ].
 
-Axiom 3.4.20 El_istype_eq_reflect { ⊢ M Ulevel, x : [U](M), y : [U](M) } [ *x = *y ] ⇒ [ x = y : [U](M) ].
+Axiom 3.4.20 El_eq_reflect { ⊢ M Ulevel, x : [U](M), y : [U](M) } [ *x = *y ] ⇒ [ x = y : [U](M) ].
 
 Axiom 3.4.21 ∏i { ⊢ T Type } { t : T ⊢ U Type } ⊢ [∏;t] (T,U/t) Type .
 
@@ -68,25 +68,25 @@ Axiom 3.4.28 eta_reduction { ⊢ T Type } { t : T ⊢ U Type } { ⊢ f : [∏;t]
 
 Axiom 3.4.29 j_type { ⊢ M1 M2 Ulevel } [ [max](M1,M2) ~ M2 Ulevel ] ⇒ [ [j](M1,M2) : [U](M1) -> [U](M2) ].
 
-Axiom 3.4.30 El_istype_j_reduction { ⊢ M1 M2 Ulevel, o : [U](M1) } 
+Axiom 3.4.30 El_j_reduction { ⊢ M1 M2 Ulevel, o : [U](M1) } 
 
      		[ [max](M1,M2) ~ M2 Ulevel ] ⇒ [ *[ev;_]([j](M1,M2),o,[U](M2)) = *o ].
 
 Axiom 3.4.31 forall { ⊢ M1 M2 Ulevel, o1 : [U](M1) } { x : *o1 ⊢ o2 : [U](M2) } ⊢ [∀;t](M1,M2,o1,o2/t) : [U]([max](M1,M2)).
 
-Axiom 3.4.32 El_istype_forall_reduction { ⊢ M1 M2 Ulevel, o1 : [U](M1) } { x : *o1 ⊢ o2 : [U](M2) }
+Axiom 3.4.32 El_forall_reduction { ⊢ M1 M2 Ulevel, o1 : [U](M1) } { x : *o1 ⊢ o2 : [U](M2) }
 
           [ (*[∀;x](M1,M2,o1,o2/x)) = ([∏;x](*o1,[El](o2/x))) ].		# parser doesn't let us use *(o2/x); fix
 
-Axiom 5.3.1 Pt_istype ⊢ [Pt]() Type. 
+Axiom 5.3.1 Pt ⊢ [Pt]() Type. 
 
-Axiom 5.3.2 tt_hastype ⊢ [tt]() : [Pt](). 
+Axiom 5.3.2 tt ⊢ [tt]() : [Pt](). 
 
 Axiom 5.3.3 Pt_eta { ⊢ o : [Pt]() } [ o = [tt]() : [Pt]() ].
 
-Axiom 5.3.4 pt_hastype ⊢ [pt]() : [U](uu0).
+Axiom 5.3.4 pt ⊢ [pt]() : [U](uu0).
 
-Axiom 5.3.5 El_istype_pt_reduction [ [El]([pt]()) = [Pt]() ].
+Axiom 5.3.5 El_pt_reduction [ [El]([pt]()) = [Pt]() ].
 
 Axiom 5.4.1 Pt_eliminator { ⊢ x : [Pt]() } { t : [Pt]() ⊢ T Type } { ⊢ o : T/[tt]() } ⊢ [pt_r;t](o,T/t) : [Pi;x]([Pt](),T/x) .
 

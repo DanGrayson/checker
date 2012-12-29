@@ -66,21 +66,21 @@ Check TS λ f:T⟶U, λ o:T, [ev;_](f,o,U).
 Check TS λ f:X⟶T, λ y:X, [ev;_](f,y,T).
 # Check TS λ f:X⟶T, λ y:X, f y.
 
-Check TS U_istype.
+Check TS UU.
 Check TS [Pi;x](T,T).
 
 Check LF : ∏ x:oexp, ∏ y:oexp, ∏ T:texp, ∏ U:texp, [ x = y : T ]⟶[ T = U ]⟶[ x = y : U ].
-Check LF (U_istype u1).
+Check LF (UU u1).
 
-Check LF El_istype.
+Check LF El.
 
-Theorem foo { ⊢ u Ulevel, t : [U]([next](u)) } ⊢ *t Type ::= u |-> t |-> (El_istype ([next] u) t).
+Theorem foo { ⊢ u Ulevel, t : [U]([next](u)) } ⊢ *t Type ::= u |-> t |-> (El ([next] u) t).
 
-Theorem fot { ⊢ u Ulevel, t : [U]([next](u)) } ⊢ *t Type ::= u |-> t |-> (El_istype ([next] u) t).
+Theorem fot { ⊢ u Ulevel, t : [U]([next](u)) } ⊢ *t Type ::= u |-> t |-> (El ([next] u) t).
 
-Theorem B   { ⊢ u Ulevel, t : [U](u        ) } ⊢ *t Type ::= u |-> t |-> (El_istype u t).
+Theorem B   { ⊢ u Ulevel, t : [U](u        ) } ⊢ *t Type ::= u |-> t |-> (El u t).
 
-Theorem C { ⊢ u Ulevel, t : [U](u) } ⊢ *t Type ::= u |-> t |-> (El_istype $1 $0).
+Theorem C { ⊢ u Ulevel, t : [U](u) } ⊢ *t Type ::= u |-> t |-> (El $1 $0).
 
 Check LF : texp ** oexp .
 Check LF      (pair ([U] u0) ([u] u0)).

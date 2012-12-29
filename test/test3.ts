@@ -3,22 +3,33 @@ Theorem id0 { ⊢ T Type, t:T } : T ::= _ ⟼ t ⟼ (t, _ ⟼ t ⟼ t).
 
 Theorem id0' { ⊢ u Ulevel, T:[U](u), t:*T } : *T ::= _ ⟼ _ ⟼ t ⟼ (t, _ ⟼ t ⟼ t).
 
-Theorem id0'' { ⊢ u Ulevel, T:[U](u), t:*T } : *T := _ ⟾ _ ⟾ t ⟾ t.
+Theorem id0'' { ⊢ u Ulevel, T:[U](u), t:*T } : *T := _ ⟾ _ ⟾ t ⟾ (t, _ ⟾ t ⟾ t).
 
-Theorem id1 { ⊢ T Type, t:T} ⊢ t : T := _ ⟾ t ⟾ t.
+Theorem id1 { ⊢ T Type, t:T} ⊢ t : T := _ ⟾ t ⟾ (t, _ ⟾ t ⟾ t).
 
-Theorem id1' { ⊢ u Ulevel, T:[U](u), t:*T } ⊢ t : *T ::= _ ⟼ _ ⟼ t ⟼ t.
+Theorem id1' { ⊢ u Ulevel, T:[U](u), t:*T } ⊢ t : *T ::= _ ⟼ _ ⟼ t ⟼ (t, _ ⟼ t ⟼ t).
 
-Theorem id1'' { ⊢ u Ulevel, T:[U](u), t:*T } ⊢ t : *T := _ ⟾ _ ⟾ t ⟾ t.
+Theorem id1'' { ⊢ u Ulevel, T:[U](u), t:*T } ⊢ t : *T := _ ⟾ _ ⟾ t ⟾ (t, _ ⟾ t ⟾ t).
 
-Theorem id2 { ⊢ T U Type, f:T⟶U } : T⟶U ::= _ ⟼ _ ⟼ f ⟼ f.
+Theorem id2 { ⊢ T U Type, f:T⟶U } : T⟶U ::= _ ⟼ _ ⟼ f ⟼ (f, _ ⟼ _ ⟼ f ⟼ f).
 
-Theorem id2' { ⊢ u Ulevel, T:[U](u) }{ ⊢ U:[U](u), f:*T⟶*U } : *T⟶*U ::= _ ⟼_ ⟼ _ ⟼ f ⟼ f.
+Theorem id2' { ⊢ u Ulevel, T:[U](u) }{ ⊢ U:[U](u), f:*T⟶*U } : *T⟶*U ::= _ ⟼ _ ⟼ _ ⟼ f ⟼ (f, _ ⟼ _ ⟼ f ⟼ f).
 
-Theorem id3 { ⊢ T Type, U Type, f:T⟶U, t:T } : U ::= T ⟼ U ⟼ f ⟼ t ⟼ (ev T U f t).
+
+# ev : (T:texp) ⟶ (U:oexp ⟶ texp) ⟶ (f:oexp) ⟶ (o:oexp) ⟶ (x:Singleton(([ev] f o (t ⟼ (U t))) : oexp)) 
+# × istype T ⟶ ((t:oexp) ⟶ hastype t T ⟶ istype (U t)) ⟶ hastype f ([∏] T U) ⟶ hastype o T ⟶ hastype x (U o))
+
+
+Theorem id3 { ⊢ T Type, U Type, f:T⟶U, t:T } : U ::= 
+		T  ⟼ U  ⟼ f  ⟼ t  ⟼ ((ev T U f t CAR), 
+		T' ⟼ U' ⟼ f' ⟼ t' ⟼  (ev T U f t CDR T' U' f' t')).
 
 Theorem id3' { ⊢ u Ulevel, T:[U](u) }{ ⊢ U:[U](u), f:*T⟶*U, t:*T} : *U ::=
-		u ⟼ T ⟼ U ⟼ f ⟼ t ⟼ (ev (El_istype u T) (El_istype u U) f t).
+	u ⟼ T  ⟼ U  ⟼ f  ⟼ t  ⟼ (
+		(ev (El u T CAR   ) (El u U CAR   ) f  t CAR),
+            T' ⟼ U' ⟼ f' ⟼ t' ⟼  
+		(ev (El u T CAR   ) (El u U CAR   ) f  t CDR 
+		    (El u T CDR T') (El u U CDR U') f' t'    )).
 
 End.
 
