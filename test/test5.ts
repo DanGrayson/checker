@@ -13,5 +13,5 @@ Check LF : T Type |- ( x::T |- U Type) |- pi Type.
 Check LF : T Type |- ( x::T |- y::T |- U Type) |- pi Type.
 
 #   Local Variables:
-#   compile-command: "make -C .. run5 "
+#   compile-command: "make -C .. test5 "
 #   End:

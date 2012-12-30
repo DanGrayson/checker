@@ -83,5 +83,5 @@ Theorem LF compose3 : (u:uexp) ⟶ (T : obj_of_type (UU u)) ⟶ (U : obj_of_type
 		      (ev (El u U) (_ ⟼ (El u V)) (A u U V g) (ev (El u T) (_ ⟼ (El u U)) (A u T U f) t)) .
 
 #   Local Variables:
-#   compile-command: "make -C .. run4 "
+#   compile-command: "make -C .. test4 "
 #   End:

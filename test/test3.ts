@@ -1,3 +1,18 @@
+Mode Relative.
+
+Include "test/rules.ts".
+
+# derive versions of some inference rules with simple types
+
+Definition pi1 { ⊢ T U Type } ⊢ [∏;_](T,U) Type ::= T ⟼ U ⟼ ((pi T (_ ⟼ U) CAR), T' ⟼ U' ⟼ (pi T (_ ⟼ U) CDR T' (_ ⟼ _ ⟼ U'))).
+
+Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ [λ](T,o) : [∏;_](T,U) ::=
+	   T ⟼ U ⟼ o ⟼ (([λ] T o), T' ⟼ U' ⟼ (λh T (_ ⟼ U) o CDR T' (_ ⟼ _ ⟼ U'))).
+
+Definition ev1 { ⊢ T U Type, f : [∏;_](T,U), o : T } ⊢ [ev;_](f,o,U) : U ::=
+	   T ⟼ U ⟼ f ⟼ o ⟼ ((ev T (_ ⟼ U) f o CAR), T' ⟼ U' ⟼ (ev T (_ ⟼ U) f o CDR T' (_ ⟼ _ ⟼ U'))).
+
+#
 
 Theorem id0 { ⊢ T Type, t:T } : T ::= _ ⟼ t ⟼ (t, _ ⟼ t ⟼ t).
 
@@ -65,9 +80,7 @@ Theorem modus_ponens { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
 					    (ev1 U V g (ev1 T U f t CAR) CDR 
 					         U' V' g' (ev1 T U f t CDR T' U' f' t'))))))))).
 
-End.
-
 
 #   Local Variables:
-#   compile-command: "make -C .. run3 DEBUG=no"
+#   compile-command: "make -C .. test3 DEBUG=no"
 #   End:

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+Include "test/rules.ts".
+
 Variable T Type.
 Theorem TT |- T Type ::= (pair _ _).
 Variable u0 u1 u2 Ulevel ; [next](u0) <= u1; [next](u1) < u2.
@@ -91,5 +93,5 @@ Check LF : Singleton ( (pair u0 ([U] u0)) :  (Sigma x: uexp, texp) ).
 
 
 #   Local Variables:
-#   compile-command: "make -C .. run "
+#   compile-command: "make -C .. test "
 #   End:

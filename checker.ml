@@ -186,7 +186,7 @@ let show_command env n =
   ( match n with None -> print_signature env stdout | _ -> () );
   print_context n stdout env
 
-let process_command env lexbuf = 
+let rec process_command env lexbuf = 
   let c = 
     try
       Grammar.command Tokens.expr_tokens lexbuf
@@ -204,9 +204,14 @@ let process_command env lexbuf =
     | Toplevel.Theorem (pos,name,deriv,thm) -> defCommand env [ Var name, pos, deriv, thm ]
     | Toplevel.Show n -> show_command env n; env
     | Toplevel.CheckUniverses -> checkUniversesCommand env pos; env
+    | Toplevel.Include filename -> parse_file env filename
+    | Toplevel.Clear -> []
+    | Toplevel.Mode_single -> Toplevel.binder_mode := raise NotImplemented; env
+    | Toplevel.Mode_pairs -> Toplevel.binder_mode := Toplevel.Binder_mode_pairs; env
+    | Toplevel.Mode_relative -> Toplevel.binder_mode := Toplevel.Binder_mode_relative; env
     | Toplevel.End -> error_summary pos; raise StopParsingFile
 
-let read_eval_command context lexbuf = 
+and read_eval_command context lexbuf = 
   let rec repeat context = 
     try 
       repeat (
@@ -218,7 +223,7 @@ let read_eval_command context lexbuf =
     | StopParsingFile -> context
   in repeat context
 
-let parse_file env filename =
+and parse_file env filename =
   let lexbuf = Lexing.from_channel (open_in filename) in
   lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = filename};
   let env = read_eval_command env lexbuf in
@@ -251,9 +256,7 @@ let toplevel() =
       (Arg.align
 	 [
 	  ("--debug" , Arg.Set debug_mode, " Turn on debug mode");
-	  ("--no-debug" , Arg.Clear debug_mode, " Turn off debug mode");
-	  ("--auto-intro" , Arg.Set Lfcheck.auto_intro_mode, " Turn on auto_intro mode");
-	  ("--no-auto-intro" , Arg.Clear Lfcheck.auto_intro_mode, " Turn off auto_intro mode");
+	  ("--no-debug" , Arg.Clear debug_mode, " Turn off debug mode")
 	])
       (fun filename -> env := parse_file !env filename)
       ("usage: " ^ (Filename.basename Sys.argv.(0)) ^ " [option|filename] ...");

@@ -13,8 +13,6 @@
 
 *)
 
-let auto_intro_mode = ref false
-
 open Error
 open Variables
 open Typesystem
@@ -379,13 +377,7 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
         subtype env s t;
         e
       with SubtypeFailure -> 
-	if !auto_intro_mode && not (is_product_type env s) && (is_product_type env t) then (
-	  (* now we try a tactic to salvage the type checking: if a function was demanded, and we don't have one,
-	     we make one from e that ignores its one parameter and returns e *)
-	  let e' = with_pos (get_pos e) (LAMBDA(newunused(), e)) in
-	  if !debug_mode then printf " type_check auto_intro:\n\t s = %a\n\t t = %a\n\t e = %a\n\t e' = %a\n%!" _t s _t t _e e _e e';
-	  type_check surr env e' t)
-	else mismatch_term_type_type env e0 s t
+	mismatch_term_type_type env e0 s t
 
 and type_synthesis (surr:surrounding) (env:context) (m:lf_expr) : lf_expr * lf_type =
   (* assume nothing *)

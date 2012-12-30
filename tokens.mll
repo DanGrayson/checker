@@ -6,19 +6,34 @@
  open Grammar
  open Variables
  open Typesystem
+
+ let commands = Hashtbl.create 20
+ let _ = List.iter (fun (w,t) -> Hashtbl.add commands w t) [
+   "∏", Pi; "λ", Lambda; "Σ", Sigma; "Pi", Pi; "lambda", Lambda; 
+   "Ulevel", Ulevel; "Type", Type; "max", Kumax; "Singleton", Singleton; 
+   "Sigma", Sigma; "pair", Kpair; "_1", K_1; "_2", K_2; "CAR", K_CAR; 
+   "CDR", K_CDR; "Mode", Mode; "Single", Single; "Relative", Relative;
+   "Pairs", Pairs; "Clear", Clear; "Universes", Universes; "LF", LF; "TS", TS;
+   "Check", Check; "Axiom", Axiom; "Alpha", Alpha; "Variable", Variable; 
+   "End", End; "Include", Include; "Clear", Clear; "Show", Show; 
+   "Theorem", Theorem; "Definition", Theorem; "Lemma", Theorem; 
+   "Proposition", Theorem; "Corollary", Theorem ]
+
  let error_count = ref 0
+
  let bump_error_count () =
    incr error_count;
    if !error_count >= 7 then (
-     Printf.fprintf stderr "Too many errors, exiting.\n"; 
-     flush stderr; 
+     Printf.fprintf stderr "Too many errors, exiting.\n%!"; 
      exit 1);
    flush stderr
+
  let lexing_pos lexbuf = 
    let p = Lexing.lexeme_start_p lexbuf in
    p.Lexing.pos_fname ^ ":" ^
    string_of_int p.Lexing.pos_lnum ^ ":" ^
    (string_of_int (p.Lexing.pos_cnum-p.Lexing.pos_bol+1))
+
  let tab lexbuf =
    let p = lexbuf.Lexing.lex_curr_p in
    let bol = p.Lexing.pos_bol in
@@ -55,27 +70,6 @@ let ident = first ( after | '_' first ) *
 
 rule expr_tokens = parse
 
-(* command tokens *)
-
-  | "Check" space "Universes" { CheckUniverses }
-  | "LF" { LF }
-  | "TS" { TS }
-  | "Check" { Check }
-  | "Axiom" { Axiom }
-  | "Alpha" { Alpha }
-  | "Variable" { Variable }
-  | "End" { End }
-  | "Show" { Show }
-
-(* various synonyms of "Theorem" *)
-
-  | "Theorem" { Theorem }
-  | "Definition" { Theorem }
-  | "Lemma" { Theorem }
-  | "Proposition" { Theorem }
-  | "Corollary" { Theorem }
-  | "Derived" space "Rule" { Theorem }
-
 (* white space, comments *)
 
   | '\t' { tab lexbuf; expr_tokens lexbuf }
@@ -104,67 +98,34 @@ rule expr_tokens = parse
   | '['  { LeftBracket }
   | '}'  { RightBrace }
   | '{'  { LeftBrace }
-  | '*'  { Star }			(* for [El] *)
+  | '*'  { Star }
   | '$'  { Dollar }
-
-(* LF-TS punctuation pairs *)
-
-  | ( "->" | "⟶" ) { Arrow        }
-  | ( "=>" | "⇒" ) { DoubleArrow }
-
-  | ( "|->" | "⟼" ) { ArrowFromBar }
-  | ( "|=>" | "⟾" ) { DoubleArrowFromBar }
-
-  | '/'       { Slash }
-
-(* TS punctuation *)
-
-  | ':'     { Colon } 
-
-  | "::"     { ColonColon }
-
-  | ( "|-" | "⊢" ) { Turnstile }
-
-  | ( "|=" | "⊨" ) { TurnstileDouble }
-
-(* tokens common to LF and TS *)
-
-  | "Pi" { Pi }
-  | "lambda" { Lambda }
-  | "∏" { Pi }
-  | "λ" { Lambda }
-
-(* tokens of TS *)
-
-  | "Ulevel" { Ulevel }
-  | "Type" { Type }
-  | "max" { Kumax }
-
-(* tokens of LF *)
-
-  | "Singleton" { Singleton }
-  | "Σ" { Sigma }
-  | "Sigma" { Sigma }
+  | '/'  { Slash }
+  | ':'  { Colon } 
+  | "::" { ColonColon }
   | "×" { Times }
   | "**" { Times }
-
-  | "pair" { Kpair }
-
   | "₁" { K_1 }
   | "₂" { K_2 }
-  | "_1" { K_1 }
-  | "_2" { K_2 }
-  | "CAR" { K_CAR }
-  | "CDR" { K_CDR }
+  | ( "->" | "⟶" ) { Arrow        }
+  | ( "=>" | "⇒" ) { DoubleArrow }
+  | ( "|->" | "⟼" ) { ArrowFromBar }
+  | ( "|=>" | "⟾" ) { DoubleArrowFromBar }
+  | ( "|-" | "⊢" ) { Turnstile }
+  | ( "|=" | "⊨" ) { TurnstileDouble }
 
-(* variable names *)
+(* variable names, keywords, and commands *)
 
   | '[' (ident as id) ']' { CONSTANT id }
   | '[' (ident as id) ';' { CONSTANT_SEMI id }
-  | ( nzdigit digit* | '0' ) as n { NUMBER (int_of_string n) } (* eventually check for overflow *)
-  | ident as id { IDENTIFIER id }
+  | ident as id { try Hashtbl.find commands id with Not_found -> IDENTIFIER id }
   | '[' (ident as name) '.' (digit+ as aspect) ']' { VARIABLE (VarDefined(name,int_of_string aspect)) }
   | (ident as name) '$' (digit+ as gen) { VARIABLE (VarGen(int_of_string gen,name)) }
+
+(* constants *)
+
+  | ( nzdigit digit* | '0' ) as n { NUMBER (int_of_string n) } (* eventually check for overflow *)
+  | '"' ( [ ^ '"' ] * as s ) '"' { STRING s }
 
 (* invalid characters *)
 
@@ -172,7 +133,6 @@ rule expr_tokens = parse
 	     flush stderr ;
 	     bump_error_count();
 	     expr_tokens lexbuf }
-
 
 and command_flush = parse
   | eof { EOF }

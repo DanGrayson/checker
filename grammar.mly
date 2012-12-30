@@ -68,7 +68,27 @@ let pi1_relative_implication t u =
       bind_pi (pos,e,(bind_pis p ee)) (bind_pis q (bind_sigma f (arrow (bind_pis p j) k)))
   | None -> raise NotImplemented
 
-let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_type) (t2 : lf_expr -> lf_type) (u : lf_type) = 
+let apply_binder_1 pos (c:(var marked * lf_expr) list) v t1 t2 u = 
+  let (vpos,v) = v in
+  let u = fix1 vpos v u in
+  let w = newfresh v in
+  let ww = var_to_lf_pos vpos w in
+  let t1 = List.fold_left (fun t1 (_,t) -> with_pos vpos (unmark (oexp @-> t1))) t1 c in
+  let ww = List.fold_left 
+      (fun ww (x,t) -> 
+	let (xpos,x) = x in 
+	Substitute.apply_args ww (ARG(var_to_lf (*pos*) x,END)))
+      ww c in
+  let t2 = new_pos pos (t2 ww) in
+  let t2 = List.fold_right (
+    fun (x,t) t2 -> 
+      let (xpos,x) = x in 
+      let x' = newunused() in
+      with_pos pos (F_Pi(x, oexp, with_pos pos (F_Pi(x', hastype (var_to_lf (*pos*) x) t, t2))))
+   ) c t2 in
+  F_Pi(v, (pos, F_Sigma(w, t1, t2)), u)
+
+let apply_binder_2 pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_type) (t2 : lf_expr -> lf_type) (u : lf_type) = 
   (* syntax is { v_1 : T_1 , ... , v_n : T_n |- v Type } u  or  { v_1 : T_1 , ... , v_n : T_n |- v:T } u *)
   (* t1 is texp or oexp; t2 is (fun t -> istype t) or (fun o -> hastype o t) *)
   let (vpos,v) = v in
@@ -77,6 +97,11 @@ let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_t
   let t = List.fold_right pi1_relative_implication c t in
   let u = pi1_relative_implication t u in
   unmark u
+
+let apply_binder pos c v t1 t2 u =
+  match !Toplevel.binder_mode with
+  | Toplevel.Binder_mode_relative -> apply_binder_2 pos c v t1 t2 u
+  | Toplevel.Binder_mode_pairs -> apply_binder_1 pos c v t1 t2 u
 
 %}
 %start command ts_exprEof
@@ -88,7 +113,7 @@ let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_t
 %type <Typesystem.lf_expr> ts_exprEof
 
 %token <int> NUMBER
-%token <string> IDENTIFIER CONSTANT CONSTANT_SEMI
+%token <string> IDENTIFIER CONSTANT CONSTANT_SEMI STRING
 %token <Variables.var> VARIABLE
 %token
 
@@ -96,10 +121,11 @@ let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_t
 
   LeftParen RightParen RightBracket LeftBracket Comma Period Colon Star Arrow
   ArrowFromBar Equal Underscore Axiom GreaterEqual Greater LessEqual Less
-  Semicolon Ulevel Kumax Type Pi Lambda Sigma Check Show End Variable
-  Alpha EOF CheckUniverses Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_CAR
-  K_CDR Times Slash Turnstile DoubleArrow DoubleArrowFromBar ColonColonEqual
-  ColonEqual Theorem LeftBrace RightBrace TurnstileDouble ColonColon
+  Semicolon Ulevel Kumax Type Pi Lambda Sigma Check Show End Variable Alpha EOF
+  Universes Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_CAR K_CDR Times Slash
+  Turnstile DoubleArrow DoubleArrowFromBar ColonColonEqual ColonEqual Theorem
+  LeftBrace RightBrace TurnstileDouble ColonColon Include Clear Mode Single
+  Relative Pairs
 
 (* precedences, lowest first *)
 
@@ -348,7 +374,7 @@ unmarked_command:
     | Check LF Colon t= lf_type Period
 	{ Toplevel.CheckLFtype t }
 
-    | CheckUniverses Period
+    | Check Universes Period
 	{ Toplevel.CheckUniverses }
 
     | Alpha e1= ts_expr Equal e2= ts_expr Period
@@ -369,14 +395,14 @@ unmarked_command:
 	  let pos = Position($startpos, $endpos) in
 	  Toplevel.Theorem (pos, name, deriv, thm) }
 
-    | Show Period 
-	{ Toplevel.Show None }
-
-    | Show n= NUMBER Period 
-	{ Toplevel.Show (Some n) }
-
-    | End Period
-	{ Toplevel.End }
+    | Include filename= STRING Period { Toplevel.Include filename }
+    | Clear Period { Toplevel.Clear }
+    | Show Period { Toplevel.Show None }
+    | Show n= NUMBER Period { Toplevel.Show (Some n) }
+    | End Period { Toplevel.End }
+    | Mode Single Period { Toplevel.Mode_single }
+    | Mode Pairs Period { Toplevel.Mode_pairs }
+    | Mode Relative Period { Toplevel.Mode_relative }
 
 marked_variable:
 

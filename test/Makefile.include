@@ -1,0 +1,16 @@
+TSFILES = test/rules.ts test/demo.ts test/test.ts test/test2.ts test/test3.ts test/test4.ts test/test5.ts
+
+tests : rules demo test test2 test3 test4 test5
+
+rules: $(CHECKER_EXE) ; $(CHECKER) test/rules.ts
+demo:  $(CHECKER_EXE) ; $(CHECKER) test/demo.ts
+
+test:  $(CHECKER_EXE) ; $(CHECKER) test/test.ts
+test2: $(CHECKER_EXE) ; $(CHECKER) test/test2.ts
+test3: $(CHECKER_EXE) ; $(CHECKER) test/test3.ts
+test4: $(CHECKER_EXE) ; $(CHECKER) test/test4.ts
+test5: $(CHECKER_EXE) ; $(CHECKER) test/test5.ts
+
+#  Local Variables:
+#  compile-command: "make -C .. tests "
+#  End:
