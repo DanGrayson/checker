@@ -1,10 +1,36 @@
+#############################################################################
+
+Mode Pairs.
+
+Include "test/rules.ts".
+
+# derive versions of some inference rules with simple types
+
+Check LF pi.
+
+Definition pi1 { ⊢ T U Type } ⊢ [∏;_](T,U) Type ::= 
+	   T ⟼ U ⟼ (pi T (_⟼U₁,_⟼_⟼U₂)).
+
+Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ [λ](T,o) : [∏;_](T,U) ::= 
+	   T ⟼ U ⟼ o ⟼ (λh T (_⟼U₁,_⟼_⟼U₂) o).
+
+Definition ev1 { ⊢ T U Type, f : [∏;_](T,U), o : T } ⊢ [ev;_](f,o,U) : U ::= 
+	   T ⟼ U ⟼ f ⟼ o ⟼ (ev T (_⟼U₁,_⟼_⟼U₂) f o).
+
+Clear.
+
+#############################################################################
+
 Mode Relative.
 
 Include "test/rules.ts".
 
 # derive versions of some inference rules with simple types
 
-Definition pi1 { ⊢ T U Type } ⊢ [∏;_](T,U) Type ::= T ⟼ U ⟼ ((pi T (_ ⟼ U) CAR), T' ⟼ U' ⟼ (pi T (_ ⟼ U) CDR T' (_ ⟼ _ ⟼ U'))).
+Check LF pi.
+
+Definition pi1 { ⊢ T U Type } ⊢ [∏;_](T,U) Type ::= 
+	   T ⟼ U ⟼ ((pi T (_ ⟼ U) CAR), T' ⟼ U' ⟼ (pi T (_ ⟼ U) CDR T' (_ ⟼ _ ⟼ U'))).
 
 Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ [λ](T,o) : [∏;_](T,U) ::=
 	   T ⟼ U ⟼ o ⟼ (([λ] T o), T' ⟼ U' ⟼ (λh T (_ ⟼ U) o CDR T' (_ ⟼ _ ⟼ U'))).
