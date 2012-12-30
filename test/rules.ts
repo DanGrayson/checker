@@ -32,7 +32,7 @@ Axiom 3.4.19 El_eq { ⊢ M Ulevel, x : [U](M), y : [U](M) } [ x = y : [U](M) ] �
 
 Axiom 3.4.20 El_eq_reflect { ⊢ M Ulevel, x : [U](M), y : [U](M) } [ *x = *y ] ⇒ [ x = y : [U](M) ].
 
-Axiom 3.4.21 ∏i { ⊢ T Type } { t : T ⊢ U Type } ⊢ [∏;t] (T,U/t) Type .
+Axiom 3.4.21 ∏i { ⊢ T Type } { t : T ⊢ U Type } ⊢ [∏;t](T,U/t) Type .
 
 Axiom 3.4.22 ∏_eq { ⊢ T T' Type } { t : T ⊢ U U' Type } [ T = T' ] ⇒ ( { ⊢ x : T } [ U/x = U'/x ] ) ⇒ [ [∏;t](T,U/t) = [∏;t](T',U'/t) ].
 

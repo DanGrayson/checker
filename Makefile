@@ -68,7 +68,7 @@ lc:; wc -l $(SRCFILES) test/rules.ts
 rules:$(CHECKER_EXE) test/rules.ts ; $(CHECKER)
 run:  $(CHECKER_EXE) test/rules.ts test/test.ts ; $(CHECKER) test/test.ts
 run2: $(CHECKER_EXE) test/test2.ts ; $(BARE_CHECKER) test/test2.ts
-run3: $(CHECKER_EXE) test/test3.ts ; $(CHECKER) --auto-intro test/test3.ts
+run3: $(CHECKER_EXE) test/test3.ts ; $(CHECKER) test/test3.ts
 run4: $(CHECKER_EXE) test/test3.ts ; $(BARE_CHECKER) test/test4.ts
 run5: $(CHECKER_EXE) test/test3.ts ; $(BARE_CHECKER) test/test5.ts
 demo: $(CHECKER_EXE) test/rules.ts test/test.ts ; $(CHECKER) --auto-intro test/demo.ts
