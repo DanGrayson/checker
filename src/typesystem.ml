@@ -326,6 +326,6 @@ let tactics : (string * tactic_function) list ref = ref []
 
 (* 
   Local Variables:
-  compile-command: "make typesystem.cmo "
+  compile-command: "make -C .. src/typesystem.cmo "
   End:
  *)

@@ -4,7 +4,6 @@ open Variables
 open Typesystem
 open Names
 open Helpers
-open Definitions
 open Printer
 open Printf
 

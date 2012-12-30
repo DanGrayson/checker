@@ -16,7 +16,6 @@ open Universe
 open Hash
 open Printf
 open Printer
-open Definitions
 open Lfcheck
 
 module Load = struct

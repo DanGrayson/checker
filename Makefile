@@ -1,22 +1,22 @@
 SRCFILES =					\
-	error.ml				\
-	variables.ml				\
-	typesystem.ml				\
-	names.ml				\
-	helpers.ml				\
-	printer.ml				\
-	hash.ml					\
-	universe.ml				\
-	alpha.ml alpha.mli			\
-	substitute.ml				\
-	equality.ml equality.mli		\
-	tau.ml tau.mli				\
-	lfcheck.ml				\
-	tactics.ml				\
-	grammar.mly				\
-	tokens.mll				\
-	toplevel.ml				\
-	checker.ml
+	src/error.ml				\
+	src/variables.ml			\
+	src/typesystem.ml			\
+	src/names.ml				\
+	src/helpers.ml				\
+	src/printer.ml				\
+	src/hash.ml				\
+	src/universe.ml				\
+	src/alpha.ml src/alpha.mli		\
+	src/substitute.ml			\
+	src/equality.ml src/equality.mli	\
+	src/tau.ml src/tau.mli			\
+	src/lfcheck.ml				\
+	src/tactics.ml				\
+	src/grammar.mly				\
+	src/tokens.mll				\
+	src/toplevel.ml				\
+	src/checker.ml
 
 # CODE = native
 CODE = byte
@@ -30,7 +30,7 @@ CHECKER += --debug
 CHECKER += --debug
 endif
 
-BFLAGS = -cflags -g,-annot -lflags -g -yaccflag -v -menhir 'menhir --explain'
+BFLAGS = -I src -cflags -g,-annot -lflags -g -yaccflag -v -menhir 'menhir --explain'
 BFLAGS += -use-menhir
 
 # add -yaccflag --trace to ocamlbuild command line to get the menhir parser to display a trace
@@ -54,8 +54,9 @@ RUN = -b
 all: TAGS tests doc
 include test/Makefile.include
 
-build: $(CHECKER_EXE)
-checker.byte checker.native: $(SRCFILES); ocamlbuild $(BFLAGS) $@
+build: src/$(CHECKER_EXE)
+src/checker.byte src/checker.native: always; ocamlbuild $(BFLAGS) $@
+always:
 doc: checker.odocl $(SRCFILES)
 	ocamlbuild $(BFLAGS) $(CHECKER_EXE) checker.docdir/index.html
 checker.odocl: Makefile
