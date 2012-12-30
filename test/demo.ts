@@ -76,7 +76,7 @@ Theorem compose2 { ⊢ u Ulevel, T:[U](u), U:[U](u), V:[U](u), g:*U ⟶ *V, f:*T
 #Lemma A { |- u Ulevel, T U : [U](u), f : *[∀;x](u,u,T,U) } : [Pi;_](*T,*U) ::=
 #                 u ⟼ T ⟼ U ⟼ f ⟼ 
 #		 (cast (El u (forall u u T U)) 
-#                       (∏i (El u T) (El u U))
+#                       (pi (El u T) (El u U))
 #                       (El_forall_reduction u u T U)
 #		       f).
 #
@@ -101,7 +101,7 @@ Theorem compose2 { ⊢ u Ulevel, T:[U](u), U:[U](u), V:[U](u), g:*U ⟶ *V, f:*T
 #Theorem A' { |- u Ulevel, T U : [U](u), f : *[∀;x](u,u,T,U) } : [Pi](*T,*U) ::=  # <-- bug here 
 #                 u ⟼ T ⟼ U ⟼ f ⟼ 
 #		 (cast (El u (forall u u T U)) 
-#                             (∏i (El u T) (El u U))
+#                             (pi (El u T) (El u U))
 #                             (El_forall_reduction u u T U) f).
 #
 

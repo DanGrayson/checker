@@ -45,20 +45,20 @@ Theorem LF make : (T:type) ⟶ (U:type) ⟶ (f : obj_of_type T ⟶ obj_of_type U
 
 # introduce non-dependent versions of pi, lamb, and ev:
 
-Definition LF arrow : (T:type) ⟶ (U:type) ⟶ type := T ⟼ U ⟼ (pi T (_ ⟼ U)).
+Definition LF pi1 : (T:type) ⟶ (U:type) ⟶ type := T ⟼ U ⟼ (pi T (_ ⟼ U)).
 
-Definition LF lamb1 : (T:type) ⟶ (U:type) ⟶ (body : (t:obj_of_type T) ⟶ obj_of_type U) ⟶ obj_of_type (arrow T U) :=
+Definition LF lamb1 : (T:type) ⟶ (U:type) ⟶ (body : (t:obj_of_type T) ⟶ obj_of_type U) ⟶ obj_of_type (pi1 T U) :=
 	   T ⟼ U ⟼ (lamb T (_ ⟼ U)).
 
-Definition LF ev1 : (T:type) ⟶ (U:type) ⟶ (f : obj_of_type (arrow T U)) ⟶ (arg : obj_of_type T) ⟶ obj_of_type U :=
+Definition LF ev1 : (T:type) ⟶ (U:type) ⟶ (f : obj_of_type (pi1 T U)) ⟶ (arg : obj_of_type T) ⟶ obj_of_type U :=
 	   T ⟼ U ⟼ (ev T (_ ⟼ U)).
 
-Theorem LF modus_ponens : (T:type) ⟶ (U:type) ⟶ (V:type) ⟶ obj_of_type (arrow (arrow T U) (arrow (arrow U V) (arrow T V))) :=
+Theorem LF modus_ponens : (T:type) ⟶ (U:type) ⟶ (V:type) ⟶ obj_of_type (pi1 (pi1 T U) (pi1 (pi1 U V) (pi1 T V))) :=
 	T ⟼ U ⟼ V ⟼ 
-	(lamb1 (arrow T U)
-	       (arrow (arrow U V) (arrow T V))
-	       (f ⟼ (lamb1 (arrow U V)
-	       		   (arrow T V)
+	(lamb1 (pi1 T U)
+	       (pi1 (pi1 U V) (pi1 T V))
+	       (f ⟼ (lamb1 (pi1 U V)
+	       		   (pi1 T V)
 			   (g ⟼ (lamb1 T V 
 			   	       (t ⟼ (ev1 U V g (ev1 T U f t)))))))).
 

@@ -32,11 +32,16 @@ Axiom 3.4.19 El_eq { ⊢ M Ulevel, x : [U](M), y : [U](M) } [ x = y : [U](M) ] �
 
 Axiom 3.4.20 El_eq_reflect { ⊢ M Ulevel, x : [U](M), y : [U](M) } [ *x = *y ] ⇒ [ x = y : [U](M) ].
 
-Axiom 3.4.21 ∏i { ⊢ T Type } { t : T ⊢ U Type } ⊢ [∏;t](T,U/t) Type .
+Axiom 3.4.21 pi { ⊢ T Type } { t : T ⊢ U Type } ⊢ [∏;t](T,U/t) Type .
+
+Definition pi1 { ⊢ T U Type } ⊢ [∏;_](T,U) Type ::= T ⟼ U ⟼ ((pi T (_ ⟼ U) CAR), T' ⟼ U' ⟼ (pi T (_ ⟼ U) CDR T' (_ ⟼ _ ⟼ U'))).
 
 Axiom 3.4.22 ∏_eq { ⊢ T T' Type } { t : T ⊢ U U' Type } [ T = T' ] ⇒ ( { ⊢ x : T } [ U/x = U'/x ] ) ⇒ [ [∏;t](T,U/t) = [∏;t](T',U'/t) ].
 
 Axiom 3.4.23 λh { ⊢ T Type } { x : T ⊢ U Type, o : U/x } ⊢ [λ](T,o) : [∏;t](T,U/t).
+
+Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ [λ](T,o) : [∏;_](T,U) ::=
+	   T ⟼ U ⟼ o ⟼ (([λ] T o), T' ⟼ U' ⟼ o' ⟼ (λh T (_ ⟼ U) o CDR T' (_ ⟼ _ ⟼ U') o')).
 
 Axiom 3.4.24 λ_equality { ⊢ T T' Type } { x : T ⊢ U U' Type, o o' : U/x }
 
@@ -55,6 +60,9 @@ Axiom 3.4.24.2 λ_equality2 { ⊢ T Type } { x : T ⊢ U U' Type, o o' : U/x }
 			[ [λ](T,o) = [λ](T,o') : [∏;t](T,U/t) ].
 
 Axiom 3.4.25 ev { ⊢ T Type } { t : T ⊢ U Type } { ⊢ f : [∏](T,U), o : T } ⊢ [ev;t](f,o,U/t) : U/o.
+
+Definition ev1 { ⊢ T U Type, f : [∏;_](T,U), o : T } ⊢ [ev;_](f,o,U) : U ::=
+	   T ⟼ U ⟼ f ⟼ o ⟼ ((ev T (_ ⟼ U) f o CAR), T' ⟼ U' ⟼ f' ⟼ o' ⟼ (ev T (_ ⟼ U) f o CDR T' (_ ⟼ _ ⟼ U') f' o')).
 
 Axiom 3.4.26 ev_eq { ⊢ T Type, o o' : T } { t : T ⊢ U U' Type } { ⊢ f f' : [∏;t](T,U/t) } 
 

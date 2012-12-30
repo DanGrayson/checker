@@ -15,16 +15,6 @@ Theorem id2 { ⊢ T U Type, f:T⟶U } : T⟶U ::= _ ⟼ _ ⟼ f ⟼ (f, _ ⟼ _ 
 
 Theorem id2' { ⊢ u Ulevel, T:[U](u) }{ ⊢ U:[U](u), f:*T⟶*U } : *T⟶*U ::= _ ⟼ _ ⟼ _ ⟼ f ⟼ (f, _ ⟼ _ ⟼ f' ⟼ f').
 
-# introduce non-dependent versions of Pi, lambda, and ev:
-
-Definition arrow { ⊢ T U Type } ⊢ [∏;_](T,U) Type ::= T ⟼ U ⟼ ((∏i T (_ ⟼ U) CAR), T' ⟼ U' ⟼ (∏i T (_ ⟼ U) CDR T' (_ ⟼ _ ⟼ U'))).
-
-Definition lambda1 { ⊢ T Type } { ⊢ U Type, o : U } ⊢ [λ;_](T,o) : [∏;t](T,U) ::=
-	   T ⟼ U ⟼ o ⟼ (([λ] T (_ ⟼ o)), T' ⟼ U' ⟼ o' ⟼ (λh T (_ ⟼ U) (_ ⟼ o) CDR T' (_ ⟼ _ ⟼ U') (_ ⟼ _ ⟼ o'))).
-
-Definition ev1 { ⊢ T U Type, f : [∏;_](T,U), o : T } ⊢ [ev;_](f,o,U) : U ::=
-	   T ⟼ U ⟼ f ⟼ o ⟼ ((ev T (_ ⟼ U) f o CAR), T' ⟼ U' ⟼ f' ⟼ o' ⟼ (ev T (_ ⟼ U) f o CDR T' (_ ⟼ _ ⟼ U') f' o')).
-
 Theorem id3' { ⊢ u Ulevel, T:[U](u) }{ ⊢ U:[U](u), f:*T⟶*U, t:*T} : *U ::=
 	u ⟼ T  ⟼ U  ⟼ f  ⟼ t  ⟼ (
 		(ev1 (El u T CAR   ) (El u U CAR   ) f t CAR),
@@ -32,22 +22,50 @@ Theorem id3' { ⊢ u Ulevel, T:[U](u) }{ ⊢ U:[U](u), f:*T⟶*U, t:*T} : *U ::=
 		(ev1 (El u T CAR   ) (El u U CAR   ) f t CDR 
 		     (El u T CDR T') (El u U CDR U'))).
 
-End.
-
-Check LF λh.
-
 Theorem modus_ponens { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 
+	# this is a lot longer than the proof in test4.ts
 	T ⟼ U ⟼ V ⟼ 
-	(λh (∏i T U)
-		   (∏i (∏i U V) (∏i T V))
-		   _).  # ?
+	((lambda1 (pi1 T U CAR)
+	          (pi1 (pi1 U V CAR) (pi1 T V CAR) CAR)
+	          (f ⟼ (lambda1 
+			   (pi1 U V CAR)
+	       		   (pi1 T V CAR)
+			   (g ⟼ 
+				(lambda1 T V 
+			   	       (t ⟼ 
+					    (ev1 U V g (ev1 T U f t CAR) CAR)) CAR)) CAR)) CAR), 
+	T' ⟼ U' ⟼ V' ⟼ 
+        (lambda1 (pi1 T U CAR)
+	         (pi1 (pi1 U V CAR) (pi1 T V CAR) CAR)
+	         (f ⟼ 
+		      (lambda1 
+			   (pi1 U V CAR)
+	       		   (pi1 T V CAR)
+			   (g ⟼ 
+				(lambda1 T V 
+			   	       (t ⟼ 
+					    (ev1 U V g (ev1 T U f t CAR) CAR)) CAR)) CAR)) CDR
+		(pi1 T U CDR T' U')
+		(pi1 (pi1 U V CAR) (pi1 T V CAR) CDR (pi1 U V CDR U' V') (pi1 T V CDR T' V'))
+		(f ⟼ f' ⟼ 
+		       (lambda1 
+			   (pi1 U V CAR)
+	       		   (pi1 T V CAR)
+			   (g ⟼ 
+				(lambda1 T V 
+			   	       (t ⟼ 
+					    (ev1 U V g (ev1 T U f t CAR) CAR)) CAR)) CDR
+ 					    (pi1 U V CDR U' V')
+ 					    (pi1 T V CDR T' V')
+			(g ⟼ g' ⟼ 
+			   (lambda1 T V 
+			   	       (t ⟼ 
+					    (ev1 U V g (ev1 T U f t CAR) CAR)) CDR T' V' 
+					(t ⟼ t' ⟼ 
+					    (ev1 U V g (ev1 T U f t CAR) CDR 
+					         U' V' g' (ev1 T U f t CDR T' U' f' t'))))))))).
+
 End.
-		   T : texp,  Ti : istype T
-		   U : texp,  Ui : istype U
-		   V : texp,  Vi : istype V
-		   f : oexp,  fh : hastype f ([Pi;t](T,U))
-		   g : oexp,  gh : hastype f ([Pi;u](U,V))
-		   let gf := [λ](T,t ⟼ [ev](g, [ev](f, t)))
 
 
 #   Local Variables:
