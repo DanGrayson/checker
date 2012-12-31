@@ -489,7 +489,7 @@ let _pos_of file x = output_string file (errfmt (get_pos x))
 
 let print_signature env file =
   fprintf file "Signature:\n";
-  fprintf file "  Kind constants:\n";
+  fprintf file "  Kind of type constants:\n";
   List.iter (fun (kind,name) -> 
     fprintf file "     %s : kind\n" name
            ) lf_kind_constant_table;

@@ -1,3 +1,36 @@
+Summary of next idea:
+
+In pairs mode
+
+     Axiom 3.4.21 pi { ⊢ T Type } { t : T ⊢ U Type } ⊢ [∏;t](T,U/t) Type.
+
+gets translated to 
+
+     (T:(T1:texp) × istype T1) ⟶ 
+     (U:(U1:oexp ⟶ texp) × (t:oexp) ⟶ hastype t T₁ ⟶ istype (U1 t)) ⟶ 
+     (t:Singleton(([∏] T₁ (t1 ⟼ (U₁ t1))) : texp)) × istype t
+
+The next thing to try is something like
+
+    (pi' : (T:texp) -> (U: oexp -> texp) -> Singleton(([∏] T U) : texp)) × 
+	 (T: (T1:texp) × istype T1) ⟶ 
+	 (U:(U1:oexp ⟶ texp) × (t:oexp) ⟶ hastype t T₁ ⟶ istype (U1 t)) ⟶ 
+	 istype (pi' T_1 U_1)
+
+Thus each theorem would return an expression and a typing judgment about it.
+
+And the proofs would be almost as short as in test4.ts.
+
+We may also want to reduce the number of arguments of U_2 like this:
+
+    (pi' : (T:texp) -> (U: oexp -> texp) -> Singleton(([∏] T (t |-> (U t)) : texp)) × 
+	 (T: (T1:texp) × istype T1) ⟶ 
+	 (U:(U1:oexp ⟶ texp) × (t:oexp) × hastype t T₁ ⟶ istype (U1 t)) ⟶ 
+	 istype (pi' T_1 U_1)
+
+-----------------------------------------------------------------------------
+
+
 I wrote this in the log to commit ce1c802e4977ce40fee140a92c633b39b8b96566:
 
 >     Next goal:
@@ -29,7 +62,7 @@ and in relative mode it gets translated to
 	((t1:oexp) ⟶ hastype t1 T ⟶ istype (U t1)) ⟶ 
 	istype t
 
-The proposal is to change the pairs-mode realization to 
+The proposal was to change the pairs-mode realization to 
 
      (T: (T1:texp) × istype T1) ⟶ 
      (U: ((t:oexp) × hastype t T₁) ⟶ ((U':texp) × istype U')) ⟶
@@ -40,7 +73,7 @@ type texp when t is of type oexp for the result to be a well-typed texp.  We
 can't enter (U t1)₁ because t1 is not a pair and U expects its argument to be a
 pair.
 
-The next thing to try is something like
+The next thing to try (in pairs mode) is something like
 
     (pi' : (T:texp) -> (U: oexp -> texp) -> Singleton(([∏] T U) : texp)) × 
 	 (T: (T1:texp) × istype T1) ⟶ 
