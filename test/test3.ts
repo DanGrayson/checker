@@ -27,8 +27,6 @@ Include "test/rules.ts".
 
 Check LF pi.
 
-End.
-
 Definition pi1 { ⊢ T U Type } ⊢ [∏;_](T,U) Type ::= 
 	   T ⟼ U ⟼ ((pi T (_ ⟼ U) CAR), T' ⟼ U' ⟼ (pi T (_ ⟼ U) CDR T' (_ ⟼ _ ⟼ U'))).
 
@@ -106,6 +104,8 @@ Theorem modus_ponens { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
 					    (ev1 U V g (ev1 T U f t CAR) CDR 
 					         U' V' g' (ev1 T U f t CDR T' U' f' t'))))))))).
 
+
+Show.
 
 #   Local Variables:
 #   compile-command: "make -C .. test3 DEBUG=no"
