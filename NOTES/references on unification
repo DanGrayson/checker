@@ -1,0 +1,10 @@
+references:
+
+Binary bidirectional algorithm for LF:
+http://www.cs.cmu.edu/~rwh/papers/lf-theory/lf-theory.pdf
+
+Simplest unifiication for first-order terms:
+http://www.cs.cmu.edu/~fp/courses/lp/lectures/06-unif.pdf
+
+Higher-order pattern unification
+http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.190.4789
