@@ -13,19 +13,42 @@ gets translated to
 The next thing to try is something like
 
     (pi' : (T:texp) -> (U: oexp -> texp) -> Singleton(([∏] T U) : texp)) × 
-	 (T: (T1:texp) × istype T1) ⟶ 
-	 (U: (U1:oexp ⟶ texp) × (t:oexp) ⟶ hastype t T₁ ⟶ istype (U1 t)) ⟶ 
-	 istype (pi' T_1 U_1)
+	 (T: (T':texp) × istype T') ⟶ 
+	 (U: (U':oexp ⟶ texp) × (t:oexp) ⟶ hastype t T₁ ⟶ istype (U' t)) ⟶ 
+	 istype (pi' T₁ U₁)
 
 Thus each theorem would return an expression and a typing judgment about it.
 That way, it would be reasonable to impose premisses that do that same.
 
-We may also want to reduce the number of arguments of U_2 like this:
+We also want to reduce the number of arguments of U₂ like this:
 
-    (pi' : (T:texp) -> (U: oexp -> texp) -> Singleton(([∏] T (t |-> (U t)) : texp)) × 
-	 (T: (T1:texp) × istype T1) ⟶ 
-	 (U:(U1:oexp ⟶ texp) × (t:oexp) × hastype t T₁ ⟶ istype (U1 t)) ⟶ 
-	 istype (pi' T_1 U_1)
+*     (pi' : (T:texp) -> (U : oexp -> texp) -> Singleton(([∏] T (t ⟼ (U t)) : texp))) × 
+* 	 (T: (T':texp) × istype T') ⟶ 
+* 	 (U: (U' : oexp ⟶ texp) × (t : (t':oexp) × hastype t' T₁) ⟶ istype (U' t₁)) ⟶ 
+* 	 istype (pi' T₁ U₁)
+
+so the type of the premise U is the sort of type one of our theorems might be.
+
+Alternatively, increasing the number of arguments by breaking out the pairs would lead
+to :
+
+    (pi' : (T:texp) -> (U : oexp -> texp) -> Singleton(([∏] T (t ⟼ (U t)) : texp))) × 
+	 (T:texp) ⟶ 
+	 istype T ⟶ 
+	 (U : oexp ⟶ texp) ⟶ 
+	 ( (t : oexp) ⟶ hastype t T ⟶ istype (U' t) ) ⟶ 
+	 istype (pi' T U)
+
+which is reminiscent of and more complicated than what we're doing in relative mode:
+
+    (T:texp) ⟶ 
+    (U:oexp ⟶ texp) ⟶ 
+    (t:Singleton(([∏] T (t1 ⟼ (U t1))) : texp)) × 
+	istype T ⟶ 
+	((t1:oexp) ⟶ hastype t1 T ⟶ istype (U t1)) ⟶ 
+	istype t
+
+, so probably is not worth trying.
 
 -----------------------------------------------------------------------------
 
@@ -77,16 +100,16 @@ The next thing to try (in pairs mode) is something like
     (pi' : (T:texp) -> (U: oexp -> texp) -> Singleton(([∏] T U) : texp)) × 
 	 (T: (T1:texp) × istype T1) ⟶ 
 	 (U: (U1:oexp ⟶ texp) × (t:oexp) ⟶ hastype t T₁ ⟶ istype (U1 t)) ⟶ 
-	 istype (pi' T_1 U_1)
+	 istype (pi' T₁ U₁)
 
 Thus each theorem would return an expression and a typing judgment about it.
 
-We may also want to reduce the number of arguments of U_2 like this:
+We may also want to reduce the number of arguments of U₂ like this:
 
     (pi' : (T:texp) -> (U: oexp -> texp) -> Singleton(([∏] T U) : texp)) × 
 	 (T: (T1:texp) × istype T1) ⟶ 
 	 (U:(U1:oexp ⟶ texp) × (t:oexp) × hastype t T₁ ⟶ istype (U1 t)) ⟶ 
-	 istype (pi' T_1 U_1)
+	 istype (pi' T₁ U₁)
 
 and also in relative mode:
 
@@ -114,7 +137,7 @@ Problem 1:
 
 	We need a way to convert one like the first one to one like the second one.
 
-	It's (pair (_ |-> U_1) (_ |-> _ |-> U_2)).  One way to do that is with
+	It's (pair (_ ⟼ U₁) (_ ⟼ _ ⟼ U₂)).  One way to do that is with
 	auto-introduction.
 
 Problem 2:
@@ -184,9 +207,9 @@ basics as follows, in terms of LF:
 
 	obj_of_type   ====>   (t:oexp) * hastype t T
 
-	type_equality   ====>   T ⟶ U ⟶ tequal T_1 U_1
+	type_equality   ====>   T ⟶ U ⟶ tequal T₁ U₁
 
-	object_equality   ====>   T ⟶ t ⟶ t' ⟶ oequal t_1 t'_1 T_1
+	object_equality   ====>   T ⟶ t ⟶ t' ⟶ oequal t₁ t'₁ T₁
 
 and we even redefine *all* of the arrows above by mapping them *not* to function types
 between sigma types, but to "pi1-relative" function types between sigma types.  Thus
