@@ -79,12 +79,13 @@ let apply_binder_1 pos (c:(var marked * lf_expr) list) v t1 t2 u =
 	Substitute.apply_args ww (ARG(var_to_lf (*pos*) x,END)))
       ww c in
   let t2 = new_pos pos (t2 ww) in
-  let t2 = List.fold_right (
-    fun (x,t) t2 -> 
-      let (xpos,x) = x in 
-      let x' = newunused() in
-      with_pos pos (F_Pi(x, oexp, with_pos pos (F_Pi(x', hastype (var_to_lf (*pos*) x) t, t2))))
-   ) c t2 in
+  let t2 = List.fold_right 
+      (
+       fun (x,t) t2 -> 
+	 let (xpos,x) = x in 
+	 let x' = newfresh x in
+	 with_pos pos (F_Pi(x, with_pos pos (F_Sigma(x', oexp, hastype (var_to_lf_pos pos x') t)), fix1 xpos x t2))
+      ) c t2 in
   F_Pi(v, (pos, F_Sigma(w, t1, t2)), u)
 
 let apply_binder_2 pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_type) (t2 : lf_expr -> lf_type) (u : lf_type) = 
