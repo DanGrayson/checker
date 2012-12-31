@@ -139,3 +139,10 @@ and command_flush = parse
   | '#' [ ^ '\n' ]* { expr_tokens lexbuf }
   | newline { command_flush lexbuf }
   | _ { command_flush lexbuf }
+
+ 
+(* 
+  Local Variables:
+  compile-command: "make -C .. src/tokens.cmo "
+  End:
+ *)

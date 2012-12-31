@@ -17,19 +17,28 @@ let car (hd,reversed_args) = (hd, CAR reversed_args)
 
 let cdr (hd,reversed_args) = (hd, CDR reversed_args)
 
-let fix1 pos v t = Substitute.subst_type (v,pi1 (var_to_lf_pos pos v)) t
-
 type binder = position * var * lf_type
 
-let rec bind_pis binders b =
+let bind_sigma binder b =
+  match binder with
+  | (pos,v,a) -> with_pos pos (F_Sigma(v,a,b))
+
+let bind_pi binder b =
+  match binder with 
+  | (pos,v,a) -> with_pos pos (F_Pi(v,a,b))
+
+let bind_some_sigma binder b =
+  match binder with
+  | Some binder -> bind_sigma binder b
+  | None -> b
+
+let rec bind_pi_list_rev binders b =
   match binders with
   | [] -> b
-  | (pos,v,a) :: binders -> bind_pis binders (with_pos pos (F_Pi(v,a,b)))
+  | binder :: binders -> bind_pi_list_rev binders (bind_pi binder b)
 
 let apply_vars f binders =
   Substitute.apply_args f (List.fold_right (fun (pos,v,a) accu -> (ARG(var_to_lf_pos pos v,accu))) binders END)
-
-let bind_pi binder b = bind_pis [binder] b
 
  (** for a type p of the form (p_1:P_1) -> ... -> (p_n:P_n) -> (e:E) ** J we
      return [p_n,P_n;...;p_1,P_n],(e,E),J. *)
@@ -38,14 +47,9 @@ let unbind p : binder list * binder option * lf_type =
     match unmark p with
     | F_Pi(v,a,b) -> repeat ((get_pos p,v,a) :: binders) b
     | F_Sigma(v,a,b) -> binders, Some (get_pos p,v,a), b
-    | _ -> [], None, bind_pis binders p
+    | _ -> [], None, bind_pi_list_rev binders p
   in
   repeat [] p
-
-let rec bind_sigma binder b =
-  match binder with
-  | Some (pos,v,a) -> with_pos pos (F_Sigma(v,a,b))
-  | None -> b
 
  (** Suppose t has the form P -> (e:E) ** J and u has the form Q -> (f:F) ** K.
      We think of an instance of t as providing a parametrized expression of
@@ -64,29 +68,29 @@ let pi1_relative_implication t u =
   | Some (pos,e,ee) ->
       let fix t = Substitute.subst_type (e,apply_vars (var_to_lf_pos pos e) (List.rev p)) t in
       let j = fix j in
-      bind_pi (pos,e,(bind_pis p ee)) (bind_pis q (bind_sigma f (arrow (bind_pis p j) k)))
+      bind_pi (pos,e,(bind_pi_list_rev p ee)) (bind_pi_list_rev q (bind_some_sigma f (arrow (bind_pi_list_rev p j) k)))
   | None -> raise NotImplemented
 
-let apply_binder_1 pos (c:(var marked * lf_expr) list) v t1 t2 u = 
+let apply_binder_1 pos (parms:(var marked * lf_expr) list) v t1 t2 u = 
   let (vpos,v) = v in
+  let fix1 pos v t = Substitute.subst_type (v,pi1 (var_to_lf_pos pos v)) t in
   let u = fix1 vpos v u in
   let w = newfresh v in
-  let ww = var_to_lf_pos vpos w in
-  let t1 = List.fold_left (fun t1 (_,t) -> with_pos vpos (unmark (oexp @-> t1))) t1 c in
-  let ww = List.fold_left 
-      (fun ww (x,t) -> 
+  let t1 = List.fold_left (fun t1 (_,t) -> new_pos vpos (oexp @-> t1)) t1 parms in
+  let w_applied = List.fold_left 
+      (fun w_applied (x,t) -> 
 	let (xpos,x) = x in 
-	Substitute.apply_args ww (ARG(var_to_lf (*pos*) x,END)))
-      ww c in
-  let t2 = new_pos pos (t2 ww) in
-  let t2 = List.fold_right 
-      (
-       fun (x,t) t2 -> 
-	 let (xpos,x) = x in 
-	 let x' = newfresh x in
-	 with_pos pos (F_Pi(x, with_pos pos (F_Sigma(x', oexp, hastype (var_to_lf_pos pos x') t)), fix1 xpos x t2))
-      ) c t2 in
-  F_Pi(v, (pos, F_Sigma(w, t1, t2)), u)
+	Substitute.apply_args w_applied (ARG(var_to_lf_pos xpos x,END)))
+      (var_to_lf_pos vpos w) parms in
+  let t2 = new_pos pos (t2 w_applied) in
+  let parms = List.map 
+      (fun ((xpos,x),t) -> 
+	let x' = newfresh x in
+	let t = bind_sigma (pos,x',oexp) (hastype (var_to_lf_pos pos x') t) in
+	((xpos,x),t)) parms in
+  let t2 = List.fold_right (fun ((xpos,x),t) t2 -> with_pos pos (F_Pi(x, t, fix1 xpos x t2))) parms t2 in
+  let t = bind_sigma (pos,w,t1) t2 in
+  F_Pi(v, t, u)
 
 let apply_binder_2 pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_type) (t2 : lf_expr -> lf_type) (u : lf_type) = 
   (* syntax is { v_1 : T_1 , ... , v_n : T_n |- v Type } u  or  { v_1 : T_1 , ... , v_n : T_n |- v:T } u *)
