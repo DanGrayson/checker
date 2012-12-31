@@ -414,7 +414,7 @@ and type_synthesis (surr:surrounding) (env:context) (m:lf_expr) : lf_expr * lf_t
             (CDR args', t)
         | t, END -> END, (pos,t)
         | _, ARG(arg,_) -> err env (get_pos arg) "extra argument"
-        | _, CAR _ -> err env pos "pi1 expected a pair (3)"
+        | _, CAR _ -> err env pos ("pi1 expected a pair (3) but got " ^ lf_expr_to_string (with_pos pos (APPLY(head,reverse_spine args_passed))))
         | _, CDR _ -> err env pos "pi2 expected a pair (3)"
        )
       in

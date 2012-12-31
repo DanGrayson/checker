@@ -1,0 +1,66 @@
+I wrote this in the log to commit ce1c802e4977ce40fee140a92c633b39b8b96566:
+
+>     Next goal:
+>     
+>         For a binder (in pairs mode) of the form
+>     	       { t : T ⊢ U Type }
+>         instead of
+>     	       (U:(U1:oexp ⟶ texp) × (t:oexp) ⟶ hastype t T₁ ⟶ istype (U1 t)) ⟶
+>         we want
+>     	       (U: ((t:oexp) × hastype t T₁) ⟶ ((U':texp) × istype U')) ⟶
+>         because none of our theorems give results usable as such premisses.
+
+But that won't work, because we want to write an inference rule such as
+
+           Axiom 3.4.21 pi { ⊢ T Type } { t : T ⊢ U Type } ⊢ [∏;t](T,U/t) Type .
+
+In pairs mode that gets translated to 
+
+     (T:(T1:texp) × istype T1) ⟶ 
+     (U:(U1:oexp ⟶ texp) × (t:oexp) ⟶ hastype t T₁ ⟶ istype (U1 t)) ⟶ 
+     (t:Singleton(([∏] T₁ (t1 ⟼ (U₁ t1))) : texp)) × istype t
+
+and in relative mode it gets translated to
+
+    (T:texp) ⟶ 
+    (U:oexp ⟶ texp) ⟶ 
+    (t:Singleton(([∏] T (t1 ⟼ (U t1))) : texp)) × 
+	istype T ⟶ 
+	((t1:oexp) ⟶ hastype t1 T ⟶ istype (U t1)) ⟶ 
+	istype t
+
+The proposal is to change the pairs-mode realization to 
+
+     (T: (T1:texp) × istype T1) ⟶ 
+     (U: ((t:oexp) × hastype t T₁) ⟶ ((U':texp) × istype U')) ⟶
+     (t:Singleton(([∏] T₁ (t1 ⟼ ( ? ))) : texp)) × istype t
+
+The thing we actually enter for U/t as the second branch of [∏;t] must be of
+type texp when t is of type oexp for the result to be a well-typed texp.  We
+can't enter (U t1)₁ because t1 is not a pair and U expects its argument to be a
+pair.
+
+The next thing to try is something like
+
+    (pi' : (T:texp) -> (U: oexp -> texp) -> Singleton(([∏] T U) : texp)) × 
+	 (T: (T1:texp) × istype T1) ⟶ 
+	 (U:(U1:oexp ⟶ texp) × (t:oexp) ⟶ hastype t T₁ ⟶ istype (U1 t)) ⟶ 
+	 istype (pi' T_1 U_1)
+
+Thus each theorem would return an expression and a typing judgment about it.
+
+We may also want to reduce the number of arguments of U_2 like this:
+
+    (pi' : (T:texp) -> (U: oexp -> texp) -> Singleton(([∏] T U) : texp)) × 
+	 (T: (T1:texp) × istype T1) ⟶ 
+	 (U:(U1:oexp ⟶ texp) × (t:oexp) × hastype t T₁ ⟶ istype (U1 t)) ⟶ 
+	 istype (pi' T_1 U_1)
+
+and also in relative mode:
+
+    (T:texp) ⟶ 
+    (U:oexp ⟶ texp) ⟶ 
+    (t:Singleton(([∏] T (t1 ⟼ (U t1))) : texp)) × 
+	istype T ⟶ 
+	((t1:oexp) × hastype t1 T ⟶ istype (U t1)) ⟶ 
+	istype t

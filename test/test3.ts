@@ -6,8 +6,6 @@ Include "test/rules.ts".
 
 # derive versions of some inference rules with simple types
 
-Check LF pi.
-
 Definition pi1 { ⊢ T U Type } ⊢ [∏;_](T,U) Type ::= 
 	   T ⟼ U ⟼ (pi T (_⟼U₁,_⟼_⟼U₂)).
 
@@ -28,6 +26,8 @@ Include "test/rules.ts".
 # derive versions of some inference rules with simple types
 
 Check LF pi.
+
+End.
 
 Definition pi1 { ⊢ T U Type } ⊢ [∏;_](T,U) Type ::= 
 	   T ⟼ U ⟼ ((pi T (_ ⟼ U) CAR), T' ⟼ U' ⟼ (pi T (_ ⟼ U) CDR T' (_ ⟼ _ ⟼ U'))).

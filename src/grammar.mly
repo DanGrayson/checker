@@ -671,7 +671,7 @@ unmarked_ts_expr:
  
 (* 
   Local Variables:
-  compile-command: "make grammar.cmo "
+  compile-command: "make -C .. src/grammar.cmo "
   End:
  *)
 
