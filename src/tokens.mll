@@ -9,14 +9,13 @@
 
  let commands = Hashtbl.create 20
  let _ = List.iter (fun (w,t) -> Hashtbl.add commands w t) [
-   "∏", Pi; "λ", Lambda; "Σ", Sigma; "Pi", Pi; "lambda", Lambda; 
-   "Ulevel", Ulevel; "Type", Type; "max", Kumax; "Singleton", Singleton; 
-   "Sigma", Sigma; "pair", Kpair; "_1", K_1; "_2", K_2; "CAR", K_CAR; 
-   "CDR", K_CDR; "Mode", Mode; "Single", Single; "Relative", Relative;
-   "Pairs", Pairs; "Clear", Clear; "Universes", Universes; "LF", LF; "TS", TS;
-   "Check", Check; "Axiom", Axiom; "Alpha", Alpha; "Variable", Variable; 
-   "End", End; "Include", Include; "Clear", Clear; "Show", Show; 
-   "Theorem", Theorem; "Definition", Theorem; "Lemma", Theorem; 
+   "∏", Pi; "λ", Lambda; "Σ", Sigma; "Pi", Pi; "lambda", Lambda; "Ulevel",
+   Ulevel; "Type", Type; "max", Kumax; "Singleton", Singleton; "Sigma", Sigma;
+   "pair", Kpair; "CAR", K_CAR; "CDR", K_CDR; "Mode", Mode; "Single", Single;
+   "Relative", Relative; "Pairs", Pairs; "Clear", Clear; "Universes",
+   Universes; "LF", LF; "TS", TS; "Check", Check; "Axiom", Axiom; "Alpha",
+   Alpha; "Variable", Variable; "End", End; "Include", Include; "Clear", Clear;
+   "Show", Show; "Theorem", Theorem; "Definition", Theorem; "Lemma", Theorem;
    "Proposition", Theorem; "Corollary", Theorem ]
 
  let error_count = ref 0
@@ -105,8 +104,8 @@ rule expr_tokens = parse
   | "::" { ColonColon }
   | "×" { Times }
   | "**" { Times }
-  | "₁" { K_1 }
-  | "₂" { K_2 }
+  | ( "₁" | "_1" ) { K_1 }
+  | ( "₂" | "_2" ) { K_2 }
   | ( "->" | "⟶" ) { Arrow        }
   | ( "=>" | "⇒" ) { DoubleArrow }
   | ( "|->" | "⟼" ) { ArrowFromBar }

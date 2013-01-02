@@ -79,29 +79,29 @@ let mismatch_type env pos t pos' t' =
 
 let mismatch_term_type env e t =
   raise (TypeCheckingFailure (env, [
-               get_pos e, "expected term\n\t" ^ lf_expr_to_string e;
+               get_pos e, "error: expected term\n\t" ^ lf_expr_to_string e;
                get_pos t, "to be compatible with type\n\t" ^ lf_type_to_string t]))
 
 let mismatch_term_type_type env e s t =
   raise (TypeCheckingFailure (env, [
-               get_pos e, "expected term\n\t" ^ lf_expr_to_string e;
+               get_pos e, "error: expected term\n\t" ^ lf_expr_to_string e;
                get_pos s, "of type\n\t" ^ lf_type_to_string s;
                get_pos t, "to be compatible with type\n\t" ^ lf_type_to_string t]))
 
 let mismatch_term_t env pos x pos' x' t = 
   raise (TypeCheckingFailure (env, [
-                    pos , "expected term\n\t" ^ lf_expr_to_string x ;
+                    pos , "error: expected term\n\t" ^ lf_expr_to_string x ;
                     pos',      "to match\n\t" ^ lf_expr_to_string x';
                get_pos t,       "of type\n\t" ^ lf_type_to_string t]))
 
 let mismatch_term env pos x pos' x' = 
   raise (TypeCheckingFailure (env, [
-                    pos , "expected term\n\t" ^ lf_expr_to_string x;
+                    pos , "error: expected term\n\t" ^ lf_expr_to_string x;
                     pos',      "to match\n\t" ^ lf_expr_to_string x']))
 
 let function_expected env f t =
   raise (TypeCheckingFailure (env, [
-                    get_pos f, "encountered a non-function\n\t" ^ lf_expr_to_string f;
+                    get_pos f, "error: encountered a non-function\n\t" ^ lf_expr_to_string f;
                     get_pos t, "of type\n\t" ^ lf_type_to_string t]))
 
 let rec strip_singleton ((_,(_,t)) as u) = match t with
@@ -359,8 +359,13 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
       let surr = (None,e0,Some t) :: surr in
       let body = type_check surr ((v,a) :: env) body (subst_type (w,var_to_lf v) b) in
       pos, LAMBDA(v,body)
-  | LAMBDA _, _ -> mismatch_term_type env e0 t
- 
+  | LAMBDA _, F_Sigma _ -> 
+      raise (TypeCheckingFailure (env, [
+				  get_pos e0, "error: expected a pair but got a function:\n\t" ^ lf_expr_to_string e0]))
+  | LAMBDA _, _ -> 
+      raise (TypeCheckingFailure (env, [
+				  get_pos t, "error: expected something of type\n\t" ^ lf_type_to_string t;
+				  get_pos e0, "but got a function\n\t" ^ lf_expr_to_string e0]))
   | _, F_Sigma(w,a,b) -> (* The published algorithm omits this, correctly, but we want to
                             give advice to tactics for filling holes in [p], so we try type-directed
                             type checking as long as possible. *)

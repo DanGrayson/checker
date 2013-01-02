@@ -6,14 +6,16 @@ Include "test/rules.ts".
 
 # derive versions of some inference rules with simple types
 
+Check LF pi.
+
 Definition pi1 { ⊢ T U Type } ⊢ [∏;_](T,U) Type ::= 
-	   T ⟼ U ⟼ (pi T (_⟼U₁,_⟼U₂)).
+	   (_, T ⟼ U ⟼ (pi₂ T (_⟼U₁,_⟼U₂))).
 
 Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ [λ](T,o) : [∏;_](T,U) ::= 
-	   T ⟼ U ⟼ (λh T (_⟼U₁,_⟼U₂)).
+	   (_, T ⟼ U ⟼ (λh₂ T (_⟼U₁,_⟼U₂))).
 
 Definition ev1 { ⊢ T U Type, f : [∏;_](T,U), o : T } ⊢ [ev;_](f,o,U) : U ::= 
-	   T ⟼ U ⟼ (ev T (_⟼U₁,_⟼U₂)).
+	   (_, T ⟼ U ⟼ (ev₂ T (_⟼U₁,_⟼U₂))).
 
 Clear.
 
