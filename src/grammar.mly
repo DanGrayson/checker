@@ -46,6 +46,11 @@ let unbind_pair p : binder option * lf_type =
   | F_Sigma(v,a,b) -> Some (get_pos p,v,a), b
   | _ -> None, p
 
+let is_t_o_expr t = 
+  match unmark t with
+  | F_Apply(( F_uexp | F_texp | F_oexp ), _) -> true
+  | _ -> false  
+
  (** Suppose t has the form (e:E) ** J and u has the form (f:F) ** K.  We think
      of an instance of t as providing a parametrized expression of type E
      together with a judgment of type J about the expression, and similarly for
@@ -53,30 +58,40 @@ let unbind_pair p : binder option * lf_type =
      together with a judgment about it, of type (E**J)->K.  The resulting type
      looks like (f: (e:E)->F) ** (e : (e':E)**J)->K. *)
 let pi1_pairs_implication t u =
-  if false then printf " entering pi1_pairs_implication:\n\t t = %a\n\t u = %a\n%!" _t t _t u;
   let (e,j) = unbind_pair t in
   let (f,k) = unbind_pair u in
   match e,f with
   | Some (epos,e,ee), Some(fpos,f,ff) ->
-      let e' = newfresh e in
-      if false then printf " old k = %a\n%!" _t k;
+      let bt = 
+	match unmark ff with
+	| F_Singleton s -> let (_,bt) = Lfcheck.strip_singleton s in bt
+	| _ -> ff in
+      if false then printf "   base type bt = %a\n%!" _t bt;
+      if false then printf " old e = %a; ee = %a; f = %a; ff = %a; k = %a\n%!" _v e _t ee _v f _t ff _t k;
+      let k = 
+	if is_t_o_expr bt 
+	then bind_sigma (fpos,f,with_pos fpos (F_Singleton(var_to_lf_pos fpos f,bt))) k
+	else k in
       let k = Substitute.subst_type (e,with_pos epos (APPLY(V e, CAR END))) k in
       let k = Substitute.subst_type (f,with_pos fpos (APPLY(V f, ARG (with_pos epos (APPLY(V e, CAR END)), END)))) k in
       if false then printf " new k = %a\n%!" _t k;
-      let t = bind_sigma (epos,e',ee) (Substitute.subst_type (e, (var_to_lf_pos epos e')) j) in
-      bind_sigma 
-	(fpos,f,bind_pi (epos,e,ee) ff)
-	(bind_pi (epos,e,t) k)
+      let t = bind_sigma (epos,e,ee) j in
+      bind_sigma (fpos,f,bind_pi (epos,e,ee) ff) (bind_pi (epos,e,t) k)
   | Some (epos,e,ee), None ->
-      let e' = newfresh e in
       if false then printf " old k = %a\n%!" _t k;
       let k = Substitute.subst_type (e,with_pos epos (APPLY(V e, CAR END))) k in
       if false then printf " new k = %a\n%!" _t k;
-      let t = bind_sigma (epos,e',ee) (Substitute.subst_type (e, (var_to_lf_pos epos e')) j) in
+      let t = bind_sigma (epos,e,ee) j in
       bind_pi (epos,e,t) k
   | _ -> 
       printf " pi1_pairs_implication case unimplemented\n%!";
       raise NotImplemented
+
+let pi1_pairs_implication t u =
+  if false then printf " entering pi1_pairs_implication:\n\t t = %a\n\t u = %a\n%!" _t t _t u;
+  let r = pi1_pairs_implication t u in
+  if false then printf " leaving pi1_pairs_implication:\n\t r = %a\n%!" _t r;
+  r
 
  (** for a type p of the form (p_1:P_1) -> ... -> (p_n:P_n) -> (e:E) ** J we
      return [p_n,P_n;...;p_1,P_n],(e,E),J. *)
