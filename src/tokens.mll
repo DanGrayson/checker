@@ -121,16 +121,19 @@ rule expr_tokens = parse
   | '/'  { Slash }
   | ':'  { Colon } 
   | "::" { ColonColon }
-  | "×" { Times }
   | "**" { Times }
-  | ( "₁" | "_1" ) { K_1 }
-  | ( "₂" | "_2" ) { K_2 }
-  | ( "->" | "⟶" ) { Arrow        }
-  | ( "=>" | "⇒" ) { DoubleArrow }
-  | ( "|->" | "⟼" ) { ArrowFromBar }
-  | ( "|=>" | "⟾" ) { DoubleArrowFromBar }
-  | ( "|-" | "⊢" ) { Turnstile }
-  | ( "|=" | "⊨" ) { TurnstileDouble }
+
+(* unicode symbols *)
+
+  | "×" as symb { utf8_fix lexbuf symb; Times }
+  | ( "₁" | "_1" ) as symb { utf8_fix lexbuf symb; K_1 }
+  | ( "₂" | "_2" ) as symb { utf8_fix lexbuf symb; K_2 }
+  | ( "->" | "⟶" ) as symb { utf8_fix lexbuf symb; Arrow }
+  | ( "=>" | "⇒" ) as symb { utf8_fix lexbuf symb; DoubleArrow }
+  | ( "|->" | "⟼" ) as symb { utf8_fix lexbuf symb; ArrowFromBar }
+  | ( "|=>" | "⟾" ) as symb { utf8_fix lexbuf symb; DoubleArrowFromBar }
+  | ( "|-" | "⊢" ) as symb { utf8_fix lexbuf symb; Turnstile }
+  | ( "|=" | "⊨" ) as symb { utf8_fix lexbuf symb; TurnstileDouble }
 
 (* variable names, keywords, and commands *)
 
