@@ -3,5 +3,5 @@
 Include "rules/TS4.ts".
 
 #   Local Variables:
-#   compile-command: "make -C .. rules "
+#   compile-command: "make -C .. rules5 "
 #   End:

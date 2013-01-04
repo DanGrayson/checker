@@ -351,7 +351,7 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
       | TacticFailure ->
           raise (TypeCheckingFailure (env, [
                                pos, "tactic failed : "^tactic_to_string tac;
-                               pos, "in hole of type: "^lf_type_to_string t])))
+                               pos, "in hole of type\n\t"^lf_type_to_string t])))
 
   | LAMBDA(v,body), F_Pi(w,a,b) -> (* the published algorithm is not applicable here, since
                                    our lambda doesn't contain type information for the variable,

@@ -17,5 +17,5 @@ Axiom 5.3.5 El_pt_reduction [ [El]([pt]()) = [Pt]() ].
 Axiom 5.4.1 Pt_eliminator { ⊢ x : [Pt]() } { t : [Pt]() ⊢ T Type } { ⊢ o : T/[tt]() } ⊢ [pt_r;t](o,T/t) : [Pi;x]([Pt](),T/x) .
 
 #   Local Variables:
-#   compile-command: "make -C .. rules "
+#   compile-command: "make -C .. rules2 "
 #   End:

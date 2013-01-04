@@ -507,6 +507,7 @@ let print_signature env file =
 
 let print_context n file (env:context) = 
   let n = match n with None -> -1 | Some n -> n in
+  let env = if n < 0 then List.rev env else env in
   fprintf file "Context:\n";
   try iteri
       (fun i (v,t) ->
@@ -521,3 +522,8 @@ let print_context n file (env:context) =
       env
   with Limit -> ()
 
+(* 
+  Local Variables:
+  compile-command: "make -C .. src/typesystem.cmo "
+  End:
+ *)

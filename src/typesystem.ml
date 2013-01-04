@@ -202,7 +202,7 @@ let ohead_to_lf_type = function
   | O_c -> texp @-> oexp @-> texp1 @-> texp2 @-> oexp3 @-> oexp @-> oexp @-> oexp
   | O_ip_r -> texp @-> oexp @-> texp1 @-> texp2 @-> oexp3 @-> oexp @-> texp2 @-> oexp @-> oexp
   | O_ip -> oexp @-> oexp @-> oexp1 @-> oexp2 @-> oexp3 @-> oexp
-  | O_paths -> texp @-> oexp @-> oexp @-> oexp
+  | O_paths -> uexp @-> oexp @-> oexp @-> oexp @-> oexp
   | O_refl -> texp @-> oexp @-> oexp
   | O_J -> texp @-> oexp @-> oexp @-> oexp @-> oexp @-> texp2 @-> oexp
   | O_rr0 -> uexp @-> uexp @-> oexp @-> oexp @-> oexp @-> oexp
