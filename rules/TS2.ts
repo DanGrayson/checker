@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+Include "rules/TS1.ts".
+
+# Pt, pt, tt
+
 Axiom 5.3.1 Pt ⊢ [Pt]() Type. 
 
 Axiom 5.3.2 tt ⊢ [tt]() : [Pt](). 

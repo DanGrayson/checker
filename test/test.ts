@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+Mode Relative.
+
 Include "rules/TS.ts".
 
 Variable T Type.

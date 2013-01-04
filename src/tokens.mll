@@ -6,6 +6,7 @@
  open Grammar
  open Variables
  open Typesystem
+ open Printf
 
  let commands = Hashtbl.create 20
  let _ = List.iter (fun (w,t) -> Hashtbl.add commands w t) [
@@ -23,7 +24,7 @@
  let bump_error_count () =
    incr error_count;
    if !error_count >= 7 then (
-     Printf.fprintf stderr "Too many errors, exiting.\n%!"; 
+     fprintf stderr "Too many errors, exiting.\n%!"; 
      exit 1);
    flush stderr
 
@@ -41,6 +42,24 @@
    let col = (col + 7) / 8 * 8 in
    let bol = cnum - col in
    lexbuf.Lexing.lex_curr_p <- { p with Lexing.pos_bol = bol }
+
+ let utf8_length id =
+   let n = String.length id in
+   let ulen = ref 0 in
+   for i = 0 to n-1 do
+     if id.[i] >= '\192' || id.[i] < '\128' then ulen := !ulen + 1;
+   done;
+   !ulen
+
+ let utf8_fix lexbuf id =
+   let m = String.length id in
+   let n = utf8_length id in
+   if m != n then (
+     let p = lexbuf.Lexing.lex_curr_p in
+     let bol = p.Lexing.pos_bol in
+     lexbuf.Lexing.lex_curr_p <- { p with Lexing.pos_bol = bol + (m-n) }
+     )
+
 }
 let nzdigit = [ '1'-'9' ]
 let digit = [ '0'-'9' ]
@@ -115,11 +134,11 @@ rule expr_tokens = parse
 
 (* variable names, keywords, and commands *)
 
-  | '[' (ident as id) ']' { CONSTANT id }
-  | '[' (ident as id) ';' { CONSTANT_SEMI id }
-  | ident as id { try Hashtbl.find commands id with Not_found -> IDENTIFIER id }
-  | '[' (ident as name) '.' (digit+ as aspect) ']' { VARIABLE (VarDefined(name,int_of_string aspect)) }
-  | (ident as name) '$' (digit+ as gen) { VARIABLE (VarGen(int_of_string gen,name)) }
+  | '[' (ident as id) ']' { utf8_fix lexbuf id; CONSTANT id }
+  | '[' (ident as id) ';' { utf8_fix lexbuf id; CONSTANT_SEMI id }
+  | ident as id { utf8_fix lexbuf id; try Hashtbl.find commands id with Not_found -> IDENTIFIER id }
+  | '[' (ident as name) '.' (digit+ as aspect) ']' { utf8_fix lexbuf name; VARIABLE (VarDefined(name,int_of_string aspect)) }
+  | (ident as name) '$' (digit+ as gen) { utf8_fix lexbuf name; VARIABLE (VarGen(int_of_string gen,name)) }
 
 (* constants *)
 
@@ -128,7 +147,7 @@ rule expr_tokens = parse
 
 (* invalid characters *)
 
-  | _ as c { Printf.fprintf stderr "%s: invalid character: '%c'\n" (lexing_pos lexbuf) c; 
+  | _ as c { fprintf stderr "%s: invalid character: '%c'\n" (lexing_pos lexbuf) c; 
 	     flush stderr ;
 	     bump_error_count();
 	     expr_tokens lexbuf }

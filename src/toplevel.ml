@@ -6,7 +6,7 @@ open Typesystem
 
 type binder_mode = Binder_mode_relative | Binder_mode_pairs
 
-let binder_mode = ref Binder_mode_relative
+let binder_mode = ref Binder_mode_pairs
 
 type command' = 
   | Axiom of (int list) option * string * lf_type

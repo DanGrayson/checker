@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# the derivation rules for TS0
-
 Variable uu0 Ulevel.
 
 Axiom 3.4.7 tsimeq { ⊢ T U Type } [ T ~ U Type ] ⇒ [ T = U ].
@@ -52,7 +50,7 @@ Axiom 3.4.24.2 λ_equality2 { ⊢ T Type } { x : T ⊢ U U' Type, o o' : U/x }
 
      			( { ⊢ x : T } [ o/x = o'/x : U/x ] ) ⇒ 
 
-			[ [λ](T,o) = [λ](T,o') : [∏;t](T,U/t) ].
+			[ [λ](T,o) = [λ](T,o'): [∏;t](T,U/t) ].
 
 Axiom 3.4.25 ev { ⊢ T Type } { t : T ⊢ U Type } { ⊢ f : [∏](T,U), o : T } ⊢ [ev;t](f,o,U/t) : U/o.
 
@@ -79,5 +77,5 @@ Axiom 3.4.32 El_forall_reduction { ⊢ M1 M2 Ulevel, o1 : [U](M1) } { x : *o1 �
           [ (*[∀;x](M1,M2,o1,o2/x)) = ([∏;x](*o1,[El](o2/x))) ].		# parser doesn't let us use *(o2/x); fix
 
 #   Local Variables:
-#   compile-command: "make -C .. rules "
+#   compile-command: "make -C .. rules0 "
 #   End:

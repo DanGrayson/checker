@@ -1,6 +1,16 @@
 RULES_FILES = 					\
 	rules/TS.ts
 
+rules: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS.ts test/show.ts
+rules0: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS0.ts test/show.ts
+rules1: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS1.ts test/show.ts
+rules2: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS2.ts test/show.ts
+rules3: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS3.ts test/show.ts
+rules4: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS4.ts test/show.ts
+rules5: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS5.ts test/show.ts
+rules6: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS6.ts test/show.ts
+rules7: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS7.ts test/show.ts
+
 #  Local Variables:
 #  compile-command: "make -C .. "
 #  End:
