@@ -1,0 +1,6 @@
+RULES_FILES = 					\
+	rules/TS.ts
+
+#  Local Variables:
+#  compile-command: "make -C .. "
+#  End:

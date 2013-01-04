@@ -1,8 +1,8 @@
-TSFILES = test/rules.ts test/demo.ts test/test.ts test/test2.ts test/test3.ts test/test4.ts test/test5.ts
+TSFILES = test/demo.ts test/test.ts test/test2.ts test/test3.ts test/test4.ts test/test5.ts
 
 tests : rules demo test test2 test3 test4 test5
 
-rules: src/$(CHECKER_EXE) ; $(CHECKER) test/rules.ts
+rules: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS.ts
 demo:  src/$(CHECKER_EXE) ; $(CHECKER) test/demo.ts
 
 test:  src/$(CHECKER_EXE) ; $(CHECKER) test/test.ts

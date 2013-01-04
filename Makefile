@@ -53,6 +53,7 @@ RUN = -b
 
 all: TAGS tests doc
 include test/Makefile.include
+include rules/Makefile.include
 
 build: src/$(CHECKER_EXE)
 src/checker.byte src/checker.native: always; ocamlbuild $(BFLAGS) $@
@@ -65,7 +66,7 @@ clean::; ocamlbuild -clean
 TAGS: $(SRCFILES) $(TSFILES) scripts/ts.etags Makefile
 	( scripts/etags.ocaml $(SRCFILES) && etags --regex=@scripts/ts.etags $(TSFILES) -o - ) >$@
 clean::; rm -f TAGS checker.odocl .DS_Store
-lc:; wc -l $(SRCFILES) test/rules.ts
+lc:; wc -l $(SRCFILES) $(RULES_FILES)
 debug:
 	ocamlbuild $(BFLAGS) checker.byte 
 	@ echo "enter:"

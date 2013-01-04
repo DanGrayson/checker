@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-Include "test/rules.ts".
+Include "rules/TS.ts".
 
 Variable T Type.
 Theorem TT |- T Type ::= (pair _ _).

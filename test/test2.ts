@@ -1,6 +1,6 @@
 
 Mode Pairs.
-Include "test/rules.ts".
+Include "rules/TS.ts".
 Check LF pi.
 Check LF ev.
 Check LF λh.
@@ -8,7 +8,7 @@ Check LF λh.
 End.
 
 Mode Relative.
-Include "test/rules.ts".
+Include "rules/TS.ts".
 Check LF pi.
 Check LF ev.
 Check LF λh.
