@@ -127,10 +127,13 @@ let defCommand env defs =
       if not (Alpha.UEqual.term_equiv empty_uContext tm' tm'') then (
 	printf "       %a = %a [normalized]\n%!" _v v  _e tm'';
 	(* printf "       %a = %a [normalized, TS format]\n%!" _v v  _ts tm''; *)
+	let _ = type_check env tm'' tp' in ();
        );
       let tp'' = type_normalization env tp' in
       if not (Alpha.UEqual.type_equiv empty_uContext tp' tp'') then (
-	printf "       %a : %a [normalized]\n%!" _v v  _t tp'');
+	printf "       %a : %a [normalized]\n%!" _v v  _t tp'';
+	let _ = type_validity env tp'' in ();
+       );
       def_bind v pos tm' tp' env
     ) 
     env defs

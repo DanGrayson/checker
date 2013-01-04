@@ -483,18 +483,24 @@ let rec num_args t = match unmark t with
   | F_Pi(_,_,b) -> 1 + num_args b
   | _ -> 0
 
+let bound_var_override f w =		(* just to get a good variable name *)
+  match unmark f with
+  | LAMBDA(v,_) -> v
+  | _ -> w
+
 let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
   let (pos,t0) = t in
   match t0 with 
   | F_Pi(v,a,b) ->
-      let w = newfresh v in		(* in case x contains v as a free variable *)
+      let v' = bound_var_override x v in 
+      let w = newfresh v' in		(* in case x contains v as a free variable *)
       let w' = var_to_lf w in 
       let b = subst_type (v,w') b in
       let env = (w,a) :: env in
       let result = apply_args x (ARG(w',END)) in
       let body = term_normalization env result b in
-      pos, LAMBDA(v,body)
+      pos, LAMBDA(w,body)
   | F_Sigma(v,a,b) ->
       let pos = get_pos x in
       let p = x in

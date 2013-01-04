@@ -1,0 +1,93 @@
+-*- text -*-
+
+Constraints:
+
+	inference rules need TS expressions provided by the premisses, in order
+	to build new TS expressions
+
+	theorems need to provide TS expressions as part of the proof so other
+	theorems can incorporate them into their proofs
+
+	we want to keep a TS expression together with the typing judgment about
+	it, at all times, so tactics have information to work with
+
+	we want proofs to be short
+
+Solution:
+
+	introduce a new type of type to LF: "product-pair" types:
+
+		         a:A |- z:C
+		x : (a:A)**B |- y : (c:C[x_1/a])**D
+		x : (a:A)**B |- y_1 = z : C[x_1/a]
+		---------------------------------------------
+		(x |-> y) : (PiPair x:(a:A)**B) ((c:C)**D)	
+
+	given two (dependent) sigma-types (a:A)**B and (c:C)**D we consider
+	those lambda expressions of the form
+
+		(a,b) |-> (c',d')
+
+	where
+
+		a:A |- c':C
+
+		a:A, b:B |- d':D[c'/c]
+
+	so that (c',d') : (c:C)**D, and we will regard such lambda expressions
+	as instances of a new type:
+
+		((a,b) |-> (c',d')) : (PiPair x:(a:A)**B) ((c:C)**D)
+
+	That will be the normal form for such expressions, but there will be
+	other ways of making them (??).
+
+	There is also a way of embedding the the new type theory into the old.
+	The embedding Psi will send
+
+		((a,b) |-> (c',d'))
+
+	to
+
+		((a |-> c'),(x |-> (c'[x_1/a],d'[x_1/a,x_2/b]))) : ((a:A)->C) ** (x:(a:A)**B) ((c:C)**D)
+
+	The first projection will be available as a new operation f |-> f_1, which sends
+
+		|- f : (PiPair x:(a:A)**B) ((c:C)**D)
+		------------------------------
+		|- f_1 : (a:A) -> C
+
+	and it will send
+
+		((a,b) |-> (c',d'))
+
+	to
+
+		(a |-> c')
+
+	The second projection will not be available.  
+
+	There will be application:
+
+		|- f : (PiPair x:(a:A)**B) ((c:C)**D)
+		|- x' : (a:A)**B
+		-------------------
+		|- f x' : (c:C)**D
+
+	Under the embedding, f x' will go to ((Psi f)_1 x'_1, (Psi f)_2 x').
+
+	There will be a reduction-equality
+
+		|- f : (PiPair x:(a:A)**B) ((c:C)**D)
+		|- x' : (a:A)**B
+		------------------------------
+		|- (f x')_1 = f_1 x'_1 : C
+
+
+	Derived ways of making expressions of product-pair type:
+
+	(2)
+		|- f : (PiPair x:(a:A)**B) ((c:C)**D)
+		---------------------------------------------
+		|- x |-> f x : (PiPair x:(a:A)**B) ((c:C)**D)
+
