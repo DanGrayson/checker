@@ -7,18 +7,17 @@ Include "test/rules.ts".
 # derive versions of some inference rules with simple types
 
 Definition pi1 { ⊢ T U Type } ⊢ [∏;_](T,U) Type ::= 
-	   (_, T ⟼ U ⟼ (pi₂ T (_⟼U₁,_⟼U))).
+	   (T ⟼ U ⟼ (pi₁ T (_⟼U)), T ⟼ U ⟼ (pi₂ T (_⟼U₁,_⟼U))).
 
 Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ [λ](T,o) : [∏;_](T,U) ::= 
-	   (_, T ⟼ U ⟼ (λh₂ T (_⟼U₁,_⟼U))).
+	   (T ⟼ U ⟼ (λh₁ T (_⟼U)), T ⟼ U ⟼ (λh₂ T (_⟼U₁,_⟼U))).
 
 Definition ev1 { ⊢ T U Type, f : [∏;_](T,U), o : T } ⊢ [ev;_](f,o,U) : U ::= 
-	   (_, T ⟼ U ⟼ (ev₂ T (_⟼U₁,_⟼U))).
+	   (T ⟼ U ⟼ (ev₁ T (_⟼U)), T ⟼ U ⟼ (ev₂ T (_⟼U₁,_⟼U))).
 
 Theorem modus_ponens { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 
 	(
-	T ⟼ U ⟼ V ⟼ (lambda1₁ (pi1₁ T U) 
-			       (pi1₁ (pi1₁ U V) (pi1₁ T V))
+	T ⟼ U ⟼ V ⟼ (lambda1₁ (pi1₁ T U) (pi1₁ (pi1₁ U V) (pi1₁ T V))
 			      (f ⟼ (lambda1₁ (pi1₁ U V) (pi1₁ T V) 
 					(g ⟼ (lambda1₁ T V (t ⟼ (ev1₁ U V g (ev1₁ T U f t)))))))),
 	T ⟼ U ⟼ V ⟼ (lambda1₂ (pi1₂ T U) (pi1₂ (pi1₂ U V) (pi1₂ T V))

@@ -21,7 +21,8 @@ let rec tau (pos:position) (env:context) e : lf_expr =
       match h with
       | TAC _ -> raise NotImplemented
       | V v -> 
-	  printf "%a: tau: application of variables not implemented yet: e = %a\n%!" _pos_of e _e e;
+	  (* printf "%a: tau: variable encountered, not implemented yet: %a\n%!" _pos_of e _e e; *)
+	  (* print_context (Some 7) stdout env; *)
 	  raise NotImplemented
       | FUN _ -> raise NotImplemented
       | U uh -> raise (TypeCheckingFailure(env, [pos, "a u-expression doesn't have a type"]))

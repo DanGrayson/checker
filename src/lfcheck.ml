@@ -44,7 +44,7 @@ let abstraction3 pos (env:context) = function
 	| APPLY(T T_Pi, ARG(t, _)) -> ts_bind pos (x,t) env
 	| _ -> env)
       with NotImplemented ->
-	printf "%a: warning: abstraction3: \"tau\" not implemented for %a\n%!" _pos_of f _e f;
+	(* printf "%a: warning: abstraction3: \"tau\" not implemented for %a\n%!" _pos_of f _e f; *)
 	env)
   | _ -> env
 
