@@ -230,7 +230,7 @@ and parse_file env filename =
   let lexbuf = Lexing.from_channel (open_in filename) in
   lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = filename};
   let env = read_eval_command env lexbuf in
-  printf "done parsing file %s\n%!" filename;
+  (* printf "done parsing file %s\n%!" filename; *)
   env
 
 let strname =
