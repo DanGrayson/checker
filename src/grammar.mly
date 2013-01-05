@@ -122,30 +122,21 @@ let pi1_relative_implication t u =
       bind_pi (pos,e,(bind_pi_list_rev p ee)) (bind_pi_list_rev q (bind_some_sigma f (arrow (bind_pi_list_rev p j) k)))
   | None -> raise NotImplemented
 
-let apply_binder_1 pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_type) (t2 : lf_expr -> lf_type) (u : lf_type) = 
-  (* syntax is { v_1 : T_1 , ... , v_n : T_n |- v Type } u  or  { v_1 : T_1 , ... , v_n : T_n |- v:T } u *)
-  (* t1 is texp or oexp; t2 is (fun t -> istype t) or (fun o -> hastype o t) *)
-  let (vpos,v) = v in
-  let c = List.map (fun ((vpos,v),t) -> vpos, F_Sigma(v,oexp,hastype (var_to_lf_pos pos v) t)) c in
-  let t = pos, F_Sigma(v,t1,t2 (var_to_lf_pos pos v)) in
-  let t = List.fold_right pi1_pairs_implication c t in
-  let u = pi1_pairs_implication t u in
-  unmark u
-
-let apply_binder_2 pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_type) (t2 : lf_expr -> lf_type) (u : lf_type) = 
-  (* syntax is { v_1 : T_1 , ... , v_n : T_n |- v Type } u  or  { v_1 : T_1 , ... , v_n : T_n |- v:T } u *)
-  (* t1 is texp or oexp; t2 is (fun t -> istype t) or (fun o -> hastype o t) *)
-  let (vpos,v) = v in
-  let c = List.map (fun ((vpos,v),t) -> vpos, F_Sigma(v,oexp,hastype (var_to_lf_pos pos v) t)) c in
-  let t = pos, F_Sigma(v,t1,t2 (var_to_lf_pos pos v)) in
-  let t = List.fold_right pi1_relative_implication c t in
-  let u = pi1_relative_implication t u in
-  unmark u
-
-let apply_binder pos c v t1 t2 u =
+let pi1_implication t u = (
   match !Toplevel.binder_mode with
-  | Toplevel.Binder_mode_relative -> apply_binder_2 pos c v t1 t2 u
-  | Toplevel.Binder_mode_pairs -> apply_binder_1 pos c v t1 t2 u
+  | Toplevel.Binder_mode_relative -> pi1_relative_implication
+  | Toplevel.Binder_mode_pairs -> pi1_pairs_implication
+ ) t u
+
+let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_type) (t2 : lf_expr -> lf_type) (u : lf_type) = 
+  (* syntax is { v_1 : T_1 , ... , v_n : T_n |- v Type } u  or  { v_1 : T_1 , ... , v_n : T_n |- v:T } u *)
+  (* t1 is texp or oexp; t2 is (fun t -> istype t) or (fun o -> hastype o t) *)
+  let (vpos,v) = v in
+  let c = List.map (fun ((vpos,v),t) -> vpos, F_Sigma(v,oexp,hastype (var_to_lf_pos pos v) t)) c in
+  let t = pos, F_Sigma(v,t1,t2 (var_to_lf_pos pos v)) in
+  let t = List.fold_right pi1_implication c t in
+  let u = pi1_implication t u in
+  unmark u
 
 %}
 %start command ts_exprEof
@@ -274,9 +265,7 @@ unmarked_lf_type:
 	{ unmark (object_uequality a b t) }
 
     | a= lf_type Turnstile b= lf_type
-	{ match !Toplevel.binder_mode with
-	  | Toplevel.Binder_mode_relative -> unmark (pi1_relative_implication a b)
-	  | Toplevel.Binder_mode_pairs -> unmark (pi1_pairs_implication a b) }
+	{ unmark (pi1_implication a b) }
 
     | v= marked_variable Type
 	{ let (pos,v) = v in F_Sigma(v,texp,istype (var_to_lf_pos pos v)) }

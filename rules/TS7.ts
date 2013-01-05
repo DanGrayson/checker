@@ -39,7 +39,8 @@ Definition Isaset { ⊢ X Type } ⊢ [∏;x](X,[∏;x'](X,[Isaprop]([Id](X,x,x')
 
 Definition idfun { ⊢ X Type } ⊢ [λ;x](X,x) : [∏;_](X,X) ::= (_,X ⟼ (lambda1₂ X X (x ⟼ x,x ⟼ x))).
 
-# Theorem idisweq { ⊢ X Type } : [Isweq](X,X,[idfun](X)) ::= _ .
+#Theorem idisweq { ⊢ X Type } : [Isweq](X,X,[idfun](X)) 
+#   ::= _  .
 
 #   Local Variables:
 #   compile-command: "make -C .. rules7 "
