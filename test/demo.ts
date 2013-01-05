@@ -55,7 +55,7 @@ Check TS : { |- u v Ulevel }       [ u ~ v Ulevel ].    # ulevel equivalence for
 
 # include the standard rules of inference
 
-Include "rules/TS.ts".
+Include "rules/TS2.ts".
 
 # Sample theorems demonstrating the syntax.
 

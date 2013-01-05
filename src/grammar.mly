@@ -676,7 +676,13 @@ unmarked_ts_expr:
 	{ APPLY(U U_max, u**v**END)  }
 
     | label= tsterm_head args= arglist
-	{ APPLY(label,list_to_spine args) }
+	{ 
+	  let args = list_to_spine args in
+	  let args = 
+	    match label with
+	    | V _ -> CAR args
+	    | _ -> args in	  
+	  APPLY(label,args) }
 
     | LeftParen a= ts_expr Comma b= ts_expr RightParen
 	{ CONS(a,b) }

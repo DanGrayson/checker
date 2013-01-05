@@ -2,7 +2,7 @@
 
 Mode Relative.
 
-Include "rules/TS.ts".
+Include "rules/TS2.ts".
 
 Variable T Type.
 Theorem TT |- T Type ::= (pair _ _).

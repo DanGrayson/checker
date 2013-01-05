@@ -2,7 +2,7 @@
 
 Mode Pairs.
 
-Include "rules/TS.ts".
+Include "rules/TS2.ts".
 
 # derive versions of some inference rules with simple types
 
@@ -35,7 +35,7 @@ Clear.
 
 Mode Relative.
 
-Include "rules/TS.ts".
+Include "rules/TS2.ts".
 
 # derive versions of some inference rules with simple types
 

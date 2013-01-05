@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+Mode Pairs.
+
 Include "rules/TS6.ts".
 
 # resizing rules
@@ -17,9 +19,10 @@ Definition Iscontr { ⊢ X Type } ⊢ [Σ;x](X,[∏;y](X,[Id](X,y,x))) Type ::=
 
 Definition Hfiber { ⊢ X Y Type, f : [∏;_](X,Y), y:Y } ⊢ [Σ;x](X,[Id](Y,[ev;_](f,x,Y),y)) Type ::=
    (_, X ⟼ Y ⟼ f ⟼ y ⟼ 
-     (Σ_istype₂ X 
-     		(x ⟼ ([Id] Y₁ ([ev] f₁ x (_ ⟼ Y₁)) y₁),
-		 x ⟼ (_, (Id_istype₂ Y (ev1₂ X Y f x) y)₂)))).
+     (Σ_istype₂ X (x ⟼ ([Id] Y₁ ([ev] f₁ x (_ ⟼ Y₁)) y₁), x ⟼ (Id_istype₂ Y (ev1₂ X Y f x) y)))).
+
+Definition Isweq { ⊢ X Y Type, f : [∏;_](X,Y) } ⊢ [∏;y](Y,[Iscontr]([Hfiber](X,Y,f,y))) Type 
+   ::= (_,X ⟼ Y ⟼ f ⟼ (pi_2 Y (y ⟼ (Iscontr_1 (Hfiber_1 X_1 Y_1 f_1 y)), y ⟼ (Iscontr_2 (Hfiber_2 X Y f y))))).
 
 #   Local Variables:
 #   compile-command: "make -C .. rules7 "

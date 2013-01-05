@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+Mode Pairs.
 Include "rules/TS7.ts".
 Include "rules/others.ts".
 
