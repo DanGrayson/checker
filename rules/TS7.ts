@@ -24,6 +24,21 @@ Definition Hfiber { ⊢ X Y Type, f : [∏;_](X,Y), y:Y } ⊢ [Σ;x](X,[Id](Y,[e
 Definition Isweq { ⊢ X Y Type, f : [∏;_](X,Y) } ⊢ [∏;y](Y,[Iscontr]([Hfiber](X,Y,f,y))) Type 
    ::= (_,X ⟼ Y ⟼ f ⟼ (pi_2 Y (y ⟼ (Iscontr_1 (Hfiber_1 X_1 Y_1 f_1 y)), y ⟼ (Iscontr_2 (Hfiber_2 X Y f y))))).
 
+Definition Weq { ⊢ X Y Type } ⊢ [Σ;f]([∏;_](X,Y),[Isweq](X,Y,f)) Type 
+   ::= (_,X ⟼ Y ⟼ (Σ_istype₂ (pi1_2 X Y) (f ⟼ (Isweq_1 X_1 Y_1 f), f ⟼ (Isweq_2 X Y f)))).
+
+Definition Isaprop { ⊢ X Type } ⊢ [∏;x](X,[∏;x'](X,[Iscontr]([Id](X,x,x')))) Type
+   ::= (_,X ⟼ (pi_2 X (x ⟼ ([∏] X_1 (x' |-> (Iscontr_1 ([Id] X_1 x x')))), 
+   		       x ⟼ (pi_2 X (x' |-> (Iscontr_1 ([Id] X_1 x_1 x')),
+		       		    x' ⟼ (Iscontr_2 (Id_istype₂ X x x'))))))).
+
+Definition Isaset { ⊢ X Type } ⊢ [∏;x](X,[∏;x'](X,[Isaprop]([Id](X,x,x')))) Type
+   ::= (_,X ⟼ (pi_2 X (x ⟼ ([∏] X_1 (x' |-> (Isaprop_1 ([Id] X_1 x x')))), 
+   		       x ⟼ (pi_2 X (x' |-> (Isaprop_1 ([Id] X_1 x_1 x')),
+		       		    x' ⟼ (Isaprop_2 (Id_istype₂ X x x'))))))).
+
+Definition idfun { ⊢ X Type } ⊢ [λ;x](X,x) : [∏;_](X,X) ::= (_,X ⟼ (lambda1_2 X X (x |-> x,x |-> x))).
+
 #   Local Variables:
 #   compile-command: "make -C .. rules7 "
 #   End:
