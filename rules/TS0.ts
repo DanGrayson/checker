@@ -22,7 +22,7 @@ Axiom 3.4.15 UU { ⊢ M Ulevel } ⊢ [U](M) Type.
 
 Axiom 3.4.16 uu { ⊢ M Ulevel } ⊢ [u](M) : [U]([next](M)).
 
-Axiom 3.4.17 El { ⊢ M Ulevel, o : [U](M) } ⊢ *o Type.
+Axiom 3.4.17 El_istype { ⊢ M Ulevel, o : [U](M) } ⊢ *o Type.
 
 Axiom 3.4.18 El_u_reduction { ⊢ M Ulevel } [ *[u](M) = [U](M) ].
 
@@ -52,7 +52,7 @@ Axiom 3.4.24.2 λ_equality2 { ⊢ T Type } { x : T ⊢ U U' Type, o o' : U/x }
 
 			[ [λ](T,o) = [λ](T,o'): [∏;t](T,U/t) ].
 
-Axiom 3.4.25 ev { ⊢ T Type } { t : T ⊢ U Type } { ⊢ f : [∏](T,U), o : T } ⊢ [ev;t](f,o,U/t) : U/o.
+Axiom 3.4.25 ev_hastype { ⊢ T Type } { t : T ⊢ U Type } { ⊢ f : [∏](T,U), o : T } ⊢ [ev;t](f,o,U/t) : U/o.
 
 Axiom 3.4.26 ev_eq { ⊢ T Type, o o' : T } { t : T ⊢ U U' Type } { ⊢ f f' : [∏;t](T,U/t) } 
 

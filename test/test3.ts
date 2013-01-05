@@ -13,7 +13,7 @@ Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ [λ](T,o) : [∏;_](
 	   (T ⟼ U ⟼ (λh₁ T (_⟼U)), T ⟼ U ⟼ (λh₂ T (_⟼U₁,_⟼U))).
 
 Definition ev1 { ⊢ T U Type, f : [∏;_](T,U), o : T } ⊢ [ev;_](f,o,U) : U ::= 
-	   (T ⟼ U ⟼ (ev₁ T (_⟼U)), T ⟼ U ⟼ (ev₂ T (_⟼U₁,_⟼U))).
+	   (T ⟼ U ⟼ (ev_hastype₁ T (_⟼U)), T ⟼ U ⟼ (ev_hastype₂ T (_⟼U₁,_⟼U))).
 
 Theorem modus_ponens { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 
 	(
@@ -46,7 +46,7 @@ Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ [λ](T,o) : [∏;_](
 	   T ⟼ U ⟼ o ⟼ (([λ] T o), T' ⟼ U' ⟼ (λh T (_ ⟼ U) o CDR T' (_ ⟼ _ ⟼ U'))).
 
 Definition ev1 { ⊢ T U Type, f : [∏;_](T,U), o : T } ⊢ [ev;_](f,o,U) : U ::=
-	   T ⟼ U ⟼ f ⟼ o ⟼ ((ev T (_ ⟼ U) f o CAR), T' ⟼ U' ⟼ (ev T (_ ⟼ U) f o CDR T' (_ ⟼ _ ⟼ U'))).
+	   T ⟼ U ⟼ f ⟼ o ⟼ ((ev_hastype T (_ ⟼ U) f o CAR), T' ⟼ U' ⟼ (ev_hastype T (_ ⟼ U) f o CDR T' (_ ⟼ _ ⟼ U'))).
 
 Theorem modus_ponens { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 
 	# this is a lot longer than the proof in test4.ts

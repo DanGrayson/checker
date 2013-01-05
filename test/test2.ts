@@ -2,7 +2,7 @@
 Mode Pairs.
 Include "rules/TS.ts".
 Check LF pi.
-Check LF ev.
+Check LF ev_hastype.
 Check LF λh.
 
 End.
@@ -10,7 +10,7 @@ End.
 Mode Relative.
 Include "rules/TS.ts".
 Check LF pi.
-Check LF ev.
+Check LF ev_hastype.
 Check LF λh.
 Clear.
 
