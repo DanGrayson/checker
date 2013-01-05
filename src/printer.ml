@@ -1,6 +1,6 @@
 (** Functions for converting expressions to strings for printing *)
 
-let enable_variable_prettification = true
+let enable_variable_prettification = false
 
 open Error
 open Variables
@@ -256,7 +256,7 @@ and lf_expr_to_string_with_subs subs e : smart_string =
       application_to_lf_string (lf_expr_to_string_with_subs subs) h args
 
 and dependent_sub subs prefix infix infix_prec (v,t,u) =
-  let used = occurs_in_type v u in
+  let used = not enable_variable_prettification || occurs_in_type v u in
   let w,subs = var_chooser v subs occurs_in_type u in
   let u = lf_type_to_string_with_subs subs u in
   let t = lf_type_to_string_with_subs subs t in

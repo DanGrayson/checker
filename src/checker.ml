@@ -209,7 +209,7 @@ let rec process_command env lexbuf =
     | Toplevel.CheckUniverses -> checkUniversesCommand env pos; env
     | Toplevel.Include filename -> parse_file env filename
     | Toplevel.Clear -> []
-    | Toplevel.Mode_single -> Toplevel.binder_mode := raise NotImplemented; env
+    | Toplevel.Mode_simple -> Toplevel.binder_mode := Toplevel.Binder_mode_simple; env
     | Toplevel.Mode_pairs -> Toplevel.binder_mode := Toplevel.Binder_mode_pairs; env
     | Toplevel.Mode_relative -> Toplevel.binder_mode := Toplevel.Binder_mode_relative; env
     | Toplevel.End -> error_summary pos; raise StopParsingFile

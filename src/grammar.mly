@@ -19,6 +19,17 @@ let cdr (hd,reversed_args) = (hd, CDR reversed_args)
 
 type binder = position * var * lf_type
 
+let subst_binder sub (b:binder) = 
+  match b with
+  | (pos,v,a) -> (pos,v,Substitute.subst_type sub a)
+
+let subst_binder_list sub (b:binder list) = List.map (subst_binder sub) b
+
+let subst_binder_option sub (b:binder option) =
+  match b with
+  | Some b -> Some (subst_binder sub b)
+  | None -> None
+
 let bind_sigma binder b =
   match binder with
   | (pos,v,a) -> with_pos pos (F_Sigma(v,a,b))
@@ -48,7 +59,7 @@ let unbind_pair p : binder option * lf_type =
 
 let is_t_o_expr t = 
   match unmark t with
-  | F_Apply(( F_uexp | F_texp | F_oexp ), _) -> true
+  | F_Apply(( F_texp | F_oexp ), _) -> true
   | _ -> false  
 
  (** Suppose t has the form (e:E) ** J and u has the form (f:F) ** K.  We think
@@ -66,32 +77,25 @@ let pi1_pairs_implication t u =
 	match unmark ff with
 	| F_Singleton s -> let (_,bt) = Lfcheck.strip_singleton s in bt
 	| _ -> ff in
-      if false then printf "   base type bt = %a\n%!" _t bt;
-      if false then printf " old e = %a; ee = %a; f = %a; ff = %a; k = %a\n%!" _v e _t ee _v f _t ff _t k;
       let k = 
 	if is_t_o_expr bt 
 	then bind_sigma (fpos,f,with_pos fpos (F_Singleton(var_to_lf_pos fpos f,bt))) k
 	else k in
-      let k = Substitute.subst_type (e,with_pos epos (APPLY(V e, CAR END))) k in
-      let k = Substitute.subst_type (f,with_pos fpos (APPLY(V f, ARG (with_pos epos (APPLY(V e, CAR END)), END)))) k in
-      if false then printf " new k = %a\n%!" _t k;
+      let e_1 = with_pos epos (APPLY(V e, CAR END)) in
+      let k = Substitute.subst_type (e,e_1) k in
+      let k = Substitute.subst_type (f,with_pos fpos (APPLY(V f, ARG (e_1, END)))) k in
       let t = bind_sigma (epos,e,ee) j in
-      bind_sigma (fpos,f,bind_pi (epos,e,ee) ff) (bind_pi (epos,e,t) k)
+      let k = bind_pi (epos,e,t) k in
+      bind_sigma (fpos,f,bind_pi (epos,e,ee) ff) k
   | Some (epos,e,ee), None ->
-      if false then printf " old k = %a\n%!" _t k;
-      let k = Substitute.subst_type (e,with_pos epos (APPLY(V e, CAR END))) k in
-      if false then printf " new k = %a\n%!" _t k;
+      let e_1 = with_pos epos (APPLY(V e, CAR END)) in
+      let k = Substitute.subst_type (e,e_1) k in
       let t = bind_sigma (epos,e,ee) j in
-      bind_pi (epos,e,t) k
+      let k = bind_pi (epos,e,t) k in
+      k
   | _ -> 
       printf " pi1_pairs_implication case unimplemented\n%!";
       raise NotImplemented
-
-let pi1_pairs_implication t u =
-  if false then printf " entering pi1_pairs_implication:\n\t t = %a\n\t u = %a\n%!" _t t _t u;
-  let r = pi1_pairs_implication t u in
-  if false then printf " leaving pi1_pairs_implication:\n\t r = %a\n%!" _t r;
-  r
 
  (** for a type p of the form (p_1:P_1) -> ... -> (p_n:P_n) -> (e:E) ** J we
      return [p_n,P_n;...;p_1,P_n],(e,E),J. *)
@@ -119,11 +123,16 @@ let pi1_relative_implication t u =
   match e with
   | Some (pos,e,ee) ->
       let j = Substitute.subst_type (e,apply_vars (var_to_lf_pos pos e) (List.rev p)) j in
-      bind_pi (pos,e,(bind_pi_list_rev p ee)) (bind_pi_list_rev q (bind_some_sigma f (arrow (bind_pi_list_rev p j) k)))
+      bind_pi (pos,e,bind_pi_list_rev p ee) (bind_pi_list_rev q (bind_some_sigma f (arrow (bind_pi_list_rev p j) k)))
   | None -> raise NotImplemented
+
+let simple_implication t u =
+  printf " simple_implication\n\t t = %a\n\t u = %a\n%!" _t t _t u;
+  raise NotImplemented
 
 let pi1_implication t u = (
   match !Toplevel.binder_mode with
+  | Toplevel.Binder_mode_simple -> simple_implication
   | Toplevel.Binder_mode_relative -> pi1_relative_implication
   | Toplevel.Binder_mode_pairs -> pi1_pairs_implication
  ) t u
@@ -159,7 +168,7 @@ let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_t
   Semicolon Ulevel Kumax Type Pi Lambda Sigma Check Show End Variable Alpha EOF
   Universes Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_CAR K_CDR Times Slash
   Turnstile DoubleArrow DoubleArrowFromBar ColonColonEqual ColonEqual Theorem
-  LeftBrace RightBrace TurnstileDouble ColonColon Include Clear Mode Single
+  LeftBrace RightBrace TurnstileDouble ColonColon Include Clear Mode Simple
   Relative Pairs
 
 (* precedences, lowest first *)
@@ -435,7 +444,7 @@ unmarked_command:
     | Show Period { Toplevel.Show None }
     | Show n= NUMBER Period { Toplevel.Show (Some n) }
     | End Period { Toplevel.End }
-    | Mode Single Period { Toplevel.Mode_single }
+    | Mode Simple Period { Toplevel.Mode_simple }
     | Mode Pairs Period { Toplevel.Mode_pairs }
     | Mode Relative Period { Toplevel.Mode_relative }
 
