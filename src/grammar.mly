@@ -32,11 +32,21 @@ let subst_binder_option sub (b:binder option) =
 
 let bind_sigma binder b =
   match binder with
-  | (pos,v,a) -> with_pos pos (F_Sigma(v,a,b))
+  | (pos,v,a) -> 
+      let v' = newfresh v in
+      let v'' = var_to_lf_pos pos v' in
+      let b = Substitute.subst_type (v,v'') b in
+      let v = v' in
+      with_pos pos (F_Sigma(v,a,b))
 
 let bind_pi binder b =
   match binder with 
-  | (pos,v,a) -> with_pos pos (F_Pi(v,a,b))
+  | (pos,v,a) -> 
+      let v' = newfresh v in
+      let v'' = var_to_lf_pos pos v' in
+      let b = Substitute.subst_type (v,v'') b in
+      let v = v' in
+      with_pos pos (F_Pi(v,a,b))
 
 let bind_some_sigma binder b =
   match binder with
@@ -57,6 +67,11 @@ let unbind_pair p : binder option * lf_type =
   | F_Sigma(v,a,b) -> Some (get_pos p,v,a), b
   | _ -> None, p
 
+let good_var_name p v =
+  match unbind_pair p with
+  | Some (pos,v,a), b -> v
+  | None, b -> v
+
 let is_t_o_expr t = 
   match unmark t with
   | F_Apply(( F_texp | F_oexp ), _) -> true
@@ -68,7 +83,7 @@ let is_t_o_expr t =
      u.  We return a new type describing a parametrized expression of type E->F
      together with a judgment about it, of type (E**J)->K.  The resulting type
      looks like (f: (e:E)->F) ** (e : (e':E)**J)->K. *)
-let pi1_pairs_implication t u =
+let pi1_pairs_implication (vpos,v) t u =
   let (e,j) = unbind_pair t in
   let (f,k) = unbind_pair u in
   match e,f with
@@ -81,17 +96,19 @@ let pi1_pairs_implication t u =
 	if is_t_o_expr bt 
 	then bind_sigma (fpos,f,with_pos fpos (F_Singleton(var_to_lf_pos fpos f,bt))) k
 	else k in
-      let e_1 = with_pos epos (APPLY(V e, CAR END)) in
-      let k = Substitute.subst_type (e,e_1) k in
-      let k = Substitute.subst_type (f,with_pos fpos (APPLY(V f, ARG (e_1, END)))) k in
+      let v_1 = with_pos epos (APPLY(V v, CAR END)) in
+      let k = Substitute.subst_type (v,v_1) k in
+      let k = Substitute.subst_type (f,with_pos fpos (APPLY(V f, ARG (v_1, END)))) k in
       let t = bind_sigma (epos,e,ee) j in
-      let k = bind_pi (epos,e,t) k in
-      bind_sigma (fpos,f,bind_pi (epos,e,ee) ff) k
+      let k = bind_pi (epos,v,t) k in
+      let ff = bind_pi (epos,v,ee) ff in
+      let r = bind_sigma (fpos,f,ff) k in
+      r
   | Some (epos,e,ee), None ->
-      let e_1 = with_pos epos (APPLY(V e, CAR END)) in
-      let k = Substitute.subst_type (e,e_1) k in
+      let v_1 = with_pos epos (APPLY(V v, CAR END)) in
+      let k = Substitute.subst_type (v,v_1) k in
       let t = bind_sigma (epos,e,ee) j in
-      let k = bind_pi (epos,e,t) k in
+      let k = bind_pi (epos,v,t) k in
       k
   | _ -> 
       printf " pi1_pairs_implication case unimplemented\n%!";
@@ -117,34 +134,39 @@ let unbind_relative p : binder list * binder option * lf_type =
      (P -> J) -> K.  All this goes through if t has the form P_1 -> ... -> P_n
      -> (e:E) ** J, and similarly for u, because we can rewrite t in terms of
      P = P_1 ** ... ** P_n. *)
-let pi1_relative_implication t u =
+let pi1_relative_implication (vpos,v) t u =
   let (p,e,j) = unbind_relative t in
   let (q,f,k) = unbind_relative u in
   match e with
   | Some (pos,e,ee) ->
-      let j = Substitute.subst_type (e,apply_vars (var_to_lf_pos pos e) (List.rev p)) j in
-      bind_pi (pos,e,bind_pi_list_rev p ee) (bind_pi_list_rev q (bind_some_sigma f (arrow (bind_pi_list_rev p j) k)))
+      let j = Substitute.subst_type (e,apply_vars (var_to_lf_pos pos v) (List.rev p)) j in
+      let ee = bind_pi_list_rev p ee in
+      let j = bind_pi_list_rev p j in
+      let k = arrow j k in
+      let j = bind_pi_list_rev q (bind_some_sigma f k) in
+      let t = bind_pi (pos,v,ee) j in
+      t
   | None -> raise NotImplemented
 
-let simple_implication t u =
+let simple_implication (vpos,v) t u =
   printf " simple_implication\n\t t = %a\n\t u = %a\n%!" _t t _t u;
   raise NotImplemented
 
-let pi1_implication t u = (
+let pi1_implication (v,t) u = (
   match !Toplevel.binder_mode with
   | Toplevel.Binder_mode_simple -> simple_implication
   | Toplevel.Binder_mode_relative -> pi1_relative_implication
   | Toplevel.Binder_mode_pairs -> pi1_pairs_implication
- ) t u
+ ) v t u
 
 let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_type) (t2 : lf_expr -> lf_type) (u : lf_type) = 
   (* syntax is { v_1 : T_1 , ... , v_n : T_n |- v Type } u  or  { v_1 : T_1 , ... , v_n : T_n |- v:T } u *)
   (* t1 is texp or oexp; t2 is (fun t -> istype t) or (fun o -> hastype o t) *)
   let (vpos,v) = v in
-  let c = List.map (fun ((vpos,v),t) -> vpos, F_Sigma(v,oexp,hastype (var_to_lf_pos pos v) t)) c in
+  let c = List.map (fun ((vpos,v),t) -> (vpos,v), (vpos, F_Sigma(v,oexp,hastype (var_to_lf_pos pos v) t))) c in
   let t = pos, F_Sigma(v,t1,t2 (var_to_lf_pos pos v)) in
   let t = List.fold_right pi1_implication c t in
-  let u = pi1_implication t u in
+  let u = pi1_implication ((vpos,v),t) u in
   unmark u
 
 %}
@@ -274,7 +296,9 @@ unmarked_lf_type:
 	{ unmark (object_uequality a b t) }
 
     | a= lf_type Turnstile b= lf_type
-	{ unmark (pi1_implication a b) }
+    	{ let v = good_var_name a (Var "foo") in (* the "|-" operator is not fully implemented yet *)
+	  let v = get_pos a, v in
+	  unmark (pi1_implication (v,a) b) }
 
     | v= marked_variable Type
 	{ let (pos,v) = v in F_Sigma(v,texp,istype (var_to_lf_pos pos v)) }
@@ -502,13 +526,15 @@ unmarked_ts_judgment:
 	{ F_Sigma(newunused(),a,b) }
 
     | a= ts_judgment TurnstileDouble b= ts_judgment
-	{ unmark (pi1_relative_implication a b) }
+    	{ let v = good_var_name a (Var "foo") in (* the "|-" operator is not fully implemented yet *)
+	  let v = get_pos a, v in
+	  unmark (pi1_implication (v,a) b) }
 
 (* base judgments *)
 
     | Type
 	{ let pos = Position($startpos, $endpos) in
-	  let v = Var "t" in
+	  let v = Var "T" in
 	  F_Sigma(v, texp, with_pos pos (F_Apply(F_istype, [var_to_lf_pos pos v]))) }
 
     | Colon t= ts_expr

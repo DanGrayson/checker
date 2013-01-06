@@ -65,10 +65,6 @@ Theorem compose1 { ⊢ T Type, U Type, V Type, f:T⟶U, g:U⟶V, t:T } : V ::=
         T ⟼ U ⟼ V ⟼ f ⟼ g ⟼ t ⟼ ((ev_hastype U (_ ⟼ V) g (ev_hastype T (_ ⟼ U) f t CAR) CAR), 
         T' ⟼ U' ⟼ V' ⟼ f' ⟼ g' ⟼ t' ⟼ (ev_hastype U (_ ⟼ V) g (ev_hastype T (_ ⟼ U) f t CAR) CDR U' (_ ⟼ _ ⟼ V') g' (ev_hastype T (_ ⟼ U) f t CDR T' (_ ⟼ _ ⟼ U') f' t'))).
 
-Theorem LF compose1' : T Type |- U Type |- V Type |- f :: ([Pi] T (_ ⟼ U)) |- g :: ([Pi] U (_ ⟼ V)) |- t :: T |- v :: V := 
-        T ⟼ U ⟼ V ⟼ f ⟼ g ⟼ t ⟼ ((ev_hastype U (_ ⟼ V) g (ev_hastype T (_ ⟼ U) f t CAR) CAR), 
-        T' ⟼ U' ⟼ V' ⟼ f' ⟼ g' ⟼ t' ⟼ (ev_hastype U (_ ⟼ V) g (ev_hastype T (_ ⟼ U) f t CAR) CDR U' (_ ⟼ _ ⟼ V') g' (ev_hastype T (_ ⟼ U) f t CDR T' (_ ⟼ _ ⟼ U') f' t'))).
-
 Theorem compose1a { ⊢ T Type, U Type, V Type, g:U⟶V, f:T⟶U } : T⟶V ::=
         T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ ((λh T (_ ⟼ V) (t ⟼ (compose1 T U V f g t CAR)) CAR),
 	T' ⟼ U' ⟼ V' ⟼ g' ⟼ f' ⟼ 

@@ -1,3 +1,4 @@
+# the "|-" operator is not fully implemented yet
 
 Mode Pairs.
 
