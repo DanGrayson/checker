@@ -4,6 +4,8 @@ let debug = false
 
 let show_rules = false
 
+let show_definitions = false
+
 let try_normalization = false
 
 let env_limit = Some 9
@@ -63,8 +65,9 @@ let rec handle_exception pos0 e =
       fprintf stderr "%s: syntax error\n%!" pos;
       Tokens.bump_error_count();
       raise_switch ex Error_Handled
-  | TypeCheckingFailure (env,ps) as ex -> 
+  | TypeCheckingFailure (env,surr,ps) as ex -> 
       List.iter (fun (pos,s) -> fprintf stderr "%s: %s\n%!" (errfmt pos) s) ps;
+      show_surroundings surr;
       print_context env_limit stderr env;
       Tokens.bump_error_count();
       raise_switch ex Error_Handled
@@ -106,7 +109,7 @@ let add_tVars env tvars =
       env
 
 let lf_axiomCommand env pos name t =
-  if show_rules then ( printf "\nAxiom LF %s: %a\n%!" name  _t t );
+  if show_rules then ( printf "Axiom LF %s: %a\n%!" name  _t t );
   let t = Lfcheck.type_validity env t in
   let v = Var name in
   ensure_new_name env pos v;
@@ -115,23 +118,23 @@ let lf_axiomCommand env pos name t =
 let defCommand env defs = 
   List.fold_left
     (fun env (v, pos, tm, tp) -> 
-      printf "Define %a = %a\n%!" _v v  _e tm;
-      printf "       %a : %a\n%!" _v v  _t tp;
+      if show_definitions then printf "Define %a = %a\n%!" _v v  _e tm else printf "Define %a\n%!" _v v;
+      if show_definitions then printf "       %a : %a\n%!" _v v  _t tp;
       let tp' = type_validity env tp in
       if not (Alpha.UEqual.type_equiv empty_uContext tp tp') then
-      printf "       %a : %a [after tactics]\n%!" _v v  _t tp';
+      if show_definitions then printf "       %a : %a [after tactics]\n%!" _v v  _t tp';
       let tm' = type_check env tm tp' in
       if not (Alpha.UEqual.term_equiv empty_uContext tm tm') then (
-	printf "       %a = %a [after tactics]\n%!" _v v  _e tm');
+	if show_definitions then printf "       %a = %a [after tactics]\n%!" _v v  _e tm');
       let tm'' = term_normalization env tm' tp' in
       if not (Alpha.UEqual.term_equiv empty_uContext tm' tm'') then (
-	printf "       %a = %a [normalized]\n%!" _v v  _e tm'';
-	(* printf "       %a = %a [normalized, TS format]\n%!" _v v  _ts tm''; *)
+	if show_definitions then printf "       %a = %a [normalized]\n%!" _v v  _e tm'';
+	(* if show_definitions then printf "       %a = %a [normalized, TS format]\n%!" _v v  _ts tm''; *)
 	let _ = type_check env tm'' tp' in ();
        );
       let tp'' = type_normalization env tp' in
       if not (Alpha.UEqual.type_equiv empty_uContext tp' tp'') then (
-	printf "       %a : %a [normalized]\n%!" _v v  _t tp'';
+	if show_definitions then printf "       %a : %a [normalized]\n%!" _v v  _t tp'';
 	let _ = type_validity env tp'' in ();
        );
       def_bind v pos tm' tp' env
@@ -141,7 +144,7 @@ let defCommand env defs =
 let is_can x = (function (APPLY _) -> true | _ -> false) (unmark x)
 
 let checkLFCommand env pos x =
-  printf "\nCheck LF   = %a\n%!" _e x;
+  printf "Check LF   = %a\n%!" _e x;
   if is_can x then 
     let (x',t) = Lfcheck.type_synthesis env x in
     printf "           = %a\n" _e x';
@@ -153,7 +156,7 @@ let checkLFCommand env pos x =
       printf "           : %a [normalized]\n%!" _t t'
 
 let checkLFtypeCommand env t =
-  printf "\nCheck      : %a\n%!" _t t;
+  printf "Check      : %a\n%!" _t t;
   let t' = Lfcheck.type_validity env t in
   if not (Alpha.UEqual.type_equiv empty_uContext t t') then
     printf "           : %a [after tactics]\n%!" _t t';
@@ -163,7 +166,7 @@ let checkLFtypeCommand env t =
       printf "           : %a [after normalization]\n%!" _t t''
 
 let checkTSCommand env x =
-  printf "\nCheck TS   : %a\n%!" _ts x;
+  printf "Check TS   : %a\n%!" _ts x;
   let (x,t) = Lfcheck.type_synthesis env x in
   printf "     type :: %a\n" _t t;
   if unmark t = unmark oexp then (
@@ -175,14 +178,14 @@ let checkTSCommand env x =
    )
 
 let alphaCommand env (x,y) =
-  printf "\nAlpha      : %s\n" (if (Alpha.UEqual.term_equiv (UContext ([],[])) x y) then "true" else "false");
+  printf "Alpha      : %s\n" (if (Alpha.UEqual.term_equiv (UContext ([],[])) x y) then "true" else "false");
   printf "           : %a\n" _ts x;
   printf "           : %a\n%!" _ts y
 
 let checkUniversesCommand env pos =
   try
     Universe.consistency env;
-    printf "\nCheck Universes: okay\n"
+    printf "Check Universes: okay\n"
   with Universe.Inconsistency (p,q) -> print_inconsistency p q
 
 let show_command env n = 

@@ -10,18 +10,6 @@ open Tau
 open Printer
 open Lfcheck
 
-let show_surr (i,e,t) =
-  let _ = match i with
-  | Some i -> printf "  argument %d in %a\n" i _e e
-  | None ->   printf "  in expression %a\n"   _e e in
-  let _ = match t with
-  | Some t -> printf "        of type %a\n" _t t
-  | None -> () in
-  flush stdout
-
-let show_surroundings (surr:surrounding) = 
-  List.iter show_surr surr
-
 let add_tactic name f = tactics := (name,f) :: !tactics
 
 (** find the first variable in the context of the right type and return it *)
@@ -48,7 +36,7 @@ let ev3 (surr:surrounding) env pos t =
 	match unmark tf with
 	| APPLY(T T_Pi, ARG(_,ARG(t,END))) -> TacticSuccess t
 	| _ -> raise (TypeCheckingFailure(
-		      env, [
+		      env, surr, [
 		      get_pos f,
 		      "expected a TS function:\n    " ^ ts_expr_to_string f ^
 		      "\n  : " ^ ts_expr_to_string tf ])))

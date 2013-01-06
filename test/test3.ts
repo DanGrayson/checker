@@ -75,9 +75,6 @@ Theorem modus_ponens { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
 					(t ⟼ t' ⟼ (ev1 U V g (ev1 T U f t CAR) CDR 
 					               U' V' g' (ev1 T U f t CDR T' U' f' t'))))))))).
 
-
-Show.
-
 #   Local Variables:
 #   compile-command: "make -C .. test3 DEBUG=no"
 #   End:

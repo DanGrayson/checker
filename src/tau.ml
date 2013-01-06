@@ -13,7 +13,7 @@ let rec tau (pos:position) (env:context) e : lf_expr =
       if !debug_mode then print_context (Some 4) stderr env;
       let t = 
 	try List.assoc v env
-	with Not_found -> raise (TypeCheckingFailure(env, [pos, "variable not in TS context: " ^ vartostring v])) in
+	with Not_found -> raise (TypeCheckingFailure(env, [], [pos, "variable not in TS context: " ^ vartostring v])) in
       match unmark t with
       | F_Sigma(_,_,(_,F_Apply(F_hastype,[(_,APPLY(V v',END)); t]))) -> t
       | _ -> internal ())
@@ -25,45 +25,45 @@ let rec tau (pos:position) (env:context) e : lf_expr =
 	  (* print_context (Some 7) stdout env; *)
 	  raise NotImplemented
       | FUN _ -> raise NotImplemented
-      | U uh -> raise (TypeCheckingFailure(env, [pos, "a u-expression doesn't have a type"]))
-      | T th -> raise (TypeCheckingFailure(env, [pos, "a t-expression doesn't have a type"]))
+      | U uh -> raise (TypeCheckingFailure(env, [],[pos, "a u-expression doesn't have a type"]))
+      | T th -> raise (TypeCheckingFailure(env, [], [pos, "a t-expression doesn't have a type"]))
       | O oh -> (
           match oh with
           | O_u -> (
               match args with 
               | ARG(u,END) -> Helpers.make_T_U (pos, (Helpers.make_U_next u))
-              | _ -> raise (TypeCheckingFailure(env, [pos, "expected [u] to have one branch"])))
+              | _ -> raise (TypeCheckingFailure(env, [], [pos, "expected [u] to have one branch"])))
           | O_j -> (
               match args with 
               | ARG(m1,ARG(m2,END)) -> 
                   Helpers.make_T_Pi 
                     (with_pos_of m1 (Helpers.make_T_U m1))
                     (newunused(), (with_pos_of m2 (Helpers.make_T_U m2)))
-              | _ -> raise (TypeCheckingFailure(env, [pos, "expected [j] to have two branches"])))
+              | _ -> raise (TypeCheckingFailure(env, [], [pos, "expected [j] to have two branches"])))
           | O_ev -> (
               match args with 
               | ARG(f,ARG(o,ARG((_,LAMBDA(x,t)),END))) ->
                   unmark (Substitute.subst_expr (x,o) t)
-              | _ -> raise (TypeCheckingFailure(env, [pos, "[ev] with malformed branches"])))
+              | _ -> raise (TypeCheckingFailure(env, [], [pos, "[ev] with malformed branches"])))
           | O_lambda -> (
               match args with 
               | ARG(t,ARG(o,END)) ->
 		  let x = newfresh (Var "x") in
 		  let x' = var_to_lf x in
                   Helpers.make_T_Pi t (x, tau pos (ts_bind pos (x,t) env) (Substitute.apply_args o (ARG(x',END))))
-              | _ -> raise (TypeCheckingFailure(env, [pos, "[lambda] with malformed branches: " ^ lf_expr_to_string e])))
+              | _ -> raise (TypeCheckingFailure(env, [], [pos, "[lambda] with malformed branches: " ^ lf_expr_to_string e])))
           | O_forall -> (
               match args with 
               | ARG(u,ARG(u',_)) ->
                   Helpers.make_T_U (nowhere 6 (Helpers.make_U_max u u'))
-              | _ -> raise (TypeCheckingFailure(env, [pos, "[forall] with malformed branches"])))
+              | _ -> raise (TypeCheckingFailure(env, [], [pos, "[forall] with malformed branches"])))
           | O_tt -> Helpers.make_T_Pt
           | O_pair | O_pr1 | O_pr2 | O_total | O_pt | O_pt_r | O_coprod | O_ii1
           | O_ii2 | O_sum | O_empty | O_empty_r | O_c | O_ip_r | O_ip
           | O_paths | O_refl | O_J | O_rr0 | O_rr1
             -> raise NotImplemented
          ) )
-  | _ -> raise (TypeCheckingFailure(env, [pos, "a canonical LF expression has no TS type"]))
+  | _ -> raise (TypeCheckingFailure(env, [], [pos, "a canonical LF expression has no TS type"]))
 
 let tau env e = tau (no_pos 2) env e
 

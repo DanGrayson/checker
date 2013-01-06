@@ -68,39 +68,39 @@ let apply_ts_binder env i e =
 
 let try_alpha = true
 
-let err env pos msg = raise (TypeCheckingFailure (env, [pos, msg]))
+let err env pos msg = raise (TypeCheckingFailure (env, [], [pos, msg]))
 
 let errmissingarg env pos a = err env pos ("missing next argument, of type "^lf_type_to_string a)
 
 let mismatch_type env pos t pos' t' = 
-  raise (TypeCheckingFailure (env, [
+  raise (TypeCheckingFailure (env, [], [
          pos , "expected type " ^ lf_type_to_string t;
          pos', "to match      " ^ lf_type_to_string t']))
 
 let mismatch_term_type env e t =
-  raise (TypeCheckingFailure (env, [
+  raise (TypeCheckingFailure (env, [], [
                get_pos e, "error: expected term\n\t" ^ lf_expr_to_string e;
                get_pos t, "to be compatible with type\n\t" ^ lf_type_to_string t]))
 
 let mismatch_term_type_type env e s t =
-  raise (TypeCheckingFailure (env, [
+  raise (TypeCheckingFailure (env, [], [
                get_pos e, "error: expected term\n\t" ^ lf_expr_to_string e;
                get_pos s, "of type\n\t" ^ lf_type_to_string s;
                get_pos t, "to be compatible with type\n\t" ^ lf_type_to_string t]))
 
 let mismatch_term_t env pos x pos' x' t = 
-  raise (TypeCheckingFailure (env, [
+  raise (TypeCheckingFailure (env, [], [
                     pos , "error: expected term\n\t" ^ lf_expr_to_string x ;
                     pos',      "to match\n\t" ^ lf_expr_to_string x';
                get_pos t,       "of type\n\t" ^ lf_type_to_string t]))
 
 let mismatch_term env pos x pos' x' = 
-  raise (TypeCheckingFailure (env, [
+  raise (TypeCheckingFailure (env, [], [
                     pos , "error: expected term\n\t" ^ lf_expr_to_string x;
                     pos',      "to match\n\t" ^ lf_expr_to_string x']))
 
 let function_expected env f t =
-  raise (TypeCheckingFailure (env, [
+  raise (TypeCheckingFailure (env, [], [
                     get_pos f, "error: encountered a non-function\n\t" ^ lf_expr_to_string f;
                     get_pos t, "of type\n\t" ^ lf_type_to_string t]))
 
@@ -349,8 +349,8 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
           let suggestion = apply_args suggestion args in
           type_check surr env suggestion t
       | TacticFailure ->
-          raise (TypeCheckingFailure (env, [
-                               pos, "tactic failed : "^tactic_to_string tac;
+          raise (TypeCheckingFailure (env, surr, [
+                               pos, "tactic failed: "^tactic_to_string tac;
                                pos, "in hole of type\n\t"^lf_type_to_string t])))
 
   | LAMBDA(v,body), F_Pi(w,a,b) -> (* the published algorithm is not applicable here, since
@@ -360,10 +360,10 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
       let body = type_check surr ((v,a) :: env) body (subst_type (w,var_to_lf v) b) in
       pos, LAMBDA(v,body)
   | LAMBDA _, F_Sigma _ -> 
-      raise (TypeCheckingFailure (env, [
+      raise (TypeCheckingFailure (env, surr, [
 				  get_pos e0, "error: expected a pair but got a function:\n\t" ^ lf_expr_to_string e0]))
   | LAMBDA _, _ -> 
-      raise (TypeCheckingFailure (env, [
+      raise (TypeCheckingFailure (env, surr, [
 				  get_pos t, "error: expected something of type\n\t" ^ lf_type_to_string t;
 				  get_pos e0, "but got a function\n\t" ^ lf_expr_to_string e0]))
   | _, F_Sigma(w,a,b) -> (* The published algorithm omits this, correctly, but we want to
@@ -465,15 +465,14 @@ let type_validity (env:context) (t:lf_type) : lf_type =
           F_Singleton(x,t)) in
   try
     type_validity env t
-  with TypeCheckingFailure(env,ps) ->
+  with TypeCheckingFailure(env, [], ps) ->
     raise (TypeCheckingFailure(
-           env,
+           env, [],
            ps @ [ (get_pos t, "while checking validity of type\n\t" ^ lf_type_to_string t) ]))
 
 let type_synthesis = type_synthesis []
 
 let type_check = type_check []
-
 
 (** Normalization routines. *)
 
@@ -535,7 +534,7 @@ and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_type =
           match unmark t with
           | F_Pi(v,a,b) -> (
               match args with
-              | END -> raise (TypeCheckingFailure (env, [
+              | END -> raise (TypeCheckingFailure (env, [], [
                                                     pos , "expected "^string_of_int (num_args t)^" more arguments";
                                                     (get_pos t0), (" using:\n\t"^lf_head_to_string head^" : "^lf_type_to_string t0)]))
               | CAR args -> err env pos "pi1 expected a pair (4)"
