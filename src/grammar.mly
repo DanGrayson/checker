@@ -7,6 +7,13 @@ open Helpers
 open Printer
 open Printf
 
+let unknown_label pos name =
+  fprintf stderr "%a: unknown expression label: [%s]\n%!" _pos pos name
+
+let lookup_label pos name =
+  try List.assoc name Names.lf_expr_head_strings 
+  with Not_found as e -> unknown_label pos name; raise e
+
 type binder_judgment = ULEV | IST | HAST of lf_expr
 
 let add_single v t u = F_Pi(v, t, u)
@@ -188,7 +195,7 @@ let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_t
   LeftParen RightParen RightBracket LeftBracket Comma Period Colon Star Arrow
   ArrowFromBar Equal Underscore Axiom GreaterEqual Greater LessEqual Less
   Semicolon Ulevel Kumax Type Pi Lambda Sigma Check Show End Variable Alpha EOF
-  Universes Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_CAR K_CDR Times Slash
+  Universes Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_CAR K_CDR Times
   Turnstile DoubleArrow DoubleArrowFromBar ColonColonEqual ColonEqual Theorem
   LeftBrace RightBrace TurnstileDouble ColonColon Include Clear Mode Simple
   Relative Pairs
@@ -213,11 +220,8 @@ let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_t
 
 %nonassoc
 
-  Star					(* [El] *)
-
-%left
-
-  Slash					(* substitution *)
+  LeftBracket				(* f[a] denotes substitution *)
+  Star					(* *x denotes [El](x) *)
 
 %right
 
@@ -613,7 +617,10 @@ context:
 tsterm_head:
 
     | name= CONSTANT
-	{ try List.assoc name Names.lf_expr_head_strings with Not_found -> V (Var name) }
+	{ 
+	  let pos = Position($startpos, $endpos) in
+	  try lookup_label pos name with Not_found -> $syntaxerror
+	}
 
 arglist:
 
@@ -662,8 +669,8 @@ unmarked_ts_expr:
     | tac= tactic_expr
 	{ cite_tactic tac END }
 
-    | f= ts_expr Slash o= ts_expr
-	{ unmark (Substitute.apply_args f (o ** END)) }
+    | f= ts_expr LeftBracket o= separated_nonempty_list(Comma,ts_expr) RightBracket
+	{ unmark (Substitute.apply_args f (list_to_spine o)) }
 
     | variable
 	{ APPLY(V $1,END) }
@@ -700,13 +707,7 @@ unmarked_ts_expr:
 	{ APPLY(U U_max, u**v**END)  }
 
     | label= tsterm_head args= arglist
-	{ 
-	  let args = list_to_spine args in
-	  let args = 
-	    match label with
-	    | V _ -> CAR args
-	    | _ -> args in	  
-	  APPLY(label,args) }
+	{ APPLY(label,list_to_spine args) }
 
     | LeftParen a= ts_expr Comma b= ts_expr RightParen
 	{ CONS(a,b) }
@@ -714,10 +715,8 @@ unmarked_ts_expr:
     | name= CONSTANT_SEMI vars= separated_list(Comma,marked_variable_or_unused) RightBracket args= arglist
 	{
 	 let label = 
-	   try List.assoc name Names.lf_expr_head_strings
-	   with Not_found -> 
-	     Printf.fprintf stderr "%s: unknown term constant [%s]\n%!" (errfmt (Position($startpos, $endpos))) name;
-	     $syntaxerror
+	   let pos = Position($startpos, $endpos) in
+	   try lookup_label pos name with Not_found -> $syntaxerror
 	 in
 	 match head_to_vardist label with
 	 | None -> raise (MarkedError (Position($startpos, $endpos), "expected no variables"))

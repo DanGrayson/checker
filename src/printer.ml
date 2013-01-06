@@ -1,6 +1,6 @@
 (** Functions for converting expressions to strings for printing *)
 
-let enable_variable_prettification = false
+let enable_variable_prettification = true
 
 open Error
 open Variables
@@ -132,7 +132,6 @@ let var_chooser x subs occurs_in e =
         if var_tester w subs occurs_in e then w, (x,w) :: subs
         else repeat (i+1)
       in repeat 1			(*omit the "'" case*)
-  | _ -> x, subs
 
 let occurs_in_list occurs_in x args = List.exists (occurs_in x) args
 
@@ -363,13 +362,13 @@ and ts_expr_to_string e : smart_string =
           | ARG(t1,ARG((_,LAMBDA(x, t2)),END)) -> 
               if false
               then arrow_prec, concat [paren_left arrow_prec (ts_expr_to_string t1);" ⟶ ";paren_right arrow_prec (ts_expr_to_string t2)]
-              else top_prec, concat ["[" ^ expr_head_to_string h ^ ";";vartostring x;"](";
+              else top_prec, concat ["@[" ^ expr_head_to_string h ^ ";";vartostring x;"](";
 				     paren_left comma_prec (ts_expr_to_string t1);",";
 				     paren_right comma_prec (ts_expr_to_string t2);")"]
           | _ -> lf_atomic_p h args)
       | T T_Sigma -> (
           match args with ARG(t1,ARG((_,LAMBDA(x, t2)),END)) -> 
-            top_prec, "[" ^ expr_head_to_string h ^ ";" ^ vartostring x ^ "]" ^
+            top_prec, "@[" ^ expr_head_to_string h ^ ";" ^ vartostring x ^ "]" ^
             "(" ^ paren_left comma_prec (ts_expr_to_string t1) ^ "," ^ paren_right comma_prec (ts_expr_to_string t2) ^ ")"
           | _ -> lf_atomic_p h args)
       | O O_ev -> (

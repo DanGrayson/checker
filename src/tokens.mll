@@ -118,7 +118,6 @@ rule expr_tokens = parse
   | '{'  { LeftBrace }
   | '*'  { Star }
   | '$'  { Dollar }
-  | '/'  { Slash }
   | ':'  { Colon } 
   | "::" { ColonColon }
   | "**" { Times }
@@ -137,10 +136,9 @@ rule expr_tokens = parse
 
 (* variable names, keywords, and commands *)
 
-  | '[' (ident as id) ']' { utf8_fix lexbuf id; CONSTANT id }
-  | '[' (ident as id) ';' { utf8_fix lexbuf id; CONSTANT_SEMI id }
+  | "@[" (ident as id) "]" { utf8_fix lexbuf id; CONSTANT id }
+  | "@[" (ident as id) ";" { utf8_fix lexbuf id; CONSTANT_SEMI id }
   | ident as id { utf8_fix lexbuf id; try Hashtbl.find commands id with Not_found -> IDENTIFIER id }
-  | '[' (ident as name) '.' (digit+ as aspect) ']' { utf8_fix lexbuf name; VARIABLE (VarDefined(name,int_of_string aspect)) }
   | (ident as name) '$' (digit+ as gen) { utf8_fix lexbuf name; VARIABLE (VarGen(int_of_string gen,name)) }
 
 (* constants *)
