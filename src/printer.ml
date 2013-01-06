@@ -523,13 +523,17 @@ let print_context n file (env:context) =
 let show_surroundings (surr:surrounding) = 
   printf "Surroundings:\n";
   let show_surr (i,e,t) =
-    match i with
-    | S_projection i -> printf "     projection pi_%d of %a\n" i _e e
-    | S_argument i -> printf "     argument %d in %a\n" i _e e
-    | S_none ->   printf "     in expression %a\n"   _e e;
-    match t with
+    (match i with 
+    | S_projection i -> printf "     projection pi_%d\n" i
+    | S_argument i -> printf "     part %d\n" i
+    | S_body -> printf "     body\n");
+    (match e with 
+    | Some e -> printf "        in expression %a\n" _e e
+    | None -> ());
+    (match t with
     | Some t -> printf "        of type %a\n" _t t
-    | None -> () in
+    | None -> ())
+  in
   List.iter show_surr surr;
   flush stdout
 

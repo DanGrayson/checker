@@ -312,9 +312,9 @@ let empty_uContext = UContext([],[])
 type surrounding_component =
   | S_argument of int
   | S_projection of int
-  | S_none
+  | S_body
 
-type surrounding = (surrounding_component * lf_expr * lf_type option) list
+type surrounding = (surrounding_component * lf_expr option * lf_type option) list
 
 type tactic_return =
   | TacticFailure

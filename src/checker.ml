@@ -110,7 +110,7 @@ let add_tVars env tvars =
 
 let lf_axiomCommand env pos name t =
   if show_rules then ( printf "Axiom LF %s: %a\n%!" name  _t t );
-  let t = Lfcheck.type_validity env t in
+  let t = Lfcheck.type_validity [] env t in
   let v = Var name in
   ensure_new_name env pos v;
   (v,t) :: env
@@ -120,22 +120,22 @@ let defCommand env defs =
     (fun env (v, pos, tm, tp) -> 
       if show_definitions then printf "Define %a = %a\n%!" _v v  _e tm else printf "Define %a\n%!" _v v;
       if show_definitions then printf "       %a : %a\n%!" _v v  _t tp;
-      let tp' = type_validity env tp in
+      let tp' = type_validity [] env tp in
       if not (Alpha.UEqual.type_equiv empty_uContext tp tp') then
       if show_definitions then printf "       %a : %a [after tactics]\n%!" _v v  _t tp';
-      let tm' = type_check env tm tp' in
+      let tm' = type_check [] env tm tp' in
       if not (Alpha.UEqual.term_equiv empty_uContext tm tm') then (
 	if show_definitions then printf "       %a = %a [after tactics]\n%!" _v v  _e tm');
       let tm'' = term_normalization env tm' tp' in
       if not (Alpha.UEqual.term_equiv empty_uContext tm' tm'') then (
 	if show_definitions then printf "       %a = %a [normalized]\n%!" _v v  _e tm'';
 	(* if show_definitions then printf "       %a = %a [normalized, TS format]\n%!" _v v  _ts tm''; *)
-	let _ = type_check env tm'' tp' in ();
+	let _ = type_check [] env tm'' tp' in ();
        );
       let tp'' = type_normalization env tp' in
       if not (Alpha.UEqual.type_equiv empty_uContext tp' tp'') then (
 	if show_definitions then printf "       %a : %a [normalized]\n%!" _v v  _t tp'';
-	let _ = type_validity env tp'' in ();
+	let _ = type_validity [] env tp'' in ();
        );
       def_bind v pos tm' tp' env
     ) 
@@ -157,7 +157,7 @@ let checkLFCommand env pos x =
 
 let checkLFtypeCommand env t =
   printf "Check      : %a\n%!" _t t;
-  let t' = Lfcheck.type_validity env t in
+  let t' = Lfcheck.type_validity [] env t in
   if not (Alpha.UEqual.type_equiv empty_uContext t t') then
     printf "           : %a [after tactics]\n%!" _t t';
   if try_normalization then
@@ -288,3 +288,8 @@ with
 | Unimplemented_expr e ->
     fprintf stderr "%a: unimplemented feature: %a\n%!" _pos_of e  _e e
 
+(* 
+  Local Variables:
+  compile-command: "make -C .. src/checker.cmo "
+  End:
+ *)

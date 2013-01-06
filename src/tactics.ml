@@ -28,7 +28,7 @@ let assumption surr env pos t =
 let ev3 (surr:surrounding) env pos t =
   (* This code was formerly a part of the file fillin.ml, removed. *)
   match surr with 
-  | (_, (pos,APPLY( O O_ev, ARG(f,_))), _) :: _ -> (
+  | (_, Some (pos,APPLY( O O_ev, ARG(f,_))), _) :: _ -> (
       try
 	let tf = 
 	  tau env f 
@@ -44,7 +44,7 @@ let ev3 (surr:surrounding) env pos t =
       with NotImplemented ->
 	printf "warning: ev3: \"tau\" not implemented for %a\n%!" _e f;
 	TacticFailure)
-  | (i,e,t) :: _ ->
+  | _ :: _ ->
       internal ()
   | [] -> 
       internal ()

@@ -70,8 +70,8 @@ lc:; wc -l $(SRCFILES) $(RULES_FILES)
 debug:
 	ocamlbuild $(BFLAGS) checker.byte 
 	@ echo "enter:"
-	@ echo "  set arg test/demo.ts"
-	@ echo "  goto 10000"
-	@ echo "  break Error.trap"
-	@ echo "  run"
+	@ echo "set arg test/demo.ts"
+	@ echo "goto 10000"
+	@ echo "break Error.trap"
+	@ echo "run"
 	ocamldebug -I _build checker.byte 

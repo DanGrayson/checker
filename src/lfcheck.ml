@@ -338,8 +338,6 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
   (* assume t has been verified to be a type *)
   (* see figure 13, page 716 [EEST] *)
   (* we modify the algorithm to return a possibly modified expression e, with holes filled in by tactics *)
-  (* We hard code this tactic:
-       Fill in holes of the form [ ([ev] f o _) ] by using [tau] to compute the type that ought to go there. *)
   let pos = get_pos t in 
   match unmark e0, unmark t with
   | APPLY(TAC tac,args), _ -> (
@@ -356,7 +354,7 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
   | LAMBDA(v,body), F_Pi(w,a,b) -> (* the published algorithm is not applicable here, since
                                    our lambda doesn't contain type information for the variable,
                                    and theirs does *)
-      let surr = (S_none,e0,Some t) :: surr in
+      let surr = (S_body,Some e0,Some t) :: surr in
       let body = type_check surr ((v,a) :: env) body (subst_type (w,var_to_lf v) b) in
       pos, LAMBDA(v,body)
   | LAMBDA _, F_Sigma _ -> 
@@ -370,9 +368,9 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
                             give advice to tactics for filling holes in [p], so we try type-directed
                             type checking as long as possible. *)
       let (x,y) = (pi1 e0,pi2 e0) in
-      let x = type_check ((S_projection 1,e0,Some t) :: surr) env x a in
+      let x = type_check ((S_projection 1,Some e0,Some t) :: surr) env x a in
       let b = subst_type (w,x) b in
-      let y = type_check ((S_projection 2,e0,Some t) :: surr) env y b in
+      let y = type_check ((S_projection 2,Some e0,Some t) :: surr) env y b in
       pos, CONS(x,y)
 
   | _, _  ->
@@ -404,7 +402,7 @@ and type_synthesis (surr:surrounding) (env:context) (m:lf_expr) : lf_expr * lf_t
       let rec repeat i env head_type args_passed args = (
         match unmark head_type, args with
         | F_Pi(v,a',a''), ARG(m',args') ->
-            let surr = (S_argument i,m,None) :: surr in 
+            let surr = (S_argument i,Some m,None) :: surr in 
             let env = apply_ts_binder env i m in
             let m' = type_check surr env m' a' in
             let (args'',u) = repeat (i+1) env (subst_type (v,m') a'') (ARG(m',args_passed)) args' in
@@ -428,51 +426,45 @@ and type_synthesis (surr:surrounding) (env:context) (m:lf_expr) : lf_expr * lf_t
       let t = with_pos_of t (F_Singleton(e,t)) in (* this isn't quite like the algorithm in the paper, but it seems to work *)
       e,t
 
-let type_validity (env:context) (t:lf_type) : lf_type =
+let type_validity (surr:surrounding) (env:context) (t:lf_type) : lf_type =
   (* assume the kinds of constants, and the types in them, have been checked *)
   (* driven by syntax *)
   (* return the same type t, but with tactic holes replaced *)
   (* see figure 12, page 715 [EEST] *)
-  let rec type_validity env t =
+  let rec type_validity surr env t =
+    let t0 = t in
     let (pos,t) = t 
     in 
     ( pos,
       match t with 
       | F_Pi(v,t,u) ->
-          let t = type_validity env t in
-          let u = type_validity ((v,t) :: env) u in
+          let t = type_validity ((S_argument 1,None,Some t0) :: surr) env t in
+          let u = type_validity ((S_argument 2,None,Some t0) :: surr) ((v,t) :: env) u in
           F_Pi(v,t,u)
       | F_Sigma(v,t,u) ->
-          let t = type_validity env t in
-          let u = type_validity ((v,t) :: env) u in
+          let t = type_validity ((S_argument 1,None,Some t0) :: surr) env t in
+          let u = type_validity ((S_argument 2,None,Some t0) :: surr) ((v,t) :: env) u in
           F_Sigma(v,t,u)
       | F_Apply(head,args) ->
           let kind = tfhead_to_kind head in
-          let rec repeat env kind (args:lf_expr list) = 
+          let rec repeat i env kind (args:lf_expr list) = 
             match kind, args with 
             | ( K_expression | K_judgment | K_judged_expression | K_judged_expression_judgment ), [] -> []
             | ( K_expression | K_judgment | K_judged_expression | K_judged_expression_judgment ), x :: args -> err env pos "at least one argument too many";
             | K_Pi(v,a,kind'), x :: args -> 
-                let x' = type_check [] env x a in
-                x' :: repeat env (subst_kind (v,x') kind') args
+                let x' = type_check ((S_argument i,None,Some t0) :: surr) env x a in
+                x' :: repeat (i+1) env (subst_kind (v,x') kind') args
             | K_Pi(_,a,_), [] -> errmissingarg env pos a
           in 
-          let args' = repeat env kind args in
+          let args' = repeat 1 env kind args in
           F_Apply(head,args')
       | F_Singleton(x,t) -> 
-          let t = type_validity env t in
-          let x = type_check [] env x t in                (* rule 46 *)
+          let t = type_validity ((S_argument 2,None,Some t0) :: surr) env t in
+          let x = type_check ((S_argument 1,None,Some t0) :: surr) env x t in                (* rule 46 *)
           F_Singleton(x,t)) in
-  try
-    type_validity env t
-  with TypeCheckingFailure(env, [], ps) ->
-    raise (TypeCheckingFailure(
-           env, [],
-           ps @ [ (get_pos t, "while checking validity of type\n\t" ^ lf_type_to_string t) ]))
+  type_validity surr env t
 
 let type_synthesis = type_synthesis []
-
-let type_check = type_check []
 
 (** Normalization routines. *)
 
@@ -599,6 +591,6 @@ let rec type_normalization (env:context) (t:lf_type) : lf_type =
 
 (* 
   Local Variables:
-  compile-command: "make lfcheck.cmo "
+  compile-command: "make -C .. src/lfcheck.cmo "
   End:
  *)
