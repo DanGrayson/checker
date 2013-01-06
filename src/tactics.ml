@@ -45,11 +45,8 @@ let ev3 (surr:surrounding) env pos t =
 	printf "warning: ev3: \"tau\" not implemented for %a\n%!" _e f;
 	TacticFailure)
   | (i,e,t) :: _ ->
-      let i = match i with Some i -> i | None -> -1 in
-      printf "ev3 ( %d , %a ) ?\n%!" i _e (e);
       internal ()
   | [] -> 
-      printf "%a: ev3 ?\n%!" _pos pos;
       internal ()
 
 let rec default surr env pos t = 

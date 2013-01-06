@@ -356,7 +356,7 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
   | LAMBDA(v,body), F_Pi(w,a,b) -> (* the published algorithm is not applicable here, since
                                    our lambda doesn't contain type information for the variable,
                                    and theirs does *)
-      let surr = (None,e0,Some t) :: surr in
+      let surr = (S_none,e0,Some t) :: surr in
       let body = type_check surr ((v,a) :: env) body (subst_type (w,var_to_lf v) b) in
       pos, LAMBDA(v,body)
   | LAMBDA _, F_Sigma _ -> 
@@ -370,9 +370,9 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
                             give advice to tactics for filling holes in [p], so we try type-directed
                             type checking as long as possible. *)
       let (x,y) = (pi1 e0,pi2 e0) in
-      let x = type_check [(Some 0,e0,Some t)] env x a in
+      let x = type_check ((S_projection 1,e0,Some t) :: surr) env x a in
       let b = subst_type (w,x) b in
-      let y = type_check [(Some 1,e0,Some t)] env y b in
+      let y = type_check ((S_projection 2,e0,Some t) :: surr) env y b in
       pos, CONS(x,y)
 
   | _, _  ->
@@ -404,7 +404,7 @@ and type_synthesis (surr:surrounding) (env:context) (m:lf_expr) : lf_expr * lf_t
       let rec repeat i env head_type args_passed args = (
         match unmark head_type, args with
         | F_Pi(v,a',a''), ARG(m',args') ->
-            let surr = (Some i,m,None) :: surr in 
+            let surr = (S_argument i,m,None) :: surr in 
             let env = apply_ts_binder env i m in
             let m' = type_check surr env m' a' in
             let (args'',u) = repeat (i+1) env (subst_type (v,m') a'') (ARG(m',args_passed)) args' in

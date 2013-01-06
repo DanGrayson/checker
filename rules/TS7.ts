@@ -15,7 +15,7 @@ Definition ev1 { ⊢ T U Type, f : @[∏;_](T,U), o : T } ⊢ @[ev;_](f,o,U) : U
 
 Definition Iscontr { ⊢ X Type } ⊢ @[Σ;x](X,@[∏;y](X,@[Id](X,y,x))) Type ::= 
    (_, X ⟼ (Σ_istype₂ X (x ⟼ (@[∏] X₁ (y ⟼ (@[Id] X₁ y x))), 
-   			 x ⟼ (pi₂ X (y ⟼ (@[Id] X₁ y x₁), y ⟼ (Id_istype₂ X y x)))))).
+   			 x ⟼ (pi₂ X _)))).
 
 Definition Hfiber { ⊢ X Y Type, f : @[∏;_](X,Y), y:Y } ⊢ @[Σ;x](X,@[Id](Y,@[ev;_](f,x,Y),y)) Type ::=
    (_, X ⟼ Y ⟼ f ⟼ y ⟼ 
