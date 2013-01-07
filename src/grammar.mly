@@ -220,8 +220,11 @@ let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_t
 
 %nonassoc
 
-  LeftBracket				(* f[a] denotes substitution *)
   Star					(* *x denotes [El](x) *)
+
+%left
+
+  LeftBracket				(* f[a] denotes substitution *)
 
 %right
 

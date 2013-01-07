@@ -24,12 +24,20 @@ SRCFILES =					\
 CODE = byte
 
 CHECKER_EXE = checker.$(CODE)
-CHECKER := OCAMLRUNPARAM=$(RUN) ./$(CHECKER_EXE)
+
+# -b indicates a backtrace should be printed for an uncaught exception:
+CHECKER_ENV = OCAMLRUNPARAM=-b
+# add ,p to get the ocamlyacc parser to display a trace
+# CHECKER_ENV += ,p
+
+CHECKER_OPTIONS =
 
 DEBUG = no
 ifeq "$(DEBUG)" "yes"
 CHECKER += --debug
 endif
+
+CHECKER := $(CHECKER_ENV) ./$(CHECKER_EXE) $(CHECKER_OPTIONS)
 
 BFLAGS = -I src -I src/tactics -cflags -g,-annot -lflags -g -yaccflag -v -menhir 'menhir --explain'
 BFLAGS += -use-menhir
@@ -41,9 +49,6 @@ BFLAGS += -use-menhir
 
 BASENAMES = $(shell for i in $(patsubst %.mli, %, $(patsubst %.mly, %, $(patsubst %.mll, %, $(patsubst %.ml, %, $(SRCFILES))))) ; do echo $$i ; done | uniq)
 
-# add ,p to get the ocamlyacc parser to display a trace
-RUN = -b
-# RUN = -b,p
 
 %.cmo: %.ml; ocamlbuild $(BFLAGS) $*.cmo
 %.cmo: %.mll; ocamlbuild $(BFLAGS) $*.cmo
