@@ -1,5 +1,6 @@
 TSFILES = test/demo.ts test/test.ts test/test2.ts test/test3.ts test/test4.ts test/test5.ts
 
+all: tests
 tests : rules demo test test2 test3 test4 test5
 
 demo:  src/$(CHECKER_EXE) ; $(CHECKER) test/demo.ts

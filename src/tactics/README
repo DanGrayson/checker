@@ -1,0 +1,2 @@
+To add a tactic, add a file, add its name to the list in Makefile.include, and
+add the tactic to the list of tactics in tactics.ml.

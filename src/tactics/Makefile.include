@@ -1,0 +1,10 @@
+TACTIC_FILES =					\
+	src/tactics/tactics.ml			\
+	src/tactics/ev3.ml			\
+	src/tactics/default.ml			\
+	src/tactics/assumption.ml
+
+# Local Variables:
+# compile-command: "make -C ../.. build "
+# End:
+
