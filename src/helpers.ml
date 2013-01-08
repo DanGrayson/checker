@@ -80,12 +80,12 @@ let args_fold f pi1 pi2 accu args = (* it's fold_left, which is the only directi
 let pi1 = function
   | pos, APPLY(h,args) -> (pos,APPLY(h,join_args args (CAR END)))
   | pos, CONS(x,_) -> x
-  | _ -> internal ()
+  | _ -> (trap(); raise Internal)
 
 let pi2 = function
   | pos, APPLY(h,args) -> (pos,APPLY(h,join_args args (CDR END)))
   | pos, CONS(_,y) -> y
-  | _ -> internal ()
+  | _ -> (trap(); raise Internal)
 
 (** Helper functions for making new ts-expressions from old ts-expressions. *)
 

@@ -11,15 +11,17 @@ Definition pi1 { ⊢ T U Type } ⊢ T⟶U Type
 
 	   := T ⟾ U ⟾ (_,T' ⟾ U' ⟾ pi[T, _ ⟾ U, CDR, T', _ ⟾ _ ⟾ U']).
 
-End.							    # unfinished
-
 Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ λ t:T, o[t] : T⟶U
 
-	   := (_, T ⟾ U ⟾ λh₂[T,(_⟾U₁,_⟾U)]).
+	   ::= T ⟼ U ⟼ o ⟼ (_, T' ⟼ U' ⟼ (λh T (_ ⟼ U) o CDR T' (_ ⟼ _ ⟼ U'))).
 
 Definition ev1 { ⊢ T U Type, f:T⟶U, o:T } ⊢ @[ev;_](f,o,U) : U
 
-	   := (_, T ⟾ U ⟾ ev_hastype₂[T,(_⟾U₁,_⟾U)]).
+	   ::= T ⟼ U ⟼ f ⟼ o ⟼ (_, T' ⟼ U' ⟼ (ev_hastype T (_ ⟼ U) f o CDR T' (_ ⟼ _ ⟼ U'))).
+
+Check LF ev_hastype.
+
+End.							    # unfinished
 
 Definition Iscontr { ⊢ X Type } ⊢ Σ x:X, ∏ y:X, y=x  Type
 

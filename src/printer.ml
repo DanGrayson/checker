@@ -1,6 +1,6 @@
 (** Functions for converting expressions to strings for printing *)
 
-let enable_variable_prettification = true
+let enable_variable_prettification = false
 
 open Error
 open Variables
@@ -531,7 +531,7 @@ let print_context n file (c:context) =
       env
   with Limit -> ()
 
-let show_surroundings (surr:surrounding) = 
+let print_surroundings (surr:surrounding) = 
   printf "Surroundings:\n";
   let show_surr (i,e,t) =
     (match i with 

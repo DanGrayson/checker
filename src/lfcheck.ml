@@ -64,7 +64,7 @@ let apply_ts_binder env i e =
         (List.assoc (h,i) ts_binders) pos env args
       with
         Not_found -> env)
-  | _ -> internal ()
+  | _ -> (trap(); raise Internal)
 
 let try_alpha = true
 
@@ -124,7 +124,7 @@ let apply_tactic surr env pos t = function
       TacticSuccess (var_to_lf_pos pos v)
 
 let rec natural_type (env:context) (x:lf_expr) : lf_type =
-  if true then internal ();          (* this function is unused, because "unfold" below does what we need for weak head reduction *)
+  if true then (trap(); raise Internal);          (* this function is unused, because "unfold" below does what we need for weak head reduction *)
   (* assume nothing *)
   (* see figure 9 page 696 [EEST] *)
   let pos = get_pos x in 
@@ -159,7 +159,7 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
   match unmark x with
   | APPLY(h,args) -> (
       match h with
-      | TAC _ -> internal ()
+      | TAC _ -> (trap(); raise Internal)
       | (O _|T _) -> raise Not_found (* we know the constants in our signature don't involve singleton types *)
       | FUN(f,t) -> (
 	  (* merge this case with the case below ??? *)
@@ -182,10 +182,10 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
 	    | _ ->
 		printf "%a: head_reduction case not covered: head %a of type %a applied to args %a\n%!" _pos pos _h head _t t _s args;
 		print_context (Some 10) stdout env;
-		internal () in
+		(trap(); raise Internal) in
 	  repeat t args_passed args
      )
-  | CONS _ | LAMBDA _ -> internal ()	(* head reduction is not defined for pairs or functions *)
+  | CONS _ | LAMBDA _ -> (trap(); raise Internal)	(* head reduction is not defined for pairs or functions *)
 
 let rec head_normalization (env:context) (x:lf_expr) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
@@ -293,7 +293,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
               term_equivalence env x x' t;
               repeat (subst_kind (v,x) k) args args'
           | ( K_expression | K_judgment | K_judged_expression | K_judged_expression_judgment ), [], [] -> ()
-          | _ -> internal ()
+          | _ -> (trap(); raise Internal)
         in repeat k args args'
     | _ -> raise TypeEquivalenceFailure
   with TermEquivalenceFailure -> raise TypeEquivalenceFailure
@@ -539,7 +539,7 @@ and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_type =
           | F_Singleton _ -> 
 	      if !debug_mode then printf "\tbad type t = %a\n%!" _t t;
 	      print_context (Some 5) stdout env;
-	      internal () (* x was head normalized, so any definition of head should have been unfolded *)
+	      (trap(); raise Internal) (* x was head normalized, so any definition of head should have been unfolded *)
           | F_Sigma(v,a,b) -> (
               match args with 
               | END -> (t,END)

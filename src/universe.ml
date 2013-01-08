@@ -20,7 +20,7 @@ open Typesystem
 exception Inconsistency of lf_expr * lf_expr
 
 let rec memi' i x = function
-    [] -> internal ()
+    [] -> (trap(); raise Internal)
   | a::l -> if a = x then i else memi' (i+1) x l
 
 let memi x = memi' 0 x
@@ -35,7 +35,7 @@ let chk uv ((lhs:lf_expr),(rhs:lf_expr)) =
     | APPLY(V u,END) -> - step_size * (index u)
     | APPLY(U U_next,ARG(u,END)) -> (ev u) + 1
     | APPLY(U U_max,ARG(u,ARG(v,END))) -> max (ev u) (ev v)
-    | _ -> internal ()
+    | _ -> (trap(); raise Internal)
   in 
   if (ev lhs) != (ev rhs) then raise (Inconsistency (lhs, rhs))
 

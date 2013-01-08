@@ -27,18 +27,23 @@
 		       "max" "Singleton" "Sigma" "pair" "CAR" "CDR" ))
 
 (defvar ts-commands '( "Mode" "Simple" "Relative" "Pairs" "Clear" "Universes" "LF" "TS"
-		       "Definition" "Lemma" "Proposition" "Corollary" "Axiom" "Include"
-		       "Check" "Alpha" "Variable" "End" "Clear" "Show" "Theorem" ))
+		       "Check" "Alpha" "End" "Clear" "Show" "Theorem" ))
 
 (defvar ts-mode-font-lock-keywords 
-  (let ((max-specpdl-size 1000) ; needed for passing long long lists to regexp-opt
-	)
-    `(
-      ;; font-lock-type-face
-      (,(concat "\\<\\(" (regexp-opt ts-keywords) "\\)\\>") . ,font-lock-constant-face)
-      (,(concat "\\<\\(" (regexp-opt ts-commands) "\\)\\>") . font-lock-keyword-face)
-      ("Definition +\\([[:alnum:]]+\\)" (1 font-lock-function-name-face))
-      )))
+  `(
+    ("@\\[\\([[:alnum:]∏∐Σλ_']+\\)\\(;[[:alnum:]_',]+\\)?\\]" 
+     (1 font-lock-constant-face))
+    (,(concat "\\<\\(" (regexp-opt ts-keywords) "\\)\\>") 
+     . font-lock-type-face)
+    (,(concat "\\<\\(" (regexp-opt ts-commands) "\\)\\>") 
+     . font-lock-keyword-face)
+    ("\\(Variable\\) +\\([[:alnum:]_']+\\)"
+     (1 font-lock-keyword-face) 
+     (2 font-lock-function-name-face))
+    ("\\(Definition\\|Lemma\\|Proposition\\|Corollary\\|Axiom\\)[[:space:]]*\\( [0-9]+\\(\\.[0-9]+\\)*\\)?[[:space:]]+\\([[:alnum:]∏∐Σλ_']+\\)"
+     (1 font-lock-keyword-face) 
+     (4 font-lock-function-name-face))
+    ))
 
 (mapcar
  (function

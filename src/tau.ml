@@ -16,7 +16,7 @@ let rec tau (env:context) e : lf_expr =
 	with Not_found -> raise (TypeCheckingFailure(env, [], [pos, "variable not in LF context: " ^ vartostring v])) in
       match unmark t with
       | F_Sigma(_,_,(_,F_Apply(F_hastype,[(_,APPLY(V v',END)); t]))) -> t
-      | _ -> internal ())
+      | _ -> (trap(); raise Internal))
   | APPLY(h,args) -> (
       match h with
       | TAC _ -> raise NotImplemented

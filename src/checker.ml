@@ -67,7 +67,7 @@ let rec handle_exception pos0 e =
       raise_switch ex Error_Handled
   | TypeCheckingFailure (env,surr,ps) as ex -> 
       List.iter (fun (pos,s) -> fprintf stderr "%s: %s\n%!" (errfmt pos) s) ps;
-      show_surroundings surr;
+      print_surroundings surr;
       print_context env_limit stderr env;
       Tokens.bump_error_count();
       raise_switch ex Error_Handled

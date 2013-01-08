@@ -25,10 +25,10 @@ let ev3 (surr:surrounding) env pos t =
       with NotImplemented ->
 	printf "warning: ev3: \"tau\" not implemented for %a\n%!" _e f;
 	TacticFailure)
-  | _ :: _ ->
-      internal ()
-  | [] -> 
-      internal ()
+  | _ ->
+      printf "error: ev3 - unexpected surroundings:\n%!";
+      print_surroundings surr;
+      TacticFailure
 
 (* 
   Local Variables:
