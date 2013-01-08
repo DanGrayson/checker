@@ -73,7 +73,7 @@ Check TS λ f:X⟶T, λ y:X, @[ev;_](f,y,T).
 Check TS UU.
 Check TS @[Pi;x](T,T).
 
-Check LF : ∏ x:oexp, ∏ y:oexp, ∏ T:texp, ∏ U:texp, [ x = y : T ]⟶[ T = U ]⟶[ x = y : U ].
+Check LF : ∏ x:oexp, ∏ y:oexp, ∏ T:texp, ∏ U:texp, [ x ≡ y : T ]⟶[ T ≡ U ]⟶[ x ≡ y : U ].
 Check LF (UU u1).
 
 Check LF El_istype.

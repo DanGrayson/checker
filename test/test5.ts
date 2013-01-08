@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # the "|-" operator is not fully implemented yet
 
 Mode Pairs.

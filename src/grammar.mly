@@ -224,7 +224,7 @@ let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_t
 
 %nonassoc
 
-  EqualEqual
+  Equal
 
 %left
 
@@ -294,10 +294,10 @@ unmarked_lf_type:
     | LeftBracket a= lf_expr Colon t= lf_expr RightBracket
 	{ unmark (hastype a t) }
 
-    | LeftBracket a= lf_expr Equal b= lf_expr Colon t= lf_expr RightBracket
+    | LeftBracket a= lf_expr EqualEqual b= lf_expr Colon t= lf_expr RightBracket
 	{ unmark (object_equality a b t) }
 
-    | LeftBracket t= lf_expr Equal u= lf_expr RightBracket
+    | LeftBracket t= lf_expr EqualEqual u= lf_expr RightBracket
 	{ unmark (type_equality t u) }
 
     | LeftBracket t= lf_expr Tilde u= lf_expr Type RightBracket
@@ -456,7 +456,7 @@ unmarked_command:
     | Check Universes Period
 	{ Toplevel.CheckUniverses }
 
-    | Alpha e1= ts_expr Equal e2= ts_expr Period
+    | Alpha e1= ts_expr EqualEqual e2= ts_expr Period
 	{ Toplevel.Alpha (e1, e2) }
 
     | Theorem LF name= IDENTIFIER Colon thm= lf_type ColonEqual deriv= lf_expr Period 
@@ -490,7 +490,7 @@ marked_variable:
 
 uEquation:
 
-    | u= ts_expr Equal v= ts_expr 
+    | u= ts_expr EqualEqual v= ts_expr 
 	{ (u,v) }
 
     | v= ts_expr GreaterEqual u= ts_expr 
@@ -564,13 +564,13 @@ unmarked_ts_judgment:
     | LeftBracket a= ts_expr Type RightBracket
 	{ unmark (istype a) }
 
-    | LeftBracket a= ts_expr Equal b= ts_expr RightBracket
+    | LeftBracket a= ts_expr EqualEqual b= ts_expr RightBracket
 	{ unmark (type_equality a b) }
 
     | LeftBracket x= ts_expr Colon t= ts_expr RightBracket
 	{ unmark (hastype x t) }
 
-    | LeftBracket x= ts_expr Equal y= ts_expr Colon t= ts_expr RightBracket
+    | LeftBracket x= ts_expr EqualEqual y= ts_expr Colon t= ts_expr RightBracket
 	{ unmark (object_equality x y t) }
 
     | LeftBracket a= ts_expr Tilde b= ts_expr Ulevel RightBracket
@@ -703,8 +703,8 @@ unmarked_ts_expr:
     | LeftParen x= variable Colon t= ts_expr RightParen Arrow u= ts_expr
 	{ make_T_Pi t (x,u) }
 
-    | x= ts_expr EqualEqual y= ts_expr
-	{ make_T_Id (with_pos_of x (cite_tactic (Tactic_name "tn1") END)) x y }
+    | x= ts_expr Equal y= ts_expr
+	{ make_T_Id (with_pos_of x (cite_tactic (Tactic_name "tn12") END)) x y }
 
     | t= ts_expr Arrow u= ts_expr
 	{ make_T_Pi t (newunused(),u) }

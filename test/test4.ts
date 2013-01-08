@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # new "judged expression" level:
 
 Axiom LF pi : (T:type) ⟶ ( obj_of_type T ⟶ type ) ⟶ type.

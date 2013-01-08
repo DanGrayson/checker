@@ -12,11 +12,11 @@ Axiom 6.3.3 pr1_hastype { ⊢ T1 Type } { x : T1 ⊢ T2 Type } { ⊢ a : @[Σ](T
 
 Axiom 6.3.4 pr2_hastype { ⊢ T1 Type } { x : T1 ⊢ T2 Type } { ⊢ a : @[Σ](T1,T2) } ⊢ @[pr2](T1,T2,a) : T2[@[pr1](T1,T2,a)].
 
-Axiom 6.3.5 pr1_pair_reduction { ⊢ T1 Type } { x : T1 ⊢ T2 Type } { ⊢ o1 : T1, o2 : T2[o1] } [ @[pr1](T1,T2,@[pair](o1,o2,T2)) = o1 : T1 ].
+Axiom 6.3.5 pr1_pair_reduction { ⊢ T1 Type } { x : T1 ⊢ T2 Type } { ⊢ o1 : T1, o2 : T2[o1] } [ @[pr1](T1,T2,@[pair](o1,o2,T2)) ≡ o1 : T1 ].
 
-Axiom 6.3.6 pr2_pair_reduction { ⊢ T1 Type } { x : T1 ⊢ T2 Type } { ⊢ o1 : T1, o2 : T2[o1] } [ @[pr2](T1,T2,@[pair](o1,o2,T2)) = o2 : T2[o1] ].
+Axiom 6.3.6 pr2_pair_reduction { ⊢ T1 Type } { x : T1 ⊢ T2 Type } { ⊢ o1 : T1, o2 : T2[o1] } [ @[pr2](T1,T2,@[pair](o1,o2,T2)) ≡ o2 : T2[o1] ].
 
-Axiom 6.3.7 pair_eta_reduction { ⊢ T1 Type } { x : T1 ⊢ T2 Type } { ⊢ a : @[Σ](T1,T2) } [ @[pair](@[pr1](T1,T2,a),@[pr2](T1,T2,a),T2) = a : @[Σ](T1,T2) ].
+Axiom 6.3.7 pair_eta_reduction { ⊢ T1 Type } { x : T1 ⊢ T2 Type } { ⊢ a : @[Σ](T1,T2) } [ @[pair](@[pr1](T1,T2,a),@[pr2](T1,T2,a),T2) ≡ a : @[Σ](T1,T2) ].
 
 # ...
 

@@ -18,10 +18,10 @@ Check TS : (T:texp) => (t:oexp) => |- t : T.            # t with a proof that t 
 
 Check TS : (T:texp) =>             : T.                 # an o-expression with a proof that it has type T
 
-Check TS : (T:texp) => (U:texp) => [ T = U ].           # a proof that T = U (type equality)
+Check TS : (T:texp) => (U:texp) => [ T ≡ U ].           # a proof that T ≡ U (type equality)
 
 Check TS : (T:texp) => (t:oexp) 
-                    => (u:oexp) => [ t = u : T ].       # a proof that t = u : T (object equality)
+                    => (u:oexp) => [ t ≡ u : T ].       # a proof that t ≡ u : T (object equality)
 
 # Here are the base judgments again, but this time with binders for pairs.  For example,
 # { |- T Type } denotes a parameter T whose value is a t-expression with a proof that it is a type.
@@ -38,9 +38,9 @@ Check TS : { |- T Type, t:T }   |- t : T.               # t with a proof that t 
 
 Check TS : { |- T Type }        : T.                    # an o-expression with a proof that it has type T
 
-Check TS : { |- T U Type }      [ T = U ].              # a proof that T = U (type equality)
+Check TS : { |- T U Type }      [ T ≡ U ].              # a proof that T ≡ U (type equality)
 
-Check TS : { |- T Type, t u:T } [ t = u : T ].          # a proof that t = u : T (object equality)
+Check TS : { |- T Type, t u:T } [ t ≡ u : T ].          # a proof that t ≡ u : T (object equality)
 
 # Here are the judgments involving ulevel equality:
 

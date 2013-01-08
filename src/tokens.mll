@@ -104,7 +104,6 @@ rule expr_tokens = parse
   | ','  { Comma }
   | '~'  { Tilde }
   | '='  { Equal }
-  | "=="  { EqualEqual }
   | ">="  { GreaterEqual }
   | '>' { Greater }
   | "<="  { LessEqual }
@@ -134,6 +133,7 @@ rule expr_tokens = parse
   | ( "|=>" | "⟾" ) as symb { utf8_fix lexbuf symb; DoubleArrowFromBar }
   | ( "|-" | "⊢" ) as symb { utf8_fix lexbuf symb; Turnstile }
   | ( "|=" | "⊨" ) as symb { utf8_fix lexbuf symb; TurnstileDouble }
+  | ( "==" | "≡" ) as symb { utf8_fix lexbuf symb; EqualEqual }
 
 (* variable names, keywords, and commands *)
 
