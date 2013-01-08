@@ -42,7 +42,7 @@ Include "rules/TS2.ts".
 # derive versions of some inference rules with simple types
 
 Definition pi1 { ⊢ T U Type } ⊢ @[∏;_](T,U) Type ::= 
-	   T ⟼ U ⟼ ((pi T (_ ⟼ U) CAR), T' ⟼ U' ⟼ (pi T (_ ⟼ U) CDR T' (_ ⟼ _ ⟼ U'))).
+	   T ⟼ U ⟼ (_, T' ⟼ U' ⟼ (pi T (_ ⟼ U) CDR T' (_ ⟼ _ ⟼ U'))).
 
 Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ @[λ](T,o) : @[∏;_](T,U) ::=
 	   T ⟼ U ⟼ o ⟼ ((@[λ] T o), T' ⟼ U' ⟼ (λh T (_ ⟼ U) o CDR T' (_ ⟼ _ ⟼ U'))).

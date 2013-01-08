@@ -660,6 +660,14 @@ ts_expr:
     | e= unmarked_ts_expr
 	{ Position($startpos, $endpos), e }
 
+ts_spine_member:
+
+    | x= ts_expr { Spine_arg x }
+
+    | K_CAR { Spine_car }
+
+    | K_CDR { Spine_cdr }
+
 unmarked_ts_expr:
 
     | v= marked_variable_or_unused DoubleArrowFromBar body= ts_expr
@@ -676,8 +684,8 @@ unmarked_ts_expr:
     | tac= tactic_expr
 	{ cite_tactic tac END }
 
-    | f= ts_expr LeftBracket o= separated_nonempty_list(Comma,ts_expr) RightBracket
-	{ unmark (Substitute.apply_args f (list_to_spine o)) }
+    | f= ts_expr LeftBracket o= separated_nonempty_list(Comma,ts_spine_member) RightBracket
+	{ unmark (Substitute.apply_args f (spine_member_list_to_spine o)) }
 
     | variable
 	{ APPLY(V $1,END) }

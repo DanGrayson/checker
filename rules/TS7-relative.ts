@@ -9,7 +9,9 @@ Include "rules/TS6.ts".
 
 Definition pi1 { ⊢ T U Type } ⊢ T⟶U Type
 
-	   := (_, T ⟾ U ⟾ pi₂[T,(_⟾U₁,_⟾U)]).
+	   := T ⟾ U ⟾ (_,T' ⟾ U' ⟾ pi[T, _ ⟾ U, CDR, T', _ ⟾ _ ⟾ U']).
+
+End.							    # unfinished
 
 Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ λ t:T, o[t] : T⟶U
 

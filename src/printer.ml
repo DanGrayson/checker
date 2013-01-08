@@ -519,7 +519,7 @@ let print_context n file (c:context) =
             fprintf file "     %a : %a\n%!" _v v  _t t
       ) 
       env
-  with Limit -> ();
+  with Limit -> fprintf file "     ...\n";
   fprintf file "TS Context:\n";
   let env = c.ts_context in
   let env = if n < 0 then List.rev env else env in

@@ -47,6 +47,17 @@ let rec list_to_spine = function
   | x :: a -> x ** list_to_spine a
   | [] -> END
 
+type spine_member =
+  | Spine_arg of lf_expr
+  | Spine_car
+  | Spine_cdr
+
+let rec spine_member_list_to_spine = function
+  | Spine_arg x :: a -> ARG(x,spine_member_list_to_spine a)
+  | Spine_car :: a -> CAR(spine_member_list_to_spine a)
+  | Spine_cdr :: a -> CDR(spine_member_list_to_spine a)
+  | [] -> END
+
 let rec exists_in_spine p args =
   match args with
   | ARG(x,a) -> p x || exists_in_spine p a
@@ -129,3 +140,9 @@ let make_O_refl t o = make_O O_refl (t ** o ** END)
 let make_O_J tT a b q i (x,(e,tS)) = make_O O_J (tT ** a ** b ** q ** i ** lambda2 x e tS ** END)
 let make_O_rr0 m2 m1 s t e = make_O O_rr0 (m2 ** m1 ** s ** t ** e ** END)
 let make_O_rr1 m a p = make_O O_rr1 (m ** a ** p ** END)
+
+(* 
+  Local Variables:
+  compile-command: "make -C .. src/helpers.cmo "
+  End:
+ *)
