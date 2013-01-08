@@ -7,13 +7,13 @@ a palette of utf8-encoded characters
 	⇒
 	⟼
 	⟾
-	⊢
-	∏
-	∐
-	Σ
-	λ
 	₁
 	₂
 	≡
 	⊢
 	⊨
+
+	∏
+	∐
+	Σ
+	λ

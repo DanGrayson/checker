@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- mode: ts; coding: utf-8 -*-
 
 Mode Pairs.
 Include "rules/TS7.ts".

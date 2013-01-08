@@ -24,6 +24,7 @@ rules4: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS4.ts $(SHOWFILE)
 rules5: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS5.ts $(SHOWFILE)
 rules6: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS6.ts $(SHOWFILE)
 rules7: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS7.ts $(SHOWFILE)
+rules7r: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS7-relative.ts $(SHOWFILE)
 
 #  Local Variables:
 #  compile-command: "make -C .. "
