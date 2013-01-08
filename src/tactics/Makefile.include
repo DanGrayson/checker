@@ -1,6 +1,7 @@
 TACTIC_FILES =					\
 	src/tactics/tactics.ml			\
 	src/tactics/ev3.ml			\
+	src/tactics/tn.ml			\
 	src/tactics/default.ml			\
 	src/tactics/assumption.ml
 

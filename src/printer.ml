@@ -1,6 +1,6 @@
 (** Functions for converting expressions to strings for printing *)
 
-let enable_variable_prettification = true
+let enable_variable_prettification = false
 
 open Error
 open Variables
@@ -503,10 +503,11 @@ let print_signature env file =
   flush file
 
 (** Print the context. *)
-let print_context n file (env:context) = 
+let print_context n file (c:context) = 
   let n = match n with None -> -1 | Some n -> n in
+  fprintf file "LF Context:\n";
+  let env = c.lf_context in
   let env = if n < 0 then List.rev env else env in
-  fprintf file "Context:\n";
   try iteri
       (fun i (v,t) ->
         if i = n then raise Limit;
@@ -516,7 +517,17 @@ let print_context n file (env:context) =
             fprintf file "     %a  : %a\n%!" _v_phantom v  _t t
         | _ -> 
             fprintf file "     %a : %a\n%!" _v v  _t t
-     ) 
+      ) 
+      env
+  with Limit -> ();
+  fprintf file "TS Context:\n";
+  let env = c.ts_context in
+  let env = if n < 0 then List.rev env else env in
+  try iteri
+      (fun i (v,t) ->
+        if i = n then raise Limit;
+	fprintf file "     %a : %a\n%!" _v v  _e t
+      ) 
       env
   with Limit -> ()
 
@@ -539,6 +550,6 @@ let show_surroundings (surr:surrounding) =
 
 (* 
   Local Variables:
-  compile-command: "make -C .. src/typesystem.cmo "
+  compile-command: "make -C .. src/printer.cmo "
   End:
  *)

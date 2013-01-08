@@ -19,7 +19,7 @@ Definition ev1 { ⊢ T U Type, f:T⟶U, o:T } ⊢ @[ev;_](f,o,U) : U
 
 	   := (_, T ⟾ U ⟾ ev_hastype₂[T,(_⟾U₁,_⟾U)]).
 
-Definition Iscontr { ⊢ X Type } ⊢ Σ x:X, ∏ y:X, @[Id](X,y,x) Type
+Definition Iscontr { ⊢ X Type } ⊢ Σ x:X, ∏ y:X, @[Id]($tn1,y,x) Type
 
 	   := (_, X ⟾ Σ_istype₂[X, (x ⟾ ∏ y:X₁, @[Id](X₁,y,x), 
    			                x' ⟾ pi₂[X,(y ⟾ @[Id](X₁,y,x'₁), 

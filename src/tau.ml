@@ -5,29 +5,34 @@ open Variables
 open Typesystem
 open Names
 
-let rec tau (pos:position) (env:context) e : lf_expr = 
+let rec tau (env:context) e : lf_expr = 
   let pos = get_pos e in
   match unmark e with
   | APPLY(V v,CAR END) -> (		(* pi1 v *)
       if !debug_mode then printf " v = %a\n%!" _v v;
       if !debug_mode then print_context (Some 4) stderr env;
       let t = 
-	try List.assoc v env
-	with Not_found -> raise (TypeCheckingFailure(env, [], [pos, "variable not in TS context: " ^ vartostring v])) in
+	try List.assoc v env.lf_context
+	with Not_found -> raise (TypeCheckingFailure(env, [], [pos, "variable not in LF context: " ^ vartostring v])) in
       match unmark t with
       | F_Sigma(_,_,(_,F_Apply(F_hastype,[(_,APPLY(V v',END)); t]))) -> t
       | _ -> internal ())
-  | APPLY(h,args) -> with_pos pos (
+  | APPLY(h,args) -> (
       match h with
       | TAC _ -> raise NotImplemented
       | V v -> 
-	  (* printf "%a: tau: variable encountered, not implemented yet: %a\n%!" _pos_of e _e e; *)
-	  (* print_context (Some 7) stdout env; *)
-	  raise NotImplemented
+	  let t = 
+	    try List.assoc v env.ts_context
+	    with Not_found -> raise (TypeCheckingFailure(env, [], [pos, "variable not in TS context: " ^ vartostring v])) in
+	  (
+	   match args with 
+	   | END -> t
+	   | _ -> raise NotImplemented
+	  )
       | FUN _ -> raise NotImplemented
       | U uh -> raise (TypeCheckingFailure(env, [],[pos, "a u-expression doesn't have a type"]))
       | T th -> raise (TypeCheckingFailure(env, [], [pos, "a t-expression doesn't have a type"]))
-      | O oh -> (
+      | O oh -> with_pos pos (
           match oh with
           | O_u -> (
               match args with 
@@ -50,7 +55,7 @@ let rec tau (pos:position) (env:context) e : lf_expr =
               | ARG(t,ARG(o,END)) ->
 		  let x = newfresh (Var "x") in
 		  let x' = var_to_lf x in
-                  Helpers.make_T_Pi t (x, tau pos (ts_bind pos (x,t) env) (Substitute.apply_args o (ARG(x',END))))
+                  Helpers.make_T_Pi t (x, tau (ts_bind env x t) (Substitute.apply_args o (ARG(x',END))))
               | _ -> raise (TypeCheckingFailure(env, [], [pos, "[lambda] with malformed branches: " ^ lf_expr_to_string e])))
           | O_forall -> (
               match args with 
@@ -65,10 +70,8 @@ let rec tau (pos:position) (env:context) e : lf_expr =
          ) )
   | _ -> raise (TypeCheckingFailure(env, [], [pos, "a canonical LF expression has no TS type"]))
 
-let tau env e = tau (no_pos 2) env e
-
 (* 
   Local Variables:
-  compile-command: "make tau.cmo "
+  compile-command: "make -C .. src/tau.cmo "
   End:
  *)

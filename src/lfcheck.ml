@@ -29,11 +29,11 @@ exception TypeEquivalenceFailure
 exception SubtypeFailure
 
 let abstraction1 pos (env:context) = function
-  | ARG(t,ARG((_,LAMBDA(x, _)),_)) -> ts_bind pos (x,t) env
+  | ARG(t,ARG((_,LAMBDA(x, _)),_)) -> ts_bind env x t
   | _ -> env
 
 let abstraction2 pos (env:context) = function
-  | ARG(_,ARG(_,ARG(n,ARG((_,LAMBDA(x,_)),_)))) -> ts_bind pos (x,(get_pos n, make_T_El n)) env
+  | ARG(_,ARG(_,ARG(n,ARG((_,LAMBDA(x,_)),_)))) -> ts_bind env x (get_pos n, make_T_El n)
   | _ -> env
 
 let abstraction3 pos (env:context) = function
@@ -41,9 +41,9 @@ let abstraction3 pos (env:context) = function
       try
 	let tf = tau env f in (
 	match unmark tf with
-	| APPLY(T T_Pi, ARG(t, _)) -> ts_bind pos (x,t) env
+	| APPLY(T T_Pi, ARG(t, _)) -> ts_bind env x t
 	| _ -> env)
-      with NotImplemented ->
+      with TypeCheckingFailure _ | NotImplemented ->
 	(* printf "%a: warning: abstraction3: \"tau\" not implemented for %a\n%!" _pos_of f _e f; *)
 	env)
   | _ -> env
@@ -119,7 +119,7 @@ let apply_tactic surr env pos t = function
       tactic surr env pos t
   | Tactic_index n ->
       let (v,u) = 
-        try List.nth env n 
+        try List.nth env.lf_context n 
         with Failure nth -> err env pos ("index out of range: "^string_of_int n) in
       TacticSuccess (var_to_lf_pos pos v)
 
@@ -208,7 +208,7 @@ let rec term_equivalence (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : uni
       let w = newfresh v in		(* in case x or y contains v as a free variable *)
       let w' = var_to_lf w in 
       let b = subst_type (v,w') b in
-      let env = (w,a) :: env in
+      let env = lf_bind env w a in
       let xres = apply_args x (ARG(w',END)) in
       let yres = apply_args y (ARG(w',END)) in
       term_equivalence env xres yres b
@@ -281,7 +281,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
         let x = newfresh v in
         let b = subst_type (v, var_to_lf x) b in
         let d = subst_type (w, var_to_lf x) d in
-        let env = (x, a) :: env in
+        let env = lf_bind env x a in
         type_equivalence env b d
     | F_Apply(h,args), F_Apply(h',args') ->
         (* Here we augment the algorithm in the paper to handle the type families of LF. *)
@@ -319,11 +319,11 @@ and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
     | F_Pi(x,a,b) , F_Pi(y,c,d) ->
         subtype env c a;                        (* contravariant *)
         let w = newfresh (Var "w") in
-        subtype ((w, c) :: env) (subst_type (x,var_to_lf w) b) (subst_type (y,var_to_lf w) d)
+        subtype (lf_bind env w c) (subst_type (x,var_to_lf w) b) (subst_type (y,var_to_lf w) d)
     | F_Sigma(x,a,b) , F_Sigma(y,c,d) ->
         subtype env a c;                        (* covariant *)
         let w = newfresh (Var "w") in
-        subtype ((w, a) :: env) (subst_type (x,var_to_lf w) b) (subst_type (y,var_to_lf w) d)
+        subtype (lf_bind env w a) (subst_type (x,var_to_lf w) b) (subst_type (y,var_to_lf w) d)
     | _ -> type_equivalence env (tpos,t0) (upos,u0)
   with TypeEquivalenceFailure -> raise SubtypeFailure
 
@@ -355,7 +355,7 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
                                    our lambda doesn't contain type information for the variable,
                                    and theirs does *)
       let surr = (S_body,Some e0,Some t) :: surr in
-      let body = type_check surr ((v,a) :: env) body (subst_type (w,var_to_lf v) b) in
+      let body = type_check surr (lf_bind env v a) body (subst_type (w,var_to_lf v) b) in
       pos, LAMBDA(v,body)
   | LAMBDA _, F_Sigma _ -> 
       raise (TypeCheckingFailure (env, surr, [
@@ -439,11 +439,11 @@ let type_validity (surr:surrounding) (env:context) (t:lf_type) : lf_type =
       match t with 
       | F_Pi(v,t,u) ->
           let t = type_validity ((S_argument 1,None,Some t0) :: surr) env t in
-          let u = type_validity ((S_argument 2,None,Some t0) :: surr) ((v,t) :: env) u in
+          let u = type_validity ((S_argument 2,None,Some t0) :: surr) (lf_bind env v t) u in
           F_Pi(v,t,u)
       | F_Sigma(v,t,u) ->
           let t = type_validity ((S_argument 1,None,Some t0) :: surr) env t in
-          let u = type_validity ((S_argument 2,None,Some t0) :: surr) ((v,t) :: env) u in
+          let u = type_validity ((S_argument 2,None,Some t0) :: surr) (lf_bind env v t) u in
           F_Sigma(v,t,u)
       | F_Apply(head,args) ->
           let kind = tfhead_to_kind head in
@@ -488,7 +488,7 @@ let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
       let w = newfresh v' in		(* in case x contains v as a free variable *)
       let w' = var_to_lf w in 
       let b = subst_type (v,w') b in
-      let env = (w,a) :: env in
+      let env = lf_bind env w a in
       let result = apply_args x (ARG(w',END)) in
       let body = term_normalization env result b in
       pos, LAMBDA(w,body)
@@ -566,11 +566,11 @@ let rec type_normalization (env:context) (t:lf_type) : lf_type =
   let t = match t0 with
   | F_Pi(v,a,b) -> 
       let a' = type_normalization env a in
-      let b' = type_normalization ((v,a) :: env) b in
+      let b' = type_normalization (lf_bind env v a) b in
       F_Pi(v,a',b')
   | F_Sigma(v,a,b) -> 
       let a' = type_normalization env a in
-      let b' = type_normalization ((v,a) :: env) b in
+      let b' = type_normalization (lf_bind env v a) b in
       F_Sigma(v,a',b')
   | F_Apply(head,args) ->
       let kind = tfhead_to_kind head in
@@ -581,7 +581,7 @@ let rec type_normalization (env:context) (t:lf_type) : lf_type =
           | ( K_expression | K_judgment | K_judged_expression | K_judged_expression_judgment ), x :: args -> err env pos "too many arguments"
           | K_Pi(v,a,kind'), x :: args ->
               term_normalization env x a ::
-              repeat ((v,a) :: env) kind' args
+              repeat (lf_bind env v a) kind' args
           | K_Pi(_,a,_), [] -> errmissingarg env pos a
         in repeat env kind args
       in F_Apply(head,args)

@@ -9,6 +9,13 @@ let cite_tactic tac args = APPLY(TAC tac, args)
 
 let ( ** ) x s = ARG(x,s)		(* right associative *)
 
+let rec nth_arg n args =
+  match n,args with
+  | 0, ARG(x,_) -> x
+  | n, CAR args | n, CDR args -> nth_arg n args
+  | _, END -> raise Not_found
+  | n, ARG(_,args) -> nth_arg (n-1) args
+
 let rec join_args a b =
   if b = END then a else
   match a with

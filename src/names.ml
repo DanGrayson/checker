@@ -73,7 +73,7 @@ let marked_var_to_lf (pos,v) = pos, APPLY(V v,END)
 let var_to_lf_pos pos v = with_pos pos (APPLY(V v,END))
 
 let fetch_type env pos v = 
-  try List.assoc v env
+  try List.assoc v env.lf_context
   with Not_found -> 
     raise (TypeCheckingFailure (env, [], [pos, "unbound variable: " ^ vartostring v]))
 
@@ -86,18 +86,13 @@ let head_to_type env pos = function
   | TAC _ -> internal ()
 
 let ensure_new_name env pos v =
-  try let _ = List.assoc v env in
+  try let _ = List.assoc v env.lf_context in
       raise (MarkedError (pos, "variable already defined: " ^ vartostring v))
   with Not_found -> ()
 
 let def_bind v (pos:position) o t (env:context) = 
   ensure_new_name env pos v;
-  (v, (pos,F_Singleton(o,t))) :: env
-
-let ts_bind pos (v,t) env = 
-  let v' = newfresh v in
-  (v, with_pos pos (F_Sigma(v', oexp, new_pos pos (hastype (var_to_lf v') t)))) ::
-  env
+  lf_bind env v (pos,F_Singleton(o,t))
 
 let new_hole = 
   let counter = ref 0 in
@@ -106,3 +101,9 @@ let new_hole =
     APPLY(TAC (Tactic_hole !counter), END))
 
 let hole pos = pos, new_hole()
+
+(* 
+  Local Variables:
+  compile-command: "make -C .. src/names.cmo "
+  End:
+ *)

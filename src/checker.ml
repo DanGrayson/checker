@@ -93,7 +93,8 @@ let lexpos lexbuf =
   let _ = Tokens.command_flush lexbuf in
   p
 
-let add_tVars env tvars = 
+let add_tVars c tvars = 
+  { c with lf_context =   
     List.rev_append 
       (List.flatten
 	 (List.map
@@ -106,14 +107,14 @@ let add_tVars env tvars =
 	    tvars
 	 )
       )
-      env
+      c.lf_context }
 
 let lf_axiomCommand env pos name t =
   if show_rules then ( printf "Axiom LF %s: %a\n%!" name  _t t );
   let t = Lfcheck.type_validity [] env t in
   let v = Var name in
   ensure_new_name env pos v;
-  (v,t) :: env
+  lf_bind env v t
 
 let defCommand env defs = 
   List.fold_left
@@ -211,7 +212,7 @@ let rec process_command env lexbuf =
     | Toplevel.Show n -> show_command env n; env
     | Toplevel.CheckUniverses -> checkUniversesCommand env pos; env
     | Toplevel.Include filename -> parse_file env filename
-    | Toplevel.Clear -> []
+    | Toplevel.Clear -> empty_context
     | Toplevel.Mode_simple -> Toplevel.binder_mode := Toplevel.Binder_mode_simple; env
     | Toplevel.Mode_pairs -> Toplevel.binder_mode := Toplevel.Binder_mode_pairs; env
     | Toplevel.Mode_relative -> Toplevel.binder_mode := Toplevel.Binder_mode_relative; env
@@ -256,7 +257,7 @@ let parse_string env grammar s =
 let expr_from_string env s = parse_string env Grammar.ts_exprEof s
 
 let toplevel() = 
-  let env = ref [] in
+  let env = ref empty_context in
   (try
     Arg.parse 
       (Arg.align

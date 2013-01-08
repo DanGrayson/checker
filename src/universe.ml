@@ -54,15 +54,18 @@ let get_ueqns =
 
 let chk_var_ueqns uv eqns = List.iter (chk uv) eqns
 
-let consistency env  = List.iter (chk (get_uvars env)) (get_ueqns env)
+let consistency c = 
+  let env = c.lf_context in
+  List.iter (chk (get_uvars env)) (get_ueqns env)
 
 let chk_ueqns env ueqns = chk_var_ueqns (get_uvars env) ueqns
 
-let ubind env uvars ueqns =
+let ubind c uvars ueqns =
+  let env = c.lf_context in
   let env = List.rev_append (List.map (fun u -> ((Var u), uexp)) uvars) env in
   let env = List.rev_append (List.map (fun (u,v) -> (Variables.newfresh (Var "ueq"), ulevel_equality u v)) ueqns) env in
   chk_ueqns env ueqns;
-  env
+  {c with lf_context = env }
 
 module Equal = struct
   let term_equiv ulevel_context = 			(* structural equality *)
@@ -88,3 +91,9 @@ end
 module type Equivalence = sig
   val term_equiv : uContext -> lf_expr -> lf_expr -> bool
 end
+
+(* 
+  Local Variables:
+  compile-command: "make -C .. src/universe.cmo "
+  End:
+ *)

@@ -301,7 +301,16 @@ type oSubs = (var * lf_expr) list
 
 (** Contexts. *)
 
-type context = (var * lf_type) list
+type context = {
+    lf_context : (var * lf_type) list;
+    ts_context : (var * lf_expr) list;
+  }
+
+let empty_context = { lf_context = []; ts_context = [] }
+
+let lf_bind env v t = { env with lf_context = (v,t) :: env.lf_context }
+
+let ts_bind env v t = { env with ts_context = (v,t) :: env.ts_context }
 
 type uContext = UContext of var marked list * (lf_expr * lf_expr) marked list
 

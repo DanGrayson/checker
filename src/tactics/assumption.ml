@@ -11,7 +11,7 @@ let assumption surr env pos t =
 	with TypeEquivalenceFailure -> 
 	  repeat envp)
     | [] -> TacticFailure
-  in repeat env
+  in repeat env.lf_context
 
 (* 
   Local Variables:
