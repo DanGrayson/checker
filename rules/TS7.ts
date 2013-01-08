@@ -19,13 +19,13 @@ Definition ev1 { ⊢ T U Type, f:T⟶U, o:T } ⊢ @[ev;_](f,o,U) : U
 
 	   := (_, T ⟾ U ⟾ ev_hastype₂[T,(_⟾U₁,_⟾U)]).
 
-Definition Iscontr { ⊢ X Type } ⊢ Σ x:X, ∏ y:X, @[Id]($tn1,y,x) Type
+Definition Iscontr { ⊢ X Type } ⊢ Σ x:X, ∏ y:X, y==x  Type
 
-	   := (_, X ⟾ Σ_istype₂[X, (x ⟾ ∏ y:X₁, @[Id](X₁,y,x), 
+	   := (_, X ⟾ Σ_istype₂[X, (x ⟾ ∏ y:X₁, y==x, 
    			                x' ⟾ pi₂[X,(y ⟾ @[Id](X₁,y,x'₁), 
 			 	                    y' ⟾ Id_istype₂[X,y',x'])])]).
 
-Definition Hfiber { ⊢ X Y Type, f:X⟶Y, y:Y } ⊢ @[Σ;x](X,@[Id](Y,@[ev;_](f,x,Y),y)) Type 
+Definition Hfiber { ⊢ X Y Type, f:X⟶Y, y:Y } ⊢ Σ x:X, @[ev;_](f,x,Y) == y  Type 
 
   ::= (_, X ⟼ Y ⟼ f ⟼ y ⟼ 
      (Σ_istype₂ X (x ⟼ (@[Id] Y₁ (@[ev] f₁ x (_ ⟼ Y₁)) y₁), x ⟼ (Id_istype₂ Y (ev1₂ X Y f x) y)))).
@@ -38,13 +38,13 @@ Definition Weq { ⊢ X Y Type } ⊢ Σ f:X⟶Y, Isweq₁[X,Y,f] Type
 
    ::= (_,X ⟼ Y ⟼ (Σ_istype₂ (pi1₂ X Y) (f ⟼ (Isweq₁ X₁ Y₁ f), f ⟼ (Isweq₂ X Y f)))).
 
-Definition Isaprop { ⊢ X Type } ⊢ ∏ x:X, ∏ x':X, Iscontr₁[@[Id](X,x,x')] Type
+Definition Isaprop { ⊢ X Type } ⊢ ∏ x:X, ∏ x':X, Iscontr₁[x==x'] Type
 
    ::= (_,X ⟼ (pi₂ X (x ⟼ (@[∏] X₁ (x' ⟼ (Iscontr₁ (@[Id] X₁ x x')))), 
    		       x ⟼ (pi₂ X (x' ⟼ (Iscontr₁ (@[Id] X₁ x₁ x')),
 		       		    x' ⟼ (Iscontr₂ (Id_istype₂ X x x'))))))).
 
-Definition Isaset { ⊢ X Type } ⊢ ∏ x:X, ∏ x':X, Isaprop₁[@[Id](X,x,x')] Type
+Definition Isaset { ⊢ X Type } ⊢ ∏ x:X, ∏ x':X, Isaprop₁[x==x'] Type
 
    ::= (_,X ⟼ (pi₂ X (x ⟼ (pi₁ X₁ (x' ⟼ (Isaprop₁ (Id_istype₁ X₁ x x')))), 
    		       x ⟼ (pi₂ X (x' ⟼ (Isaprop₁ (Id_istype₁ X₁ x₁ x')),

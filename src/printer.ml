@@ -1,6 +1,6 @@
 (** Functions for converting expressions to strings for printing *)
 
-let enable_variable_prettification = false
+let enable_variable_prettification = true
 
 open Error
 open Variables

@@ -1,5 +1,14 @@
-RULES_FILES = 					\
-	rules/TS.ts
+RULES_FILES =					\
+	rules/TS.ts				\
+	rules/TS0.ts				\
+	rules/TS1.ts				\
+	rules/TS2.ts				\
+	rules/TS3.ts				\
+	rules/TS4.ts				\
+	rules/TS5.ts				\
+	rules/TS6.ts				\
+	rules/TS7.ts				\
+	rules/others.ts
 
 SHOW = no
 ifeq "$(SHOW)" "yes"

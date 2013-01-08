@@ -198,7 +198,7 @@ let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_t
   Universes Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_CAR K_CDR Times
   Turnstile DoubleArrow DoubleArrowFromBar ColonColonEqual ColonEqual Theorem
   LeftBrace RightBrace TurnstileDouble ColonColon Include Clear Mode Simple
-  Relative Pairs
+  Relative Pairs EqualEqual
 
 (* precedences, lowest first *)
 
@@ -221,6 +221,10 @@ let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_t
 %nonassoc
 
   Star					(* *x denotes [El](x) *)
+
+%nonassoc
+
+  EqualEqual
 
 %left
 
@@ -698,6 +702,9 @@ unmarked_ts_expr:
 
     | LeftParen x= variable Colon t= ts_expr RightParen Arrow u= ts_expr
 	{ make_T_Pi t (x,u) }
+
+    | x= ts_expr EqualEqual y= ts_expr
+	{ make_T_Id (with_pos_of x (cite_tactic (Tactic_name "tn1") END)) x y }
 
     | t= ts_expr Arrow u= ts_expr
 	{ make_T_Pi t (newunused(),u) }

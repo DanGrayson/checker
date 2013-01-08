@@ -104,6 +104,7 @@ rule expr_tokens = parse
   | ','  { Comma }
   | '~'  { Tilde }
   | '='  { Equal }
+  | "=="  { EqualEqual }
   | ">="  { GreaterEqual }
   | '>' { Greater }
   | "<="  { LessEqual }

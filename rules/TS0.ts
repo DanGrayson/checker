@@ -76,8 +76,6 @@ Axiom 3.4.32 El_forall_reduction { ⊢ M1 M2 Ulevel, o1 : @[U](M1) } { x : *o1 �
 
           [ (*@[∀;x](M1,M2,o1,o2[x])) = @[∏;x](*o1,*o2[x]) ].
 
-Check LF El_forall_reduction.
-
 #   Local Variables:
 #   compile-command: "make -C .. rules0 "
 #   End:
