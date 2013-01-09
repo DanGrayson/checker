@@ -1,0 +1,35 @@
+Both
+	
+     cast : (T:(T1:texp) × istype T1) ⟶ 
+     	    (U:(U1:texp) × istype U1) ⟶ 
+	    (o:(o1:oexp) × hastype o1 T₁) ⟶ 
+	    tequal T₁ U₁ ⟶ 
+	    (x:Singleton(o₁ : oexp)) × hastype x U₁
+
+and
+
+     cast : (T:texp) ⟶ 
+     	    (U:texp) ⟶ 
+	    tequal T U ⟶ 
+	    (o:oexp) ⟶ 
+	    (x:Singleton(o : oexp)) × 
+	    	istype T ⟶ istype U ⟶ hastype o T ⟶ hastype x U
+
+are both wrong, since neither provides an expression
+
+Change to
+	
+     cast : (p : (T:texp) ⟶ (U:texp) ⟶ (o:oexp) ⟶ Singleton(o : oexp)) × 
+	        (T:(T1:texp) × istype T1) ⟶ 
+     	        (U:(U1:texp) × istype U1) ⟶ 
+	    	(o:(o1:oexp) × hastype o1 T₁) ⟶ 
+	    	tequal T₁ U₁ ⟶ 
+ 		(x:Singleton((p T₁ U₁ o₁)  : oexp)) × hastype x U₁
+
+and
+
+     cast : (T:texp) ⟶ 
+     	    (U:texp) ⟶ 
+	    (o:oexp) ⟶ 
+	    (x:Singleton(o : oexp)) × 
+	    	istype T ⟶ istype U ⟶ hastype o T ⟶ tequal T U ⟶ hastype x U

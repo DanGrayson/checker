@@ -50,16 +50,3 @@ Now we have three interpretations:
      		(arg : obj_of_type T) ⟶ obj_of_type (U arg)
      lamb : (T:type) ⟶ (U : obj_of_type T ⟶ type) ⟶ (body : (t:obj_of_type T) ⟶ obj_of_type (U t)) 
      		   ⟶ obj_of_type (pi T U)
-
-  Parenthetical remark:
-
-     Another possible interpretation would be the simple one, analogous to judged
-     expressions, where expressions are neither demanded nor provided:
-
-	  pi :    (T:(T1:texp) × istype T1) ⟶ 
-		  (U:(U1:oexp ⟶ texp) × (t1:(t2:oexp) × hastype t2 T₁) ⟶ (U2:Singleton((U1 t1₁) : texp)) × istype U2) ⟶ 
-		  (t1:Singleton(([∏] T₁ (t1 ⟼ (???))) : oexp)) × istype t1
-
-     But it can't work either, because [∏] demands an expression with a free
-     variable.  We want to put something like (U t1)₁ in the blank (??? above),
-     but t1:oexp is not a pair, and U demands its argument be a pair.

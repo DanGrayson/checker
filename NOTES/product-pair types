@@ -91,3 +91,92 @@ Solution:
 		---------------------------------------------
 		|- x |-> f x : (PiPair x:(a:A)**B) ((c:C)**D)
 
+-----------------------------------------------------------------------------
+
+Further thoughts:
+
+     Another possible interpretation of axioms such as
+
+     	   Axiom 3.4.21 pi { ⊢ T Type } { t : T ⊢ U Type } ⊢ @[∏;t](T,U[t]) Type .
+
+     would be the simple one, analogous to judged expressions, where
+     expressions are neither demanded nor provided:
+
+	  pi :    (T : (T1:texp) × istype T1) ⟶ 
+		  (U : ((t2:oexp) × hastype t2 T₁) ⟶ (U2:texp) × istype U2) ⟶ 
+		  (t : Singleton(([∏] T₁ (t1 ⟼ (???))) : oexp)) × istype t
+
+     But it can't work either, because [∏] demands an expression with a free
+     variable.  We want to put something like (U t1)₁ in the blank (??? above),
+     but because
+
+     	     [∏] : texp ⟶ (oexp ⟶ texp) ⟶ texp
+
+     , t1:oexp is not a pair, and U demands its argument be a pair.
+
+     If only there were an operation of LF that would produce
+
+         U₁ : oexp ⟶ texp
+
+     from
+
+         U : ((t2:oexp) × hastype t2 T₁) ⟶ (U2:texp) × istype U2
+
+     then we could put (U₁ t1) in the blank.
+
+     What if we change our LF signature from
+
+	  Kind of type constants:
+	     type : kind
+	  Type family constants:
+	     uexp : type
+	     texp : type
+	     oexp : type
+	     istype : texp ⟶ type
+	     hastype : oexp ⟶ texp ⟶ type
+
+     to
+
+	  Kind of type constants:
+	     type1 : kind
+	     type2 : kind
+	  Type family constants:
+	     uexp : type1
+	     texp : type1
+	     oexp : type1
+	     istype : texp ⟶ type2
+	     hastype : oexp ⟶ texp ⟶ type2
+
+     and then try to define a projection that forgets everything about type2?
+
+     Or consider
+
+	     a_type : type3
+	     obj_of_type : a_type ⟶ type3
+	     type_equality : a_type ⟶ a_type ⟶ type3
+	     object_equality : (T:a_type) ⟶ obj_of_type T ⟶ obj_of_type T ⟶ type3
+
+     posit a functor "exp" from type3 objects and types to type1 objects and types :
+
+     	  a_type          |--> texp
+	  obj_of_type     |--> oexp
+	  type_equality   |--> texp -> texp -> unit
+	  object_equality |--> texp -> oexp -> oexp -> unit
+	  
+     compatible with Pi, Sigma, lambda, evaluation, and type judgments.
+
+     An axiom such as
+
+        Axiom LF pi : (T:a_type) ⟶ ( obj_of_type T ⟶ a_type ) ⟶ a_type.
+
+     would automatically yield
+
+        exp pi : (T:exp a_type) ⟶ ( exp(obj_of_type T) ⟶ exp a_type ) ⟶ exp a_type.
+
+     , i.e., 
+
+        exp pi : (T:texp) ⟶ (oexp ⟶ texp) ⟶ texp.
+
+     , and then we could define [pi] = exp pi.
+
+

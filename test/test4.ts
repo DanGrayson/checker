@@ -2,39 +2,39 @@
 
 # new "judged expression" level:
 
-Axiom LF pi : (T:type) ⟶ ( obj_of_type T ⟶ type ) ⟶ type.
+Axiom LF pi : (T:a_type) ⟶ ( obj_of_type T ⟶ a_type ) ⟶ a_type.
 
-Axiom LF UU : uexp ⟶ type.
+Axiom LF UU : uexp ⟶ a_type.
 
 Axiom LF uu : (M:uexp) ⟶ obj_of_type (UU (@[next] M)).
 
-Axiom LF El : (M:uexp) ⟶ obj_of_type (UU M) ⟶ type.
+Axiom LF El : (M:uexp) ⟶ obj_of_type (UU M) ⟶ a_type.
 
 Axiom LF El_u_reduction : (M:uexp) ⟶ type_equality (El M (uu M)) (UU M).
 
-Axiom LF cast : (T:type) ⟶ (U:type) ⟶ type_equality T U ⟶ obj_of_type T ⟶ obj_of_type U.
+Axiom LF cast : (T:a_type) ⟶ (U:a_type) ⟶ type_equality T U ⟶ obj_of_type T ⟶ obj_of_type U.
 
 Axiom LF forall : (M1:uexp) ⟶ (M2:uexp) ⟶ (o1 : obj_of_type (UU M1)) ⟶ (o2 : obj_of_type (El M1 o1) ⟶ obj_of_type (UU M2)) 
       		   ⟶ obj_of_type (UU (@[max] M1 M2)).
 
-Axiom LF lamb : (T:type) ⟶ 
-      		(U : obj_of_type T ⟶ type) ⟶ 
+Axiom LF lamb : (T:a_type) ⟶ 
+      		(U : obj_of_type T ⟶ a_type) ⟶ 
 		(body : (t:obj_of_type T) ⟶ obj_of_type (U t)) 
 	   ⟶ obj_of_type (pi T U).
 
-Axiom LF ev : (T:type) ⟶ 
-      	      (U : obj_of_type T ⟶ type) ⟶ 
+Axiom LF ev : (T:a_type) ⟶ 
+      	      (U : obj_of_type T ⟶ a_type) ⟶ 
 	      (f : obj_of_type (pi T U)) ⟶ 
 	      (arg : obj_of_type T) 
 	   ⟶ obj_of_type (U arg).
 
-Axiom LF beta_reduction : (T:type) ⟶ 
+Axiom LF beta_reduction : (T:a_type) ⟶ 
       			  (arg : obj_of_type T) ⟶ 
-			  (U : obj_of_type T ⟶ type) ⟶ 
+			  (U : obj_of_type T ⟶ a_type) ⟶ 
 			  (body : (t:obj_of_type T) ⟶ obj_of_type (U t)) 
              ⟶ object_equality (U arg) (ev T U (lamb T U body) arg) (body arg).
 
-Theorem LF id0 : (T:type) ⟶ (t:obj_of_type T) ⟶ obj_of_type T := _ ⟼ t ⟼ t.
+Theorem LF id0 : (T:a_type) ⟶ (t:obj_of_type T) ⟶ obj_of_type T := _ ⟼ t ⟼ t.
 
 Theorem LF id0' : (u:uexp) ⟶ (T:obj_of_type (UU u)) ⟶ (t:obj_of_type (El u T)) ⟶ obj_of_type (El u T) := _ ⟼ _ ⟼ t ⟼ t.
 
@@ -42,20 +42,20 @@ Theorem LF id3' : (u:uexp) ⟶ (T:obj_of_type (UU u)) ⟶ (T':obj_of_type (UU u)
 			   ⟶ (t:obj_of_type (El u T)) ⟶ obj_of_type (El u T') :=
 	u ⟼ T ⟼ T' ⟼ (ev (El u T) (_ ⟼ (El u T'))).
 
-Theorem LF make : (T:type) ⟶ (U:type) ⟶ (f : obj_of_type T ⟶ obj_of_type U) ⟶ obj_of_type (pi T (_ ⟼ U)) := 
+Theorem LF make : (T:a_type) ⟶ (U:a_type) ⟶ (f : obj_of_type T ⟶ obj_of_type U) ⟶ obj_of_type (pi T (_ ⟼ U)) := 
 	T ⟼ U ⟼ (lamb T (_ ⟼ U)).
 
 # introduce non-dependent versions of pi, lamb, and ev:
 
-Definition LF pi1 : (T:type) ⟶ (U:type) ⟶ type := T ⟼ U ⟼ (pi T (_ ⟼ U)).
+Definition LF pi1 : (T:a_type) ⟶ (U:a_type) ⟶ a_type := T ⟼ U ⟼ (pi T (_ ⟼ U)).
 
-Definition LF lamb1 : (T:type) ⟶ (U:type) ⟶ (body : (t:obj_of_type T) ⟶ obj_of_type U) ⟶ obj_of_type (pi1 T U) :=
+Definition LF lamb1 : (T:a_type) ⟶ (U:a_type) ⟶ (body : (t:obj_of_type T) ⟶ obj_of_type U) ⟶ obj_of_type (pi1 T U) :=
 	   T ⟼ U ⟼ (lamb T (_ ⟼ U)).
 
-Definition LF ev1 : (T:type) ⟶ (U:type) ⟶ (f : obj_of_type (pi1 T U)) ⟶ (arg : obj_of_type T) ⟶ obj_of_type U :=
+Definition LF ev1 : (T:a_type) ⟶ (U:a_type) ⟶ (f : obj_of_type (pi1 T U)) ⟶ (arg : obj_of_type T) ⟶ obj_of_type U :=
 	   T ⟼ U ⟼ (ev T (_ ⟼ U)).
 
-Theorem LF modus_ponens : (T:type) ⟶ (U:type) ⟶ (V:type) ⟶ obj_of_type (pi1 (pi1 T U) (pi1 (pi1 U V) (pi1 T V))) :=
+Theorem LF modus_ponens : (T:a_type) ⟶ (U:a_type) ⟶ (V:a_type) ⟶ obj_of_type (pi1 (pi1 T U) (pi1 (pi1 U V) (pi1 T V))) :=
 	T ⟼ U ⟼ V ⟼ 
 	(lamb1 (pi1 T U)
 	       (pi1 (pi1 U V) (pi1 T V))

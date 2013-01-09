@@ -14,7 +14,6 @@ Check LF pi.
 Check LF ev_hastype.
 Check LF λh.
 
-
 #   Local Variables:
 #   compile-command: "make -C .. test2 "
 #   End:
