@@ -1,19 +1,19 @@
 # -*- coding: utf-8 -*-
 
 Mode Pairs.
-Include "rules/TS.ts".
+Include "rules/TS0.ts".
 Check LF pi.
 Check LF ev_hastype.
 Check LF λh.
 
-End.
+Clear.
 
 Mode Relative.
-Include "rules/TS.ts".
+Include "rules/TS0.ts".
 Check LF pi.
 Check LF ev_hastype.
 Check LF λh.
-Clear.
+
 
 #   Local Variables:
 #   compile-command: "make -C .. test2 "

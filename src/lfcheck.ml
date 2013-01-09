@@ -292,7 +292,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
           | K_Pi(v,t,k), x :: args, x' :: args' ->
               term_equivalence env x x' t;
               repeat (subst_kind (v,x) k) args args'
-          | ( K_expression | K_judgment | K_judged_expression | K_judged_expression_judgment ), [], [] -> ()
+          | K_type, [], [] -> ()
           | _ -> (trap(); raise Internal)
         in repeat k args args'
     | _ -> raise TypeEquivalenceFailure
@@ -449,8 +449,8 @@ let type_validity (surr:surrounding) (env:context) (t:lf_type) : lf_type =
           let kind = tfhead_to_kind head in
           let rec repeat i env kind (args:lf_expr list) = 
             match kind, args with 
-            | ( K_expression | K_judgment | K_judged_expression | K_judged_expression_judgment ), [] -> []
-            | ( K_expression | K_judgment | K_judged_expression | K_judged_expression_judgment ), x :: args -> err env pos "at least one argument too many";
+            | K_type, [] -> []
+            | K_type, x :: args -> err env pos "at least one argument too many";
             | K_Pi(v,a,kind'), x :: args -> 
                 let x' = type_check ((S_argument i,None,Some t0) :: surr) env x a in
                 x' :: repeat (i+1) env (subst_kind (v,x') kind') args
@@ -577,8 +577,8 @@ let rec type_normalization (env:context) (t:lf_type) : lf_type =
       let args =
         let rec repeat env kind (args:lf_expr list) = 
           match kind, args with 
-          | ( K_expression | K_judgment | K_judged_expression | K_judged_expression_judgment ), [] -> []
-          | ( K_expression | K_judgment | K_judged_expression | K_judged_expression_judgment ), x :: args -> err env pos "too many arguments"
+          | K_type, [] -> []
+          | K_type, x :: args -> err env pos "too many arguments"
           | K_Pi(v,a,kind'), x :: args ->
               term_normalization env x a ::
               repeat (lf_bind env v a) kind' args

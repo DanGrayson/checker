@@ -1,0 +1,65 @@
+The last talk was Dec 7, 2012.  Then we had the following interpretations of
+the inference rules:
+
+     ∏_istype : (∏ T:texp) (∏ U:(oexp ⟶ texp)) (∏ x:oexp)
+     		(hastype x T) ⟶ (istype (U x)) ⟶ (istype ([Pi] T U))
+     ev_hastype : (∏ T:texp) (∏ U:(oexp ⟶ texp)) (∏ f:oexp) (∏ o:oexp) 
+     		  (hastype f ([Pi] T U)) ⟶ (hastype o T) ⟶ (hastype ([ev] f o U) (U o))
+     λ_hastype : (∏ T:texp) (∏ U:(oexp ⟶ texp)) (∏ o:(oexp ⟶ oexp)) 
+     		 (istype T) ⟶ ((∏ x:oexp) (hastype x T) ⟶ (hastype (o x) (U x))) ⟶ (hastype ([lambda] T o) ([Pi] T U))
+
+That turned out not to be workable: the premisses (and TS expressions
+themselves) may demand expressions with free variables (e.g., LF objects of
+type oexp ⟶ texp), but the inference rules don't provide them.  So if theorems
+are constructed the same way, using one theorem to prove another will be
+impossible.
+
+Now we have three interpretations:
+
+  Mode Pairs.
+
+     pi : (t:(T:texp) ⟶ (U:oexp ⟶ texp) ⟶ Singleton(([∏] T (t1 ⟼ (U t1))) : texp)) × 
+     	     (T:(T1:texp) × istype T1) ⟶ 
+	     (U:(U1:oexp ⟶ texp) × (t1:(t2:oexp) × hastype t2 T₁) ⟶ (U2:Singleton((U1 t1₁) : texp)) × istype U2) ⟶ 
+	     (t1:Singleton((t T₁ U₁) : texp)) × istype t1
+     ev_hastype : (x:texp ⟶ (U:oexp ⟶ texp) ⟶ (f:oexp) ⟶ (o:oexp) ⟶ Singleton(([ev] f o (t ⟼ (U t))) : oexp)) × 
+     			(T:(T1:texp) × istype T1) ⟶ 
+			(U:(U1:oexp ⟶ texp) × (t:(t1:oexp) × hastype t1 T₁) ⟶ (U2:Singleton((U1 t₁) : texp)) × istype U2) ⟶ 
+			(f:(f1:oexp) × hastype f1 ([∏] T₁ U₁)) ⟶ 
+			(o:(o1:oexp) × hastype o1 T₁) ⟶ 
+			(x1:Singleton((x T₁ U₁ f₁ o₁) : oexp)) × hastype x1 (U₁ o₁)
+     λh : (x:(T:texp) ⟶ (oexp ⟶ texp) ⟶ (o:oexp ⟶ oexp) ⟶ Singleton(([λ] T o) : oexp)) × 
+              (T:(T1:texp) × istype T1) ⟶ 
+	      (U:(U1:oexp ⟶ texp) × (x1:(x2:oexp) × hastype x2 T₁) ⟶ (U2:Singleton((U1 x1₁) : texp)) × istype U2) ⟶ 
+	      (o:(o1:oexp ⟶ oexp) × (x1:(x2:oexp) × hastype x2 T₁) ⟶ (o2:Singleton((o1 x1₁) : oexp)) × hastype o2 (U₁ x1₁)) ⟶ 
+	      (x1:Singleton((x T₁ U₁ o₁) : oexp)) × hastype x1 ([∏] T₁ (t ⟼ (U₁ t)))
+
+  Mode Relative.
+
+     pi : (T:texp) ⟶ (U:oexp ⟶ texp) ⟶ (t:Singleton(([∏] T (t1 ⟼ (U t1))) : texp)) × 
+     		istype T ⟶ ((t1:oexp) ⟶ hastype t1 T ⟶ istype (U t1)) ⟶ istype t
+     ev_hastype : (T:texp) ⟶ (U:oexp ⟶ texp) ⟶ (f:oexp) ⟶ (o:oexp) ⟶ (x:Singleton(([ev] f o (t ⟼ (U t))) : oexp)) × 
+     		istype T ⟶ ((t:oexp) ⟶ hastype t T ⟶ istype (U t)) ⟶ hastype f ([∏] T U) ⟶ hastype o T ⟶ hastype x (U o)
+     λh : (T:texp) ⟶ (U:oexp ⟶ texp) ⟶ (o:oexp ⟶ oexp) ⟶ (x:Singleton(([λ] T o) : oexp)) × 
+     		istype T ⟶ ((x1:oexp) ⟶ hastype x1 T ⟶ istype (U x1)) ⟶ ((x1:oexp) ⟶ hastype x1 T ⟶ hastype (o x1) (U x1)) ⟶ hastype x ([∏] T (t ⟼ (U t)))
+
+  Judged expressions (see test4.ts):
+
+     pi : (T:type) ⟶ ( obj_of_type T ⟶ type ) ⟶ type
+     ev : (T:type) ⟶ (U : obj_of_type T ⟶ type) ⟶ (f : obj_of_type (pi T U)) ⟶ 
+     		(arg : obj_of_type T) ⟶ obj_of_type (U arg)
+     lamb : (T:type) ⟶ (U : obj_of_type T ⟶ type) ⟶ (body : (t:obj_of_type T) ⟶ obj_of_type (U t)) 
+     		   ⟶ obj_of_type (pi T U)
+
+  Parenthetical remark:
+
+     Another possible interpretation would be the simple one, analogous to judged
+     expressions, where expressions are neither demanded nor provided:
+
+	  pi :    (T:(T1:texp) × istype T1) ⟶ 
+		  (U:(U1:oexp ⟶ texp) × (t1:(t2:oexp) × hastype t2 T₁) ⟶ (U2:Singleton((U1 t1₁) : texp)) × istype U2) ⟶ 
+		  (t1:Singleton(([∏] T₁ (t1 ⟼ (???))) : oexp)) × istype t1
+
+     But it can't work either, because [∏] demands an expression with a free
+     variable.  We want to put something like (U t1)₁ in the blank (??? above),
+     but t1:oexp is not a pair, and U demands its argument be a pair.
