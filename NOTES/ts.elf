@@ -1,0 +1,126 @@
+%% This file was written by Dan Licata.
+
+%% we introduce two syntactic categories for t-expressions and o-expressions
+%% note: the notion of an o-variable and a t-variable
+%% is provided by LF automatically.
+%% so are typing contexts Gamma.
+
+%% LF notation:
+%% [x:A] M   is syntax for lambda x:A. M 
+%% {x:A} B   is syntax for Pi x:A. B
+%% typing information can be omitted; Twelf will infer (e.g. [x] M).
+
+t-expr : type.  
+o-expr : type. 
+
+%% syntax trees for o-expressions 
+lambda  : t-expr -> (o-expr -> o-expr) -> o-expr.  
+         %% uses "higher-order abstract syntax": 
+         %% read "o-expr -> o-expr" as "o-expr with one free o-variable"
+ev      : o-expr -> o-expr -> o-expr.
+empty_r  : t-expr -> o-expr -> o-expr.
+
+%% syntax trees for t-expressions 
+forall : t-expr -> (o-expr -> t-expr) -> t-expr.
+empty  : t-expr. %% corresponds to Empty
+%abbrev arrow = [S][T] forall S ([_] T).
+
+%% ----------------------------------------------------------------------
+
+%% four judgement forms: 
+
+is-type   : t-expr -> type. %% read "is-type T" as "T : Type"
+has-type  : o-expr -> t-expr -> type. %% read "has-type O T" as "O : T"
+o-eq     : o-expr -> o-expr -> t-expr -> type. %% read "o-eq O1 O2 T" as "O1 = O2 : T"
+t-eq     : t-expr -> t-expr -> type. %% read "t-eq T1 T2" as "T1 = T2"
+
+%% derivation rules for these judgements: 
+
+%% Empty : Type.
+is-type/empty : is-type empty.  
+
+%% x:T1 |- T2 : Type
+%% ------------------------
+%% (forall x:T1, T2) : Type
+%% 
+is-type/forall' : {T1 : t-expr} {T2 : o-expr -> t-expr} 
+                   is-type (forall T1 T2)
+                   <- ({x : o-expr} has-type x T1 -> is-type (T2 x)).
+
+%% NOTE: capital letters can be implicitly universally quantified,
+%% so the previous rule can be written as follows: 
+is-type/forall : is-type (forall T1 T2)
+                  <- ({x : o-expr} has-type x T1 -> is-type (T2 x)).
+
+has-type/lambda : has-type (lambda T1 O) (forall T1 T2)
+                  <- ({x : o-expr} has-type x T1 -> has-type (O x) (T2 x)).
+
+has-type/ev  : has-type (ev F O) (T2 O)
+                <- has-type F (forall T1 T2)
+                <- has-type O T1.
+
+%% T : Type
+%% O : Empty
+%% ---------------
+%% empty_r T O : T
+has-type/empty_r : has-type (empty_r T O) T
+                    <- is-type T
+                    <- has-type O empty.
+
+%% rule 13
+has-type/eq : has-type O T1
+               <- has-type O T2
+               <- t-eq T1 T2.
+
+%% rule 27
+o-eq/beta : o-eq (ev (lambda T1 O2) O1) (O2 O1) (T2 O1)
+               <- has-type O1 T1
+               <- ({x : o-expr} has-type x T1 -> has-type (O2 x) (T2 x)).
+
+o-eq/app : o-eq (ev F O) (ev F' O') (T2 O)
+              <- o-eq F F' (forall T1 T2)
+              <- o-eq O O' T1. 
+%% etc other congruence rules,
+%% reflexivity, symmetry, transitivity 
+
+o-eq/empty-eta : o-eq O1 O2 A
+                  <- has-type O1 A
+                  <- has-type O2 A
+                  <- has-type O empty.
+
+%% A : Type   B : Type   O : Empty
+%% -------------------------------
+%% A = B : Type
+t-eq/empty-eta : t-eq A B
+                  <- is-type A
+                  <- is-type B
+                  <- has-type O empty.
+
+%% ----------------------------------------------------------------------
+
+%% EXAMPLE of derivation using definitional equality
+
+%% Derivation of
+%% 
+%% F : T2 -> T3,  O : T1, Bad : Empty |- F O : T3
+%%
+%% foo is the LF representation of the derivation tree
+%% that expresses this.
+%%
+%% fully annotate with types for clarity; we could omit lots of them.
+%abbrev foo         : is-type T1
+                   -> is-type T2
+                   -> has-type O T1 
+                   -> has-type F (arrow T2 T3)
+                   -> has-type Bad empty
+                   -> has-type (ev F O) T3 = 
+%% here comes the derivation term.
+    [dT1 : is-type T1]  %% hypothesis that dT1 is a derivation of T1 type 
+    [dT2 : is-type T2]  %% hypothesis that dT2 is a derivation of T2 type 
+    [dO : has-type O T1] %% hypothesis that dO is a derivation of O : T1  
+    [dF : has-type F (arrow T2 T3)] %% hypothesis that dF is a derivation of F : T2 -> T3
+    [dBad : has-type Bad empty]     %% hypothesis that dBad is a derivation of Bad : Empty.
+    has-type/ev (has-type/eq (t-eq/empty-eta dBad dT1 dT2) dO) dF.
+
+           
+           
