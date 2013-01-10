@@ -14,7 +14,7 @@ SRCFILES =					\
 	src/equality.ml src/equality.mli	\
 	src/tau.ml src/tau.mli			\
 	src/lfcheck.ml				\
-	src/grammar.mly				\
+	src/parse.ml src/grammar.mly		\
 	src/tokens.mll				\
 	src/toplevel.ml				\
 	src/checker.ml				\

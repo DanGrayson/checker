@@ -1,4 +1,4 @@
-TSNAMES = demo test test2 test3 test4 test5 ts-elf
+TSNAMES = demo test test2 test3 test4 test5 ts-elf ts-elf-2
 TSFILES = $(patsubst %,test/%.ts,$(TSNAMES))
 all: tests
 tests : $(TSNAMES)

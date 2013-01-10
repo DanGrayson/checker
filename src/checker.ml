@@ -2,7 +2,7 @@
 
 let debug = false
 
-let show_rules = false
+let show_rules = true
 
 let show_definitions = false
 

@@ -27,7 +27,7 @@
 		       "max" "Singleton" "Sigma" "pair" "CAR" "CDR" ))
 
 (defvar ts-commands '( "Mode" "Simple" "Relative" "Pairs" "Clear" "Universes" "LF" "TS"
-		       "Check" "Alpha" "End" "Clear" "Show" "Theorem" ))
+		       "Check" "Alpha" "End" "Clear" "Show" "Include" ))
 
 (defvar ts-mode-font-lock-keywords 
   `(
@@ -40,7 +40,7 @@
     ("\\(Variable\\) +\\([[:alnum:]_']+\\)"
      (1 font-lock-keyword-face) 
      (2 font-lock-function-name-face))
-    ("\\(Definition\\|Lemma\\|Proposition\\|Corollary\\|Axiom\\)[[:space:]]*\\( [0-9]+\\(\\.[0-9]+\\)*\\)?[[:space:]]+\\([[:alnum:]∏∐Σλ_']+\\)"
+    ("\\(Definition\\|Lemma\\|Proposition\\|Corollary\\|Axiom\\|Theorem\\)[[:space:]]*\\( [0-9]+\\(\\.[0-9]+\\)*\\)?[[:space:]]+\\([[:alnum:]∏∐Σλ_']+\\)"
      (1 font-lock-keyword-face) 
      (4 font-lock-function-name-face))
     ))
