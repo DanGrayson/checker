@@ -7,7 +7,9 @@
  open Grammar
  open Variables
  open Typesystem
+ open Parse
  open Printf
+ open Printer
 
  let commands = Hashtbl.create 20
  let _ = List.iter (fun (w,t) -> Hashtbl.add commands w t) [
@@ -19,12 +21,6 @@
    Alpha; "Variable", Variable; "End", End; "Include", Include; "Clear", Clear;
    "Show", Show; "Theorem", Theorem; "Definition", Theorem; "Lemma", Theorem;
    "Proposition", Theorem; "Corollary", Theorem ]
-
- let lexing_pos lexbuf = 
-   let p = Lexing.lexeme_start_p lexbuf in
-   p.Lexing.pos_fname ^ ":" ^
-   string_of_int p.Lexing.pos_lnum ^ ":" ^
-   (string_of_int (p.Lexing.pos_cnum-p.Lexing.pos_bol+1))
 
  let tab lexbuf =
    let p = lexbuf.Lexing.lex_curr_p in
@@ -141,8 +137,9 @@ rule expr_tokens = parse
 
 (* invalid characters *)
 
-  | _ as c { fprintf stderr "%s: invalid character: '%c'\n%!" (lexing_pos lexbuf) c; 
-	     bump_error_count();
+  | _ as c { let pos = lexbuf_position lexbuf in
+	     fprintf stderr "%a: invalid character: '%c'\n%!" _pos pos c; 
+	     bump_error_count pos;
 	     expr_tokens lexbuf }
 
 and command_flush = parse

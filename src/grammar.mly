@@ -252,13 +252,13 @@ command:
     | error Period
 	{ let pos = Position($startpos, $endpos) in
 	  fprintf stderr "%a: syntax error\n%!" _pos pos; 
-	  bump_error_count();
+	  bump_error_count pos;
 	  pos, Toplevel.SyntaxError }
 
     | error EOF
 	{ let pos = Position($startpos, $endpos) in
 	  fprintf stderr "%a: syntax error\n%!" _pos pos; 
-	  bump_error_count();
+	  bump_error_count pos;
 	  pos, Toplevel.SyntaxError }
 
     | EOF { trap(); raise Eof }
@@ -407,28 +407,18 @@ unmarked_ts_judgment:
 	      F_Sigma(v, with_pos pos (F_Singleton(a,texp)), with_pos pos (F_Apply(F_istype, [var_to_lf_pos pos v]))) 
 	}
 
-    | LeftBracket a= ts_expr Type RightBracket
-	{ unmark (istype a) }
-
-    | LeftBracket a= ts_expr EqualEqual b= ts_expr RightBracket
-	{ unmark (type_equality a b) }
-
-    | LeftBracket x= ts_expr Colon t= ts_expr RightBracket
-	{ unmark (hastype x t) }
-
-    | LeftBracket x= ts_expr EqualEqual y= ts_expr Colon t= ts_expr RightBracket
-	{ unmark (object_equality x y t) }
-
-    | LeftBracket a= ts_expr Tilde b= ts_expr Ulevel RightBracket
-	{ unmark (ulevel_equality a b) }
-
-    | LeftBracket a= ts_expr Tilde b= ts_expr Type RightBracket
-	{ unmark (type_uequality a b) }
-
-    | LeftBracket a= ts_expr Tilde b= ts_expr Colon t= ts_expr RightBracket
-	{ unmark (object_uequality a b t) } 
+    | j= ts_bracketed_judgment 
+	{ j }
 
 (* introduction of parameters *)
+
+    | j= ts_bracketed_judgment u= ts_judgment
+	%prec Reduce_binder
+	{ let pos = Position($startpos, $endpos) in
+	  ignore (j,u);
+	  printf "%a: bracketed binders not implemented yet\n%!" _pos pos;
+	  $syntaxerror
+	}
 
     | LeftBrace c= context vbj= separated_nonempty_list(Comma,pair(nonempty_list(marked_variable),binder_judgment)) RightBrace u= ts_judgment
 	%prec Reduce_binder
@@ -449,6 +439,29 @@ unmarked_ts_judgment:
 	      vbj u in
 	  unmark r
 	}
+
+ts_bracketed_judgment:
+
+    | LeftBracket a= ts_expr Type RightBracket
+	{ unmark (istype a) }
+
+    | LeftBracket a= ts_expr EqualEqual b= ts_expr RightBracket
+	{ unmark (type_equality a b) }
+
+    | LeftBracket x= ts_expr Colon t= ts_expr RightBracket
+	{ unmark (hastype x t) }
+
+    | LeftBracket x= ts_expr EqualEqual y= ts_expr Colon t= ts_expr RightBracket
+	{ unmark (object_equality x y t) }
+
+    | LeftBracket a= ts_expr Tilde b= ts_expr Ulevel RightBracket
+	{ unmark (ulevel_equality a b) }
+
+    | LeftBracket a= ts_expr Tilde b= ts_expr Type RightBracket
+	{ unmark (type_uequality a b) }
+
+    | LeftBracket a= ts_expr Tilde b= ts_expr Colon t= ts_expr RightBracket
+	{ unmark (object_uequality a b t) } 
 
 binder_judgment:
 

@@ -33,3 +33,10 @@ and
 	    (o:oexp) ⟶ 
 	    (x:Singleton(o : oexp)) × 
 	    	istype T ⟶ istype U ⟶ hastype o T ⟶ tequal T U ⟶ hastype x U
+
+Idea:
+
+	introduce new syntax for binders by judgments: 
+
+		Axiom 3.4.13 cast { ⊢ T U Type } [ T ≡ U ] { ⊢ o : T } ⊢ o : U.
+

@@ -7,6 +7,15 @@ open Error
 open Variables
 open Names
 
+let error_count = ref 0
+
+let bump_error_count pos =
+  incr error_count;
+  if !error_count >= 5 then (
+    Printf.fprintf stderr "%a: too many errors, exiting.\n%!" _pos pos;
+    raise (Failure "exiting"));
+  flush stderr; flush stdout		(*just in case*)
+
 let lookup_label pos name =
   try List.assoc name Names.lf_expr_head_strings 
   with Not_found as e -> fprintf stderr "%a: unknown expression label: [%s]\n%!" _pos pos name; raise e

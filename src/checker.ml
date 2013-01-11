@@ -32,66 +32,60 @@ exception WithPosition of position * exn
 let raise_switch ex1 ex2 = raise (if debug then ex1 else ex2)
 
 let error_summary pos =
-  let n = !error_count in
+  let n = !Parse.error_count in
   if n > 0 
   then (
     fprintf stderr "%s: %d error%s encountered, see messages above\n%!" (errfmt pos) n (if n == 1 then "" else "s");
     exit 1
    )
 
-let print_inconsistency lhs rhs = 
+let print_inconsistency pos lhs rhs = 
   Printf.fprintf stderr "%a: universe inconsistency:\n" _pos_of lhs;
   Printf.fprintf stderr "%a:         %a\n"  _pos_of lhs  _ts lhs;
   Printf.fprintf stderr "%a:      != %a\n%!"  _pos_of rhs  _ts rhs;
-  bump_error_count()
+  Parse.bump_error_count pos
 
-let rec handle_exception pos0 e =
-  let pos = errfmt pos0 in
+let rec handle_exception pos e =
+  let spos = errfmt pos in
   match e with
-  | WithPosition(pos,e) -> 
-      handle_exception pos e
+  | WithPosition(spos,e) -> 
+      handle_exception spos e
   | Eof -> 
-      error_summary pos0;
+      error_summary pos;
       raise StopParsingFile
-  | Failure s as ex -> 
-      fprintf stderr "%s: failure: %s\n%!" pos s;
-      bump_error_count();
-      raise_switch ex (Failure s)
+  | Failure s -> 
+      fprintf stderr "%s: %s \n%!" spos s;
+      raise (Failure "exiting")
   | GeneralError s as ex ->
-      fprintf stderr "%s: %s\n%!" pos s;
-      bump_error_count();
+      fprintf stderr "%s: %s\n%!" spos s;
+      Parse.bump_error_count pos;
       raise_switch ex Error_Handled
   | Grammar.Error | Parsing.Parse_error as ex -> 
-      fprintf stderr "%s: syntax error\n%!" pos;
-      bump_error_count();
+      fprintf stderr "%s: syntax error\n%!" spos;
+      Parse.bump_error_count pos;
       raise_switch ex Error_Handled
   | TypeCheckingFailure (env,surr,ps) as ex -> 
-      List.iter (fun (pos,s) -> fprintf stderr "%s: %s\n%!" (errfmt pos) s) ps;
+      List.iter (fun (spos,s) -> fprintf stderr "%s: %s\n%!" (errfmt spos) s) ps;
       print_surroundings surr;
       print_context env_limit stderr env;
-      bump_error_count();
+      Parse.bump_error_count pos;
       raise_switch ex Error_Handled
   | MarkedError (p,s) as ex ->
       fprintf stderr "%s: %s\n%!" (errfmt p) s;
-      bump_error_count();
+      Parse.bump_error_count pos;
       raise_switch ex Error_Handled
   | Unimplemented s as ex ->
-      fprintf stderr "%s: feature not yet implemented: %s\n%!" pos s;
-      bump_error_count();
+      fprintf stderr "%s: feature not yet implemented: %s\n%!" spos s;
+      Parse.bump_error_count pos;
       raise_switch ex Error_Handled
   | Universe.Inconsistency (lhs,rhs) as ex ->
-      print_inconsistency lhs rhs;
+      print_inconsistency pos lhs rhs;
       raise_switch ex Error_Handled
   | e -> raise e
 
 let wrap_position posfun f x = try f x with d -> WithPosition(posfun(), d)
 
 let protect f x posfun = try f x with d -> handle_exception posfun d
-
-let lexpos lexbuf = 
-  let p = Tokens.lexing_pos lexbuf in
-  let _ = Tokens.command_flush lexbuf in
-  p
 
 let add_tVars c tvars = 
   { c with lf_context =   
@@ -115,6 +109,13 @@ let lf_axiomCommand env pos name t =
   let v = Var name in
   ensure_new_name env pos v;
   lf_bind env v t
+
+let show_mode () =
+  printf "Mode %s.\n%!" (
+  match !Toplevel.binder_mode with
+  | Toplevel.Binder_mode_simple -> "Simple"
+  | Toplevel.Binder_mode_pairs -> "Pairs"
+  | Toplevel.Binder_mode_relative -> "Relative")
 
 let defCommand env defs = 
   List.fold_left
@@ -187,7 +188,7 @@ let checkUniversesCommand env pos =
   try
     Universe.consistency env;
     printf "Check Universes: okay\n"
-  with Universe.Inconsistency (p,q) -> print_inconsistency p q
+  with Universe.Inconsistency (p,q) -> print_inconsistency pos p q
 
 let show_command env n = 
   ( match n with None -> print_signature env stdout | _ -> () );
@@ -213,9 +214,18 @@ let rec process_command env lexbuf =
     | Toplevel.CheckUniverses -> checkUniversesCommand env pos; env
     | Toplevel.Include filename -> parse_file env filename
     | Toplevel.Clear -> empty_context
-    | Toplevel.Mode_simple -> Toplevel.binder_mode := Toplevel.Binder_mode_simple; env
-    | Toplevel.Mode_pairs -> Toplevel.binder_mode := Toplevel.Binder_mode_pairs; env
-    | Toplevel.Mode_relative -> Toplevel.binder_mode := Toplevel.Binder_mode_relative; env
+    | Toplevel.Mode_simple -> 
+	Toplevel.binder_mode := Toplevel.Binder_mode_simple; 
+	show_mode();
+	env
+    | Toplevel.Mode_pairs -> 
+	Toplevel.binder_mode := Toplevel.Binder_mode_pairs; 
+	show_mode();
+	env
+    | Toplevel.Mode_relative -> 
+	Toplevel.binder_mode := Toplevel.Binder_mode_relative; 
+	show_mode();
+	env
     | Toplevel.SyntaxError -> 
 	env
     | Toplevel.End -> 
@@ -270,7 +280,11 @@ let toplevel() =
 	  ("--debug" , Arg.Set debug_mode, " Turn on debug mode");
 	  ("--no-debug" , Arg.Clear debug_mode, " Turn off debug mode")
 	])
-      (fun filename -> env := parse_file !env filename)
+      (fun filename -> 
+	try
+	  env := parse_file !env filename
+	with Failure _ -> exit 1	(* after too many errors in a file, we don't parse the other files *)
+      )
       ("usage: " ^ (Filename.basename Sys.argv.(0)) ^ " [option|filename] ...");
   with FileFinished -> ());
   if false then
