@@ -7,12 +7,13 @@ open Error
 open Variables
 open Names
 
-let unknown_label pos name =
-  fprintf stderr "%a: unknown expression label: [%s]\n%!" _pos pos name
-
 let lookup_label pos name =
   try List.assoc name Names.lf_expr_head_strings 
-  with Not_found as e -> unknown_label pos name; raise e
+  with Not_found as e -> fprintf stderr "%a: unknown expression label: [%s]\n%!" _pos pos name; raise e
+
+let lookup_type_constant pos name =
+  try List.assoc name Names.string_to_type_constant
+  with Not_found as e -> Printf.fprintf stderr "%a: unknown type constant %s\n%!" _pos pos name; raise e
 
 type binder_judgment = ULEV | IST | HAST of lf_expr
 

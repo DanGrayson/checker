@@ -154,16 +154,7 @@ unmarked_lf_type:
 lf_type_constant:
 
     | l= IDENTIFIER 
-	{ 
-	  try List.assoc l Names.string_to_type_constant
-	  with 
-	    Not_found ->
-	      Printf.fprintf stderr "%s: unknown type constant %s\n" 
-		(errfmt (Position($startpos, $endpos)))
-		l;
-	      flush stderr;
-	      $syntaxerror
-	}
+	{ let pos = Position($startpos, $endpos) in try lookup_type_constant pos l with Not_found -> $syntaxerror }
 
 lf_expr:
 
@@ -264,10 +255,15 @@ command:
 	  bump_error_count();
 	  pos, Toplevel.SyntaxError }
 
-unmarked_command:
+    | error EOF
+	{ let pos = Position($startpos, $endpos) in
+	  fprintf stderr "%a: syntax error\n%!" _pos pos; 
+	  bump_error_count();
+	  pos, Toplevel.SyntaxError }
 
-    | EOF
-	{ trap(); raise Eof }
+    | EOF { trap(); raise Eof }
+
+unmarked_command:
 
     | Variable vars= nonempty_list(IDENTIFIER) Type Period
 	{ Toplevel.Variable vars }
@@ -474,10 +470,7 @@ context:
 tsterm_head:
 
     | name= CONSTANT
-	{ 
-	  let pos = Position($startpos, $endpos) in
-	  try lookup_label pos name with Not_found -> $syntaxerror
-	}
+	{ let pos = Position($startpos, $endpos) in try lookup_label pos name with Not_found -> $syntaxerror }
 
 arglist:
 
