@@ -1,10 +1,12 @@
-%{ 
+%{
 open Error
 open Variables
 open Typesystem
 open Names
 open Helpers
 open Parse
+open Printf
+open Printer
 %}
 %start command ts_exprEof
 %type <Toplevel.command> command
@@ -251,7 +253,16 @@ tactic_expr:
 
 dotted_number: n= separated_nonempty_list(Period,NUMBER) {n}
 
-command: c= unmarked_command { Position($startpos, $endpos), c }
+command: 
+
+    | c= unmarked_command 
+	{ Position($startpos, $endpos), c }
+
+    | error Period
+	{ let pos = Position($startpos, $endpos) in
+	  fprintf stderr "%a: syntax error\n%!" _pos pos; 
+	  bump_error_count();
+	  pos, Toplevel.SyntaxError }
 
 unmarked_command:
 

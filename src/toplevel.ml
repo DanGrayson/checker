@@ -24,6 +24,7 @@ type command' =
   | Mode_simple
   | Mode_pairs
   | Mode_relative
+  | SyntaxError
   | End
 
 type command = Error.position * command'

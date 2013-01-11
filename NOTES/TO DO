@@ -15,7 +15,7 @@ and
 	    (x:Singleton(o : oexp)) × 
 	    	istype T ⟶ istype U ⟶ hastype o T ⟶ hastype x U
 
-are both wrong, since neither provides an expression
+are wrong, since neither provides an expression
 
 Change to
 	

@@ -3,6 +3,7 @@
 (** The lexical analyzer for the type theory. *)
 
 {
+ open Error
  open Grammar
  open Variables
  open Typesystem
@@ -18,15 +19,6 @@
    Alpha; "Variable", Variable; "End", End; "Include", Include; "Clear", Clear;
    "Show", Show; "Theorem", Theorem; "Definition", Theorem; "Lemma", Theorem;
    "Proposition", Theorem; "Corollary", Theorem ]
-
- let error_count = ref 0
-
- let bump_error_count () =
-   incr error_count;
-   if !error_count >= 7 then (
-     fprintf stderr "Too many errors, exiting.\n%!"; 
-     exit 1);
-   flush stderr
 
  let lexing_pos lexbuf = 
    let p = Lexing.lexeme_start_p lexbuf in
@@ -149,8 +141,7 @@ rule expr_tokens = parse
 
 (* invalid characters *)
 
-  | _ as c { fprintf stderr "%s: invalid character: '%c'\n" (lexing_pos lexbuf) c; 
-	     flush stderr ;
+  | _ as c { fprintf stderr "%s: invalid character: '%c'\n%!" (lexing_pos lexbuf) c; 
 	     bump_error_count();
 	     expr_tokens lexbuf }
 

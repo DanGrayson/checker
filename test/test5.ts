@@ -22,8 +22,6 @@ Check TS : { ⊢ T Type } { t : T ⊢ U Type } ⊢ @[∏;t](T,U[t]) Type.
 
 Check LF : T Type |- ( x::T |- y::T |- U Type) |- pi Type.
 
-End.
-
 Mode Relative.
 
 Check LF : pi Type.

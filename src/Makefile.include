@@ -39,7 +39,7 @@ endif
 
 CHECKER := $(CHECKER_ENV) ./$(CHECKER_EXE) $(CHECKER_OPTIONS)
 
-BFLAGS = -I src -I src/tactics -cflags -g,-annot -lflags -g -yaccflag -v -menhir 'menhir --explain'
+BFLAGS = -I src -I src/tactics -cflags -g,-annot -lflags -g -yaccflag -v -menhir 'menhir --explain --error-recovery'
 BFLAGS += -use-menhir
 
 # add -yaccflag --trace to ocamlbuild command line to get the menhir parser to display a trace

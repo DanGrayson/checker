@@ -32,7 +32,7 @@ exception WithPosition of position * exn
 let raise_switch ex1 ex2 = raise (if debug then ex1 else ex2)
 
 let error_summary pos =
-  let n = !Tokens.error_count in
+  let n = !error_count in
   if n > 0 
   then (
     fprintf stderr "%s: %d error%s encountered, see messages above\n%!" (errfmt pos) n (if n == 1 then "" else "s");
@@ -43,7 +43,7 @@ let print_inconsistency lhs rhs =
   Printf.fprintf stderr "%a: universe inconsistency:\n" _pos_of lhs;
   Printf.fprintf stderr "%a:         %a\n"  _pos_of lhs  _ts lhs;
   Printf.fprintf stderr "%a:      != %a\n%!"  _pos_of rhs  _ts rhs;
-  Tokens.bump_error_count()
+  bump_error_count()
 
 let rec handle_exception pos0 e =
   let pos = errfmt pos0 in
@@ -55,29 +55,29 @@ let rec handle_exception pos0 e =
       raise StopParsingFile
   | Failure s as ex -> 
       fprintf stderr "%s: failure: %s\n%!" pos s;
-      Tokens.bump_error_count();
+      bump_error_count();
       raise_switch ex (Failure s)
   | GeneralError s as ex ->
       fprintf stderr "%s: %s\n%!" pos s;
-      Tokens.bump_error_count();
+      bump_error_count();
       raise_switch ex Error_Handled
   | Grammar.Error | Parsing.Parse_error as ex -> 
       fprintf stderr "%s: syntax error\n%!" pos;
-      Tokens.bump_error_count();
+      bump_error_count();
       raise_switch ex Error_Handled
   | TypeCheckingFailure (env,surr,ps) as ex -> 
       List.iter (fun (pos,s) -> fprintf stderr "%s: %s\n%!" (errfmt pos) s) ps;
       print_surroundings surr;
       print_context env_limit stderr env;
-      Tokens.bump_error_count();
+      bump_error_count();
       raise_switch ex Error_Handled
   | MarkedError (p,s) as ex ->
       fprintf stderr "%s: %s\n%!" (errfmt p) s;
-      Tokens.bump_error_count();
+      bump_error_count();
       raise_switch ex Error_Handled
   | Unimplemented s as ex ->
       fprintf stderr "%s: feature not yet implemented: %s\n%!" pos s;
-      Tokens.bump_error_count();
+      bump_error_count();
       raise_switch ex Error_Handled
   | Universe.Inconsistency (lhs,rhs) as ex ->
       print_inconsistency lhs rhs;
@@ -216,7 +216,12 @@ let rec process_command env lexbuf =
     | Toplevel.Mode_simple -> Toplevel.binder_mode := Toplevel.Binder_mode_simple; env
     | Toplevel.Mode_pairs -> Toplevel.binder_mode := Toplevel.Binder_mode_pairs; env
     | Toplevel.Mode_relative -> Toplevel.binder_mode := Toplevel.Binder_mode_relative; env
-    | Toplevel.End -> error_summary pos; raise StopParsingFile
+    | Toplevel.SyntaxError -> 
+	env
+    | Toplevel.End -> 
+	error_summary pos; 
+	fprintf stderr "%a: End.\n%!" _pos pos;
+	raise StopParsingFile
 
 and read_eval_command context lexbuf = 
   let rec repeat context = 

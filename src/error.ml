@@ -74,3 +74,12 @@ let no_pos i =
   Nowhere(i, !nowhere_ctr)
 let nowhere i x = (no_pos i,x)
 let nopos i = errfmt (no_pos i)
+
+let error_count = ref 0
+
+let bump_error_count () =
+  incr error_count;
+  if !error_count >= 7 then (
+    Printf.fprintf stderr "Too many errors, exiting.\n%!"; 
+    exit 1);
+  flush stderr; flush stdout		(*just in case*)
