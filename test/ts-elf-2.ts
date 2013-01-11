@@ -4,6 +4,8 @@
 
 Mode Simple.
 
+End.							    # temporarily, during development
+
 Include "rules/TS4.ts".
 
 #   Local Variables:
