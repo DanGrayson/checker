@@ -325,6 +325,7 @@ type surrounding = (surrounding_component * lf_expr option * lf_type option) lis
 type tactic_return =
   | TacticFailure
   | TacticSuccess of lf_expr
+  | TacticAdmit
 
 type tactic_function =
        surrounding         (* the ambient APPLY(...), if any, and the index among its head and arguments of the hole *)        

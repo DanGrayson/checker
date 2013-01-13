@@ -53,6 +53,14 @@ Theorem LF foo' : (T1:texp) ⟶ (T2:texp) ⟶ (T3:texp) ⟶ (F:oexp) ⟶ (O:oexp
       (hastype_ev T2 (_ ⟼ T3) F O 
       	  (hastype_eq T2 T1 O (t_eq_empty_eta Bad T1 T2 _ _ _) _) _).
 
+End.
+
+Theorem LF ModusPonens : 
+	(T:texp) -> (istype T) ->
+	(U:texp) -> (istype U) ->
+	(V:texp) -> (istype V) ->
+	hastype 
+
 Show 20.
 
 #   Local Variables:

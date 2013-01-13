@@ -362,9 +362,9 @@ and ts_expr_to_string e : smart_string =
           | ARG(t1,ARG((_,LAMBDA(x, t2)),END)) -> 
               if false
               then arrow_prec, concat [paren_left arrow_prec (ts_expr_to_string t1);" ⟶ ";paren_right arrow_prec (ts_expr_to_string t2)]
-              else top_prec, concat ["@[" ^ expr_head_to_string h ^ ";";vartostring x;"](";
+              else top_prec, concat ["@[" ^ expr_head_to_string h ^ ";";vartostring x;"][";
 				     paren_left comma_prec (ts_expr_to_string t1);",";
-				     paren_right comma_prec (ts_expr_to_string t2);")"]
+				     paren_right comma_prec (ts_expr_to_string t2);"]"]
           | _ -> lf_atomic_p h args)
       | T T_Sigma -> (
           match args with ARG(t1,ARG((_,LAMBDA(x, t2)),END)) -> 
@@ -374,30 +374,30 @@ and ts_expr_to_string e : smart_string =
       | O O_ev -> (
           match args with 
           | ARG(f,ARG(o,ARG((_,LAMBDA(x, t)),END))) ->
-              top_prec, "[ev;" ^ vartostring x ^ "](" ^ 
+              top_prec, "[ev;" ^ vartostring x ^ "][" ^ 
 	      paren_left comma_prec (ts_expr_to_string f) ^ "," ^ 
 	      paren_left comma_prec (ts_expr_to_string o) ^ "," ^ 
-	      paren_left comma_prec (ts_expr_to_string t) ^ ")"
+	      paren_left comma_prec (ts_expr_to_string t) ^ "]"
           | ARG(f,ARG(o,END)) ->
-              top_prec, "[ev;_](" ^ 
+              top_prec, "[ev;_][" ^ 
 	      paren_left comma_prec (ts_expr_to_string f) ^ "," ^ 
-	      paren_left comma_prec (ts_expr_to_string o) ^ ")"
+	      paren_left comma_prec (ts_expr_to_string o) ^ "]"
           | _ -> lf_atomic_p h args)
       | O O_lambda -> (
           match args with 
           | ARG(t,ARG((_,LAMBDA(x,o)),END)) ->
-              top_prec, "[λ;" (* lambda *) ^ vartostring x ^ "](" ^ 
+              top_prec, "[λ;" (* lambda *) ^ vartostring x ^ "][" ^ 
 	      paren_left comma_prec (ts_expr_to_string t) ^ "," ^ 
-	      paren_left comma_prec (ts_expr_to_string o) ^ ")"
+	      paren_left comma_prec (ts_expr_to_string o) ^ "]"
           | _ -> lf_atomic_p h args)
       | O O_forall -> (
           match args with 
           | ARG(u,ARG(u',ARG(o,ARG((_,LAMBDA(x,o')),END)))) ->
-              top_prec, "[forall;" ^ vartostring x ^ "](" ^ 
+              top_prec, "[forall;" ^ vartostring x ^ "][" ^ 
               paren_left comma_prec (ts_expr_to_string u) ^ "," ^ 
 	      paren_left comma_prec (ts_expr_to_string u') ^ "," ^ 
               paren_left comma_prec (ts_expr_to_string o) ^ "," ^ 
-	      paren_left comma_prec (ts_expr_to_string o') ^ ")"
+	      paren_left comma_prec (ts_expr_to_string o') ^ "]"
           | _ -> lf_atomic_p h args)
       | _ -> lf_atomic_p h args
 

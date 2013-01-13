@@ -8,13 +8,13 @@ Include "rules/TS2.ts".
 
 # derive versions of some inference rules with simple types
 
-Definition pi1 { ⊢ T U Type } ⊢ @[∏;_](T,U) Type ::= 
+Definition pi1 { ⊢ T U Type } ⊢ @[∏;_][T,U] Type ::= 
 	   (T ⟼ U ⟼ (pi₁ T (_⟼U)), T ⟼ U ⟼ (pi₂ T (_⟼U₁,_⟼U))).
 
-Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ @[λ](T,o) : @[∏;_](T,U) ::= 
+Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ @[λ][T,o] : @[∏;_][T,U] ::= 
 	   (T ⟼ U ⟼ (λh₁ T (_⟼U)), T ⟼ U ⟼ (λh₂ T (_⟼U₁,_⟼U))).
 
-Definition ev1 { ⊢ T U Type, f : @[∏;_](T,U), o : T } ⊢ @[ev;_](f,o,U) : U ::= 
+Definition ev1 { ⊢ T U Type, f : @[∏;_][T,U], o : T } ⊢ @[ev;_][f,o,U] : U ::= 
 	   (T ⟼ U ⟼ (ev_hastype₁ T (_⟼U)), T ⟼ U ⟼ (ev_hastype₂ T (_⟼U₁,_⟼U))).
 
 Theorem modus_ponens { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 
@@ -41,13 +41,13 @@ Include "rules/TS2.ts".
 
 # derive versions of some inference rules with simple types
 
-Definition pi1 { ⊢ T U Type } ⊢ @[∏;_](T,U) Type ::= 
+Definition pi1 { ⊢ T U Type } ⊢ @[∏;_][T,U] Type ::= 
 	   T ⟼ U ⟼ (_, T' ⟼ U' ⟼ (pi T (_ ⟼ U) CDR T' (_ ⟼ _ ⟼ U'))).
 
-Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ @[λ](T,o) : @[∏;_](T,U) ::=
+Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ @[λ][T,o] : @[∏;_][T,U] ::=
 	   T ⟼ U ⟼ o ⟼ ((@[λ] T o), T' ⟼ U' ⟼ (λh T (_ ⟼ U) o CDR T' (_ ⟼ _ ⟼ U'))).
 
-Definition ev1 { ⊢ T U Type, f : @[∏;_](T,U), o : T } ⊢ @[ev;_](f,o,U) : U ::=
+Definition ev1 { ⊢ T U Type, f : @[∏;_][T,U], o : T } ⊢ @[ev;_][f,o,U] : U ::=
 	   T ⟼ U ⟼ f ⟼ o ⟼ ((ev_hastype T (_ ⟼ U) f o CAR), T' ⟼ U' ⟼ (ev_hastype T (_ ⟼ U) f o CDR T' (_ ⟼ _ ⟼ U'))).
 
 Theorem modus_ponens { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 

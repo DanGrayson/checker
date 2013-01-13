@@ -141,13 +141,6 @@ rule expr_tokens = parse
 	     fprintf stderr "%a: invalid character: '%c'\n%!" _pos pos c; 
 	     bump_error_count pos;
 	     expr_tokens lexbuf }
-
-and command_flush = parse
-  | eof { EOF }
-  | '#' [ ^ '\n' ]* { expr_tokens lexbuf }
-  | newline { command_flush lexbuf }
-  | _ { command_flush lexbuf }
-
  
 (* 
   Local Variables:

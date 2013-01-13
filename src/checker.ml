@@ -290,7 +290,7 @@ let toplevel() =
   if false then
   let env = !env in 
   try
-    let x = expr_from_string env "[Pt]()" in
+    let x = expr_from_string env "@[Pt][]" in
     checkLFCommand env (no_pos 124) x
     with 
     | e -> handle_exception (no_pos 125) e

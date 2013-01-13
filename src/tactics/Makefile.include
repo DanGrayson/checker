@@ -1,9 +1,5 @@
-TACTIC_FILES =					\
-	src/tactics/tactics.ml			\
-	src/tactics/ev3.ml			\
-	src/tactics/tn.ml			\
-	src/tactics/default.ml			\
-	src/tactics/assumption.ml
+TACTIC_FILENAMES = tactics ev3 tn default assumption fail admit
+TACTIC_FILES = $(patsubst %, src/tactics/%.ml, $(TACTIC_FILENAMES))
 
 # Local Variables:
 # compile-command: "make -C ../.. build "

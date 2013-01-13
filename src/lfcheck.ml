@@ -343,6 +343,7 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
   | APPLY(TAC tac,args), _ -> (
       let pos = get_pos e0 in 
       match apply_tactic surr env pos t tac with
+      | TacticAdmit -> e0		(* we should also record the cheat somewhere ... *)
       | TacticSuccess suggestion -> 
           let suggestion = apply_args suggestion args in
           type_check surr env suggestion t

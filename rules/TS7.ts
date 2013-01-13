@@ -15,7 +15,7 @@ Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ λ t:T, o[t] : T⟶U
 
 	   := (_, T ⟾ U ⟾ λh₂[T,(_⟾U₁,_⟾U)]).
 
-Definition ev1 { ⊢ T U Type, f:T⟶U, o:T } ⊢ @[ev;_](f,o,U) : U
+Definition ev1 { ⊢ T U Type, f:T⟶U, o:T } ⊢ @[ev;_][f,o,U] : U
 
 	   := (_, T ⟾ U ⟾ ev_hastype₂[T,(_⟾U₁,_⟾U)]).
 
@@ -25,10 +25,10 @@ Definition Iscontr { ⊢ X Type } ⊢ Σ x:X, ∏ y:X, y=x  Type
    			                x' ⟾ pi₂[X,(y ⟾ y=x'₁, 
 			 	                    y' ⟾ Id_istype₂[X,y',x'])])]).
 
-Definition Hfiber { ⊢ X Y Type, f:X⟶Y, y:Y } ⊢ Σ x:X, @[ev;_](f,x,Y)=y  Type 
+Definition Hfiber { ⊢ X Y Type, f:X⟶Y, y:Y } ⊢ Σ x:X, @[ev;_][f,x,Y]=y  Type 
 
   := (_, X ⟾ Y ⟾ f ⟾ y ⟾ 
-     Σ_istype₂[X, (x ⟾ @[ev](f₁, x, _ ⟾ Y₁)=y₁,
+     Σ_istype₂[X, (x ⟾ @[ev][f₁, x, _ ⟾ Y₁]=y₁,
       		   x ⟾ Id_istype₂[Y, ev1₂[X,Y,f,x], y])]).
 
 Definition Isweq { ⊢ X Y Type, f:X⟶Y } ⊢ ∏ y:Y, Iscontr₁[Hfiber₁[X,Y,f,y]] Type 
@@ -41,7 +41,7 @@ Definition Weq { ⊢ X Y Type } ⊢ Σ f:X⟶Y, Isweq₁[X,Y,f] Type
 
 Definition Isaprop { ⊢ X Type } ⊢ ∏ x:X, ∏ x':X, Iscontr₁[x=x'] Type
 
-   := (_,X ⟾ pi₂[X, (x ⟾ @[∏](X₁, (x' ⟾ Iscontr₁ [ x=x' ])), 
+   := (_,X ⟾ pi₂[X, (x ⟾ @[∏][X₁, (x' ⟾ Iscontr₁ [ x=x' ])], 
    		       x ⟾ pi₂[X, (x' ⟾ Iscontr₁[ x₁=x'],
 		       		    x' ⟾ Iscontr₂[Id_istype₂[X,x,x']])])]).
 
@@ -55,8 +55,10 @@ Definition idfun { ⊢ X Type } ⊢ λ x:X, x : X⟶X
 
    ::= (_,X ⟼ (lambda1₂ X X (x ⟼ x,x ⟼ x))).
 
-#Theorem idisweq { ⊢ X Type } : @[Isweq](X,X,@[idfun](X)) 
-#   ::= _  .
+Theorem idisweq { ⊢ X Type } : Isweq₁[X,X,idfun₁[X]] 
+   ::= (
+   	X ⟼ _,
+	X' ⟼ (_,_)).
 
 #   Local Variables:
 #   compile-command: "make -C .. rules7 "

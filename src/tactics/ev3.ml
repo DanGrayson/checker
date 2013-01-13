@@ -5,7 +5,7 @@ open Error
 open Printer
 open Printf
 
-(** fill in the third argument of [ev](f,x,_) using tau *)
+(** fill in the third argument of @[ev][f,x,_] using tau *)
 let ev3 (surr:surrounding) env pos t =
   (* This code was formerly a part of the file fillin.ml, removed. *)
   match surr with 

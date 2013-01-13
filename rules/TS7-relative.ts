@@ -15,7 +15,7 @@ Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ λ t:T, o[t] : T⟶U
 
 	   ::= T ⟼ U ⟼ o ⟼ (_, T' ⟼ U' ⟼ (λh T (_ ⟼ U) o CDR T' (_ ⟼ _ ⟼ U'))).
 
-Definition ev1 { ⊢ T U Type, f:T⟶U, o:T } ⊢ @[ev;_](f,o,U) : U
+Definition ev1 { ⊢ T U Type, f:T⟶U, o:T } ⊢ @[ev;_][f,o,U] : U
 
 	   ::= T ⟼ U ⟼ f ⟼ o ⟼ (_, T' ⟼ U' ⟼ (ev_hastype T (_ ⟼ U) f o CDR T' (_ ⟼ _ ⟼ U'))).
 
@@ -29,10 +29,10 @@ Definition Iscontr { ⊢ X Type } ⊢ Σ x:X, ∏ y:X, y=x  Type
    			                x' ⟾ pi₂[X,(y ⟾ y=x'₁, 
 			 	                    y' ⟾ Id_istype₂[X,y',x'])])]).
 
-Definition Hfiber { ⊢ X Y Type, f:X⟶Y, y:Y } ⊢ Σ x:X, @[ev;_](f,x,Y)=y  Type 
+Definition Hfiber { ⊢ X Y Type, f:X⟶Y, y:Y } ⊢ Σ x:X, @[ev;_][f,x,Y]=y  Type 
 
   := (_, X ⟾ Y ⟾ f ⟾ y ⟾ 
-     Σ_istype₂[X, (x ⟾ @[ev](f₁, x, _ ⟾ Y₁)=y₁,
+     Σ_istype₂[X, (x ⟾ @[ev][f₁, x, _ ⟾ Y₁]=y₁,
       		   x ⟾ Id_istype₂[Y, ev1₂[X,Y,f,x], y])]).
 
 Definition Isweq { ⊢ X Y Type, f:X⟶Y } ⊢ ∏ y:Y, Iscontr₁[Hfiber₁[X,Y,f,y]] Type 

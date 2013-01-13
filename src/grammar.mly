@@ -51,7 +51,7 @@ open Printer
 
 %nonassoc
 
-  Star					(* *x denotes [El](x) *)
+  Star					(* *x denotes @[El][x] *)
 
 %nonassoc
 
@@ -93,7 +93,7 @@ lf_type:
 
 unmarked_lf_type:
 
-    | f= lf_type_constant args= list(lf_expr)
+    | f= lf_type_constant args= lf_expr*
 	{ F_Apply(f,args) }
 
     | Pi v= variable Colon a= lf_type Comma b= lf_type
@@ -265,16 +265,16 @@ command:
 
 unmarked_command:
 
-    | Variable vars= nonempty_list(IDENTIFIER) Type Period
+    | Variable vars= IDENTIFIER+ Type Period
 	{ Toplevel.Variable vars }
 
-    | Variable vars= nonempty_list(IDENTIFIER) Ulevel eqns= preceded(Semicolon,uEquation)* Period
+    | Variable vars= IDENTIFIER+ Ulevel eqns= preceded(Semicolon,uEquation)* Period
 	{ Toplevel.UVariable (vars,eqns) }
 
-    | Axiom num= option(dotted_number) name= IDENTIFIER t= ts_judgment Period
+    | Axiom num= dotted_number? name= IDENTIFIER t= ts_judgment Period
 	{ Toplevel.Axiom (num,name,t) }
 
-    | Axiom LF num= option(dotted_number) name= IDENTIFIER Colon t= lf_type Period
+    | Axiom LF num= dotted_number? name= IDENTIFIER Colon t= lf_type Period
 	{ Toplevel.Axiom (num,name,t) }
 
     | Check TS o= ts_expr Period
@@ -343,7 +343,7 @@ uEquation:
 
 parenthesized(X): x= delimited(LeftParen,X,RightParen) {x}
 
-list_of_parenthesized(X): list(parenthesized(X)) {$1}
+list_of_parenthesized(X): parenthesized(X)* {$1}
 
 ts_exprEof: a= ts_expr EOF {a}
 
@@ -420,7 +420,7 @@ unmarked_ts_judgment:
 	  $syntaxerror
 	}
 
-    | LeftBrace c= context vbj= separated_nonempty_list(Comma,pair(nonempty_list(marked_variable),binder_judgment)) RightBrace u= ts_judgment
+    | LeftBrace c= context vbj= separated_nonempty_list(Comma,pair(marked_variable+,binder_judgment)) RightBrace u= ts_judgment
 	%prec Reduce_binder
 	{ 
 	  let pos = Position($startpos, $endpos) in
@@ -487,12 +487,8 @@ tsterm_head:
 
 arglist:
 
-    | LeftParen a= separated_list(Comma,ts_expr) RightParen
+    | LeftBracket a= separated_list(Comma,ts_expr) RightBracket
 	{a}
-
-(* it's tempting to include '_' (Underscore) as a variable but there would be an 
-    ambiguity when looking at the start [ _ |-> x ] and [ _ ].  In the first case,
-   it's an unused variable, and in the second case, it's an empty hole. *)
 
 empty_hole: Underscore { cite_tactic (Tactic_name "default") END }
 
