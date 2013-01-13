@@ -8,6 +8,7 @@ RULES_FILES =					\
 	rules/TS5.ts				\
 	rules/TS6.ts				\
 	rules/TS7.ts				\
+	rules/TS7-relative.ts			\
 	rules/others.ts
 
 SHOW = no
@@ -25,7 +26,7 @@ rules5: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS5.ts $(SHOWFILE)
 rules6: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS6.ts $(SHOWFILE)
 rules7: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS7.ts $(SHOWFILE)
 rules7r: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS7-relative.ts $(SHOWFILE)
-all: rules7r
+all: rules7 rules7r
 
 #  Local Variables:
 #  compile-command: "make -C .. "

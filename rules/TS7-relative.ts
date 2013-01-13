@@ -9,11 +9,11 @@ Include "rules/TS6.ts".
 
 Definition pi1 { ⊢ T U Type } ⊢ T⟶U Type
 
-	   := T ⟾ U ⟾ (_,T' ⟾ U' ⟾ pi[T, _ ⟾ U, CDR, T', _ ⟾ _ ⟾ U']).
+	   := T ⟾ U ⟾ (_,T' ⟾ U' ⟾ ∏_istype[T, _ ⟾ U, CDR, T', _ ⟾ _ ⟾ U']).
 
 Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ λ t:T, o[t] : T⟶U
 
-	   ::= T ⟼ U ⟼ o ⟼ (_, T' ⟼ U' ⟼ (λh T (_ ⟼ U) o CDR T' (_ ⟼ _ ⟼ U'))).
+	   ::= T ⟼ U ⟼ o ⟼ (_, T' ⟼ U' ⟼ (λ_hastype T (_ ⟼ U) o CDR T' (_ ⟼ _ ⟼ U'))).
 
 Definition ev1 { ⊢ T U Type, f:T⟶U, o:T } ⊢ @[ev;_][f,o,U] : U
 
@@ -26,7 +26,7 @@ End.							    # unfinished
 Definition Iscontr { ⊢ X Type } ⊢ Σ x:X, ∏ y:X, y=x  Type
 
 	   := (_, X ⟾ Σ_istype₂[X, (x ⟾ ∏ y:X₁, y=x, 
-   			                x' ⟾ pi₂[X,(y ⟾ y=x'₁, 
+   			                x' ⟾ ∏_istype₂[X,(y ⟾ y=x'₁, 
 			 	                    y' ⟾ Id_istype₂[X,y',x'])])]).
 
 Definition Hfiber { ⊢ X Y Type, f:X⟶Y, y:Y } ⊢ Σ x:X, @[ev;_][f,x,Y]=y  Type 
@@ -37,7 +37,7 @@ Definition Hfiber { ⊢ X Y Type, f:X⟶Y, y:Y } ⊢ Σ x:X, @[ev;_][f,x,Y]=y  T
 
 Definition Isweq { ⊢ X Y Type, f:X⟶Y } ⊢ ∏ y:Y, Iscontr₁[Hfiber₁[X,Y,f,y]] Type 
 
-   ::= (_,X ⟼ Y ⟼ f ⟼ (pi₂ Y (y ⟼ (Iscontr₁ (Hfiber₁ X₁ Y₁ f₁ y)), y ⟼ (Iscontr₂ (Hfiber₂ X Y f y))))).
+   ::= (_,X ⟼ Y ⟼ f ⟼ (∏_istype₂ Y (y ⟼ (Iscontr₁ (Hfiber₁ X₁ Y₁ f₁ y)), y ⟼ (Iscontr₂ (Hfiber₂ X Y f y))))).
 
 Definition Weq { ⊢ X Y Type } ⊢ Σ f:X⟶Y, Isweq₁[X,Y,f] Type 
 
@@ -45,14 +45,14 @@ Definition Weq { ⊢ X Y Type } ⊢ Σ f:X⟶Y, Isweq₁[X,Y,f] Type
 
 Definition Isaprop { ⊢ X Type } ⊢ ∏ x:X, ∏ x':X, Iscontr₁[x=x'] Type
 
-   := (_,X ⟾ pi₂[X, (x ⟾ @[∏](X₁, (x' ⟾ Iscontr₁ [ x=x' ])), 
-   		       x ⟾ pi₂[X, (x' ⟾ Iscontr₁[ x₁=x'],
+   := (_,X ⟾ ∏_istype₂[X, (x ⟾ @[∏](X₁, (x' ⟾ Iscontr₁ [ x=x' ])), 
+   		       x ⟾ ∏_istype₂[X, (x' ⟾ Iscontr₁[ x₁=x'],
 		       		    x' ⟾ Iscontr₂[Id_istype₂[X,x,x']])])]).
 
 Definition Isaset { ⊢ X Type } ⊢ ∏ x:X, ∏ x':X, Isaprop₁[x=x'] Type
 
-   ::= (_,X ⟼ (pi₂ X (x ⟼ (pi₁ X₁ (x' ⟼ (Isaprop₁ (Id_istype₁ X₁ x x')))), 
-   		       x ⟼ (pi₂ X (x' ⟼ (Isaprop₁ (Id_istype₁ X₁ x₁ x')),
+   ::= (_,X ⟼ (∏_istype₂ X (x ⟼ (∏_istype₁ X₁ (x' ⟼ (Isaprop₁ (Id_istype₁ X₁ x x')))), 
+   		       x ⟼ (∏_istype₂ X (x' ⟼ (Isaprop₁ (Id_istype₁ X₁ x₁ x')),
 		       		    x' ⟼ (Isaprop₂ (Id_istype₂ X x x'))))))).
 
 Definition idfun { ⊢ X Type } ⊢ λ x:X, x : X⟶X

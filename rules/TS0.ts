@@ -30,11 +30,11 @@ Axiom 3.4.19 El_eq { ⊢ M Ulevel, x : @[U][M], y : @[U][M] } [ x ≡ y : @[U][M
 
 Axiom 3.4.20 El_eq_reflect { ⊢ M Ulevel, x : @[U][M], y : @[U][M] } [ *x ≡ *y ] ⇒ [ x ≡ y : @[U][M] ].
 
-Axiom 3.4.21 pi { ⊢ T Type } { t : T ⊢ U Type } ⊢ @[∏;t][T,U[t]] Type .
+Axiom 3.4.21 ∏_istype { ⊢ T Type } { t : T ⊢ U Type } ⊢ @[∏;t][T,U[t]] Type .
 
 Axiom 3.4.22 ∏_eq { ⊢ T T' Type } { t : T ⊢ U U' Type } [ T ≡ T' ] ⇒ ( { ⊢ x : T } [ U[x] ≡ U'[x] ] ) ⇒ [ @[∏;t][T,U[t]] ≡ @[∏;t][T',U'[t]] ].
 
-Axiom 3.4.23 λh { ⊢ T Type } { x : T ⊢ U Type, o : U[x] } ⊢ @[λ][T,o] : @[∏;t][T,U[t]].
+Axiom 3.4.23 λ_hastype { ⊢ T Type } { x : T ⊢ U Type, o : U[x] } ⊢ @[λ][T,o] : @[∏;t][T,U[t]].
 
 Axiom 3.4.24 λ_equality { ⊢ T T' Type } { x : T ⊢ U U' Type, o o' : U[x] }
 
