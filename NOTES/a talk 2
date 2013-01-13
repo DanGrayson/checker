@@ -1,5 +1,31 @@
-The last talk was Dec 7, 2012.  Then we had the following interpretations of
-the inference rules:
+The last talk was Dec 7, 2012.
+
+progress since last time, a list:
+
+	 new syntax for rules, theorems, and definitions, with multiple experimental interpretations
+	 emacs mode for *.ts files
+
+details
+
+   new syntax for rules, theorems, and definitions
+
+   	old syntax
+
+	    Rule 25 ev_hastype : ∏ T : texp, ∏ U : oexp ⟶ texp, ∏ f : oexp, ∏ o : oexp,
+		     [ f : ([∏] T U) ] ⟶ [ o : T ] ⟶ [ ([ev] f o U) : (U o)].
+		
+	new syntax
+
+	    Axiom 3.4.25 ev_hastype 
+	    	{ ⊢ T Type } 
+	    	{ t : T ⊢ U Type } 
+	    	{ ⊢ f : @[∏][T,U], o : T } 
+		⊢ @[ev;t][f,o,U[t]] : U[o].
+
+
+=============================================================================
+
+Then we had the following interpretations of the inference rules:
 
      ∏_istype : (∏ T:texp) (∏ U:(oexp ⟶ texp)) (∏ x:oexp)
      		(hastype x T) ⟶ (istype (U x)) ⟶ (istype ([Pi] T U))

@@ -12,7 +12,7 @@ Axiom LF hastype_lambda : (T1:texp) ⟶ (T2:oexp⟶texp) ⟶ (O:oexp⟶oexp) ⟶
       hastype (@[lambda] T1 O) (@[Pi] T1 T2).
 
 Axiom LF hastype_ev : (T1:texp) ⟶ (T2:oexp⟶texp) ⟶ (F:oexp) ⟶ (O:oexp) ⟶ 
-      hastype O T1 ⟶ hastype F (@[Pi] T1 T2) ⟶ hastype (@[ev] F O T2) (T2 O).
+      hastype F (@[Pi] T1 T2) ⟶ hastype O T1 ⟶ hastype (@[ev] F O T2) (T2 O).
 
 Axiom LF hastype_empty_r : (O:oexp) ⟶ (T:texp) ⟶ hastype O @[Empty] ⟶ 
       istype T ⟶ hastype (@[empty_r] T O) T.
@@ -41,8 +41,8 @@ Theorem LF foo : (T1:texp) ⟶ (T2:texp) ⟶ (T3:texp) ⟶ (F:oexp) ⟶ (O:oexp)
       hastype Bad @[Empty] ⟶ hastype (@[ev] F O (_ ⟼ T3)) T3 
       :=
       T1 ⟼ T2 ⟼ T3 ⟼ F ⟼ O ⟼ Bad ⟼ dT1 ⟼ dT2 ⟼ dO ⟼ dF ⟼ dBad ⟼ 
-      (hastype_ev T2 (_ ⟼ T3) F O 
-          (hastype_eq T2 T1 O (t_eq_empty_eta Bad T1 T2 dBad dT1 dT2) dO) dF).
+      (hastype_ev T2 (_ ⟼ T3) F O dF 
+      	(hastype_eq T2 T1 O (t_eq_empty_eta Bad T1 T2 dBad dT1 dT2) dO)).
 
 # this time with tactics:
 Theorem LF foo' : (T1:texp) ⟶ (T2:texp) ⟶ (T3:texp) ⟶ (F:oexp) ⟶ (O:oexp) ⟶ (Bad:oexp) ⟶
@@ -51,15 +51,49 @@ Theorem LF foo' : (T1:texp) ⟶ (T2:texp) ⟶ (T3:texp) ⟶ (F:oexp) ⟶ (O:oexp
       :=
       T1 ⟼ T2 ⟼ T3 ⟼ F ⟼ O ⟼ Bad ⟼ dT1 ⟼ dT2 ⟼ dO ⟼ dF ⟼ dBad ⟼ 
       (hastype_ev T2 (_ ⟼ T3) F O 
-      	  (hastype_eq T2 T1 O (t_eq_empty_eta Bad T1 T2 _ _ _) _) _).
+      	  _ (hastype_eq T2 T1 O (t_eq_empty_eta Bad T1 T2 _ _ _) _)).
 
-End.
+Definition LF arrow : (T1:texp) ⟶ (T2:texp) ⟶ texp := T1 ⟼ T2 ⟼ (@[Pi] T1 (_ ⟼ T2)).
 
-Theorem LF ModusPonens : 
-	(T:texp) -> (istype T) ->
-	(U:texp) -> (istype U) ->
-	(V:texp) -> (istype V) ->
-	hastype 
+Theorem LF istype_Forall1 : (T1:texp) ⟶ (T2:texp) ⟶ 
+      ((x:oexp) ⟶ hastype x T1 ⟶ istype T2) ⟶ istype (arrow T1 T2) :=
+        T1 ⟼ T2 ⟼ dT2 ⟼ (istype_Forall T1 (_ ⟼ T2) dT2).
+
+Theorem LF hastype_lambda1 : (T1:texp) ⟶ (T2:texp) ⟶ (O:oexp⟶oexp) ⟶ 
+      ((x:oexp) ⟶ hastype x T1 ⟶ hastype (O x) T2) ⟶ 
+      hastype (@[lambda] T1 O) (arrow T1 T2) :=
+        T1 ⟼ T2 ⟼ O ⟼ dT2 ⟼ (hastype_lambda T1 (_ ⟼ T2) O dT2).
+
+Definition LF ev1 : (T1:texp) ⟶ (T2:texp) ⟶ (F:oexp) ⟶ (O:oexp) ⟶ oexp 
+	   	  := T1 ⟼ T2 ⟼ F ⟼ O ⟼ (@[ev] F O (_ ⟼ T2)).
+
+Theorem LF hastype_ev1 : (T1:texp) ⟶ (T2:texp) ⟶ (F:oexp) ⟶ (O:oexp) ⟶ 
+      hastype F (arrow T1 T2) ⟶ hastype O T1 ⟶ hastype (ev1 T1 T2 F O) T2
+      := T1 ⟼ T2 ⟼ F ⟼ O ⟼ dF ⟼ dO ⟼ (hastype_ev T1 (_ ⟼ T2) F O dF dO).
+
+Theorem LF modus_ponens : 
+      (T:texp) ⟶ (istype T) ⟶
+      (U:texp) ⟶ (istype U) ⟶
+      (V:texp) ⟶ (istype V) ⟶
+      hastype (@[lambda] (@[Pi] T (_ ⟼ U)) (f ⟼ (@[lambda] (@[Pi] U (_ ⟼ V)) (g ⟼ (@[lambda] T (t ⟼ 
+		      (@[ev] g (@[ev] f t (_⟼ U)) (_ ⟼ V))))))))
+	      (@[Pi] (@[Pi] T (_ ⟼ U)) (_ ⟼ (@[Pi] (@[Pi] U (_ ⟼ V)) (_ ⟼ (@[Pi] T (_ ⟼ V))))))
+      :=
+      T ⟼ dT ⟼ U ⟼ dU ⟼ V ⟼ dV ⟼ 
+      (hastype_lambda1 (arrow T U) (arrow (arrow U V) (arrow T V)) 
+	(f ⟼ (@[lambda] (arrow U V)
+	      (g ⟼ (@[lambda] T 
+	      	      (t ⟼ (@[ev] g (@[ev] f t (_⟼ U)) (_ ⟼ V))))))) 
+	(f ⟼ df ⟼ (
+	  (hastype_lambda1 (arrow U V) (arrow T V)
+	      (g ⟼ (@[lambda] T 
+	      	      (t ⟼ (@[ev] g (@[ev] f t (_⟼ U)) (_ ⟼ V)))))
+	      (g ⟼ dg ⟼ (hastype_lambda1 T V
+		      (t ⟼ (@[ev] g (@[ev] f t (_⟼ U)) (_ ⟼ V)))
+		      (t ⟼ dt ⟼ (hastype_ev1 U V g 
+		      			(@[ev] f t (_⟼ U)) 
+					_
+					(hastype_ev T (_ ⟼ U) f t _ _))))))))).
 
 Show 20.
 

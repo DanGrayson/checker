@@ -161,9 +161,9 @@ lf_expr:
     | e= unmarked_lf_expr 
 	{(Position($startpos, $endpos), e)}
 
-unmarked_lf_expr:
+    | e= parenthesized(lf_expr) {e}
 
-    | e= parenthesized(unmarked_lf_expr) {e}
+unmarked_lf_expr:
 
     | LeftParen Kpair a= lf_expr b= lf_expr RightParen
 	{ CONS(a, b) }

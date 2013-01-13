@@ -8,7 +8,7 @@
 ;; 	       ))
 ;; (autoload 'ts-mode "ts.el" "" t)
 
-(define-derived-mode ts-mode fundamental-mode "Macaulay 2"
+(define-derived-mode ts-mode fundamental-mode "TS"
   "Major mode for editing TS type system files.
 
 \\{ts-mode-map}"
@@ -50,12 +50,13 @@
   (lambda (syntax-table)
     (modify-syntax-entry ?# "<" syntax-table)
     (modify-syntax-entry ?\n ">" syntax-table)
-    (modify-syntax-entry 8719  "_" syntax-table) ; ∏
-    (modify-syntax-entry 8720 "_" syntax-table) ; ∐
-    (modify-syntax-entry 931 "_" syntax-table)	; Σ
-    (modify-syntax-entry 955  "_" syntax-table)	; λ
-    (modify-syntax-entry ?_  "_" syntax-table)
-    (modify-syntax-entry ?\'  "_" syntax-table)
+    (modify-syntax-entry 8719  "w" syntax-table) ; ∏
+    (modify-syntax-entry 8720 "w" syntax-table) ; ∐
+    (modify-syntax-entry 931 "w" syntax-table)	; Σ
+    (modify-syntax-entry 955  "w" syntax-table)	; λ
+    (modify-syntax-entry 10230 "_" syntax-table) ; ⟶
+    (modify-syntax-entry ?_  "w" syntax-table)
+    (modify-syntax-entry ?\'  "w" syntax-table)
     ))
  (list ts-mode-syntax-table))
 
