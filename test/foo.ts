@@ -15,5 +15,5 @@ Include "rules/TS0.ts".
 Check LF cast.
 
 #   Local Variables:
-#   compile-command: "make -C .. test2 "
+#   compile-command: "make -C .. foo "
 #   End:

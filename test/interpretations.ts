@@ -81,5 +81,5 @@ Theorem modus_ponens { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
 					               U' V' g' (ev1 T U f t CDR T' U' f' t'))))))))).
 
 #   Local Variables:
-#   compile-command: "make -C .. test3 DEBUG=no"
+#   compile-command: "make -C .. interpretations DEBUG=no"
 #   End:

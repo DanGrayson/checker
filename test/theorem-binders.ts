@@ -39,5 +39,5 @@ Check TS : { ⊢ T Type } { t : T ⊢ U Type } ⊢ @[∏;t][T,U[t]] Type.
 Check LF : T Type |- ( x::T |- y::T |- U Type) |- pi Type.
 
 #   Local Variables:
-#   compile-command: "make -C .. test5 "
+#   compile-command: "make -C .. theorem-binders "
 #   End:
