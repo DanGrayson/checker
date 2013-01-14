@@ -17,7 +17,7 @@ Axiom LF El_u_reduction : (M:uexp) ⟶ type_equality (El M (u_hastype M)) (U_ist
 Axiom LF cast : (T:a_type) ⟶ (U:a_type) ⟶ type_equality T U ⟶ obj_of_type T ⟶ obj_of_type U.
 
 Axiom LF forall : (M1:uexp) ⟶ (M2:uexp) ⟶ (o1 : obj_of_type (U_istype M1)) ⟶ (o2 : obj_of_type (El M1 o1) ⟶ obj_of_type (U_istype M2)) 
-      		   ⟶ obj_of_type (U_istype (@[max] M1 M2)).
+      		   ⟶ obj_of_type (U_istype (umax M1 M2)).
 
 Axiom LF lamb : (T:a_type) ⟶ 
       		(U : obj_of_type T ⟶ a_type) ⟶ 
@@ -68,7 +68,7 @@ Theorem LF modus_ponens : (T:a_type) ⟶ (U:a_type) ⟶ (V:a_type) ⟶ obj_of_ty
 
 Axiom LF El_forall_reduction : (M1:uexp) ⟶ (M2:uexp) ⟶ (o1 : obj_of_type (U_istype M1))
       	⟶ (o2 : obj_of_type (El M1 o1) ⟶ obj_of_type (U_istype M2)) 
-	⟶ type_equality (El (@[max] M1 M2) (forall M1 M2 o1 o2)) (∏_istype (El M1 o1) (x ⟼ (El (@[max] M1 M2) (o2 x)))).
+	⟶ type_equality (El (umax M1 M2) (forall M1 M2 o1 o2)) (∏_istype (El M1 o1) (x ⟼ (El (umax M1 M2) (o2 x)))).
 
 Lemma LF A : (u:uexp) ⟶ (T : obj_of_type (U_istype u)) ⟶ (U : obj_of_type (U_istype u))
 		      ⟶ (f : obj_of_type (El u (forall u u T (_ ⟼ U))))

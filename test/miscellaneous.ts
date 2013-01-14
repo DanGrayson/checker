@@ -27,10 +27,10 @@ Check LF (x⟼(@[ev] f x (λ y, T))).
 
 Check TS λ x:T, x.
 Check TS T.
-Check TS @[El][@[u][u2]].
+Check TS @[El][uu[u2]].
 Check TS UU[u1].
-Check TS @[j][u1, u2].
-Check TS *@[u][u1].
+Check TS jj[u1, u2].
+Check TS *uu[u1].
 Check TS max (next[u1], u0).
 Check TS @[Σ;x][T,T'].
 Check TS Σ x:T, Σ y:U, V⟶X .
@@ -52,14 +52,14 @@ Check TS λ e:U, λ x : T, e.
 # Check TS lambda g:T⟶UU[u1], lambda f:∏ t:T, *g t, lambda o:T, f o.
 
 # ought to give a type checking error, and explain it well
-# Check TS λ g:T⟶*@[u][u1], λ f:∏ t:T, *g t, λ o:T, f f.
+# Check TS λ g:T⟶*uu[u1], λ f:∏ t:T, *g t, λ o:T, f f.
 
 Check TS T⟶U⟶X⟶Y.
 
 # Check TS λ f:(X⟶X)⟶U, f λ x:X, x.
 
-Check TS @[u][u1].
-Check TS @[j][u1,u2].
+Check TS uu[u1].
+Check TS jj[u1,u2].
 # Check TS @[ev;x][f,t0,T].
 Check TS @[λ;x][T,x].
 # Check TS @[forall;x][u1,u2,x0,x0].
@@ -88,7 +88,7 @@ Theorem B   { ⊢ u Ulevel, t : UU[u        ] } ⊢ *t Type ::= u |-> t |-> (El_
 Theorem C { ⊢ u Ulevel, t : UU[u] } ⊢ *t Type ::= u |-> t |-> (El_istype $1 $0).
 
 Check LF : texp ** oexp .
-Check LF      (pair (UU u0) (@[u] u0)).
+Check LF      (pair (UU u0) (uu u0)).
 Check LF : Sigma x: uexp, texp.
 Check LF      (pair u0 (UU u0)).
 Check LF : Singleton ( (pair u0 (UU u0)) :  (Sigma x: uexp, texp) ).

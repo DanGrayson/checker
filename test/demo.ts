@@ -54,11 +54,9 @@ Theorem compose2 { ⊢ u Ulevel, T:UU[u], U:UU[u], V:UU[u], g:*U ⟶ *V, f:*T �
 			(_ ⟼ _ ⟼ (El_istype u U CDR U')) 
 			f' t'))).
 
-End.
-
-Lemma A { |- u Ulevel, T U : UU[u], f : *[forall;x][u,u,T,U] } : @[Pi;_][*T,*U] ::=
+Lemma A { |- u Ulevel, T U : UU[u], f : *@[forall;x][u,u,T,U] } : @[Pi;_][*T,*U] ::=
                 u ⟼ T ⟼ U ⟼ f ⟼ 
-		 (cast (El_istype u (forall u u T U)) 
+		 (cast (El_istype u (forall u u T (_ ⟼ U))) 
                       (∏_istype (El_istype u T) (El_istype u U))
                       (El_istype_forall_reduction u u T U)
 		       f).

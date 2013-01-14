@@ -62,6 +62,8 @@
 
     (modify-syntax-entry ?⟶ "_" syntax-table)
 
+    (modify-syntax-entry ?₁ "." syntax-table)
+    (modify-syntax-entry ?₂ "." syntax-table)
     (modify-syntax-entry ?⟾ "." syntax-table)
     (modify-syntax-entry ?⟼ "." syntax-table)
 

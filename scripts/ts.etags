@@ -1,0 +1,1 @@
+/\(Definition\|Lemma\|Proposition\|Corollary\|Axiom\|Theorem\)[[:space:]]*\(LF\)?\( [0-9]+\(\.[0-9]+\)*\)?[[:space:]]+\([[:alnum:]∏∐Σλ_']+\)/\5/
