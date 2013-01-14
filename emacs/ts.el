@@ -8,7 +8,7 @@
 ;; 	       ))
 ;; (autoload 'ts-mode "ts.el" "" t)
 
-(define-derived-mode ts-mode fundamental-mode "TS"
+(define-derived-mode ts-mode fundamental-mode "TS-checker"
   "Major mode for editing TS type system files.
 
 \\{ts-mode-map}"

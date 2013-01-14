@@ -232,7 +232,7 @@ let application_to_lf_string p_arg head args : smart_string =
 let rec lf_head_to_string_with_subs subs h : string =
   match h with
   | V v -> vartostring (var_sub subs v)
-  | U _ | T _ | O _ -> "[" ^ expr_head_to_string h ^ "]"
+  | U _ | T _ | O _ -> "@[" ^ expr_head_to_string h ^ "]"
   | TAC tac -> tactic_to_string tac
   | FUN(f,t) ->
       let f = lf_expr_to_string_with_subs subs f in

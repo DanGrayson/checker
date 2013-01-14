@@ -28,39 +28,43 @@ Definition Iscontr { ⊢ X Type } ⊢ Σ x:X, ∏ y:X, y=x  Type
 Definition Hfiber { ⊢ X Y Type, f:X⟶Y, y:Y } ⊢ Σ x:X, @[ev;_][f,x,Y]=y  Type 
 
   := (_, X ⟾ Y ⟾ f ⟾ y ⟾ 
-     Σ_istype₂[X, (x ⟾ @[ev][f₁, x, _ ⟾ Y₁]=y₁,
+     Σ_istype₂[X, (x ⟾ @[ev;_][f₁,x,Y₁] = y₁,
       		   x ⟾ Id_istype₂[Y, ev1₂[X,Y,f,x], y])]).
 
 Definition Isweq { ⊢ X Y Type, f:X⟶Y } ⊢ ∏ y:Y, Iscontr₁[Hfiber₁[X,Y,f,y]] Type 
 
-   ::= (_,X ⟼ Y ⟼ f ⟼ (∏_istype₂ Y (y ⟼ (Iscontr₁ (Hfiber₁ X₁ Y₁ f₁ y)), y ⟼ (Iscontr₂ (Hfiber₂ X Y f y))))).
+   := (_,X ⟾ Y ⟾ f ⟾ ∏_istype₂[Y, (y ⟾ Iscontr₁[ Hfiber₁[X₁,Y₁,f₁,y]], 
+   				    y' ⟾ Iscontr₂[ Hfiber₂[X,Y,f,y']])]).
 
 Definition Weq { ⊢ X Y Type } ⊢ Σ f:X⟶Y, Isweq₁[X,Y,f] Type 
 
-   ::= (_,X ⟼ Y ⟼ (Σ_istype₂ (pi1₂ X Y) (f ⟼ (Isweq₁ X₁ Y₁ f), f ⟼ (Isweq₂ X Y f)))).
+   := (_,X ⟾ Y ⟾ Σ_istype₂[pi1₂[X,Y], 
+   		(f ⟾ Isweq₁[X₁,Y₁,f], 
+   		 f' ⟾ Isweq₂[X,Y,f'])]).
 
-Definition Isaprop { ⊢ X Type } ⊢ ∏ x:X, ∏ x':X, Iscontr₁[x=x'] Type
+Definition Isaprop { ⊢ X Type } ⊢ ∏ x:X, ∏ y:X, Iscontr₁[x=y] Type
 
-   := (_,X ⟾ ∏_istype₂[X, (x ⟾ @[∏][X₁, (x' ⟾ Iscontr₁ [ x=x' ])], 
-   		       x ⟾ ∏_istype₂[X, (x' ⟾ Iscontr₁[ x₁=x'],
-		       		    x' ⟾ Iscontr₂[Id_istype₂[X,x,x']])])]).
+   := (_,X ⟾ ∏_istype₂[X, (x ⟾ ∏ y:X₁, Iscontr₁ [ x=y ],
+   		            x' ⟾ ∏_istype₂[X, (y ⟾ Iscontr₁[ x'₁=y],
+		       		                y' ⟾ Iscontr₂[Id_istype₂[X,x',y']])])]).
 
-Definition Isaset { ⊢ X Type } ⊢ ∏ x:X, ∏ x':X, Isaprop₁[x=x'] Type
+Definition Isaset { ⊢ X Type } ⊢ ∏ x:X, ∏ y:X, Isaprop₁[x=y] Type
 
-   ::= (_,X ⟼ (∏_istype₂ X (x ⟼ (∏_istype₁ X₁ (x' ⟼ (Isaprop₁ (Id_istype₁ X₁ x x')))), 
-   		       x ⟼ (∏_istype₂ X (x' ⟼ (Isaprop₁ (Id_istype₁ X₁ x₁ x')),
-		       		    x' ⟼ (Isaprop₂ (Id_istype₂ X x x'))))))).
+   := (_,X ⟾ ∏_istype₂[X, (x ⟾ ∏_istype₁[X₁, y ⟾ Isaprop₁[Id_istype₁[X₁,x,y]]], 
+   		            x' ⟾ ∏_istype₂[X, 
+			    		     (y ⟾ Isaprop₁[Id_istype₁[X₁,x'₁,y]],
+		       		              y' ⟾ Isaprop₂[Id_istype₂[X,x',y']])])]).
 
-Definition idfun { ⊢ X Type } ⊢ λ x:X, x : X⟶X
+Definition idfun { ⊢ X Type } ⊢ λ x:X,x : X⟶X
 
-   ::= (_,X ⟼ (lambda1₂ X X (x ⟼ x,x ⟼ x))).
+   := (_,X ⟾ lambda1₂[X,X,(x ⟾ x,x ⟾ x)]).
 
 End.
 
 Theorem idisweq { ⊢ X Type } : Isweq₁[X,X,idfun₁[X]] 
-   ::= (
-   	X ⟼ _,
-	X' ⟼ (_,_)).
+   := (
+   	X ⟾ _,
+	X' ⟾ (_,_)).
 
 #   Local Variables:
 #   compile-command: "make -C .. rules7 "

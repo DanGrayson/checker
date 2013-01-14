@@ -194,6 +194,18 @@ let show_command env n =
   ( match n with None -> print_signature env stdout | _ -> () );
   print_context n stdout env
 
+let chk_u env u =
+  let u = Lfcheck.type_check [] env u uexp in
+  Lfcheck.term_normalization env u uexp
+
+let ubind env uvars ueqns =
+  let uvars = List.map (fun u -> Var u) uvars in 
+  let env = List.fold_left (fun env u -> lf_bind env u uexp) env uvars in
+  let ueqns = List.map (fun (u,v) -> (chk_u env u, chk_u env v)) ueqns in
+  let env = List.fold_left (fun env (u,v) -> lf_bind env (Variables.newfresh (Var "ueq")) (ulevel_equality u v)) env ueqns in
+  chk_ueqns env ueqns;
+  env
+
 let rec process_command env lexbuf = 
   let c = 
     try

@@ -16,6 +16,8 @@
 open Error
 open Variables
 open Typesystem
+open Printf
+open Printer
 
 exception Inconsistency of lf_expr * lf_expr
 
@@ -35,37 +37,31 @@ let chk uv ((lhs:lf_expr),(rhs:lf_expr)) =
     | APPLY(V u,END) -> - step_size * (index u)
     | APPLY(U U_next,ARG(u,END)) -> (ev u) + 1
     | APPLY(U U_max,ARG(u,ARG(v,END))) -> max (ev u) (ev v)
-    | _ -> (trap(); raise Internal)
+    | _ -> (
+	printf "%a: unexpected u-expression: %a\n%!" _pos pos _e e;
+	trap(); raise Internal)
   in 
   if (ev lhs) != (ev rhs) then raise (Inconsistency (lhs, rhs))
 
-let get_uvars =
+let get_uvars env =
   let rec get_uvars accu = function
   | [] -> List.rev accu
   | (u,t) :: rest -> if t = uexp then get_uvars (u :: accu) rest else get_uvars accu rest
-  in get_uvars []
+  in get_uvars [] env.lf_context
 
-let get_ueqns =
+let get_ueqns env =
   let rec get_ueqns accu = function
   | (_, (pos,F_Apply(F_ulevel_equality,[u; u']))) :: rest -> get_ueqns ((u,u') :: accu) rest
   | _ :: rest -> get_ueqns accu rest 
   | [] -> List.rev accu
-  in get_ueqns []
+  in get_ueqns [] env.lf_context
 
 let chk_var_ueqns uv eqns = List.iter (chk uv) eqns
 
-let consistency c = 
-  let env = c.lf_context in
+let consistency env = 
   List.iter (chk (get_uvars env)) (get_ueqns env)
 
 let chk_ueqns env ueqns = chk_var_ueqns (get_uvars env) ueqns
-
-let ubind c uvars ueqns =
-  let env = c.lf_context in
-  let env = List.rev_append (List.map (fun u -> ((Var u), uexp)) uvars) env in
-  let env = List.rev_append (List.map (fun (u,v) -> (Variables.newfresh (Var "ueq"), ulevel_equality u v)) ueqns) env in
-  chk_ueqns env ueqns;
-  {c with lf_context = env }
 
 module Equal = struct
   let term_equiv ulevel_context = 			(* structural equality *)

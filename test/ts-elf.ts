@@ -2,7 +2,9 @@
 
 # Here we translate the file ../NOTES/ts.elf into our syntax.
 
-Axiom LF Empty_istype : istype @[Empty].
+Include "rules/abbreviations.ts".
+
+Axiom LF Empty_istype : istype Empty.
 
 Axiom LF ∏_istype : (T1:texp) ⟶ (T2:oexp⟶texp) ⟶ 
       istype T1 ⟶ 
@@ -16,7 +18,7 @@ Axiom LF λ_hastype : (T1:texp) ⟶ (T2:oexp⟶texp) ⟶ (O:oexp⟶oexp) ⟶
 Axiom LF ev_hastype : (T1:texp) ⟶ (T2:oexp⟶texp) ⟶ (F:oexp) ⟶ (O:oexp) ⟶ 
       hastype F (@[Pi] T1 T2) ⟶ hastype O T1 ⟶ hastype (@[ev] F O T2) (T2 O).
 
-Axiom LF empty_r_hastype : (O:oexp) ⟶ (T:texp) ⟶ hastype O @[Empty] ⟶ 
+Axiom LF empty_r_hastype : (O:oexp) ⟶ (T:texp) ⟶ hastype O Empty ⟶ 
       istype T ⟶ hastype (@[empty_r] T O) T.
 
 Axiom LF eq_hastype : (T1:texp) ⟶ (T2:texp) ⟶ (O:oexp) ⟶ tequal T1 T2 ⟶ 
@@ -33,14 +35,14 @@ Axiom LF o_eq_app : (T1:texp) ⟶ (T2:oexp⟶texp) ⟶ (O:oexp) ⟶ (O':oexp) �
       oequal (@[ev] F O T2) (@[ev] F' O' T2) (T2 O).
 
 Axiom LF o_eq_empty_eta : (O:oexp) ⟶ (O1:oexp) ⟶ (O2:oexp) ⟶ (A:texp) ⟶ 
-      hastype O @[Empty] ⟶ hastype O1 A ⟶ hastype O2 A ⟶ oequal O1 O2 A.
+      hastype O Empty ⟶ hastype O1 A ⟶ hastype O2 A ⟶ oequal O1 O2 A.
 
 Axiom LF t_eq_empty_eta : (O:oexp) ⟶ (B:texp) ⟶ (A:texp) ⟶ 
-      hastype O @[Empty] ⟶ istype B ⟶ istype A ⟶ tequal A B.
+      hastype O Empty ⟶ istype B ⟶ istype A ⟶ tequal A B.
 
 Theorem LF foo : (T1:texp) ⟶ (T2:texp) ⟶ (T3:texp) ⟶ (F:oexp) ⟶ (O:oexp) ⟶ (Bad:oexp) ⟶
       istype T1 ⟶ istype T2 ⟶ hastype O T1 ⟶ hastype F (@[Pi] T2 (_ ⟼ T3)) ⟶
-      hastype Bad @[Empty] ⟶ hastype (@[ev] F O (_ ⟼ T3)) T3 
+      hastype Bad Empty ⟶ hastype (@[ev] F O (_ ⟼ T3)) T3 
       :=
       T1 ⟼ T2 ⟼ T3 ⟼ F ⟼ O ⟼ Bad ⟼ dT1 ⟼ dT2 ⟼ dO ⟼ dF ⟼ dBad ⟼ 
       (ev_hastype T2 (_ ⟼ T3) F O dF 
@@ -49,7 +51,7 @@ Theorem LF foo : (T1:texp) ⟶ (T2:texp) ⟶ (T3:texp) ⟶ (F:oexp) ⟶ (O:oexp)
 # this time with tactics:
 Theorem LF foo' : (T1:texp) ⟶ (T2:texp) ⟶ (T3:texp) ⟶ (F:oexp) ⟶ (O:oexp) ⟶ (Bad:oexp) ⟶
       istype T1 ⟶ istype T2 ⟶ hastype O T1 ⟶ hastype F (@[Pi] T2 (_ ⟼ T3)) ⟶
-      hastype Bad @[Empty] ⟶ hastype (@[ev] F O (_ ⟼ T3)) T3 
+      hastype Bad Empty ⟶ hastype (@[ev] F O (_ ⟼ T3)) T3 
       :=
       T1 ⟼ T2 ⟼ T3 ⟼ F ⟼ O ⟼ Bad ⟼ dT1 ⟼ dT2 ⟼ dO ⟼ dF ⟼ dBad ⟼ 
       (ev_hastype T2 (_ ⟼ T3) F O 

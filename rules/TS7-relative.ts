@@ -13,11 +13,11 @@ Definition pi1 { ⊢ T U Type } ⊢ T⟶U Type
 
 Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ λ t:T, o[t] : T⟶U
 
-	   ::= T ⟼ U ⟼ o ⟼ (_, T' ⟼ U' ⟼ (λ_hastype T (_ ⟼ U) o CDR T' (_ ⟼ _ ⟼ U'))).
+	   := T ⟾ U ⟾ o ⟾ (_, T' ⟾ U' ⟾ λ_hastype[T, _ ⟾ U, o, CDR, T', _ ⟾ _ ⟾ U']).
 
 Definition ev1 { ⊢ T U Type, f:T⟶U, o:T } ⊢ @[ev;_][f,o,U] : U
 
-	   ::= T ⟼ U ⟼ f ⟼ o ⟼ (_, T' ⟼ U' ⟼ (ev_hastype T (_ ⟼ U) f o CDR T' (_ ⟼ _ ⟼ U'))).
+	   := T ⟾ U ⟾ f ⟾ o ⟾ (_, T' ⟾ U' ⟾ ev_hastype[T, _ ⟾ U, f, o, CDR, T', _ ⟾ _ ⟾ U']).
 
 Check LF ev_hastype.
 

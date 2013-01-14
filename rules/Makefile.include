@@ -1,4 +1,5 @@
 RULES_FILES =					\
+	rules/abbreviations.ts			\
 	rules/TS.ts				\
 	rules/TS0.ts				\
 	rules/TS1.ts				\
@@ -16,6 +17,7 @@ ifeq "$(SHOW)" "yes"
 SHOWFILE = test/show.ts
 endif
 
+abbreviations: src/$(CHECKER_EXE) ; $(CHECKER) rules/abbreviations.ts $(SHOWFILE)
 rules: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS.ts $(SHOWFILE)
 rules0: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS0.ts $(SHOWFILE)
 rules1: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS1.ts $(SHOWFILE)
