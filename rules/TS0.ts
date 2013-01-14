@@ -72,7 +72,7 @@ Axiom 3.4.30 El_j_reduction { ⊢ M1 M2 Ulevel, o : UU[M1] }
 
      		[ umax[M1,M2] ~ M2 Ulevel ] ⇒ [ *@[ev;_][jj[M1,M2],o,UU[M2]] ≡ *o ].
 
-Axiom 3.4.31 forall { ⊢ M1 M2 Ulevel, o1 : UU[M1] } { x : *o1 ⊢ o2 : UU[M2] } ⊢ @[forall;t][M1,M2,o1,o2[t]] : UU[umax[M1,M2]].
+Axiom 3.4.31 forall_hastype { ⊢ M1 M2 Ulevel, o1 : UU[M1] } { x : *o1 ⊢ o2 : UU[M2] } ⊢ @[forall;t][M1,M2,o1,o2[t]] : UU[umax[M1,M2]].
 
 Axiom 3.4.32 El_forall_reduction { ⊢ M1 M2 Ulevel, o1 : UU[M1] } { x : *o1 ⊢ o2 : UU[M2] }
 

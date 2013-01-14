@@ -107,8 +107,6 @@ Theorem LF modus_ponens :
 					_
 					(ev_hastype1 T U f t _ _))))))))).
 
-Show 20.
-
 #   Local Variables:
 #   compile-command: "make -C .. ts-elf "
 #   End:

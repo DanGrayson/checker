@@ -54,37 +54,6 @@ Theorem compose2 { ⊢ u Ulevel, T:UU[u], U:UU[u], V:UU[u], g:*U ⟶ *V, f:*T �
 			(_ ⟼ _ ⟼ (El_istype u U CDR U')) 
 			f' t'))).
 
-Lemma A { |- u Ulevel, T U : UU[u], f : *@[forall;x][u,u,T,U] } : @[Pi;_][*T,*U] ::=
-                u ⟼ T ⟼ U ⟼ f ⟼ 
-		 (cast (El_istype u (forall u u T (_ ⟼ U))) 
-                      (∏_istype (El_istype u T) (El_istype u U))
-                      (El_istype_forall_reduction u u T U)
-		       f).
-
-Theorem compose3 { |- u Ulevel, T U V : UU[u], g : *[forall;x][u,u,U,V], f : *[forall;x][u,u,T,U], t: *T } : *V ::=
-                u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ t ⟼ 
-                (ev_hastype (El_istype u U) (El_istype u V) (A u U V g) (ev_hastype (El_istype u T) (El_istype u U) (A u T U f) t)).
-
-Theorem compose4 { |- u Ulevel, T U V : UU[u], g : *[forall;x][u,u,U,V], f : *[forall;x][u,u,T,U] } : *T ⟶ *V ::=
-                u ⟼ T ⟼ U ⟼ V ⟼ g ⟼ f ⟼ 
-		 (λ_hastype 
-			    (El_istype u T) (El_istype u V) 
-			    (compose3 u T U V g f) # <--- same problem here
-			    ).
-
-	need:
-
-	(o:oexp ⟶ oexp) × ((x:oexp) ⟶ 
-				hastype x (El_istype u (T₁,T₂))₁ ⟶ 
-				hastype (o x) (El_istype u (V₁,V₂))₁)
-
-
-Theorem A' { |- u Ulevel, T U : UU[u], f : *[forall;x][u,u,T,U] } : @[Pi][*T,*U] ::=  # <-- bug here 
-                u ⟼ T ⟼ U ⟼ f ⟼ 
-		 (cast (El_istype u (forall u u T U)) 
-                            (∏_istype (El_istype u T) (El_istype u U))
-                            (El_istype_forall_reduction u u T U) f).
-
 
 #   Local Variables:
 #   compile-command: "make -C .. demo "

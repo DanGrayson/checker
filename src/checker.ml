@@ -120,7 +120,7 @@ let show_mode () =
 let defCommand env defs = 
   List.fold_left
     (fun env (v, pos, tm, tp) -> 
-      if show_definitions then printf "Define %a = %a\n%!" _v v  _e tm else printf "Define %a\n%!" _v v;
+      if show_definitions then printf "Define %a = %a\n%!" _v v  _e tm (* else printf "Define %a\n%!" _v v *);
       if show_definitions then printf "       %a : %a\n%!" _v v  _t tp;
       let tp' = type_validity [] env tp in
       if not (Alpha.UEqual.type_equiv empty_uContext tp tp') then
@@ -168,7 +168,7 @@ let checkLFtypeCommand env t =
       printf "           : %a [after normalization]\n%!" _t t''
 
 let checkTSCommand env x =
-  printf "Check TS   : %a\n%!" _ts x;
+  printf "Check      : %a\n%!" _ts x;
   let (x,t) = Lfcheck.type_synthesis env x in
   printf "     type :: %a\n" _t t;
   if unmark t = unmark oexp then (

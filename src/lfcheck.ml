@@ -108,6 +108,11 @@ let rec strip_singleton ((_,(_,t)) as u) = match t with
 | F_Singleton a -> strip_singleton a
 | _ -> u
 
+let rec un_singleton t =
+  match unmark t with 
+  | F_Singleton xt -> let (x,t) = strip_singleton xt in t
+  | _ -> t
+
 (* background assumption: all types in the environment have been verified *)
 
 let apply_tactic surr env pos t = function
@@ -379,8 +384,7 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
       try
         subtype env s t;
         e
-      with SubtypeFailure -> 
-	mismatch_term_type_type env e0 s t
+      with SubtypeFailure -> mismatch_term_type_type env e0 (un_singleton s) t
 
 and type_synthesis (surr:surrounding) (env:context) (m:lf_expr) : lf_expr * lf_type =
   (* assume nothing *)
