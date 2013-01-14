@@ -33,30 +33,36 @@
   `(
     ("@\\[\\([[:alnum:]∏∐Σλ_']+\\)\\(;[[:alnum:]_',]+\\)?\\]" 
      (1 font-lock-constant-face))
-    (,(concat "\\<\\(" (regexp-opt ts-keywords) "\\)\\>") 
-     . font-lock-type-face)
     (,(concat "\\<\\(" (regexp-opt ts-commands) "\\)\\>") 
      . font-lock-keyword-face)
     ("\\(Variable\\) +\\([[:alnum:]_']+\\)"
      (1 font-lock-keyword-face) 
      (2 font-lock-function-name-face))
-    ("\\(Definition\\|Lemma\\|Proposition\\|Corollary\\|Axiom\\|Theorem\\)[[:space:]]*\\( [0-9]+\\(\\.[0-9]+\\)*\\)?[[:space:]]+\\([[:alnum:]∏∐Σλ_']+\\)"
+    ("\\(Definition\\|Lemma\\|Proposition\\|Corollary\\|Axiom\\|Theorem\\)[[:space:]]*\\(LF\\)?\\( [0-9]+\\(\\.[0-9]+\\)*\\)?[[:space:]]+\\([[:alnum:]∏∐Σλ_']+\\)"
      (1 font-lock-keyword-face) 
-     (4 font-lock-function-name-face))
+     (5 font-lock-function-name-face))
+    (,(concat "\\<\\(" (regexp-opt ts-keywords) "\\)\\>") 
+     . font-lock-type-face)
     ))
 
 (mapcar
  (function
   (lambda (syntax-table)
-    (modify-syntax-entry ?# "<" syntax-table)
-    (modify-syntax-entry ?\n ">" syntax-table)
-    (modify-syntax-entry 8719  "w" syntax-table) ; ∏
-    (modify-syntax-entry 8720 "w" syntax-table) ; ∐
-    (modify-syntax-entry 931 "w" syntax-table)	; Σ
-    (modify-syntax-entry 955  "w" syntax-table)	; λ
-    (modify-syntax-entry 10230 "_" syntax-table) ; ⟶
-    (modify-syntax-entry ?_  "w" syntax-table)
-    (modify-syntax-entry ?\'  "w" syntax-table)
+
+    (modify-syntax-entry ?# "<" syntax-table) (modify-syntax-entry ?\n ">" syntax-table)
+
+    (modify-syntax-entry ?∏ "w" syntax-table)
+    (modify-syntax-entry ?Σ "w" syntax-table)
+    (modify-syntax-entry ?λ "w" syntax-table)
+    (modify-syntax-entry ?\' "w" syntax-table)
+
+    (modify-syntax-entry ?_ "_" syntax-table)
+    (modify-syntax-entry ?∐ "_" syntax-table)
+    (modify-syntax-entry ?⟶ "_" syntax-table)
+
+    (modify-syntax-entry ?⟾ "." syntax-table)
+    (modify-syntax-entry ?⟼ "." syntax-table)
+
     ))
  (list ts-mode-syntax-table))
 

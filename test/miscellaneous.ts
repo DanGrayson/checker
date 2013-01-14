@@ -37,7 +37,7 @@ Check TS Σ x:T, Σ y:U, V⟶X .
 Check TS @[∐][T,T'].
 Check TS @[Empty][].
 Check TS λ x:T, λ y:T, λ t:@[Id][T,x,y], t.
-Check TS λ o:T, λ o':T, @[∀;x][u1,u2,o,o'].
+Check TS λ o:T, λ o':T, @[forall;x][u1,u2,o,o'].
 Check TS ∏ x : T, @[U][@[next][u0]].
 Check TS ∏ x : T, @[U][u0].
 Check TS u1.
@@ -61,7 +61,7 @@ Check TS @[u][u1].
 Check TS @[j][u1,u2].
 # Check TS @[ev;x][f,t0,T].
 Check TS @[λ;x][T,x].
-# Check TS @[∀;x][u1,u2,x0,x0].
+# Check TS @[forall;x][u1,u2,x0,x0].
 
 Check TS λ f:T⟶U, λ o:T, @[ev;_][f,o,U].
 # Check TS λ f:T⟶U, λ o:T, f o.

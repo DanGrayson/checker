@@ -70,11 +70,11 @@ Axiom 3.4.30 El_j_reduction { ⊢ M1 M2 Ulevel, o : @[U][M1] }
 
      		[ @[max][M1,M2] ~ M2 Ulevel ] ⇒ [ *@[ev;_][@[j][M1,M2],o,@[U][M2]] ≡ *o ].
 
-Axiom 3.4.31 forall { ⊢ M1 M2 Ulevel, o1 : @[U][M1] } { x : *o1 ⊢ o2 : @[U][M2] } ⊢ @[∀;t][M1,M2,o1,o2[t]] : @[U][@[max][M1,M2]].
+Axiom 3.4.31 forall { ⊢ M1 M2 Ulevel, o1 : @[U][M1] } { x : *o1 ⊢ o2 : @[U][M2] } ⊢ @[forall;t][M1,M2,o1,o2[t]] : @[U][@[max][M1,M2]].
 
 Axiom 3.4.32 El_forall_reduction { ⊢ M1 M2 Ulevel, o1 : @[U][M1] } { x : *o1 ⊢ o2 : @[U][M2] }
 
-          [ (*@[∀;x][M1,M2,o1,o2[x]]) ≡ @[∏;x][*o1,*o2[x]] ].
+          [ (*@[forall;x][M1,M2,o1,o2[x]]) ≡ @[∏;x][*o1,*o2[x]] ].
 
 #   Local Variables:
 #   compile-command: "make -C .. rules0 "

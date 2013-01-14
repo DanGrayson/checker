@@ -9,8 +9,7 @@ exception Unimplemented_expr of lf_expr
 exception TypeCheckingFailure of context * surrounding * (position * string) list
 
 let lf_expr_head_table = [
-  T T_Pi, "∏" ; T T_Sigma, "Σ" ; T T_Coprod, "∐" ; 
-  O O_lambda, "λ" ; O O_forall, "∀" ;
+  T T_Pi, "∏" ; T T_Sigma, "Σ" ; T T_Coprod, "∐" ; O O_lambda, "λ" ;
   U U_next, "next" ; U U_max, "max" ;
   T T_El, "El"  ; T T_U, "U"  ; T T_Pi, "Pi"  ; T T_Sigma, "Sigma" ;
   T T_Pt, "Pt"  ; T T_Coprod, "Coprod"  ; T T_Coprod2, "Coprod2" ;

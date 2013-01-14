@@ -5,7 +5,9 @@
 Axiom LF Empty_istype : istype @[Empty].
 
 Axiom LF ∏_istype : (T1:texp) ⟶ (T2:oexp⟶texp) ⟶ 
-      ((x:oexp) ⟶ hastype x T1 ⟶ istype (T2 x)) ⟶ istype (@[Pi] T1 T2).
+      istype T1 ⟶ 
+      ((x:oexp) ⟶ hastype x T1 ⟶ istype (T2 x)) ⟶ 
+      istype (@[Pi] T1 T2).
 
 Axiom LF λ_hastype : (T1:texp) ⟶ (T2:oexp⟶texp) ⟶ (O:oexp⟶oexp) ⟶ 
       ((x:oexp) ⟶ hastype x T1 ⟶ hastype (O x) (T2 x)) ⟶ 
@@ -56,20 +58,24 @@ Theorem LF foo' : (T1:texp) ⟶ (T2:texp) ⟶ (T3:texp) ⟶ (F:oexp) ⟶ (O:oexp
 Definition LF arrow : (T1:texp) ⟶ (T2:texp) ⟶ texp := T1 ⟼ T2 ⟼ (@[Pi] T1 (_ ⟼ T2)).
 
 Theorem LF ∏_istype1 : (T1:texp) ⟶ (T2:texp) ⟶ 
-      ((x:oexp) ⟶ hastype x T1 ⟶ istype T2) ⟶ istype (arrow T1 T2) :=
-        T1 ⟼ T2 ⟼ dT2 ⟼ (∏_istype T1 (_ ⟼ T2) dT2).
+	istype T1 ⟶ 
+        ((x:oexp) ⟶ hastype x T1 ⟶ istype T2) ⟶ istype (arrow T1 T2) 
+	:=
+        T1 ⟼ T2 ⟼ dT1 ⟼ dT2 ⟼ (∏_istype T1 (_ ⟼ T2) dT1 dT2).
 
 Theorem LF λ_hastype1 : (T1:texp) ⟶ (T2:texp) ⟶ (O:oexp⟶oexp) ⟶ 
       ((x:oexp) ⟶ hastype x T1 ⟶ hastype (O x) T2) ⟶ 
-      hastype (@[lambda] T1 O) (arrow T1 T2) :=
-        T1 ⟼ T2 ⟼ O ⟼ dT2 ⟼ (λ_hastype T1 (_ ⟼ T2) O dT2).
+      hastype (@[lambda] T1 O) (arrow T1 T2) 
+      :=
+      T1 ⟼ T2 ⟼ O ⟼ dT2 ⟼ (λ_hastype T1 (_ ⟼ T2) O dT2).
 
 Definition LF ev1 : (T1:texp) ⟶ (T2:texp) ⟶ (F:oexp) ⟶ (O:oexp) ⟶ oexp 
 	   	  := T1 ⟼ T2 ⟼ F ⟼ O ⟼ (@[ev] F O (_ ⟼ T2)).
 
 Theorem LF ev_hastype1 : (T1:texp) ⟶ (T2:texp) ⟶ (F:oexp) ⟶ (O:oexp) ⟶ 
       hastype F (arrow T1 T2) ⟶ hastype O T1 ⟶ hastype (ev1 T1 T2 F O) T2
-      := T1 ⟼ T2 ⟼ F ⟼ O ⟼ dF ⟼ dO ⟼ (ev_hastype T1 (_ ⟼ T2) F O dF dO).
+      := 
+      T1 ⟼ T2 ⟼ F ⟼ O ⟼ dF ⟼ dO ⟼ (ev_hastype T1 (_ ⟼ T2) F O dF dO).
 
 Theorem LF modus_ponens : 
       (T:texp) ⟶ (istype T) ⟶
