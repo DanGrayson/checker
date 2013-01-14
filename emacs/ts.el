@@ -24,6 +24,8 @@
   )
 
 (defvar ts-keywords '( "lambda" "Pi" "Sigma" "∏" "λ" "Σ" "Pi" "lambda" "Ulevel" "Type"
+		       "uexp" "texp" "oexp" "istype" "hastype" "uequal" "tequal" "oequal" "tuequal" "ouequal" 
+		       "a_type" "obj_of_type" "type_equality" "object_equality"
 		       "max" "Singleton" "Sigma" "pair" "CAR" "CDR" ))
 
 (defvar ts-commands '( "Mode" "Simple" "Relative" "Pairs" "Clear" "Universes" "LF" "TS"
@@ -51,13 +53,13 @@
 
     (modify-syntax-entry ?# "<" syntax-table) (modify-syntax-entry ?\n ">" syntax-table)
 
+    (modify-syntax-entry ?\' "w" syntax-table)
     (modify-syntax-entry ?∏ "w" syntax-table)
     (modify-syntax-entry ?Σ "w" syntax-table)
     (modify-syntax-entry ?λ "w" syntax-table)
-    (modify-syntax-entry ?\' "w" syntax-table)
+    (modify-syntax-entry ?_ "w" syntax-table)
+    (modify-syntax-entry ?∐ "w" syntax-table)
 
-    (modify-syntax-entry ?_ "_" syntax-table)
-    (modify-syntax-entry ?∐ "_" syntax-table)
     (modify-syntax-entry ?⟶ "_" syntax-table)
 
     (modify-syntax-entry ?⟾ "." syntax-table)

@@ -69,11 +69,11 @@ Theorem LF λ_hastype1 : (T1:texp) ⟶ (T2:texp) ⟶ (O:oexp⟶oexp) ⟶
       :=
       T1 ⟼ T2 ⟼ O ⟼ dT2 ⟼ (λ_hastype T1 (_ ⟼ T2) O dT2).
 
-Definition LF ev1 : (T1:texp) ⟶ (T2:texp) ⟶ (F:oexp) ⟶ (O:oexp) ⟶ oexp 
-	   	  := T1 ⟼ T2 ⟼ F ⟼ O ⟼ (@[ev] F O (_ ⟼ T2)).
+Definition LF ev1 : (F:oexp) ⟶ (O:oexp) ⟶ (T2:texp) ⟶ oexp 
+	   	  := F ⟼ O ⟼ T2 ⟼ (@[ev] F O (_ ⟼ T2)).
 
 Theorem LF ev_hastype1 : (T1:texp) ⟶ (T2:texp) ⟶ (F:oexp) ⟶ (O:oexp) ⟶ 
-      hastype F (arrow T1 T2) ⟶ hastype O T1 ⟶ hastype (ev1 T1 T2 F O) T2
+      hastype F (arrow T1 T2) ⟶ hastype O T1 ⟶ hastype (ev1 F O T2) T2
       := 
       T1 ⟼ T2 ⟼ F ⟼ O ⟼ dF ⟼ dO ⟼ (ev_hastype T1 (_ ⟼ T2) F O dF dO).
 
@@ -81,25 +81,29 @@ Theorem LF modus_ponens :
       (T:texp) ⟶ (istype T) ⟶
       (U:texp) ⟶ (istype U) ⟶
       (V:texp) ⟶ (istype V) ⟶
-      hastype (@[lambda] (@[Pi] T (_ ⟼ U)) (f ⟼ (@[lambda] (@[Pi] U (_ ⟼ V)) (g ⟼ (@[lambda] T (t ⟼ 
-		      (@[ev] g (@[ev] f t (_⟼ U)) (_ ⟼ V))))))))
-	      (@[Pi] (@[Pi] T (_ ⟼ U)) (_ ⟼ (@[Pi] (@[Pi] U (_ ⟼ V)) (_ ⟼ (@[Pi] T (_ ⟼ V))))))
+      hastype 
+      (@[lambda] 
+        (arrow T U) 
+	(f ⟼ (@[lambda] (arrow U V) 
+	      (g ⟼ (@[lambda] T 
+	      	      (t ⟼ (ev1 g (ev1 f t U) V)))))))
+      (arrow (arrow T U) (arrow (arrow U V) (arrow T V)))
       :=
       T ⟼ dT ⟼ U ⟼ dU ⟼ V ⟼ dV ⟼ 
       (λ_hastype1 (arrow T U) (arrow (arrow U V) (arrow T V)) 
 	(f ⟼ (@[lambda] (arrow U V)
 	      (g ⟼ (@[lambda] T 
-	      	      (t ⟼ (@[ev] g (@[ev] f t (_⟼ U)) (_ ⟼ V))))))) 
+	      	      (t ⟼ (ev1 g (ev1 f t U) V)))))) 
 	(f ⟼ df ⟼ (
 	  (λ_hastype1 (arrow U V) (arrow T V)
 	      (g ⟼ (@[lambda] T 
-	      	      (t ⟼ (@[ev] g (@[ev] f t (_⟼ U)) (_ ⟼ V)))))
+	      	      (t ⟼ (ev1 g (ev1 f t U) V))))
 	      (g ⟼ dg ⟼ (λ_hastype1 T V
-		      (t ⟼ (@[ev] g (@[ev] f t (_⟼ U)) (_ ⟼ V)))
+		      (t ⟼ (ev1 g (ev1 f t U) V))
 		      (t ⟼ dt ⟼ (ev_hastype1 U V g 
-		      			(@[ev] f t (_⟼ U)) 
+		      			(ev1 f t U) 
 					_
-					(ev_hastype T (_ ⟼ U) f t _ _))))))))).
+					(ev_hastype1 T U f t _ _))))))))).
 
 Show 20.
 

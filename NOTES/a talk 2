@@ -1,3 +1,5 @@
+-*- ts -*-
+
 The last talk was Dec 7, 2012.
 
 progress since last time, a list:
@@ -28,11 +30,17 @@ details
 Then we had the following interpretations of the inference rules:
 
      ∏_istype : (∏ T:texp) (∏ U:(oexp ⟶ texp)) (∏ x:oexp)
-     		(hastype x T) ⟶ (istype (U x)) ⟶ (istype ([Pi] T U))
+     		(hastype x T) ⟶ 
+		(istype (U x)) ⟶ 
+		(istype ([Pi] T U))
      ev_hastype : (∏ T:texp) (∏ U:(oexp ⟶ texp)) (∏ f:oexp) (∏ o:oexp) 
-     		  (hastype f ([Pi] T U)) ⟶ (hastype o T) ⟶ (hastype ([ev] f o U) (U o))
+     		  (hastype f ([Pi] T U)) ⟶ 
+		  (hastype o T) ⟶ 
+		  (hastype ([ev] f o U) (U o))
      λ_hastype : (∏ T:texp) (∏ U:(oexp ⟶ texp)) (∏ o:(oexp ⟶ oexp)) 
-     		 (istype T) ⟶ ((∏ x:oexp) (hastype x T) ⟶ (hastype (o x) (U x))) ⟶ (hastype ([lambda] T o) ([Pi] T U))
+     		 (istype T) ⟶ 
+		 ((∏ x:oexp) (hastype x T) ⟶ (hastype (o x) (U x))) ⟶ 
+		 (hastype ([lambda] T o) ([Pi] T U))
 
 That turned out not to be workable: the premisses (and TS expressions
 themselves) may demand expressions with free variables (e.g., LF objects of
