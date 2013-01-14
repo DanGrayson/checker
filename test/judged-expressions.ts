@@ -196,7 +196,7 @@ Definition LF idfun # { ⊢ X Type } ⊢ λ x:X,x : X⟶X
 
 Theorem LF idisweq # { ⊢ X Type } : Isweq₁[X,X,idfun₁[X]] 
       : (X : a_type) ⟶ obj_of_type (Isweq X X (idfun X))
-      := X ⟼ $admit .
+      := $admit. # $( intro ; fail ) .
 
 Check idisweq.
 

@@ -102,13 +102,11 @@ unmarked_lf_type:
 
     | Sigma v= variable Colon a= lf_type Comma b= lf_type
 	%prec Reduce_binder
+    | LeftParen v= variable Colon a= lf_type RightParen Times b= lf_type
 	{ F_Sigma(v,a,b) }
 
     | a= lf_type Times b= lf_type
 	{ F_Sigma(newunused(),a,b) }
-
-    | LeftParen v= variable Colon a= lf_type RightParen Times b= lf_type
-	{ F_Sigma(v,a,b) }
 
     | LeftParen v= variable Colon a= lf_type RightParen Arrow b= lf_type
        { F_Pi(v,a,b) }
@@ -166,48 +164,34 @@ lf_expr:
 unmarked_lf_expr:
 
     | LeftParen Kpair a= lf_expr b= lf_expr RightParen
-	{ CONS(a, b) }
-
     | LeftParen a= lf_expr Comma b= lf_expr RightParen
 	{ CONS(a, b) }
 
     | Lambda v= marked_variable_or_unused Comma body= lf_expr
-	{ 
-	  let (pos,v) = v in
-	  let (v,body) = Substitute.subst_fresh pos (v,body) in 
-	  LAMBDA(v,body) }
-
     | v= marked_variable_or_unused ArrowFromBar body= lf_expr
 	{ 
 	  let (pos,v) = v in
 	  let (v,body) = Substitute.subst_fresh pos (v,body) in 
 	  LAMBDA(v,body) }
 
-    | empty_hole {$1}
+    | empty_hole 
+	{$1}
 
     | head_and_args = short_head_and_reversed_spine
-	{ let (hd,args) = head_and_args in APPLY(hd,reverse_spine args) }
-
     | LeftParen head_and_args= lf_expr_head_and_reversed_spine RightParen
 	{ let (hd,args) = head_and_args in APPLY(hd,reverse_spine args) }
 
 lf_expr_head_and_reversed_spine:
 
     | head_and_args= lf_expr_head_and_reversed_spine arg= lf_expr
-	{ app head_and_args arg }
-
     | head_and_args= short_head_and_reversed_spine arg= lf_expr
 	{ app head_and_args arg }
 
     | head_and_args= lf_expr_head_and_reversed_spine K_CAR
-	{ car head_and_args }
-
     | head_and_args= short_head_and_reversed_spine K_CAR
 	{ car head_and_args }
 
     | head_and_args= lf_expr_head_and_reversed_spine K_CDR
-	{ cdr head_and_args }
-
     | head_and_args= short_head_and_reversed_spine K_CDR
 	{ cdr head_and_args }
 
@@ -220,27 +204,31 @@ short_head_and_reversed_spine:
 	{ V $1, END }
 
     | head_and_args= short_head_and_reversed_spine K_1
-    	{ car head_and_args }
-
-    | head_and_args= short_head_and_reversed_spine K_2
-    	{ cdr head_and_args }
-
-    | tac= tactic_expr
-	{ TAC tac, END }
-
     | head_and_args= parenthesized(lf_expr_head_and_reversed_spine) K_1
     	{ car head_and_args }
 
+    | head_and_args= short_head_and_reversed_spine K_2
     | head_and_args= parenthesized(lf_expr_head_and_reversed_spine) K_2
     	{ cdr head_and_args }
 
-tactic_expr:
+    | tac= closed_tactic_expr
+	{ TAC tac, END }
+
+closed_tactic_expr:
+
+    | Dollar LeftParen e= tactic_expr RightParen
+	{ e }
 
     | Dollar name= IDENTIFIER
 	{ Tactic_name name }
 
     | Dollar index= NUMBER
 	{ Tactic_index index }
+
+tactic_expr:
+
+    | name= IDENTIFIER
+	{ Tactic_name name }
 
 dotted_number: n= separated_nonempty_list(Period,NUMBER) {n}
 
@@ -250,11 +238,6 @@ command:
 	{ Position($startpos, $endpos), c }
 
     | error Period
-	{ let pos = Position($startpos, $endpos) in
-	  fprintf stderr "%a: syntax error\n%!" _pos pos; 
-	  bump_error_count pos;
-	  pos, Toplevel.SyntaxError }
-
     | error EOF
 	{ let pos = Position($startpos, $endpos) in
 	  fprintf stderr "%a: syntax error\n%!" _pos pos; 
@@ -284,8 +267,6 @@ unmarked_command:
 	{ Toplevel.CheckLF e }
 
     | Check TS? Colon t= ts_judgment Period
-	{ Toplevel.CheckLFtype t }
-
     | Check LF Colon t= lf_type Period
 	{ Toplevel.CheckLFtype t }
 
@@ -296,28 +277,34 @@ unmarked_command:
 	{ Toplevel.Alpha (e1, e2) }
 
     | Theorem LF name= IDENTIFIER Colon thm= lf_type ColonEqual deriv= lf_expr Period 
-	{ 
-	  let pos = Position($startpos, $endpos) in
-	  Toplevel.Theorem (pos, name, deriv, thm) }
-
     | Theorem name= IDENTIFIER thm= ts_judgment ColonColonEqual deriv= lf_expr Period 
-	{ 
-	  let pos = Position($startpos, $endpos) in
-	  Toplevel.Theorem (pos, name, deriv, thm) }
-
     | Theorem name= IDENTIFIER thm= ts_judgment ColonEqual deriv= ts_expr Period 
 	{ 
 	  let pos = Position($startpos, $endpos) in
 	  Toplevel.Theorem (pos, name, deriv, thm) }
 
-    | Include filename= STRING Period { Toplevel.Include filename }
-    | Clear Period { Toplevel.Clear }
-    | Show Period { Toplevel.Show None }
-    | Show n= NUMBER Period { Toplevel.Show (Some n) }
-    | End Period { Toplevel.End }
-    | Mode Simple Period { Toplevel.Mode_simple }
-    | Mode Pairs Period { Toplevel.Mode_pairs }
-    | Mode Relative Period { Toplevel.Mode_relative }
+    | Include filename= STRING Period 
+	{ Toplevel.Include filename }
+
+    | Clear Period 
+	{ Toplevel.Clear }
+
+    | Show Period 
+	{ Toplevel.Show None }
+    | Show n= NUMBER Period 
+	{ Toplevel.Show (Some n) }
+
+    | End Period
+	{ Toplevel.End }
+
+    | Mode Simple Period
+	{ Toplevel.Mode_simple }
+
+    | Mode Pairs Period
+	{ Toplevel.Mode_pairs }
+
+    | Mode Relative Period
+	{ Toplevel.Mode_relative }
 
 marked_variable:
 
@@ -330,15 +317,11 @@ uEquation:
 	{ (u,v) }
 
     | v= ts_expr GreaterEqual u= ts_expr 
-	{ let pos = Position($startpos, $endpos) in (pos, make_U_max u v), v }
-
-    | u= ts_expr LessEqual v= ts_expr 
+    | u= ts_expr LessEqual    v= ts_expr 
 	{ let pos = Position($startpos, $endpos) in (pos, make_U_max u v), v }
 
     | v= ts_expr Greater u= ts_expr 
-	{ let pos = Position($startpos, $endpos) in (pos, make_U_max (pos, make_U_next u) v), v }
-
-    | u= ts_expr Less v= ts_expr 
+    | u= ts_expr Less    v= ts_expr 
 	{ let pos = Position($startpos, $endpos) in (pos, make_U_max (pos, make_U_next u) v), v }
 
 parenthesized(X): x= delimited(LeftParen,X,RightParen) {x}
@@ -350,8 +333,6 @@ ts_exprEof: a= ts_expr EOF {a}
 ts_judgment:
 
     | LeftParen t= unmarked_ts_judgment RightParen
-	{ Position($startpos, $endpos), t }
-
     | t= unmarked_ts_judgment
 	{ Position($startpos, $endpos), t }
 
@@ -514,11 +495,14 @@ ts_expr:
 
 ts_spine_member:
 
-    | x= ts_expr { Spine_arg x }
+    | x= ts_expr 
+	{ Spine_arg x }
 
-    | K_CAR { Spine_car }
+    | K_CAR 
+	{ Spine_car }
 
-    | K_CDR { Spine_cdr }
+    | K_CDR 
+	{ Spine_cdr }
 
 unmarked_ts_expr:
 
@@ -533,7 +517,7 @@ unmarked_ts_expr:
     | e= ts_expr K_2
     	{ unmark ( Substitute.apply_args e (CDR END) ) }
 
-    | tac= tactic_expr
+    | tac= closed_tactic_expr
 	{ cite_tactic tac END }
 
     | f= ts_expr LeftBracket o= separated_nonempty_list(Comma,ts_spine_member) RightBracket
