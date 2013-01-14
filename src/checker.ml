@@ -6,7 +6,7 @@ let show_rules = false
 
 let show_definitions = false
 
-let try_normalization = false
+let try_normalization = true
 
 let env_limit = Some 9
 
@@ -177,7 +177,10 @@ let checkTSCommand env x =
 	let ts = Tau.tau env x in
 	printf "      type : %a ?\n%!" _ts ts
     | _ -> ()
-   )
+   );
+  if try_normalization then
+    let x' = Lfcheck.term_normalization env x t in
+    printf "           = %a [normalized]\n%!" _e x'
 
 let alphaCommand env (x,y) =
   printf "Alpha      : %s\n" (if (Alpha.UEqual.term_equiv (UContext ([],[])) x y) then "true" else "false");

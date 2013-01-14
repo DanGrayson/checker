@@ -159,7 +159,7 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
   match unmark x with
   | APPLY(h,args) -> (
       match h with
-      | TAC _ -> (trap(); raise Internal)
+      | TAC _ -> raise Not_found	(* the presence of a tactic here means that the $admit tactic has been used *)
       | (O _|T _) -> raise Not_found (* we know the constants in our signature don't involve singleton types *)
       | FUN(f,t) -> (
 	  (* merge this case with the case below ??? *)
@@ -343,7 +343,6 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
   | APPLY(TAC tac,args), _ -> (
       let pos = get_pos e0 in 
       match apply_tactic surr env pos t tac with
-      | TacticAdmit -> e0		(* we should also record the cheat somewhere ... *)
       | TacticSuccess suggestion -> 
           let suggestion = apply_args suggestion args in
           type_check surr env suggestion t
@@ -502,11 +501,11 @@ let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
       let b = subst_type (v,x) b in
       let y = term_normalization env y b in
       pos, CONS(x,y)
-  | F_Apply _
-  | F_Singleton _ ->
+  | F_Apply _ ->
       let x = head_normalization env x in
       let (x,t) = path_normalization env x in
       x
+  | F_Singleton(x',t) -> term_normalization env x t
       
 and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_type =
   (* returns the normalized term x and the inferred type of x *)

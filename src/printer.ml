@@ -36,6 +36,7 @@ let rec vars_in_spine args =
 and head_to_vars h = 
   match h with
   | V v -> [v]
+  | ADMISSION t -> lf_type_to_vars t
   | FUN(f,t) -> lf_expr_to_vars f @ lf_type_to_vars t
   | U _ | T _ | O _ | TAC _ -> []
 
@@ -62,6 +63,7 @@ let rec lf_kind_to_vars = function
 let rec occurs_in_head w h =
   match h with 
   | V v -> w = v
+  | ADMISSION t -> occurs_in_type w t
   | FUN(f,t) -> occurs_in_expr w f || occurs_in_type w t
   | U _ | T _ | O _ | TAC _ -> false
 
@@ -209,6 +211,8 @@ let paren_right p (p2,s) = if choose p p2 = SHIFT then s else "(" ^ s ^ ")"
 
 let paren_always (p,s) = "(" ^ s ^ ")"
 
+let paren_never (p,s) = s
+
 let mark_top s = top_prec, s
 
 let make_top ((i,a),s) = top_prec, if i = top_level then s else "(" ^ s ^ ")"
@@ -234,6 +238,7 @@ let rec lf_head_to_string_with_subs subs h : string =
   | V v -> vartostring (var_sub subs v)
   | U _ | T _ | O _ -> "@[" ^ expr_head_to_string h ^ "]"
   | TAC tac -> tactic_to_string tac
+  | ADMISSION t -> "$(admitted object of type " ^ paren_never (lf_type_to_string_with_subs subs t) ^ ")"
   | FUN(f,t) ->
       let f = lf_expr_to_string_with_subs subs f in
       let t = lf_type_to_string_with_subs subs t in

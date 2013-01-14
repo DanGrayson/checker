@@ -59,12 +59,10 @@ Definition idfun { ⊢ X Type } ⊢ λ x:X,x : X⟶X
 
    := (_,X ⟾ lambda1₂[X,X,(x ⟾ x,x ⟾ x)]).
 
-End.
-
 Theorem idisweq { ⊢ X Type } : Isweq₁[X,X,idfun₁[X]] 
    := (
-   	X ⟾ _,
-	X' ⟾ (_,_)).
+   	X ⟾ $admit,
+	X' ⟾ (_,$admit)).
 
 #   Local Variables:
 #   compile-command: "make -C .. rules7 "

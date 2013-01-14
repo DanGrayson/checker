@@ -277,13 +277,13 @@ unmarked_command:
     | Axiom LF num= dotted_number? name= IDENTIFIER Colon t= lf_type Period
 	{ Toplevel.Axiom (num,name,t) }
 
-    | Check TS o= ts_expr Period
+    | Check TS? o= ts_expr Period
 	{ Toplevel.CheckTS o }
 
     | Check LF e= lf_expr Period
 	{ Toplevel.CheckLF e }
 
-    | Check TS Colon t= ts_judgment Period
+    | Check TS? Colon t= ts_judgment Period
 	{ Toplevel.CheckLFtype t }
 
     | Check LF Colon t= lf_type Period

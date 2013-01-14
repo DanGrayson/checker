@@ -33,6 +33,7 @@ and subst_expr subl e =
       | V v -> (
 	  try apply_args (new_pos pos (List.assoc v subl)) args
 	  with Not_found -> pos, APPLY(h,args))
+      | ADMISSION t -> with_pos pos (APPLY(ADMISSION (subst_type subl t), args))
       | FUN(f,t) -> raise NotImplemented
       | U _ | T _ | O _ | TAC _ -> pos, APPLY(h,args))
   | CONS(x,y) -> pos, CONS(subst_expr subl x,subst_expr subl y)
@@ -116,6 +117,6 @@ let subst_type_fresh pos (v,e) = subst_type_fresh pos [] (v,e)
 
 (* 
   Local Variables:
-  compile-command: "make substitute.cmo "
+  compile-command: "make -C .. src/substitute.cmo "
   End:
  *)
