@@ -22,9 +22,9 @@ let ohash = function
   | O_rr1 -> 97
 
 let tachash = function
+  | Tactic_sequence _ -> 124		(* ?? *)
   | Tactic_name _ -> 1233		(* ?? *)
   | Tactic_index n -> 55 * n
-  | Tactic_hole n -> 5 + n
 
 let rec hhash = function
   | TAC tac -> tachash tac

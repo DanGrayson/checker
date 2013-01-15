@@ -1,0 +1,77 @@
+    Theorem LF idisweq # { ⊢ X Type } : Isweq₁[X,X,idfun₁[X]] 
+	  : (X : a_type) ⟶ obj_of_type (Isweq X X (idfun X))
+          := X |-> (λ_object _ _ _). 
+
+    File "test/judged-expressions.ts", line 191, character 27: tactic failed: $(_)
+    File "test/judged-expressions.ts", line 191, character 27: in hole of type
+	    a_type
+    Surroundings:
+	 part 0
+	    in expression (λ_object $(_) $(_) $(_))
+	 body
+	    in expression _ ⟼ (λ_object $(_) $(_) $(_))
+	    of type (X:a_type) ⟶ obj_of_type (Isweq X X (idfun X))
+
+    Definition LF Isweq # { ⊢ X Y Type, f:X⟶Y } ⊢ ∏ y:Y, Iscontr₁[Hfiber₁[X,Y,f,y]] Type 
+	  : (X : a_type) ⟶ (Y : a_type) ⟶
+	    (f : obj_of_type (arrow_type X Y)) ⟶
+	    a_type
+	  := X ⟼ Y ⟼ f ⟼ (∏_type Y (y ⟼ (Iscontr (Hfiber X Y f y)))).
+
+    Axiom LF λ_object # { ⊢ T Type } { x : T ⊢ U Type, o : U[x] } ⊢ λ t:T, o[t] : ∏ t:T, U[t].
+	   : (T:a_type) ⟶ 
+		    (U : obj_of_type T ⟶ a_type) ⟶ 
+		    (body : (t:obj_of_type T) ⟶ obj_of_type (U t)) 
+	       ⟶ obj_of_type (∏_type T U).
+
+What $intro has to do is to observe that 
+
+     (λ_object ?T ?U ?body)
+
+would evaluate to
+
+     obj_of_type (∏_type ?T ?U)
+
+and then unify with 
+
+     obj_of_type (Isweq X X (idfun X))
+
+after unfolding Isweq in it to get 
+
+     obj_of_type (∏_type X (y ⟼ (Iscontr (Hfiber X X (idfun X) y))))
+
+and thus realizing that we want
+
+     T to be X
+
+and 
+
+     U to be (y ⟼ (Iscontr (Hfiber X X (idfun X) y)))
+
+thus partially completing
+
+     (λ_object ?T ?U ?body)
+
+to
+
+     (λ_object X (y ⟼ (Iscontr (Hfiber X X (idfun X) y))) ?body)
+
+and then immediate introduce an LF variable
+
+     (λ_object X (y ⟼ (Iscontr (Hfiber X X (idfun X) y))) (y ⟼ _))
+
+and then when examining the new hole, we would have
+
+     y : obj_of_type X
+
+in the context, and we'd have 
+
+     obj_of_type (Iscontr (Hfiber X X (idfun X) y))
+
+as the goal.  But all of that would be generic, and work for any inference
+rule, not just λ_object.  I.e., $intro just means $(apply λ_object)!
+
+If this sort of unification is useful at the level just above where some holes
+are, it should be useful starting at the top.  So, what about a new type-checking
+algorithm that works top-down by unification?  Or maybe we separate type-checking
+from tactics and unification.

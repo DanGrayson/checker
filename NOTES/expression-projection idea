@@ -1,0 +1,38 @@
+instead of
+
+Axiom LF ∏_istype : (T1:texp) ⟶ (T2:oexp⟶texp) ⟶ 
+      istype T1 ⟶ 
+      ((x:oexp) ⟶ hastype x T1 ⟶ istype (T2 x)) ⟶ 
+      istype (@[Pi] T1 T2).
+
+we would have
+
+Axiom LF ∏_istype : 
+      (T1:texp) × istype T1 ⟶ 
+      (T2 : (x:oexp) × hastype x T1 ⟶ (U:texp) × istype U)  ⟶ 
+      (result : Singleton((@[Pi] T1 (EXP T2)) : texp) × 
+      istype result.
+
+Somehow we need to get "(EXP T2)" to be an abstract expression of
+type "oexp ⟶ texp".
+
+Simple case:
+
+        T2 is 
+
+       		_ |-> (U,i)
+
+	where U : texp
+	      i : istype U
+
+Then we want "(EXP T2)" to reduce to "_ |-> U".
+
+We would also want "(EXP ∏_istype)" to reduce to the concrete expression
+
+      T1 |-> T2 |-> (@[Pi] T1 (EXP T2))
+
+of type
+
+      (T1:texp) ⟶ 
+      (T2:oexp ⟶ texp)  ⟶ 
+      Singleton((@[Pi] T1 T2) : texp)

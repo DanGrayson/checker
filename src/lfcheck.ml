@@ -116,7 +116,7 @@ let rec un_singleton t =
 (* background assumption: all types in the environment have been verified *)
 
 let apply_tactic surr env pos t = function
-  | Tactic_hole n -> TacticFailure
+  | Tactic_sequence _ -> raise NotImplemented
   | Tactic_name name ->
       let tactic = 
         try List.assoc name !tactics

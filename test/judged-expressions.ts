@@ -46,14 +46,6 @@ Axiom LF beta_reduction	# { ⊢ T Type, o1 : T } { x : T ⊢ U Type, o2 : U[x] }
 	    (body : (t:obj_of_type T) ⟶ obj_of_type (U t)) 
 	     ⟶ object_equality (U arg) (ev_object T U (λ_object T U body) arg) (body arg).
 
-Theorem LF id0 : (T:a_type) ⟶ (t:obj_of_type T) ⟶ obj_of_type T := _ ⟼ t ⟼ t.
-
-Theorem LF id0' : (u:uexp) ⟶ (T:obj_of_type (U_type u)) ⟶ (t:obj_of_type (El_type u T)) ⟶ obj_of_type (El_type u T) := _ ⟼ _ ⟼ t ⟼ t.
-
-Theorem LF id3' : (u:uexp) ⟶ (T:obj_of_type (U_type u)) ⟶ (T':obj_of_type (U_type u)) ⟶ (f:obj_of_type (∏_type (El_type u T) (_ ⟼ (El_type u T'))))
-			   ⟶ (t:obj_of_type (El_type u T)) ⟶ obj_of_type (El_type u T') :=
-	u ⟼ T ⟼ T' ⟼ (ev_object (El_type u T) (_ ⟼ (El_type u T'))).
-
 # introduce non-dependent versions of ∏_type, λ_object, and ev_object:
 
 Definition LF arrow_type : (T:a_type) ⟶ (U:a_type) ⟶ a_type := T ⟼ U ⟼ (∏_type T (_ ⟼ U)).
@@ -196,9 +188,10 @@ Definition LF idfun # { ⊢ X Type } ⊢ λ x:X,x : X⟶X
 
 Theorem LF idisweq # { ⊢ X Type } : Isweq₁[X,X,idfun₁[X]] 
       : (X : a_type) ⟶ obj_of_type (Isweq X X (idfun X))
-      := $admit. # $( intro ; fail ) .
-
-Check idisweq.
+      := $admit.
+#      := X |-> (λ_object _ _ _). 
+#      := X |-> (λ_object X (y ⟼ (Iscontr (Hfiber X X (idfun X) y))) (y ⟼ _)). 
+#      := $( intro ; fail ) .
 
 End.
 

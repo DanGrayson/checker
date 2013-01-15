@@ -31,11 +31,12 @@ let swap (x,y) = (y,x)
 
 let lf_expr_head_strings = List.map swap lf_expr_head_table
 
-let tactic_to_string : tactic_expr -> string = function
-  | Tactic_hole n -> "?" ^ string_of_int n
-  | Tactic_name n -> 
-      if n = "default" then "_" else "$" ^ n
-  | Tactic_index n -> "$" ^ string_of_int n
+let rec tactic_to_string_0 = function
+  | Tactic_name n -> if n = "default" then "_" else n
+  | Tactic_sequence(x,rest) -> tactic_to_string_0 x ^ ";" ^ tactic_to_string_0 rest
+  | Tactic_index n -> string_of_int n
+
+let tactic_to_string t = "$(" ^ tactic_to_string_0 t ^ ")" (* doesn't correspond to our parser, fix later ... *)
 
 let lf_type_constant_table = [
   F_uexp, "uexp" ;
@@ -90,14 +91,6 @@ let ensure_new_name env pos v =
 let def_bind v (pos:position) o t (env:context) = 
   ensure_new_name env pos v;
   lf_bind env v (pos,F_Singleton(o,t))
-
-let new_hole = 
-  let counter = ref 0 in
-  fun () -> (
-    incr counter;
-    APPLY(TAC (Tactic_hole !counter), END))
-
-let hole pos = pos, new_hole()
 
 (* 
   Local Variables:

@@ -227,6 +227,14 @@ closed_tactic_expr:
 
 tactic_expr:
 
+    | s= tactic_expr_2
+	{s}
+
+    | s= tactic_expr_2 Semicolon t= tactic_expr
+	{ Tactic_sequence (s,t) }
+
+tactic_expr_2:
+
     | name= IDENTIFIER
 	{ Tactic_name name }
 

@@ -132,9 +132,9 @@ and bare_lf_type =
 
 (** Tactics *)
 and tactic_expr = 
-  | Tactic_hole of int			(* represented by _ *)
-  | Tactic_name of string		(* represented by $foo *)
-  | Tactic_index of int			(* represented by $n *)
+  | Tactic_index of int				 (* $3 *)
+  | Tactic_name of string			 (* $foo *)
+  | Tactic_sequence of tactic_expr * tactic_expr (* $(a;b;c) *)
 
 let ( @@ ) f x : lf_type = nowhere 3 (F_Apply(f,x))
 
