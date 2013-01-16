@@ -55,7 +55,7 @@ and lf_type_to_vars (_,t) = match t with
   | F_Apply(hd,args) -> vars_in_list lf_expr_to_vars args
 
 let rec lf_kind_to_vars = function
-  | K_expression | K_judgment | K_judged_expression -> []
+  | K_ulevel | K_expression | K_judgment | K_judged_expression -> []
   | K_Pi(v,t,k) -> lf_type_to_vars t @ remove v (lf_kind_to_vars k)
 
 (** Whether [x] occurs as a free variable in an expression. *)
@@ -80,7 +80,7 @@ and occurs_in_type w (_,t) = match t with
   | F_Apply(h,args) -> List.exists (occurs_in_expr w) args
 
 let rec occurs_in_kind w = function
-  | K_expression | K_judgment | K_judged_expression -> false
+  | K_ulevel | K_expression | K_judgment | K_judged_expression -> false
   | K_Pi(v,t,k) -> occurs_in_type w t || w <> v && occurs_in_kind w k
 
 (** Printing of LF and TS expressions. 
@@ -285,7 +285,7 @@ and lf_type_to_string_with_subs subs (_,t) : smart_string = match t with
       list_application_to_string (mark_top <<- lf_type_head_to_string) (lf_expr_to_string_with_subs subs) (hd,args)
 
 let rec lf_kind_to_string_with_subs subs = function
-  | ( K_expression | K_judgment | K_judged_expression ) as k -> top_prec, List.assoc k lf_kind_constant_table
+  | ( K_ulevel | K_expression | K_judgment | K_judged_expression ) as k -> top_prec, List.assoc k lf_kind_constant_table
   | K_Pi(v,t,k) -> 
       let used = occurs_in_kind v k in
       let w,subs = var_chooser v subs occurs_in_kind k in
@@ -493,11 +493,11 @@ let _pos_of file x = output_string file (errfmt (get_pos x))
 
 let print_signature env file =
   fprintf file "Signature:\n";
-  fprintf file "  Kind of type constants:\n";
+  fprintf file "  Kind constants:\n";
   List.iter (fun (kind,name) -> 
     fprintf file "     %s : kind\n" name
            ) lf_kind_constant_table;
-  fprintf file "  Type family constants:\n";
+  fprintf file "  Type constants:\n";
   List.iter (fun h -> 
     fprintf file "     %a : %a\n" _th h  _k (tfhead_to_kind h)
            ) lf_type_heads;

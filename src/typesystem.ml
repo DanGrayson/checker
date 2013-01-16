@@ -230,6 +230,7 @@ let head_to_vardist = function
 
     Notation: constructors starting with "K_" refer to kinds of LF. *)
 type lf_kind =
+  | K_ulevel
   | K_expression
   | K_judgment
   | K_judged_expression
@@ -282,7 +283,7 @@ let judged_obj_equal_kind =
   K_Pi(t, a_type, obj_of_type tt @@-> obj_of_type tt @@-> K_judged_expression)
 
 let tfhead_to_kind = function
-  | F_uexp -> K_expression
+  | F_uexp -> K_ulevel
   | F_texp -> K_expression
   | F_oexp -> K_expression
   | F_istype -> istype_kind
@@ -297,7 +298,24 @@ let tfhead_to_kind = function
   | F_judged_type_equal -> judged_kind_equal_kind
   | F_judged_obj_equal -> judged_obj_equal_kind
 
-type oSubs = (var * lf_expr) list
+(** Subordination: see section 2.4 of Mechanizing Meta-theory by Harper and Licata *)
+type kind_comparison = K_equal | K_less | K_greater | K_incomparable
+
+let rec ultimate_kind = function
+  | K_ulevel
+  | K_expression
+  | K_judgment
+  | K_judged_expression as k -> k
+  | K_Pi (v,t,k) -> ultimate_kind k
+
+let rec compare_kinds k l =
+  let k = ultimate_kind k in
+  let l = ultimate_kind l in
+  if k = l then K_equal else
+  match k,l with
+  | K_ulevel, _ | K_expression, K_judgment -> K_less
+  | _, K_ulevel | K_judgment, K_expression -> K_greater
+  | _ -> K_incomparable
 
 (** Contexts. *)
 

@@ -428,25 +428,6 @@ and type_synthesis (surr:surrounding) (env:context) (m:lf_expr) : lf_expr * lf_t
       let t = with_pos_of t (F_Singleton(e,t)) in (* this isn't quite like the algorithm in the paper, but it seems to work *)
       e,t
 
-(** Subordination: see section 2.4 of Mechanizing Meta-theory by Harper and Licata *)
-type kind_comparison = K_equal | K_less | K_greater | K_incomparable
-
-let rec ultimate_kind = function
-  | K_expression
-  | K_judgment
-  | K_judged_expression as k -> k
-  | K_Pi (v,t,k) -> ultimate_kind k
-
-let rec compare_kinds k l =
-  let k = ultimate_kind k in
-  let l = ultimate_kind l in
-  if k = l then K_equal else
-  match k,l with
-  | K_expression, K_judgment -> K_less
-  | K_judgment, K_expression -> K_greater
-  | K_expression, K_judged_expression -> K_less
-  | _ -> K_incomparable
-
 exception IncomparableKinds of lf_kind * lf_kind
 
 let min_kind k l =
@@ -519,8 +500,8 @@ let type_validity (surr:surrounding) (env:context) (t:lf_type) : lf_type =
           let kind = tfhead_to_kind head in
           let rec repeat i env kind (args:lf_expr list) = 
             match kind, args with 
-            | ( K_expression | K_judgment | K_judged_expression ), [] -> []
-            | ( K_expression | K_judgment | K_judged_expression ), x :: args -> err env pos "at least one argument too many";
+            | ( K_ulevel | K_expression | K_judgment | K_judged_expression ), [] -> []
+            | ( K_ulevel | K_expression | K_judgment | K_judged_expression ), x :: args -> err env pos "at least one argument too many";
             | K_Pi(v,a,kind'), x :: args -> 
                 let x' = type_check ((S_argument i,None,Some t0) :: surr) env x a in
                 x' :: repeat (i+1) env (subst_kind (v,x') kind') args
@@ -647,8 +628,8 @@ let rec type_normalization (env:context) (t:lf_type) : lf_type =
       let args =
         let rec repeat env kind (args:lf_expr list) = 
           match kind, args with 
-          | ( K_expression | K_judgment | K_judged_expression ), [] -> []
-          | ( K_expression | K_judgment | K_judged_expression ), x :: args -> err env pos "too many arguments"
+          | ( K_ulevel | K_expression | K_judgment | K_judged_expression ), [] -> []
+          | ( K_ulevel | K_expression | K_judgment | K_judged_expression ), x :: args -> err env pos "too many arguments"
           | K_Pi(v,a,kind'), x :: args ->
               term_normalization env x a ::
               repeat (lf_bind env v a) kind' args

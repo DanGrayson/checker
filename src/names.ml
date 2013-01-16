@@ -55,6 +55,7 @@ let lf_type_constant_table = [
 ]
 
 let lf_kind_constant_table = [
+  K_ulevel, "ulevel";
   K_expression, "expression";
   K_judgment, "judgment";
   K_judged_expression, "judged_expression"
