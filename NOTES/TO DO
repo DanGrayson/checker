@@ -1,3 +1,12 @@
+should be able to write
+
+       Definition LF UU := @[U].
+
+instead of
+
+       Definition LF UU : uexp ⟶ texp := @[U].
+
+-----------------------------------------------------------------------------
 Both
 	
      cast : (T:(T1:texp) × istype T1) ⟶ 
@@ -39,4 +48,3 @@ Idea:
 	introduce new syntax for binders by judgments: 
 
 		Axiom 3.4.13 cast { ⊢ T U Type } [ T ≡ U ] { ⊢ o : T } ⊢ o : U.
-

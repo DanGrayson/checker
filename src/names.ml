@@ -9,18 +9,19 @@ exception Unimplemented_expr of lf_expr
 exception TypeCheckingFailure of context * surrounding * (position * string) list
 
 let lf_expr_head_table = [
-  T T_Pi, "∏" ; T T_Sigma, "Σ" ; T T_Coprod, "∐" ; O O_lambda, "λ" ;
-  U U_next, "next" ; U U_max, "max" ;
-  T T_El, "El"  ; T T_U, "U"  ; T T_Pi, "Pi"  ; T T_Sigma, "Sigma" ;
-  T T_Pt, "Pt"  ; T T_Coprod, "Coprod"  ; T T_Coprod2, "Coprod2" ;
-  T T_Empty, "Empty"  ; T T_IP, "IP"  ; T T_Id, "Id" ;
-  O O_u, "u"  ; O O_j, "j"  ; O O_ev, "ev"  ; O O_lambda, "lambda" ;
-  O O_forall, "forall"  ; O O_pair, "pair"  ; O O_pr1, "pr1" ;
-  O O_pr2, "pr2"  ; O O_total, "total"  ; O O_pt, "pt"  ; O O_pt_r, "pt_r" ;
-  O O_tt, "tt"  ; O O_coprod, "coprod"  ; O O_ii1, "ii1"  ; O O_ii2, "ii2" ;
-  O O_sum, "sum"  ; O O_empty, "empty"  ; O O_empty_r, "empty_r"  ; O O_c, "c" ;
-  O O_ip_r, "ip_r"  ; O O_ip, "ip"  ; O O_paths, "paths"  ; O O_refl, "refl" ;
-  O O_J, "J"  ; O O_rr0, "rr0"  ; O O_rr1, "rr1" 
+  T T_Pi, "∏" ; O O_lambda, "λ" ; O O_ev, "ev"; O O_forall, "forall" ; 
+  T T_El, "El" ; 
+  T T_Id, "Id" ; O O_paths, "paths"; O O_refl, "refl" ; O O_J, "J" ;
+  T T_Sigma, "Σ" ; O O_pair, "pair" ; O O_pr1, "pr1" ; O O_pr2, "pr2" ; O O_total, "total" ; 
+  T T_Pt, "Pt" ; O O_pt, "pt" ; O O_pt_r, "pt_r" ; O O_tt, "tt" ; 
+  T T_Coprod, "∐" ; T T_Coprod, "Coprod" ; T T_Coprod2, "Coprod2" ;
+  T T_Empty, "Empty" ; O O_empty, "empty" ; O O_empty_r, "empty_r" ; 
+  T T_IP, "IP" ; O O_ip_r, "ip_r" ; O O_ip, "ip" ; O O_c, "c" ;
+  O O_coprod, "coprod" ; O O_ii1, "ii1" ; O O_ii2, "ii2" ;
+  O O_sum, "sum" ; 
+  U U_next, "next" ; U U_max, "max" ; T T_U, "U" ; O O_u, "u" ; O O_j, "j" ;
+  O O_rr0, "rr0" ; O O_rr1, "rr1" ;
+  T T_Pi, "Pi" ; T T_Sigma, "Sigma" ; O O_lambda, "lambda" ;
 ]
 
 let expr_head_to_string h = List.assoc h lf_expr_head_table
@@ -56,8 +57,7 @@ let lf_type_constant_table = [
 let lf_kind_constant_table = [
   K_expression, "expression";
   K_judgment, "judgment";
-  K_judged_expression, "judged_expression";
-  K_judged_expression_judgment, "judged_expression_judgment"
+  K_judged_expression, "judged_expression"
 ]
 
 let lf_type_head_to_string h = List.assoc h lf_type_constant_table

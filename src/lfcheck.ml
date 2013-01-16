@@ -297,7 +297,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
           | K_Pi(v,t,k), x :: args, x' :: args' ->
               term_equivalence env x x' t;
               repeat (subst_kind (v,x) k) args args'
-          | ( K_expression | K_judgment | K_judged_expression | K_judged_expression_judgment ), [], [] -> ()
+          | ( K_expression | K_judgment | K_judged_expression ), [], [] -> ()
           | _ -> (trap(); raise Internal)
         in repeat k args args'
     | _ -> raise TypeEquivalenceFailure
@@ -428,6 +428,66 @@ and type_synthesis (surr:surrounding) (env:context) (m:lf_expr) : lf_expr * lf_t
       let t = with_pos_of t (F_Singleton(e,t)) in (* this isn't quite like the algorithm in the paper, but it seems to work *)
       e,t
 
+(** Subordination: see section 2.4 of Mechanizing Meta-theory by Harper and Licata *)
+type kind_comparison = K_equal | K_less | K_greater | K_incomparable
+
+let rec ultimate_kind = function
+  | K_expression
+  | K_judgment
+  | K_judged_expression as k -> k
+  | K_Pi (v,t,k) -> ultimate_kind k
+
+let rec compare_kinds k l =
+  let k = ultimate_kind k in
+  let l = ultimate_kind l in
+  if k = l then K_equal else
+  match k,l with
+  | K_expression, K_judgment -> K_less
+  | K_judgment, K_expression -> K_greater
+  | K_expression, K_judged_expression -> K_less
+  | _ -> K_incomparable
+
+exception IncomparableKinds of lf_kind * lf_kind
+
+let min_kind k l =
+  match compare_kinds k l with
+  | K_equal | K_less -> k
+  | K_greater -> l
+  | K_incomparable -> raise (IncomparableKinds (k,l))
+
+let min_kind_option k l =
+  match k,l with
+  | None,None -> None
+  | k,None -> k
+  | None,l -> l
+  | Some k, Some l -> Some (min_kind k l)  
+
+let rec min_target_kind t =
+  match unmark t with
+  | F_Singleton _ -> None
+  | F_Pi(v,t,u) -> min_target_kind u
+  | F_Apply(h,args) -> Some (ultimate_kind (tfhead_to_kind h))
+  | F_Sigma(v,t,u) -> min_kind_option (min_target_kind t) (min_target_kind u)
+
+exception InsubordinateKinds of lf_kind * lf_kind
+
+let rec check_less_equal t u =
+  match min_target_kind u with
+  | None -> ()
+  | Some l ->
+      let rec repeat t =
+	match unmark t with
+	| F_Singleton(e,t) -> repeat t
+	| F_Pi(v,t,u) -> repeat t ; repeat u
+	| F_Apply(h,args) ->
+	    let k = ultimate_kind (tfhead_to_kind h) in (
+	    match compare_kinds k l with
+	    | K_incomparable | K_greater -> raise (InsubordinateKinds(k,l))
+	    | K_equal | K_less -> ())
+	| F_Sigma(v,t1,t2) -> check_less_equal t1 u; check_less_equal t2 u 
+      in
+      repeat t  
+
 let type_validity (surr:surrounding) (env:context) (t:lf_type) : lf_type =
   (* assume the kinds of constants, and the types in them, have been checked *)
   (* driven by syntax *)
@@ -441,7 +501,15 @@ let type_validity (surr:surrounding) (env:context) (t:lf_type) : lf_type =
       match t with 
       | F_Pi(v,t,u) ->
           let t = type_validity ((S_argument 1,None,Some t0) :: surr) env t in
-          let u = type_validity ((S_argument 2,None,Some t0) :: surr) (lf_bind env v t) u in
+          let u = type_validity ((S_argument 2,None,Some t0) :: surr) (lf_bind env v t) u in (
+	  try 
+	    check_less_equal t u
+	  with 
+	  | InsubordinateKinds(k,l) | IncomparableKinds(k,l) -> 
+	      raise (TypeCheckingFailure 
+		       (env, [], [
+			get_pos t, "expected type " ^ lf_type_to_string t ^ " of kind involving \"" ^ lf_kind_to_string k ^ "\"";
+			get_pos u, "to be subordinate to " ^ lf_type_to_string u  ^ " of kind involving \"" ^ lf_kind_to_string l ^ "\""])));
           F_Pi(v,t,u)
       | F_Sigma(v,t,u) ->
           let t = type_validity ((S_argument 1,None,Some t0) :: surr) env t in
@@ -451,8 +519,8 @@ let type_validity (surr:surrounding) (env:context) (t:lf_type) : lf_type =
           let kind = tfhead_to_kind head in
           let rec repeat i env kind (args:lf_expr list) = 
             match kind, args with 
-            | ( K_expression | K_judgment | K_judged_expression | K_judged_expression_judgment ), [] -> []
-            | ( K_expression | K_judgment | K_judged_expression | K_judged_expression_judgment ), x :: args -> err env pos "at least one argument too many";
+            | ( K_expression | K_judgment | K_judged_expression ), [] -> []
+            | ( K_expression | K_judgment | K_judged_expression ), x :: args -> err env pos "at least one argument too many";
             | K_Pi(v,a,kind'), x :: args -> 
                 let x' = type_check ((S_argument i,None,Some t0) :: surr) env x a in
                 x' :: repeat (i+1) env (subst_kind (v,x') kind') args
@@ -579,8 +647,8 @@ let rec type_normalization (env:context) (t:lf_type) : lf_type =
       let args =
         let rec repeat env kind (args:lf_expr list) = 
           match kind, args with 
-          | ( K_expression | K_judgment | K_judged_expression | K_judged_expression_judgment ), [] -> []
-          | ( K_expression | K_judgment | K_judged_expression | K_judged_expression_judgment ), x :: args -> err env pos "too many arguments"
+          | ( K_expression | K_judgment | K_judged_expression ), [] -> []
+          | ( K_expression | K_judgment | K_judged_expression ), x :: args -> err env pos "too many arguments"
           | K_Pi(v,a,kind'), x :: args ->
               term_normalization env x a ::
               repeat (lf_bind env v a) kind' args

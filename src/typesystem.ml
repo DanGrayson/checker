@@ -233,7 +233,6 @@ type lf_kind =
   | K_expression
   | K_judgment
   | K_judged_expression
-  | K_judged_expression_judgment
   | K_Pi of var * lf_type * lf_kind
 
 let ( @@-> ) a b = K_Pi(newunused(), a, b)
@@ -273,14 +272,14 @@ let a_type_kind = K_judged_expression
 
 let obj_of_type_kind = a_type @@-> K_judged_expression
 
-let judged_kind_equal_kind = a_type @@-> a_type @@-> K_judged_expression_judgment
+let judged_kind_equal_kind = a_type @@-> a_type @@-> K_judged_expression
 
 let var_to_lf v = nowhere 1 (APPLY(V v,END))
 
 let judged_obj_equal_kind = 
   let t = newfresh (Var "T") in
   let tt = var_to_lf t in
-  K_Pi(t, a_type, obj_of_type tt @@-> obj_of_type tt @@-> K_judged_expression_judgment)
+  K_Pi(t, a_type, obj_of_type tt @@-> obj_of_type tt @@-> K_judged_expression)
 
 let tfhead_to_kind = function
   | F_uexp -> K_expression
