@@ -54,7 +54,10 @@ let lf_type_constant_table = [
 ]
 
 let lf_kind_constant_table = [
-  K_type, "type"
+  K_expression, "expression";
+  K_judgment, "judgment";
+  K_judged_expression, "judged_expression";
+  K_judged_expression_judgment, "judged_expression_judgment"
 ]
 
 let lf_type_head_to_string h = List.assoc h lf_type_constant_table

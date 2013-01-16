@@ -230,7 +230,10 @@ let head_to_vardist = function
 
     Notation: constructors starting with "K_" refer to kinds of LF. *)
 type lf_kind =
-  | K_type
+  | K_expression
+  | K_judgment
+  | K_judged_expression
+  | K_judged_expression_judgment
   | K_Pi of var * lf_type * lf_kind
 
 let ( @@-> ) a b = K_Pi(newunused(), a, b)
@@ -252,37 +255,37 @@ let k_pi t k =
   let v' = nowhere 126 (APPLY(V v,END)) in
   K_Pi(v,t,k v')
 
-let istype_kind = texp @@-> K_type
+let istype_kind = texp @@-> K_judgment
 
-let hastype_kind = oexp @@-> texp @@-> K_type
+let hastype_kind = oexp @@-> texp @@-> K_judgment
 
-let type_equality_kind = texp @@-> texp @@-> K_type
+let type_equality_kind = texp @@-> texp @@-> K_judgment
 
-let object_equality_kind = oexp @@-> oexp @@-> texp @@-> K_type
+let object_equality_kind = oexp @@-> oexp @@-> texp @@-> K_judgment
 
-let ulevel_equality_kind = uexp @@-> uexp @@-> K_type
+let ulevel_equality_kind = uexp @@-> uexp @@-> K_judgment
 
-let type_uequality_kind = texp @@-> texp @@-> K_type
+let type_uequality_kind = texp @@-> texp @@-> K_judgment
 
-let object_uequality_kind = oexp @@-> oexp @@-> texp @@-> K_type
+let object_uequality_kind = oexp @@-> oexp @@-> texp @@-> K_judgment
 
-let a_type_kind = K_type
+let a_type_kind = K_judged_expression
 
-let obj_of_type_kind = a_type @@-> K_type
+let obj_of_type_kind = a_type @@-> K_judged_expression
 
-let judged_kind_equal_kind = a_type @@-> a_type @@-> K_type
+let judged_kind_equal_kind = a_type @@-> a_type @@-> K_judged_expression_judgment
 
 let var_to_lf v = nowhere 1 (APPLY(V v,END))
 
 let judged_obj_equal_kind = 
   let t = newfresh (Var "T") in
   let tt = var_to_lf t in
-  K_Pi(t, a_type, obj_of_type tt @@-> obj_of_type tt @@-> K_type)
+  K_Pi(t, a_type, obj_of_type tt @@-> obj_of_type tt @@-> K_judged_expression_judgment)
 
 let tfhead_to_kind = function
-  | F_uexp -> K_type
-  | F_texp -> K_type
-  | F_oexp -> K_type
+  | F_uexp -> K_expression
+  | F_texp -> K_expression
+  | F_oexp -> K_expression
   | F_istype -> istype_kind
   | F_hastype -> hastype_kind
   | F_ulevel_equality -> ulevel_equality_kind
