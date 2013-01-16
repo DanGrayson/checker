@@ -9,7 +9,7 @@ we would have
 
 Axiom LF ∏_istype : 
       (T1:texp) × istype T1 ⟶ 
-      (T2 : (x:oexp) × hastype x T1 ⟶ (U:texp) × istype U)  ⟶ 
+      (T2 : ((x:oexp) × hastype x T1) ⟶ (U:texp) × istype U)  ⟶ 
       (result : Singleton((@[Pi] T1 (EXP T2)) : texp) × 
       istype result.
 

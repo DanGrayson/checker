@@ -115,13 +115,13 @@ let rec un_singleton t =
 
 (* background assumption: all types in the environment have been verified *)
 
-let apply_tactic surr env pos t = function
+let apply_tactic surr env pos t args = function
   | Tactic_sequence _ -> raise NotImplemented
   | Tactic_name name ->
       let tactic = 
         try List.assoc name !tactics
         with Not_found -> err env pos ("unknown tactic: " ^ name) in
-      tactic surr env pos t
+      tactic surr env pos t args
   | Tactic_index n ->
       let (v,u) = 
         try List.nth env.lf_context n 
@@ -347,13 +347,11 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
   match unmark e0, unmark t with
   | APPLY(TAC tac,args), _ -> (
       let pos = get_pos e0 in 
-      match apply_tactic surr env pos t tac with
-      | TacticSuccess suggestion -> 
-          let suggestion = apply_args suggestion args in
-          type_check surr env suggestion t
-      | TacticFailure ->
+      match apply_tactic surr env pos t args tac with
+      | TacticSuccess suggestion -> type_check surr env suggestion t
+      | TacticFailure -> (* we may want the tactic itself to raise the error message, when tactics are chained *)
           raise (TypeCheckingFailure (env, surr, [
-                               pos, "tactic failed: "^tactic_to_string tac;
+                               pos, "tactic failed: "^ lf_expr_to_string e0;
                                pos, "in hole of type\n\t"^lf_type_to_string t])))
 
   | LAMBDA(v,body), F_Pi(w,a,b) -> (* the published algorithm is not applicable here, since

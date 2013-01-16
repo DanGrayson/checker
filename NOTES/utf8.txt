@@ -16,3 +16,4 @@ a palette of utf8-encoded characters
 	∐
 	Σ
 	λ
+	≣

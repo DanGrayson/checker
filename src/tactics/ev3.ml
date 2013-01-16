@@ -6,7 +6,7 @@ open Printer
 open Printf
 
 (** fill in the third argument of @[ev][f,x,_] using tau *)
-let ev3 (surr:surrounding) env pos t =
+let ev3 (surr:surrounding) env pos t args =
   (* This code was formerly a part of the file fillin.ml, removed. *)
   match surr with 
   | (_, Some (pos,APPLY( O O_ev, ARG(f,_))), _) :: _ -> (

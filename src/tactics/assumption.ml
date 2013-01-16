@@ -2,7 +2,7 @@ open Typesystem
 open Lfcheck
 
 (** find the first variable in the context of the right type and return it *)
-let assumption surr env pos t =
+let assumption surr env pos t args =
   let rec repeat = function
     | (v,u) :: envp -> (
 	try

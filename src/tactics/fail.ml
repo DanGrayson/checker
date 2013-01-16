@@ -2,7 +2,7 @@ open Typesystem
 open Lfcheck
 
 (** a tactic that always fails *)
-let fail surr env pos t = TacticFailure
+let fail surr env pos t args = TacticFailure
 
 (* 
   Local Variables:

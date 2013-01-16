@@ -7,7 +7,7 @@ open Helpers
 open Printer
 
 (** insert the type of the next argument *)
-let tn1 surr env pos t =
+let tn1 surr env pos t args =
   if not (Alpha.UEqual.type_equiv empty_uContext t texp)
   then raise (TypeCheckingFailure(env, surr, [ pos, "error: tactic tn1: expected a hole for a t-expression" ]));
   match surr with
@@ -15,7 +15,7 @@ let tn1 surr env pos t =
   | _ -> TacticFailure
 
 (** insert the type of either of the next two arguments *)
-let tn12 surr env pos t =
+let tn12 surr env pos t args =
   if not (Alpha.UEqual.type_equiv empty_uContext t texp)
   then raise (TypeCheckingFailure(
               env, surr, 
@@ -30,9 +30,6 @@ let tn12 surr env pos t =
 	Tau.tau env (nth_arg (i+2) args)
      )
   | _ -> TacticFailure
-
-let _ = add_tactic "tn1" tn1
-let _ = add_tactic "tn12" tn12
 
 (* 
   Local Variables:

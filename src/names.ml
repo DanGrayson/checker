@@ -31,12 +31,10 @@ let swap (x,y) = (y,x)
 
 let lf_expr_head_strings = List.map swap lf_expr_head_table
 
-let rec tactic_to_string_0 = function
-  | Tactic_name n -> if n = "default" then "_" else n
-  | Tactic_sequence(x,rest) -> tactic_to_string_0 x ^ ";" ^ tactic_to_string_0 rest
-  | Tactic_index n -> string_of_int n
-
-let tactic_to_string t = "$(" ^ tactic_to_string_0 t ^ ")" (* doesn't correspond to our parser, fix later ... *)
+let rec tactic_to_string = function
+  | Tactic_name n -> if n = "default" then "_" else "$" ^ n
+  | Tactic_sequence(x,rest) -> "$(" ^ tactic_to_string x ^ ";" ^ tactic_to_string rest ^ ")"
+  | Tactic_index n -> "$" ^ string_of_int n
 
 let lf_type_constant_table = [
   F_uexp, "uexp" ;

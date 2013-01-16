@@ -188,10 +188,14 @@ Definition LF idfun # { ⊢ X Type } ⊢ λ x:X,x : X⟶X
 
 Theorem LF idisweq # { ⊢ X Type } : Isweq₁[X,X,idfun₁[X]] 
       : (X : a_type) ⟶ obj_of_type (Isweq X X (idfun X))
+#      := X |-> ($apply λ_object).
       := $admit.
-#      := X |-> (λ_object _ _ _). 
-#      := X |-> (λ_object X (y ⟼ (Iscontr (Hfiber X X (idfun X) y))) (y ⟼ _)). 
-#      := $( intro ; fail ) .
+End.      
+      := X |-> $fail.
+      := ($fail λ_object _ _ _).
+      := X |-> (λ_object _ _ _). 
+      := X |-> (λ_object X (y ⟼ (Iscontr (Hfiber X X (idfun X) y))) (y ⟼ _)). 
+      := $( intro ; fail ) .
 
 End.
 
