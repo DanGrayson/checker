@@ -2,14 +2,17 @@
 
 open Typesystem
 
-let _ = add_tactic "ev3" Ev3.ev3
-let _ = add_tactic "default" Default.default
-let _ = add_tactic "assumption" Assumption.assumption
-let _ = add_tactic "fail" Fail.fail
-let _ = add_tactic "admit" Admit.admit
-let _ = add_tactic "apply" Apply.apply
-let _ = add_tactic "tn1" Tn.tn1
-let _ = add_tactic "tn12" Tn.tn12
+let _ = List.iter add_tactic [
+  "ev3", Ev3.ev3;
+  "default", Default.default;
+  "assumption", Assumption.assumption;
+  "fail", Fail.fail;
+  "admit", Admit.admit;
+  "apply", Apply.apply;
+  "tn1", Tn.tn1;
+  "tn12", Tn.tn12;
+  "check", Check.check
+] 
 
 (* 
   Local Variables:

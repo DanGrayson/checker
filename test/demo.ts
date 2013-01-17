@@ -11,7 +11,6 @@ Clear.
 Mode Pairs.
 Include "rules/TS0.ts".
 Check LF ∏_istype.
-End.
 
 # the subordination checker will give an error on this:
 # Check LF : (t:texp) -> istype t -> oexp.

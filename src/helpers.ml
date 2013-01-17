@@ -82,6 +82,15 @@ let args_fold f pi1 pi2 accu args = (* it's fold_left, which is the only directi
     | END -> accu
   in repeat accu args
 
+let args_iter f pi1 pi2 args =
+  let rec repeat args =
+    match args with
+    | ARG(a,args) -> f a; repeat args
+    | CAR args -> pi1 (); repeat args
+    | CDR args -> pi2 (); repeat args
+    | END -> ()
+  in repeat args
+
 let pi1 = function
   | pos, APPLY(h,args) -> (pos,APPLY(h,join_args args (CAR END)))
   | pos, CONS(x,_) -> x

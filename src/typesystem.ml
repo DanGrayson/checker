@@ -357,7 +357,7 @@ type tactic_function =
 
 let tactics : (string * tactic_function) list ref = ref []
 
-let add_tactic name f = tactics := (name,f) :: !tactics
+let add_tactic (name,f) = tactics := (name,f) :: !tactics
 
 (* 
   Local Variables:
