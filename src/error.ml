@@ -1,10 +1,14 @@
 (** Exceptions, experiments, error message handling, and source code positions. *)
 
+let lesser_debug_mode = true
+
 let debug_mode = ref false
 
 let internal_location_trap = 0
 
-let genctr_trap = 0
+let genctr_trap = 2945			(* raise an exception when a fresh variable with this number is created *)
+
+let genctr_exception = 0                (* raise a trap and an exception when a fresh variable with this number is created *)
 
 let trap () = ()			(* set a break point here *)
 
@@ -74,3 +78,9 @@ let no_pos i =
   Nowhere(i, !nowhere_ctr)
 let nowhere i x = (no_pos i,x)
 let nopos i = errfmt (no_pos i)
+
+(* 
+  Local Variables:
+  compile-command: "make -C .. src/error.cmo "
+  End:
+ *)

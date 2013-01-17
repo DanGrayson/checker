@@ -210,7 +210,7 @@ let rec term_equivalence (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : uni
       term_equivalence env (pi1 x) (pi1 y) a;
       term_equivalence env (pi2 x) (pi2 y) (subst_type (v,(pi1 x)) b)
   | F_Pi (v,a,b) ->
-      let w = newfresh v in		(* in case x or y contains v as a free variable *)
+      let w = newfresh (Var "e") in		(* in case x or y contains v as a free variable *)
       let w' = var_to_lf w in 
       let b = subst_type (v,w') b in
       let env = lf_bind env w a in
@@ -358,7 +358,18 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
                                    our lambda doesn't contain type information for the variable,
                                    and theirs does *)
       let surr = (S_body,Some e0,Some t) :: surr in
-      let body = type_check surr (lf_bind env v a) body (subst_type (w,var_to_lf v) b) in
+      let body = 
+	let (b,env) =
+	  if isunused w then
+	    if isunused v 
+	    then b, env 
+	    else b, lf_bind env v a
+	  else
+	    if isunused v 
+	    then b, lf_bind env w a
+	    else subst_type (w,var_to_lf v) b, lf_bind env v a
+	in
+	type_check surr env body b in
       pos, LAMBDA(v,body)
   | LAMBDA _, F_Sigma _ -> 
       raise (TypeCheckingFailure (env, surr, [
@@ -527,8 +538,8 @@ let rec num_args t = match unmark t with
 
 let bound_var_override f w =		(* just to get a good variable name *)
   match unmark f with
-  | LAMBDA(v,_) -> v
-  | _ -> w
+  | LAMBDA(v,_) -> if isunused v then if isunused w then Var "m" else w else v
+  | _ -> if isunused w then Var "n" else w
 
 let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
   (* see figure 9 page 696 [EEST] *)

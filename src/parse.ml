@@ -50,19 +50,13 @@ let subst_binder_option sub (b:binder option) =
 let bind_sigma binder b =
   match binder with
   | (pos,v,a) -> 
-      let v' = newfresh v in
-      let v'' = var_to_lf_pos pos v' in
-      let b = Substitute.subst_type (v,v'') b in
-      let v = v' in
+      let (v,b) = Substitute.subst_type_fresh pos (v,b) in
       with_pos pos (F_Sigma(v,a,b))
 
 let bind_pi binder b =
   match binder with 
   | (pos,v,a) -> 
-      let v' = newfresh v in
-      let v'' = var_to_lf_pos pos v' in
-      let b = Substitute.subst_type (v,v'') b in
-      let v = v' in
+      let (v,b) = Substitute.subst_type_fresh pos (v,b) in
       with_pos pos (F_Pi(v,a,b))
 
 let bind_arrow (pos,a) b = with_pos pos (F_Pi(newunused(),a,b))

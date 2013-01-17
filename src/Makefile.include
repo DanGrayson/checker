@@ -34,7 +34,7 @@ CHECKER_OPTIONS =
 
 DEBUG = no
 ifeq "$(DEBUG)" "yes"
-CHECKER += --debug
+CHECKER_OPTIONS += --debug
 endif
 
 CHECKER := $(CHECKER_ENV) ./$(CHECKER_EXE) $(CHECKER_OPTIONS)
@@ -83,7 +83,7 @@ debug:
 	@ echo "goto 10000"
 	@ echo "break Error.trap"
 	@ echo "run"
-	ocamldebug -I _build/src -I _build/tactics checker.byte 
+	ocamldebug -I _build/src -I _build/src/tactics checker.byte 
 
 # Local Variables:
 # compile-command: "make -C .. build "

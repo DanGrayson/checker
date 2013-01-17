@@ -9,8 +9,12 @@ open Printer
 open Printf
 
 let fresh pos v subl =
-  let v' = newfresh v in
-  v', (v,var_to_lf_pos pos v') :: subl
+  if isunused v 
+  then
+    v, subl
+  else
+    let v' = newfresh v in
+    v', (v,var_to_lf_pos pos v') :: subl
 
 let show_subs (subl : (var * lf_expr) list) =
   printf " subs =\n";
@@ -42,9 +46,14 @@ and subst_expr subl e =
       pos, LAMBDA(v, body)
 
 and subst_fresh pos subl (v,e) =
-  let (v',subl) = fresh pos v subl in
-  let e' = subst_expr subl e in
-  v', e'
+  if isunused v
+  then
+    let e' = subst_expr subl e in
+    v, e'
+  else
+    let (v',subl) = fresh pos v subl in
+    let e' = subst_expr subl e in
+    v', e'
 
 and apply_args e args =
   let rec repeat e args = 
@@ -103,7 +112,16 @@ let subst_l subs e = if subs = [] then e else subst_expr subs e
 
 let subst_type_l subs t = if subs = [] then t else subst_type subs t
 
-let preface subber (v,x) e = subber [(v,x)] e
+let preface subber (v,x) e = 
+  assert
+    (
+     if (isunused_variable_expression x)
+     then (
+       printf " subber v = %a  x = %a\n%!" _v v _e x;
+       false)
+     else true
+    );
+  subber [(v,x)] e
 
 let subst_expr = preface subst_expr
 
@@ -111,9 +129,15 @@ let subst_type = preface subst_type
 
 let subst_kind = preface subst_kind
 
-let subst_fresh pos (v,e) = subst_fresh pos [] (v,e)
+let subst_fresh pos (v,e) = 
+  if isunused v 
+  then v,e 
+  else subst_fresh pos [] (v,e)
 
-let subst_type_fresh pos (v,e) = subst_type_fresh pos [] (v,e)
+let subst_type_fresh pos (v,e) = 
+  if isunused v 
+  then v,e 
+  else subst_type_fresh pos [] (v,e)
 
 (* 
   Local Variables:

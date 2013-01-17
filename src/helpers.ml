@@ -5,6 +5,11 @@ open Variables
 open Typesystem
 open Names
 
+let isunused_variable_expression x = 
+  match unmark x with 
+  | APPLY(V v, END) -> isunused v
+  | _ -> false
+
 let cite_tactic tac args = APPLY(TAC tac, args)
 
 let ( ** ) x s = ARG(x,s)		(* right associative *)

@@ -45,47 +45,42 @@ let print_inconsistency pos lhs rhs =
   Printf.fprintf stderr "%a:      != %a\n%!"  _pos_of rhs  _ts rhs;
   Parse.bump_error_count pos
 
-let rec handle_exception pos e =
-  let spos = errfmt pos in
-  match e with
-  | WithPosition(spos,e) -> 
-      handle_exception spos e
+let protect f posfun =
+  let spos () = errfmt (posfun ()) in 
+  try f() with
+  (* | WithPosition(spos,e) ->  *)
+  (*     handle_exception (spos ()) e *)
   | Eof -> 
-      error_summary pos;
+      error_summary (posfun ());
       raise StopParsingFile
   | Failure s -> 
-      fprintf stderr "%s: %s \n%!" spos s;
+      fprintf stderr "%s: %s \n%!" (spos ()) s;
       raise (Failure "exiting")
   | GeneralError s as ex ->
-      fprintf stderr "%s: %s\n%!" spos s;
-      Parse.bump_error_count pos;
+      fprintf stderr "%s: %s\n%!" (spos ()) s;
+      Parse.bump_error_count (posfun ());
       raise_switch ex Error_Handled
   | Grammar.Error | Parsing.Parse_error as ex -> 
-      fprintf stderr "%s: syntax error\n%!" spos;
-      Parse.bump_error_count pos;
+      fprintf stderr "%s: syntax error\n%!" (spos ());
+      Parse.bump_error_count (posfun ());
       raise_switch ex Error_Handled
   | TypeCheckingFailure (env,surr,ps) as ex -> 
       List.iter (fun (spos,s) -> fprintf stderr "%s: %s\n%!" (errfmt spos) s) ps;
       print_surroundings surr;
       print_context env_limit stderr env;
-      Parse.bump_error_count pos;
+      Parse.bump_error_count (posfun ());
       raise_switch ex Error_Handled
   | MarkedError (p,s) as ex ->
       fprintf stderr "%s: %s\n%!" (errfmt p) s;
-      Parse.bump_error_count pos;
+      Parse.bump_error_count (posfun ());
       raise_switch ex Error_Handled
   | Unimplemented s as ex ->
-      fprintf stderr "%s: feature not yet implemented: %s\n%!" spos s;
-      Parse.bump_error_count pos;
+      fprintf stderr "%s: feature not yet implemented: %s\n%!" (spos ()) s;
+      Parse.bump_error_count (posfun ());
       raise_switch ex Error_Handled
   | Universe.Inconsistency (lhs,rhs) as ex ->
-      print_inconsistency pos lhs rhs;
+      print_inconsistency (posfun ()) lhs rhs;
       raise_switch ex Error_Handled
-  | e -> raise e
-
-let wrap_position posfun f x = try f x with d -> WithPosition(posfun(), d)
-
-let protect f x posfun = try f x with d -> handle_exception posfun d
 
 let add_tVars c tvars = 
   { c with lf_context =   
@@ -211,9 +206,9 @@ let ubind env uvars ueqns =
 
 let rec process_command env lexbuf = 
   let c = 
-    try
+    (* try *)
       Grammar.command Tokens.expr_tokens lexbuf
-    with e -> raise (WithPosition(lexbuf_position lexbuf,e))
+    (* with e -> raise (WithPosition(lexbuf_position lexbuf,e)) *)
   in
   match c with (pos,c) ->
     match c with
@@ -251,10 +246,7 @@ let rec process_command env lexbuf =
 and read_eval_command context lexbuf = 
   let rec repeat context = 
     try 
-      repeat (
-      try
-	process_command context lexbuf
-      with e -> handle_exception (lexbuf_position lexbuf) e )
+      repeat ( protect (fun () -> process_command context lexbuf) (fun () -> lexbuf_position lexbuf) )
     with
     | Error_Handled -> repeat context
     | StopParsingFile -> context
@@ -275,9 +267,7 @@ let strname =
     p
 
 let read_expr env lexbuf =
-  try
-    Grammar.ts_exprEof Tokens.expr_tokens lexbuf
-  with e -> handle_exception (lexbuf_position lexbuf) e
+  protect (fun () -> Grammar.ts_exprEof Tokens.expr_tokens lexbuf) (fun () -> lexbuf_position lexbuf)
 
 let parse_string env grammar s = 
     let lexbuf = Lexing.from_string s in
@@ -304,12 +294,11 @@ let toplevel() =
   with FileFinished -> ());
   if false then
   let env = !env in 
-  try
-    let x = expr_from_string env "@[Pt][]" in
-    checkLFCommand env (no_pos 124) x
-    with 
-    | e -> handle_exception (no_pos 125) e
-    
+  protect 
+    (fun () -> 
+      let x = expr_from_string env "@[Pt][]" in
+      checkLFCommand env (no_pos 124) x)
+    (fun () -> no_pos 125)
 
 let _ = try
   toplevel()

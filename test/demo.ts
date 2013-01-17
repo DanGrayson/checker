@@ -4,7 +4,7 @@ Check LF : oexp -> oexp.
 Check LF : (t:texp) -> istype t.
 
 # the subordination checker will give an error on this:
-# Check LF : (t:texp) -> istype t -> oexp.
+ Check LF : (t:texp) -> istype t -> oexp.
 
 Mode Relative.
 Include "rules/TS0.ts".

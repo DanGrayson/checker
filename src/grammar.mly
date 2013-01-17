@@ -252,7 +252,7 @@ command:
 	  bump_error_count pos;
 	  pos, Toplevel.SyntaxError }
 
-    | EOF { trap(); raise Eof }
+    | EOF { raise Eof }
 
 unmarked_command:
 
