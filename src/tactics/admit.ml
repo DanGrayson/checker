@@ -1,7 +1,10 @@
 open Typesystem
 open Lfcheck
 
-(** find the first variable in the context of the right type and return it *)
+(** admit the current tactic term, unchanged, as satisfactory for type checking
+
+    Not completely implemented, in that the routine path_equivalence may raise
+    an exception. *)
 let admit surr env pos t args = TacticSuccess (pos, APPLY(ADMISSION t, END))
 
 (* 
