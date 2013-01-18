@@ -18,24 +18,26 @@ Axiom LF ∏_type
 
       # ∏_istype { ⊢ T Type } { t : T ⊢ U Type } ⊢ ∏ t:T, U[t] Type .
 
-      : (T:((T':texp) × istype T')) ⟶ (U : ((o':oexp) × hastype o' T₁) ⟶ ((T':texp) × istype T') ) ⟶ ((T':Singleton(([∏] ($exp T) ($exp U)):texp)) × istype T').
+      : (T:((T':texp) × istype T')) ⟶ (U : ((o':oexp) × hastype o' T₁) ⟶ ((T':texp) × istype T') ) ⟶ ((T':Singleton((@[∏] T₁ U₁):texp)) × istype T').
 
 # We make $exp T return T₁.  But what about $exp U?
 
-# What if we make the term_normalization routine do the work?  It would be told
+# What if we make the term_normalization routine do the work?  The tactic would be told
 # the type
 
 #     	U : (o : (o':oexp) × hastype o' T₁) ⟶ ((T':texp) × istype T')
 
-# and then it would receive
+# , it would receive
 
 #         ($exp U)
 
 # and return the following expression of type oexp ⟶ texp
 
-#     	o ⟼ (U (o UNCAR))
-#		      later:  (o UNCAR CAR) ---> o
-#		      	      (o UNCAR CDR) ---> internal error
+#     	o ⟼ (U (o,WildCard))₁
+
+# where
+
+#	WildCard : Empty
 
 Axiom LF U_type
 
