@@ -164,7 +164,7 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
   match unmark x with
   | APPLY(h,args) -> (
       match h with
-      | TAC _ -> raise Not_found	(* the presence of a tactic here means that the $admit tactic has been used *)
+      | TAC _ -> raise Internal	(* all tactics should have been handled during type checking *)
       | (O _|T _) -> raise Not_found (* we know the constants in our signature don't involve singleton types *)
       | FUN(f,t) -> (
 	  (* merge this case with the case below ??? *)
@@ -179,13 +179,14 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
 	  let args_passed = END in
 	  let rec repeat t args_passed args =
 	    match unmark t, args with
+	    | F_Empty, _ -> raise Not_found
 	    | F_Singleton s, args -> let (x,t) = strip_singleton s in apply_args x args
 	    | F_Pi(v,a,b), ARG(x,args) -> repeat (subst_type (v,x) b) (ARG(x,args_passed)) args
 	    | F_Sigma(v,a,b), CAR args -> repeat a (CAR args_passed) args
 	    | F_Sigma(v,a,b), CDR args -> repeat (subst_car_passed_term v pos head args_passed b) (CDR args_passed) args
 	    | _, END -> raise Not_found
 	    | _ ->
-		printf "%a: head_reduction case not covered: head %a of type %a applied to args %a\n%!" _pos pos _h head _t t _s args;
+		printf "%a: head_reduction case not covered: head %a of type %a applied to args: %a\n%!" _pos pos _h head _t t _s args;
 		print_context (Some 10) stdout env;
 		(trap(); raise Internal) in
 	  repeat t args_passed args
@@ -205,6 +206,7 @@ let rec term_equivalence (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : uni
   if !debug_mode then printf " term_equivalence\n\t x=%a\n\t y=%a\n\t t=%a\n%!" _e x _e y _t t;
   (if try_alpha && Alpha.UEqual.term_equiv empty_uContext x y then () else
   match unmark t with
+  | F_Empty -> raise Internal (* the WildCard has escaped *)
   | F_Singleton _ -> ()
   | F_Sigma (v,a,b) -> 
       term_equivalence env (pi1 x) (pi1 y) a;
@@ -300,6 +302,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
           | ( K_expression | K_judgment | K_judged_expression ), [], [] -> ()
           | _ -> (trap(); raise Internal)
         in repeat k args args'
+    | F_Empty, F_Empty -> ()
     | _ -> raise TypeEquivalenceFailure
   with TermEquivalenceFailure -> raise TypeEquivalenceFailure
 
@@ -329,6 +332,7 @@ and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
         subtype env a c;                        (* covariant *)
         let w = newfresh (Var "w") in
         subtype (lf_bind env w a) (subst_type (x,var_to_lf w) b) (subst_type (y,var_to_lf w) d)
+    | F_Empty, _ -> ()
     | _ -> type_equivalence env (tpos,t0) (upos,u0)
   with TypeEquivalenceFailure -> raise SubtypeFailure
 
@@ -336,8 +340,7 @@ let rec is_product_type env t =
   match unmark t with 
   | F_Pi _ -> true
   | F_Singleton(_,t) -> is_product_type env t
-  | F_Sigma _ -> false
-  | F_Apply _ -> false    
+  | F_Sigma _ | F_Apply _ | F_Empty -> false
 
 let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : lf_expr = 
   (* assume t has been verified to be a type *)
@@ -456,7 +459,7 @@ let min_kind_option k l =
 
 let rec min_target_kind t =
   match unmark t with
-  | F_Singleton _ -> None
+  | F_Empty | F_Singleton _ -> None
   | F_Pi(v,t,u) -> min_target_kind u
   | F_Apply(h,args) -> Some (ultimate_kind (tfhead_to_kind h))
   | F_Sigma(v,t,u) -> min_kind_option (min_target_kind t) (min_target_kind u)
@@ -477,6 +480,7 @@ let rec check_less_equal t u =
 	    | K_incomparable | K_greater -> raise (InsubordinateKinds(k,l))
 	    | K_equal | K_less -> ())
 	| F_Sigma(v,t1,t2) -> check_less_equal t1 u; check_less_equal t2 u 
+	| F_Empty -> ()
       in
       repeat t  
 
@@ -493,7 +497,8 @@ let type_validity (surr:surrounding) (env:context) (t:lf_type) : lf_type =
       match t with 
       | F_Pi(v,t,u) ->
           let t = type_validity ((S_argument 1,None,Some t0) :: surr) env t in
-          let u = type_validity ((S_argument 2,None,Some t0) :: surr) (lf_bind env v t) u in (
+          let u = type_validity ((S_argument 2,None,Some t0) :: surr) (lf_bind env v t) u in 
+	  (*
 	  try 
 	    check_less_equal t u
 	  with 
@@ -501,7 +506,7 @@ let type_validity (surr:surrounding) (env:context) (t:lf_type) : lf_type =
 	      raise (TypeCheckingFailure 
 		       (env, [], [
 			get_pos t, "expected type " ^ lf_type_to_string t ^ " of kind involving \"" ^ lf_kind_to_string k ^ "\"";
-			get_pos u, "to be subordinate to " ^ lf_type_to_string u  ^ " of kind involving \"" ^ lf_kind_to_string l ^ "\""])));
+			get_pos u, "to be subordinate to " ^ lf_type_to_string u  ^ " of kind involving \"" ^ lf_kind_to_string l ^ "\""])); *)
           F_Pi(v,t,u)
       | F_Sigma(v,t,u) ->
           let t = type_validity ((S_argument 1,None,Some t0) :: surr) env t in
@@ -523,7 +528,9 @@ let type_validity (surr:surrounding) (env:context) (t:lf_type) : lf_type =
       | F_Singleton(x,t) -> 
           let t = type_validity ((S_argument 2,None,Some t0) :: surr) env t in
           let x = type_check ((S_argument 1,None,Some t0) :: surr) env x t in                (* rule 46 *)
-          F_Singleton(x,t)) in
+          F_Singleton(x,t)
+      | F_Empty as t -> t
+     ) in
   type_validity surr env t
 
 let type_synthesis = type_synthesis []
@@ -568,6 +575,7 @@ let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
       let (x,t) = path_normalization env x in
       x
   | F_Singleton(x',t) -> term_normalization env x t
+  | F_Empty -> raise Internal (* the WildCard has escaped *)
       
 and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_type =
   (* returns the normalized term x and the inferred type of x *)
@@ -618,9 +626,16 @@ and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_type =
               | END -> (t,END)
               | CAR args -> err env pos "pi1 expected a pair (5)"
               | CDR args -> err env pos "pi2 expected a pair (5)"
-              | ARG(x,args) -> err env (get_pos x) "unexpected argument"))
-        in repeat t0 args_passed args
-      in ((pos,APPLY(head,args)), t))
+              | ARG(x,args) -> err env (get_pos x) "unexpected argument")
+	  | F_Empty -> (
+	      match args with
+              | END -> (t,END)
+              | CAR args -> err env pos "pi1 encountered a wild card"
+              | CDR args -> err env pos "pi2 encountered a wild card"
+              | ARG(x,args) -> err env (get_pos x) "wild card applied to an argument")
+	 ) in
+	repeat t0 args_passed args in
+      ((pos,APPLY(head,args)), t))
 
 let rec type_normalization (env:context) (t:lf_type) : lf_type =
   (* see figure 9 page 696 [EEST] *)
@@ -649,6 +664,7 @@ let rec type_normalization (env:context) (t:lf_type) : lf_type =
       in F_Apply(head,args)
   | F_Singleton(x,t) -> 
       F_Singleton( term_normalization env x t, type_normalization env t )
+  | F_Empty as t -> t
   in (pos,t)
 
 (* 

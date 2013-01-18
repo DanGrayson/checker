@@ -326,20 +326,13 @@ Definition LF idfun
 
       := X ⟼ (simple_λ_object X X (x ⟼ x)).
 
-Theorem LF idisweq
+Check LF # Theorem LF idisweq
 
       # { ⊢ X Type } : Isweq₁[X,X,idfun₁[X]] 
 
-      : (X : a_type) ⟶ obj_of_type (Isweq X X (idfun X))
+      : (X : a_type) ⟶ obj_of_type (Isweq X X (idfun X)).
 
-      := $admit.
-
-      # := X |-> ($apply λ_object).
-      # := X |-> $fail.
-      # := ($fail λ_object _ _ _).
-      # := X |-> (λ_object _ _ _). 
-      # := X |-> (λ_object X (y ⟼ (Iscontr (Hfiber X X (idfun X) y))) (y ⟼ _)). 
-      # := $( intro ; fail ) .
+# to do: give a proof.
 
 End.
 

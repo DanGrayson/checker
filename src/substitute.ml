@@ -37,7 +37,6 @@ and subst_expr subl e =
       | V v -> (
 	  try apply_args (new_pos pos (List.assoc v subl)) args
 	  with Not_found -> pos, APPLY(h,args))
-      | ADMISSION t -> with_pos pos (APPLY(ADMISSION (subst_type subl t), args))
       | FUN(f,t) -> raise NotImplemented
       | U _ | T _ | O _ | TAC _ -> pos, APPLY(h,args))
   | CONS(x,y) -> pos, CONS(subst_expr subl x,subst_expr subl y)
@@ -88,7 +87,9 @@ and subst_type (subl : (var * lf_expr) list) (pos,t) =
        let (v,b) = subst_type_fresh pos subl (v,b) in
        F_Sigma(v,a,b)
    | F_Apply(label,args) -> F_Apply(label, subst_list subl args)
-   | F_Singleton(e,t) -> F_Singleton( subst_expr subl e, subst_type subl t ))
+   | F_Singleton(e,t) -> F_Singleton( subst_expr subl e, subst_type subl t )
+   | F_Empty as t -> t
+  )
 
 and subst_type_fresh pos subl (v,t) =
   let (v,subl) = fresh pos v subl in

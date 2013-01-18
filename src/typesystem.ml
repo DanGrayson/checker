@@ -85,7 +85,6 @@ type lf_expr_head =
   | O of oHead			(** labels for o-expressions of TS *)
   | V of var			(** labels for variables of TS *)
   | TAC of tactic_expr		(** An empty hole, to be filled in later by calling a tactic routine. *)
-  | ADMISSION of lf_type	(** The $admit tactic was used in a hole of the given type. *)
   | FUN of lf_expr * lf_type
 	(** In context with the spine, this is a [beta-redex] ready to be
 	    reduced, i.e., it's a function [f] of type [t] and an argument
@@ -129,6 +128,7 @@ and bare_lf_type =
   | F_Sigma of var * lf_type * lf_type
   | F_Apply of lf_type_head * lf_expr list
   | F_Singleton of (lf_expr * lf_type)
+  | F_Empty
 
 (** Tactics *)
 and tactic_expr = 

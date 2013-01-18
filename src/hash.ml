@@ -32,7 +32,6 @@ let rec hhash = function
   | T h -> thash h
   | O h -> ohash h
   | V h -> 2
-  | ADMISSION t -> type_hash t
   | FUN(f,t) -> 36 * expr_hash f + type_hash t
 
 and expr_hash e = match Error.unmark e with

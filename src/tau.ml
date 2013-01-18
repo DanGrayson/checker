@@ -29,7 +29,6 @@ let rec tau (env:context) e : lf_expr =
 	   | END -> t
 	   | _ -> raise NotImplemented
 	  )
-      | ADMISSION t -> raise NotImplemented
       | FUN _ -> raise NotImplemented
       | U uh -> raise (TypeCheckingFailure(env, [],[pos, "a u-expression doesn't have a type"]))
       | T th -> raise (TypeCheckingFailure(env, [], [pos, "a t-expression doesn't have a type"]))

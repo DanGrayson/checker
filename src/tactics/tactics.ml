@@ -7,7 +7,7 @@ let _ = List.iter add_tactic [
   "default", Default.default;
   "assumption", Assumption.assumption;
   "fail", Fail.fail;
-  "admit", Admit.admit;
+  (* "admit", Admit.admit; *)
   "apply", Apply.apply;
   "tn1", Tn.tn1;
   "tn12", Tn.tn12;

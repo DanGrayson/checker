@@ -82,7 +82,6 @@ let head_to_type env pos = function
   | T h -> thead_to_lf_type h
   | O h -> ohead_to_lf_type h
   | V v -> fetch_type env pos v
-  | ADMISSION t -> t
   | TAC _ -> (trap(); raise Internal)
 
 let ensure_new_name env pos v =

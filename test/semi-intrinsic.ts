@@ -14,11 +14,15 @@ Include "rules/abbreviations.ts".
 
 # Then we will write a tactic for extracting the expression part of a term or type.
 
+Axiom LF WildCard : LF_Empty.
+
 Axiom LF ∏_type 
 
       # ∏_istype { ⊢ T Type } { t : T ⊢ U Type } ⊢ ∏ t:T, U[t] Type .
 
-      : (T:((T':texp) × istype T')) ⟶ (U : ((o':oexp) × hastype o' T₁) ⟶ ((T':texp) × istype T') ) ⟶ ((T':Singleton((@[∏] T₁ U₁):texp)) × istype T').
+      : (T:((T':texp) × istype T')) ⟶ 
+        (U : ((o':oexp) × hastype o' T₁) ⟶ ((T':texp) × istype T') ) ⟶ 
+        ((T':Singleton((@[∏] T₁ (o ⟼ (U (o,WildCard))₁)):texp)) × istype T').
 
 # We make $exp T return T₁.  But what about $exp U?
 
@@ -43,19 +47,19 @@ Axiom LF U_type
 
       # U_istype { ⊢ M Ulevel } ⊢ UU[M] Type.
 
-      : uexp ⟶ ((T':texp) × istype T').
+      : (M:uexp) ⟶ ((T':Singleton((UU M):texp)) × istype T').
 
 Axiom LF u_object
 
       #  { ⊢ M Ulevel } ⊢ uu[M] : UU[next[M]].
 
-      : (M:uexp) ⟶ ((o':oexp) × hastype o' (U_type (next M))₁).
+      : (M:uexp) ⟶ ((o':Singleton((uu M):oexp)) × hastype o' (U_type (next M))₁).
 
 Axiom LF El_type
 
       # { ⊢ M Ulevel, o : UU[M] } ⊢ *o Type.
 
-      : (M:uexp) ⟶ ((o':oexp) × hastype o' (U_type M)₁) ⟶ ((T':texp) × istype T').
+      : (M:uexp) ⟶ (o: (o':oexp) × hastype o' (U_type M)₁) ⟶ ((T':Singleton((El o₁):texp)) × istype T').
 
 Axiom LF El_u_reduction
 
@@ -67,7 +71,11 @@ Axiom LF cast
 
       #  { ⊢ T U Type } [ T ≡ U ] ⇒ { ⊢ o : T } ⊢ o : U.
 
-      : (T:((T':texp) × istype T')) ⟶ (U:((T':texp) × istype T')) ⟶ tequal T₁ U₁ ⟶ ((o':oexp) × hastype o' T₁) ⟶ ((o':oexp) × hastype o' U₁).
+      : (T:((T':texp) × istype T')) ⟶ 
+        (U:((T':texp) × istype T')) ⟶ 
+        tequal T₁ U₁ ⟶ 
+        (o : (o':oexp) × hastype o' T₁) ⟶ 
+        ((o':Singleton(o₁:oexp)) × hastype o' U₁).
 
 Axiom LF forall_object
 
@@ -78,7 +86,7 @@ Axiom LF forall_object
          (M2:uexp) ⟶ 
          (o1 : ((o':oexp) × hastype o' (U_type M1)₁)) ⟶ 
 	 (o2 : ((o':oexp) × hastype o' (El_type M1 o1)₁) ⟶ ((o':oexp) × hastype o' (U_type M2)₁)) 
-  	 ⟶ ((o':oexp) × hastype o' (U_type (umax M1 M2))₁).
+  	 ⟶ ((o':Singleton((@[forall] M1 M2 o1₁ (o ⟼ (o2 (o,WildCard))₁)):oexp)) × hastype o' (U_type (umax M1 M2))₁).
 
 Axiom LF λ_object
 
@@ -86,8 +94,8 @@ Axiom LF λ_object
 
       : (T:((T':texp) × istype T')) ⟶ 
       	(U : ((o':oexp) × hastype o' T₁) ⟶ ((T':texp) × istype T')) ⟶ 
-	(body : (t:((o':oexp) × hastype o' T₁)) ⟶ ((o':oexp) × hastype o' (U t)₁)) 
-	⟶ ((o':oexp) × hastype o' (∏_type T U)₁).
+	(o : (t:((o':oexp) × hastype o' T₁)) ⟶ ((o':oexp) × hastype o' (U t)₁)) 
+	⟶ ((o':Singleton((@[λ] T₁ (t ⟼ (o (t,WildCard))₁)):oexp)) × hastype o' (∏_type T U)₁).
 
 Axiom LF ev_object
 
@@ -96,8 +104,8 @@ Axiom LF ev_object
       : (T:((T':texp) × istype T')) ⟶ 
       	(U : ((o':oexp) × hastype o' T₁) ⟶ ((T':texp) × istype T')) ⟶ 
 	(f : ((o':oexp) × hastype o' (∏_type T U)₁)) ⟶ 
-	(arg : ((o':oexp) × hastype o' T₁)) 
-	⟶ ((o':oexp) × hastype o' (U arg)₁).
+	(o : ((o':oexp) × hastype o' T₁)) 
+	⟶ ((t:Singleton((@[ev] f₁ o₁ (t' ⟼ (U (t',WildCard))₁)):oexp)) × hastype t (U (t,WildCard))₁).
 
 Axiom LF beta_reduction
 
@@ -108,7 +116,7 @@ Axiom LF beta_reduction
        	 (arg : ((o':oexp) × hastype o' T₁)) ⟶ 
 	 (U : ((o':oexp) × hastype o' T₁) ⟶ ((T':texp) × istype T')) ⟶ 
 	 (body : (t:((o':oexp) × hastype o' T₁)) ⟶ ((o':oexp) × hastype o' (U t)₁)) 
-	 ⟶ oequal (U arg)₁ (ev_object T U (λ_object T U body) arg)₁ (body arg)₁.
+	 ⟶ oequal (ev_object T U (λ_object T U body) arg)₁ (body arg)₁ (U arg)₁.
 
 # introduce non-dependent versions of ∏_type, λ_object, and ev_object:
 
@@ -197,7 +205,9 @@ Axiom LF 6.3.1 Σ_type
 
       # { ⊢ T Type } { t : T ⊢ U Type } ⊢ Σ t:T, U[t] Type .
 
-      : (T : ((T':texp) × istype T')) ⟶ ( ((o':oexp) × hastype o' T₁) ⟶ ((T':texp) × istype T') ) ⟶ ((T':texp) × istype T').
+      : (T : ((T':texp) × istype T')) ⟶ 
+        (U : ((o':oexp) × hastype o' T₁) ⟶ ((T':texp) × istype T') ) ⟶ 
+        ((T':Singleton((@[Σ] T₁ (t ⟼ (U (t,WildCard))₁)):texp)) × istype T').
 
 Axiom LF 6.3.2 pair_object
 
@@ -207,7 +217,7 @@ Axiom LF 6.3.2 pair_object
         (T2 : ((o':oexp) × hastype o' T1₁) ⟶ ((T':texp) × istype T')) ⟶ 
 	(o1 : ((o':oexp) × hastype o' T1₁)) ⟶
         (o2 : ((o':oexp) × hastype o' (T2 o1)₁))
-	⟶ ((o':oexp) × hastype o' (Σ_type T1 T2)₁).
+	⟶ ((o':Singleton((@[pair] o1₁ o2₁ (t ⟼ (T2 (t,WildCard))₁)):oexp)) × hastype o' (Σ_type T1 T2)₁).
 
 Axiom LF 6.3.3 pr1_object
 
@@ -216,7 +226,7 @@ Axiom LF 6.3.3 pr1_object
       : (T1 : ((T':texp) × istype T')) ⟶ 
         (T2 : ((o':oexp) × hastype o' T1₁) ⟶ ((T':texp) × istype T')) ⟶ 
 	(a : ((o':oexp) × hastype o' (Σ_type T1 T2)₁))
-	 ⟶ ((o':oexp) × hastype o' T1₁).
+	 ⟶ ((o':Singleton((@[pr1] T1₁ (t ⟼ (T2 (t,WildCard))₁) a₁):oexp)) × hastype o' T1₁).
 
 Axiom LF 6.3.4 pr2_object
 
@@ -226,7 +236,8 @@ Axiom LF 6.3.4 pr2_object
       : (T1 : ((T':texp) × istype T')) ⟶ 
         (T2 : ((o':oexp) × hastype o' T1₁) ⟶ ((T':texp) × istype T')) ⟶ 
 	(a : ((o':oexp) × hastype o' (Σ_type T1 T2)₁))
-	 ⟶ ((o':oexp) × hastype o' (T2 (pr1_object T1 T2 a))₁).
+	 ⟶ (  (o':Singleton((@[pr2] T1₁ (t ⟼ (T2 (t,WildCard))₁) a₁):oexp)) 
+	    × hastype o' (T2 (pr1_object T1 T2 a))₁).
 
 Axiom LF 6.3.5 pr1_pair_reduction
 
@@ -237,16 +248,16 @@ Axiom LF 6.3.5 pr1_pair_reduction
         (T2 : ((o':oexp) × hastype o' T1₁) ⟶ ((T':texp) × istype T')) ⟶ 
         (o1 : ((o':oexp) × hastype o' T1₁)) ⟶
         (o2 : ((o':oexp) × hastype o' (T2 o1)₁)) ⟶
-        oequal T1₁
-	   (pr1_object T1 T2 (pair_object T1 T2 o1 o2))₁
-	   o1₁.
+        oequal (pr1_object T1 T2 (pair_object T1 T2 o1 o2))₁
+	       o1₁
+	       T1₁.
 
-Axiom LF parametrized_tequal			    # new axiom
+Axiom LF parametrized_tequal			    # new axiom, why is it needed?
       : (T1 : ((T':texp) × istype T')) ⟶ 
         (T2 : ((o':oexp) × hastype o' T1₁) ⟶ ((T':texp) × istype T')) ⟶ 
-	(o : ((o':oexp) × hastype o' T1₁)) ⟶
+	(o  : ((o':oexp) × hastype o' T1₁)) ⟶
 	(o' : ((o':oexp) × hastype o' T1₁)) ⟶
-	(oequal T1₁ o₁ o'₁) ⟶
+	(oequal o₁ o'₁ T1₁) ⟶
 	(tequal (T2 o)₁ (T2 o')₁).        
 
 Axiom LF 6.3.6 pr2_pair_reduction
@@ -258,7 +269,7 @@ Axiom LF 6.3.6 pr2_pair_reduction
         (T2 : ((o':oexp) × hastype o' T1₁) ⟶ ((T':texp) × istype T')) ⟶ 
         (o1 : ((o':oexp) × hastype o' T1₁)) ⟶
         (o2 : ((o':oexp) × hastype o' (T2 o1)₁)) ⟶
-        oequal (T2 o1)₁
+        oequal
 	   (cast
 	       (T2 (pr1_object T1 T2 (pair_object T1 T2 o1 o2)))
 	       (T2 o1)
@@ -266,7 +277,8 @@ Axiom LF 6.3.6 pr2_pair_reduction
 	       	  T1 T2 (pr1_object T1 T2 (pair_object T1 T2 o1 o2)) o1
 		  (pr1_pair_reduction T1 T2 o1 o2))
 	       (pr2_object T1 T2 (pair_object T1 T2 o1 o2)))₁
-	   o2₁.
+	   o2₁
+	   (T2 o1)₁.
 
 Axiom LF 11.5.1 paths_object
 
@@ -276,7 +288,7 @@ Axiom LF 11.5.1 paths_object
         (t : ((o':oexp) × hastype o' (U_type M)₁)) ⟶
       	(o1 : ((o':oexp) × hastype o' (El_type M t)₁)) ⟶
       	(o2 : ((o':oexp) × hastype o' (El_type M t)₁)) ⟶
-	((o':oexp) × hastype o' (U_type M)₁).
+	((o':Singleton((@[paths] M t₁ o1₁ o2₁):oexp)) × hastype o' (U_type M)₁).
 
 Axiom LF 11.5.2 Id_type
 
@@ -285,7 +297,7 @@ Axiom LF 11.5.2 Id_type
       : (T : ((T':texp) × istype T')) ⟶ 
         (o1 : ((o':oexp) × hastype o' T₁)) ⟶ 
 	(o2 : ((o':oexp) × hastype o' T₁)) ⟶
-        ((T':texp) × istype T').
+        ((T':Singleton((@[Id] T₁ o1₁ o2₁):texp)) × istype T').
 
 Axiom LF 11.5.3 refl_object
 
@@ -293,7 +305,7 @@ Axiom LF 11.5.3 refl_object
 
       : (T : ((T':texp) × istype T')) ⟶ 
         (o : ((o':oexp) × hastype o' T₁)) ⟶ 
-	((o':oexp) × hastype o' (Id_type T o o)₁).
+	((o':Singleton((@[refl] T₁ o₁):oexp)) × hastype o' (Id_type T o o)₁).
 
 Axiom LF 11.5.4 J_object
 
@@ -308,7 +320,7 @@ Axiom LF 11.5.4 J_object
 	(x : ((o':oexp) × hastype o' T₁)) ⟶
 	(S : (x : ((o':oexp) × hastype o' T₁)) ⟶ ((o':oexp) × hastype o' (Id_type T a x)₁) ⟶ ((T':texp) × istype T')) ⟶
 	(q : ((o':oexp) × hastype o' (S a (refl_object T a))₁)) ⟶
-	((o':oexp) × hastype o' (S b i)₁).
+	((o':Singleton((@[J] T₁ a₁ b₁ q₁ i₁ (x ⟼ e ⟼ (S (x,WildCard) (e,WildCard))₁)):oexp)) × hastype o' (S b i)₁).
 
 Definition LF Iscontr
 
@@ -354,6 +366,8 @@ Definition LF idfun
       : (X : ((T':texp) × istype T')) ⟶ ((o':oexp) × hastype o' (arrow_type X X)₁)
 
       := X ⟼ (simple_λ_object X X (x ⟼ x)).
+
+End.
 
 Theorem LF idisweq
 

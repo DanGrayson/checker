@@ -29,7 +29,7 @@ open Printer
   Universes Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_CAR K_CDR Times
   Turnstile DoubleArrow DoubleArrowFromBar ColonColonEqual ColonEqual Theorem
   LeftBrace RightBrace TurnstileDouble ColonColon Include Clear Mode Simple
-  Relative Pairs EqualEqual
+  Relative Pairs EqualEqual LF_Empty
 
 (* precedences, lowest first *)
 
@@ -95,6 +95,9 @@ unmarked_lf_type:
 
     | f= lf_type_constant args= lf_expr*
 	{ F_Apply(f,args) }
+
+    | LF_Empty
+	{ F_Empty }
 
     | Pi v= variable Colon a= lf_type Comma b= lf_type
 	%prec Reduce_binder

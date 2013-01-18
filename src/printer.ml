@@ -36,7 +36,6 @@ let rec vars_in_spine args =
 and head_to_vars h = 
   match h with
   | V v -> [v]
-  | ADMISSION t -> lf_type_to_vars t
   | FUN(f,t) -> lf_expr_to_vars f @ lf_type_to_vars t
   | U _ | T _ | O _ | TAC _ -> []
 
@@ -53,6 +52,7 @@ and lf_type_to_vars (_,t) = match t with
   | F_Sigma(v,t,u) -> dependent_vars (v,t,u)
   | F_Singleton(x,t) -> lf_expr_to_vars x @ lf_type_to_vars t
   | F_Apply(hd,args) -> vars_in_list lf_expr_to_vars args
+  | F_Empty -> []
 
 let rec lf_kind_to_vars = function
   | K_ulevel | K_expression | K_judgment | K_judged_expression -> []
@@ -63,7 +63,6 @@ let rec lf_kind_to_vars = function
 let rec occurs_in_head w h =
   match h with 
   | V v -> w = v
-  | ADMISSION t -> occurs_in_type w t
   | FUN(f,t) -> occurs_in_expr w f || occurs_in_type w t
   | U _ | T _ | O _ | TAC _ -> false
 
@@ -78,6 +77,7 @@ and occurs_in_type w (_,t) = match t with
   | F_Sigma(v,t,u) -> occurs_in_type w t || w <> v && occurs_in_type w u
   | F_Singleton(e,t) -> occurs_in_expr w e || occurs_in_type w t
   | F_Apply(h,args) -> List.exists (occurs_in_expr w) args
+  | F_Empty -> false
 
 let rec occurs_in_kind w = function
   | K_ulevel | K_expression | K_judgment | K_judged_expression -> false
@@ -238,7 +238,6 @@ let rec lf_head_to_string_with_subs subs h : string =
   | V v -> vartostring (var_sub subs v)
   | U _ | T _ | O _ -> "@[" ^ expr_head_to_string h ^ "]"
   | TAC tac -> tactic_to_string tac
-  | ADMISSION t -> "$(admitted object of type " ^ paren_never (lf_type_to_string_with_subs subs t) ^ ")"
   | FUN(f,t) ->
       let f = lf_expr_to_string_with_subs subs f in
       let t = lf_type_to_string_with_subs subs t in
@@ -283,6 +282,7 @@ and lf_type_to_string_with_subs subs (_,t) : smart_string = match t with
       top_prec, concat ["Singleton(";paren_left colon_prec x;" : ";paren_right colon_prec t;")"]
   | F_Apply(hd,args) -> 
       list_application_to_string (mark_top <<- lf_type_head_to_string) (lf_expr_to_string_with_subs subs) (hd,args)
+  | F_Empty -> top_prec, "LF_Empty"
 
 let rec lf_kind_to_string_with_subs subs = function
   | ( K_ulevel | K_expression | K_judgment | K_judged_expression ) as k -> top_prec, List.assoc k lf_kind_constant_table

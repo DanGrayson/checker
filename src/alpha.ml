@@ -56,6 +56,7 @@ module Make(Ueq: Universe.Equivalence) : S = struct
 	  let alpha = addalpha x x' alpha 
 	  in type_eq alpha u u'
       | F_Apply(h,args), F_Apply(h',args') -> h = h' && List.for_all2 (term_eq ulevel_context alpha) args args'
+      | F_Empty, F_Empty -> true
       | _ -> false
     in type_eq alpha
 
