@@ -1,3 +1,5 @@
+# -*- makefile-gmake -*-
+
 all: TAGS
 include src/Makefile.include
 include test/Makefile.include

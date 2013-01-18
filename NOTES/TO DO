@@ -1,3 +1,16 @@
+Switch to de Bruijn indices.  Advantage: fewer substitutions of a variable by a
+fresh variable will be needed.
+
+-----------------------------------------------------------------------------
+
+The recent change, under which unused variables (with base name "_") don't
+go onto the context during type checking, is a bit unsafe because it's not
+uniformly implemented.  A tactic such as $assumption may proffer a reference
+to such a variable, resulting in a lambda expression where the variable is
+used, despite the name, and later examination of the body may not work out.
+
+-----------------------------------------------------------------------------
+
 should be able to write
 
        Definition LF UU := @[U].

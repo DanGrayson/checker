@@ -1,3 +1,3 @@
 # -*- makefile-gmake -*-
 
-all :; $(MAKE) -C ..
+all :; $(MAKE) -C ../..

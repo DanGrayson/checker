@@ -1,4 +1,4 @@
-TSNAMES = demo judgments miscellaneous foo interpretations judged-expressions theorem-binders ts-elf ts-elf-2 show
+TSNAMES = demo judgments miscellaneous foo interpretations judged-expressions theorem-binders ts-elf ts-elf-2 show semi-intrinsic
 TSFILES = $(patsubst %,test/%.ts,$(TSNAMES))
 all: tests
 tests : $(TSNAMES)
