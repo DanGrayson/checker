@@ -198,6 +198,38 @@ let rec head_normalization (env:context) (x:lf_expr) : lf_expr =
   try head_normalization env (head_reduction env x)
   with Not_found -> x
 
+(** Subordination *)
+
+exception IncomparableKinds of lf_kind * lf_kind
+
+let min_kind k l =
+  match compare_kinds k l with
+  | K_equal | K_less -> k
+  | K_greater -> l
+  | K_incomparable -> raise (IncomparableKinds (k,l))
+
+let min_kind_option k l =
+  match k,l with
+  | None,None -> None
+  | k,None -> k
+  | None,l -> l
+  | Some k, Some l -> Some (min_kind k l)  
+
+let rec min_type_kind t =
+  match unmark t with
+  | F_Empty -> K_judgment
+  | F_Singleton(x,t) -> min_type_kind t
+  | F_Pi(v,t,u) -> min_type_kind u
+  | F_Apply(h,args) -> ultimate_kind (tfhead_to_kind h)
+  | F_Sigma(v,t,u) -> min_kind (min_type_kind t) (min_type_kind u)
+
+let rec min_target_kind t =
+  match unmark t with
+  | F_Empty | F_Singleton _ -> None
+  | F_Pi(v,t,u) -> min_target_kind u
+  | F_Apply(h,args) -> Some (ultimate_kind (tfhead_to_kind h))
+  | F_Sigma(v,t,u) -> min_kind_option (min_target_kind t) (min_target_kind u)
+
 (** Type checking and equivalence routines. *)
 
 let rec term_equivalence (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : unit =
@@ -332,7 +364,8 @@ and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
         subtype env a c;                        (* covariant *)
         let w = newfresh (Var "w") in
         subtype (lf_bind env w a) (subst_type (x,var_to_lf w) b) (subst_type (y,var_to_lf w) d)
-    | F_Empty, _ -> ()
+    | F_Empty, _ ->
+	if not (min_type_kind u = K_judgment) then raise SubtypeFailure
     | _ -> type_equivalence env (tpos,t0) (upos,u0)
   with TypeEquivalenceFailure -> raise SubtypeFailure
 
@@ -441,28 +474,6 @@ and type_synthesis (surr:surrounding) (env:context) (m:lf_expr) : lf_expr * lf_t
       let e = pos, APPLY(head,args') in
       let t = with_pos_of t (F_Singleton(e,t)) in (* this isn't quite like the algorithm in the paper, but it seems to work *)
       e,t
-
-exception IncomparableKinds of lf_kind * lf_kind
-
-let min_kind k l =
-  match compare_kinds k l with
-  | K_equal | K_less -> k
-  | K_greater -> l
-  | K_incomparable -> raise (IncomparableKinds (k,l))
-
-let min_kind_option k l =
-  match k,l with
-  | None,None -> None
-  | k,None -> k
-  | None,l -> l
-  | Some k, Some l -> Some (min_kind k l)  
-
-let rec min_target_kind t =
-  match unmark t with
-  | F_Empty | F_Singleton _ -> None
-  | F_Pi(v,t,u) -> min_target_kind u
-  | F_Apply(h,args) -> Some (ultimate_kind (tfhead_to_kind h))
-  | F_Sigma(v,t,u) -> min_kind_option (min_target_kind t) (min_target_kind u)
 
 exception InsubordinateKinds of lf_kind * lf_kind
 

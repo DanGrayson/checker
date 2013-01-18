@@ -79,7 +79,7 @@ Theorem LF ev_hastype1 : (T1:texp) ⟶ (T2:texp) ⟶ (F:oexp) ⟶ (O:oexp) ⟶
       := 
       T1 ⟼ T2 ⟼ F ⟼ O ⟼ dF ⟼ dO ⟼ (ev_hastype T1 (_ ⟼ T2) F O dF dO).
 
-Theorem LF modus_ponens : 
+Theorem LF compose : 
       (T:texp) ⟶ (istype T) ⟶
       (U:texp) ⟶ (istype U) ⟶
       (V:texp) ⟶ (istype V) ⟶

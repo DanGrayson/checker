@@ -17,7 +17,7 @@ Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ @[λ][T,o] : @[∏;_
 Definition ev1 { ⊢ T U Type, f : @[∏;_][T,U], o : T } ⊢ @[ev;_][f,o,U] : U ::= 
 	   (T ⟼ U ⟼ (ev_hastype₁ T (_⟼U)), T ⟼ U ⟼ (ev_hastype₂ T (_⟼U₁,_⟼U))).
 
-Theorem modus_ponens { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 
+Theorem compose { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 
 	(
 	T ⟼ U ⟼ V ⟼ (lambda1₁ (pi1₁ T U) (pi1₁ (pi1₁ U V) (pi1₁ T V))
 			       (f ⟼ (lambda1₁ (pi1₁ U V) (pi1₁ T V) 
@@ -57,7 +57,7 @@ Definition ev1 { ⊢ T U Type, f : @[∏;_][T,U], o : T } ⊢ @[ev;_][f,o,U] : U
    T ⟼ U ⟼ f ⟼ o ⟼ 
    ((ev_hastype T (_ ⟼ U) f o CAR), T' ⟼ U' ⟼ (ev_hastype T (_ ⟼ U) f o CDR T' (_ ⟼ _ ⟼ U'))).
 
-Theorem modus_ponens { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 
+Theorem compose { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 
    T ⟼ U ⟼ V ⟼ 
    ((lambda1 (pi1 T U CAR) (pi1 (pi1 U V CAR) (pi1 T V CAR) CAR)
 	     (f ⟼ (lambda1 (pi1 U V CAR) (pi1 T V CAR)
@@ -85,7 +85,7 @@ Theorem modus_ponens { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
 						 dU dV dg 
 						 (ev1 T U f t CDR dT dU df dt))))))))).
 
-Theorem modus_ponens' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 
+Theorem compose' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 
 	# this time with tactics (tactics like these don't help in pairs mode)
 	T ⟼ U ⟼ V ⟼ 
 	((lambda1 (pi1 T U CAR) (pi1 (pi1 U V CAR) (pi1 T V CAR) CAR)

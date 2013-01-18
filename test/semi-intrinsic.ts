@@ -16,6 +16,9 @@ Include "rules/abbreviations.ts".
 
 Axiom LF WildCard : LF_Empty.
 
+# the following check fails, showing that LF_Empty is not a subtype of oexp, preserving adequacy
+# Check LF (@[El] WildCard).
+
 Axiom LF ∏_type 
 
       # ∏_istype { ⊢ T Type } { t : T ⊢ U Type } ⊢ ∏ t:T, U[t] Type .
@@ -145,7 +148,7 @@ Definition LF simple_ev_object
 
 	   := T ⟼ U ⟼ (ev_object T (_ ⟼ U)).
 
-Theorem LF modus_ponens
+Theorem LF compose
 
 	: (T:((T':texp) × istype T')) ⟶ 
 	  (U:((T':texp) × istype T')) ⟶ 
@@ -383,8 +386,6 @@ Theorem LF idisweq
       # := X |-> (λ_object _ _ _). 
       # := X |-> (λ_object X (y ⟼ (Iscontr (Hfiber X X (idfun X) y))) (y ⟼ _)). 
       # := $( intro ; fail ) .
-
-End.
 
 #   Local Variables:
 #   compile-command: "make -C .. semi-intrinsic "

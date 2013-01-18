@@ -108,7 +108,7 @@ Definition LF simple_ev_object
 
 	   := T ⟼ U ⟼ (ev_object T (_ ⟼ U)).
 
-Theorem LF modus_ponens
+Theorem LF compose
 
 	: (T:a_type) ⟶ 
 	  (U:a_type) ⟶ 
