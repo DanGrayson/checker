@@ -136,6 +136,9 @@ and tactic_expr =
   | Tactic_name of string			 (* $foo *)
   | Tactic_sequence of tactic_expr * tactic_expr (* $(a;b;c) *)
 
+let name_F_Empty = "BottomJudgment"
+let name_F_Pi = "Pi"
+
 let ( @@ ) f x : lf_type = nowhere 3 (F_Apply(f,x))
 
 let uexp = F_uexp @@ []

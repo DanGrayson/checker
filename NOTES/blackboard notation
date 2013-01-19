@@ -1,0 +1,70 @@
+-*- text -*-
+
+upper case for types, lower case for objects
+
+with no free variable:
+
+	⊢ U		U is a well-formed t-expression		U : texp
+
+	⊢ x		x is a well-formed o-expression		x : oexp
+
+	⊢ :U		U is a TS-type				
+								
+			⊢ U					U : texp
+			⊢ :U					_ : istype U
+
+			⊨ :U					U : (U:texp) × istype U
+
+	⊢ x:U		x has type U				
+								
+			⊢ x  					x : oexp
+			⊢ x:U					_ : hastype x U
+
+			⊨ x:U					x : (x:oexp) × hastype x U
+
+
+with a free variable t:
+
+	t ⊢ U		U is a well-formed t-expression		U : oexp ⟶ texp
+
+	t ⊢ x		x is a well-formed o-expression		x : oexp ⟶ oexp
+
+	t:T ⊢ :U	U is a TS-type				
+								
+			t ⊢ U					U : oexp ⟶ texp
+			t:T ⊢ :U				_ : (t:oexp) ⟶ 
+								      hastype t T ⟶ 
+								        istype (U t)
+
+								U : (t:oexp) ⟶ 
+								      (U:texp) ×
+								        hastype t T ⟶ 
+									  istype U
+
+								U : (U : (t:oexp) ⟶ texp)) × 
+								      (t:oexp) ⟶ 
+								        hastype t T ⟶ 
+									  istype (U t)
+
+			t:T ⊨ :U				U : ((t:oexp) × hastype t T) ⟶ 
+								      ((U:texp) × istype U)
+
+	t:T ⊢ x:U	x has type T				
+								
+			t ⊢ x					x : oexp ⟶ oexp
+			t:T ⊢ x:U				_ : (t:oexp) ⟶ 
+								      hastype t T ⟶ 
+								        hastype (x t) (U t)
+
+								x : (t:oexp) ⟶ (x:oexp) ×
+								      hastype t T ⟶ 
+								        hastype x U
+
+								x : (U : (t:oexp) ⟶ texp)) × (t:oexp) ⟶ 
+								      hastype t T ⟶ 
+								        istype (U t)
+
+			t:T ⊨ x:U				x : ((t:oexp) × hastype t T) ⟶ 
+								      ((U:texp) × istype U)
+
+

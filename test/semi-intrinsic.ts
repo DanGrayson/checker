@@ -14,9 +14,9 @@ Include "rules/abbreviations.ts".
 
 # Then we will write a tactic for extracting the expression part of a term or type.
 
-Axiom LF WildCard : LF_Empty.
+Axiom LF WildCard : BottomJudgment.
 
-# the following check fails, showing that LF_Empty is not a subtype of oexp, preserving adequacy
+# the following check fails, showing that BottomJudgment is not a subtype of oexp, preserving adequacy
 # Check LF (@[El] WildCard).
 
 Axiom LF ∏_type 

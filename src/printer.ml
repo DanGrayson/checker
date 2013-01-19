@@ -282,7 +282,7 @@ and lf_type_to_string_with_subs subs (_,t) : smart_string = match t with
       top_prec, concat ["Singleton(";paren_left colon_prec x;" : ";paren_right colon_prec t;")"]
   | F_Apply(hd,args) -> 
       list_application_to_string (mark_top <<- lf_type_head_to_string) (lf_expr_to_string_with_subs subs) (hd,args)
-  | F_Empty -> top_prec, "LF_Empty"
+  | F_Empty -> top_prec, name_F_Empty
 
 let rec lf_kind_to_string_with_subs subs = function
   | ( K_ulevel | K_expression | K_judgment | K_judged_expression ) as k -> top_prec, List.assoc k lf_kind_constant_table
