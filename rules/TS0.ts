@@ -6,16 +6,28 @@ Variable uu0 Ulevel.
 
 Axiom 3.4.7 tsimeq { ⊢ T U Type } [ T ~ U Type ] ⇒ [ T ≡ U ].
 
+# not in Voevodsky's paper; we may not need it
+Axiom teqrefl { ⊢ T Type } [ T ≡ T ].
+
 Axiom 3.4.8 teqsymm { ⊢ T U Type } [ T ≡ U ] ⇒ [ U ≡ T ].
 
 Axiom 3.4.9 teqtrans { ⊢ T U V Type } [ T ≡ U ] ⇒ [ U ≡ V ] ⇒ [ T ≡ V ].
 
 Axiom 3.4.10 osimeq { ⊢ T Type, x y : T } [ x ~ y : T ] ⇒ [ x ≡ y : T ].
 
+# not in Voevodsky's paper; we may not need it:
+Axiom oeqrefl { ⊢ T Type, x : T } [ x ≡ x : T ].
+
 Axiom 3.4.11 oeqsymm { ⊢ T Type, x : T, y : T } [ x ≡ y : T ] ⇒ [ y ≡ x : T ].
 
 Axiom 3.4.12 oeqtrans { ⊢ T Type, x : T, y : T, z : T } [ x ≡ y : T ] 
       	⇒ [ y ≡ z : T ] ⇒ [ x ≡ z : T ].
+
+Axiom 3.5.8.1 parametrized_type_equality { ⊢ T Type } { t : T ⊢ U Type } { ⊢ t : T, t' : T }
+         [ t ≡ t' : T ] ⇒ [ U[t] ≡ U[t'] ].
+
+Axiom 3.5.8.2 parametrized_object_equality { ⊢ T Type, U Type } { t : T ⊢ x : U } { ⊢ t : T, t' : T }
+         [ t ≡ t' : T ] ⇒ [ x[t] ≡ x[t'] : U ].
 
 Axiom 3.4.13 cast { ⊢ T U Type } [ T ≡ U ] ⇒ { ⊢ o : T } ⊢ o : U.
 

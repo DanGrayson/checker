@@ -7,7 +7,12 @@ open Printf
 (** print the arguments and their types *)
 let check surr env pos t args =
   args_iter 
-    (fun x -> printf "$check = %a\n       : %a\n%!" _e x _t (un_singleton (snd (type_synthesis env x))))
+    (fun x -> 
+      let (x',t) = type_synthesis env x in
+      let t = un_singleton t in
+      let x' = term_normalization env x' t in
+      printf "$check = %a\n       = %a [normalized]\n       : %a\n%!" _e x _e x' _t t;
+    )
     (fun () -> ())
     (fun () -> ())
     args;

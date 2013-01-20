@@ -1,5 +1,27 @@
-Switch to de Bruijn indices.  Advantage: fewer substitutions of a variable by a
-fresh variable will be needed.
+The need for the cast when stating the axiom pr2_pair_reduction in intrinsic.ts
+uncovers a misfeature in our LF encoding of TS, namely, a judgment "tequal T U"
+should not be considered well-formed unless "istype T" and "istype U" are
+established, and, similarly, a judgment "oequal x y T" should not be considered
+well-formed unless we already know "istype T", "hastype x T", and "hastype y
+T".  Experience shows we can't trust the one who codes the inference rules to
+keep that in mind, so it should be checked by LF.  A corollary is that we
+should insist that "hastype x T" is considered well-formed only in the presence
+of "istype T".  Or not?  Insisting on such evidence will only make the proof
+terms longer, so perhaps there is some other way to check that kind of thing,
+for the convenience of those writing inference rules.
+
+-----------------------------------------------------------------------------
+
+Notice that u-expressions are subordinate to t- and o- expressions, in the
+sense that no inference rule or object constant that forms a u-expression
+requires a t- or o- expression as a premise or argument.  This suggests that
+"judged" names of types might need a projection operator to extract the ulevel
+component. (?)
+
+-----------------------------------------------------------------------------
+
+Switch to de Bruijn indices for bound variables.  Advantage: fewer
+substitutions of a variable by a fresh variable will be needed.
 
 -----------------------------------------------------------------------------
 

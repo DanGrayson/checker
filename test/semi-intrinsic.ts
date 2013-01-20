@@ -273,13 +273,18 @@ Axiom LF 6.3.6 pr2_pair_reduction
         (o1 : ((o':oexp) × hastype o' T1₁)) ⟶
         (o2 : ((o':oexp) × hastype o' (T2 o1)₁)) ⟶
         oequal
-	   (cast
-	       (T2 (pr1_object T1 T2 (pair_object T1 T2 o1 o2)))
-	       (T2 o1)
-	       (parametrized_tequal
-	       	  T1 T2 (pr1_object T1 T2 (pair_object T1 T2 o1 o2)) o1
-		  (pr1_pair_reduction T1 T2 o1 o2))
-	       (pr2_object T1 T2 (pair_object T1 T2 o1 o2)))₁
+	   # ($check
+	   #     (T2 (pr1_object T1 T2 (pair_object T1 T2 o1 o2)))₁
+	   #     (T2 o1)₁
+	   #     )
+	   # (cast
+	   #     (T2 (pr1_object T1 T2 (pair_object T1 T2 o1 o2)))
+	   #     (T2 o1)
+	   #     (parametrized_tequal
+	   #     	  T1 T2 (pr1_object T1 T2 (pair_object T1 T2 o1 o2)) o1
+	   # 	  (pr1_pair_reduction T1 T2 o1 o2))
+	   #     (pr2_object T1 T2 (pair_object T1 T2 o1 o2)))₁
+	   (pr2_object T1 T2 (pair_object T1 T2 o1 o2))₁
 	   o2₁
 	   (T2 o1)₁.
 

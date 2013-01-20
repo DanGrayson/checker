@@ -213,12 +213,21 @@ Axiom LF 6.3.5 pr1_pair_reduction
 	   o1.
 
 Axiom LF parametrized_type_equality			    # new axiom
-      : (T1 : a_type) ⟶ 
-        (T2 : obj_of_type T1 ⟶ a_type) ⟶ 
-	(o : obj_of_type T1) ⟶
-	(o' : obj_of_type T1) ⟶
-	(object_equality T1 o o') ⟶
-	(type_equality (T2 o) (T2 o')).        
+      : (T : a_type) ⟶ 
+        (U : obj_of_type T ⟶ a_type) ⟶ 
+	(t : obj_of_type T) ⟶
+	(t' : obj_of_type T) ⟶
+	(object_equality T t t') ⟶
+	(type_equality (U t) (U t')).        
+
+Axiom LF parametrized_object_equality			    # new axiom
+      : (T : a_type) ⟶ 
+        (U : a_type) ⟶ 
+        (x : obj_of_type T ⟶ obj_of_type U) ⟶ 
+	(t : obj_of_type T) ⟶
+	(t' : obj_of_type T) ⟶
+	(object_equality T t t') ⟶
+	(object_equality U (x t) (x t')).        
 
 Axiom LF 6.3.6 pr2_pair_reduction
 
@@ -337,5 +346,5 @@ Check LF # Theorem LF idisweq
 End.
 
 #   Local Variables:
-#   compile-command: "make -C .. judged-expressions "
+#   compile-command: "make -C .. intrinsic "
 #   End:
