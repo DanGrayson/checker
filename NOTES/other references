@@ -7,6 +7,8 @@ Abella
 	meta-theory of programming languages and other logical systems which
 	manipulate objects with binding.
 
+	http://www-users.cs.umn.edu/~agacek/pubs/gacek-thesis/gacek-thesis.pdf
+	
 	suggested by Bas
 
 POPLmark Challenge
@@ -18,3 +20,21 @@ POPLmark Challenge
 	mechanizing the metatheory of programming languages.
 
 	suggested by Bas
+
+Proof checkers to look at:
+
+	Matita
+	    http://matita.cs.unibo.it/
+	    http://matita.cs.unibo.it/documentation.shtml
+	    http://matita.cs.unibo.it/PAPERS/system_description2011.pdf
+	    http://matita.cs.unibo.it/PAPERS/plmms09.pdf (A new type for tactics)
+
+	Epigram
+	    http://www.e-pig.org/epilogue/
+	    http://en.wikipedia.org/wiki/Epigram_(programming_language)
+	    implemented by Conor McBride and then continued by the Epigram group,
+		    including Thorsten Altenkirch
+	    http://code.google.com/p/epigram/
+
+	    To download the source requires "darcs", but the Mac OS X binary for
+	    it doesn't work, and the sources for it require haskell.
