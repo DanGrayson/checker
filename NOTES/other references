@@ -1,0 +1,10 @@
+Abella
+
+	http://abella.cs.umn.edu/
+
+	Abella is an interactive theorem prover based on lambda-tree
+	syntax. This means that Abella is well-suited for reasoning about the
+	meta-theory of programming languages and other logical systems which
+	manipulate objects with binding.
+
+	suggested by Bas
