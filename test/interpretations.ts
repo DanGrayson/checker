@@ -104,32 +104,42 @@ Theorem compose { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
    # 						 (ev1 _ _ f t CDR dT dU df dt))))))))).
 
 Theorem compose' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 
-	# this time with tactics (tactics like these don't help in pairs mode)
-	T ⟼ U ⟼ V ⟼ 
-	((lambda1 (pi1 T U CAR) (pi1 (pi1 U V CAR) (pi1 T V CAR) CAR)
+    # this time with micro-tactics (which don't help in pairs mode!)
+    T ⟼ U ⟼ V ⟼ 
+    ((lambda1 (pi1 T U CAR) (pi1 (pi1 U V CAR) (pi1 T V CAR) CAR)
 	          (f ⟼ (lambda1 (pi1 U V CAR) (pi1 T V CAR)
 			   (g ⟼ (lambda1 T V 
 			   	       (t ⟼ (ev1 U V g (ev1 T U f t CAR) CAR)) CAR)) CAR)) CAR), 
-	dT ⟼ dU ⟼ dV ⟼ 
-        (lambda1 (pi1 T U CAR)
-	         (pi1 (pi1 U V CAR) (pi1 T V CAR) CAR)
-	         (f ⟼ (lambda1 (pi1 U V CAR) (pi1 T V CAR)
-			   (g ⟼ (lambda1 T V 
-			   	       (t ⟼ (ev1 U V g (ev1 T U f t CAR) CAR)) CAR)) CAR)) CDR
-		(pi1 T U CDR _ _)
-		(pi1 (pi1 U V CAR) (pi1 T V CAR) CDR (pi1 U V CDR _ _) (pi1 T V CDR _ _))
-		(f ⟼ df ⟼ (lambda1 
-			   (pi1 U V CAR)
-	       		   (pi1 T V CAR)
-			   (g ⟼ (lambda1 T V 
-			   	       (t ⟼ (ev1 U V g (ev1 T U f t CAR) CAR)) CAR)) CDR
- 					    (pi1 U V CDR _ _)
- 					    (pi1 T V CDR _ _)
-			(g ⟼ dg ⟼ (lambda1 T V 
-			   	       (t ⟼ (ev1 U V g (ev1 T U f t CAR) CAR)) CDR _ _ 
-					(t ⟼ dt ⟼ (ev1 U V g (ev1 T U f t CAR) CDR 
-					               _ _ _ (ev1 T U f t CDR _ _ _ _))))))))).
+    _ ⟼ _ ⟼ _ ⟼ 
+    (λ_hastype (pi1 T U CAR)
+	 (_ ⟼ (pi1 (pi1 U V CAR) (pi1 T V CAR) CAR))
+	 (f ⟼ (λ_hastype (pi1 U V CAR) (_ ⟼ (pi1 T V CAR))
+		   (g ⟼ (λ_hastype T (_ ⟼ V) 
+			       (t ⟼ (ev1 U V g (ev1 T U f t CAR) CAR)) CAR)) CAR)) CDR
+	(pi1 T U CDR _ _)
+	(_ ⟼ _ ⟼ (pi1 (pi1 U V CAR) (pi1 T V CAR) CDR (pi1 U V CDR _ _) (pi1 T V CDR _ _)))
+	(f ⟼ _ ⟼ (λ_hastype
+	       (pi1 U V CAR)
+	       (_ ⟼ (pi1 T V CAR))
+	       (g ⟼ (λ_hastype T (_ ⟼ V) 
+			   (t ⟼ (ev1 U V g (ev1 T U f t CAR) CAR)) CAR)) CDR
+				(pi1 U V CDR _ _)
+				(_ ⟼ _ ⟼ (∏_istype T (_ ⟼ V) CDR _ _))
+	       (g ⟼ _ ⟼ (λ_hastype T (_ ⟼ V)
+			      (t ⟼ (ev1 U V g (ev1 T U f t CAR) CAR)) CDR _ _ 
+			       (t ⟼ _ ⟼ (ev1 U V g (ev1 T U f t CAR) CDR 
+					      _ _ _ (ev1 T U f t CDR _ _ _ _))))))))).
 
+  # ev1 : (T:texp) ⟶ 
+  #       (U:texp) ⟶ 
+  #       (f:oexp) ⟶ 
+  #       (o:oexp) ⟶ 
+  #       (x:Singleton((@[ev] f o (_ ⟼ U)) : oexp)) × 
+  #         istype T ⟶ 
+  #         istype U ⟶ 
+  #         hastype f (@[∏] T (_ ⟼ U)) ⟶ 
+  #         hastype o T ⟶ 
+  #         hastype x U
 
 #   Local Variables:
 #   compile-command: "make -C .. interpretations DEBUG=no"

@@ -113,16 +113,7 @@ let subst_l subs e = if subs = [] then e else subst_expr subs e
 
 let subst_type_l subs t = if subs = [] then t else subst_type subs t
 
-let preface subber (v,x) e = 
-  assert
-    (
-     if (isunused_variable_expression x)
-     then (
-       printf " subber v = %a  x = %a\n%!" _v v _e x;
-       false)
-     else true
-    );
-  subber [(v,x)] e
+let preface subber (v,x) e = subber [(v,x)] e
 
 let subst_expr = preface subst_expr
 
