@@ -395,16 +395,7 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
                                    and theirs does *)
       let surr = (S_body,Some e0,Some t) :: surr in
       let body = 
-	let (b,env) =
-	  if isunused w then
-	    if isunused v 
-	    then b, env 
-	    else b, lf_bind env v a
-	  else
-	    if isunused v 
-	    then b, lf_bind env w a
-	    else subst_type (w,var_to_lf v) b, lf_bind env v a
-	in
+	let (b,env) = subst_type (w,var_to_lf v) b, lf_bind env v a in
 	type_check surr env body b in
       pos, LAMBDA(v,body)
   | LAMBDA _, F_Sigma _ -> 
