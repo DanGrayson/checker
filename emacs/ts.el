@@ -25,7 +25,7 @@
 
 (defvar ts-keywords '( "lambda" "Pi" "Sigma" "∏" "λ" "Σ" "Pi" "lambda" "Ulevel" "Type"
 		       "uexp" "texp" "oexp" "istype" "hastype" "uequal" "tequal" "oequal" "tuequal" "ouequal" 
-		       "a_type" "obj_of_type" "type_equality" "object_equality"
+		       "Texp" "Oexp" "Tequal" "Oequal"
 		       "max" "Singleton" "LF_Empty" "pair" "CAR" "CDR" "WildCard" ))
 
 (defvar ts-commands '( "Mode" "Simple" "Relative" "Pairs" "Clear" "Universes" "LF" "TS" "SemiIntrinsic"

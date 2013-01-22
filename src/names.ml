@@ -48,10 +48,10 @@ let lf_type_constant_table = [
   F_object_equality, "oequal" ;
   F_type_uequality, "tuequal" ;
   F_object_uequality, "ouequal";
-  F_a_type, "a_type";
-  F_obj_of_type, "obj_of_type";
-  F_judged_type_equal, "type_equality";
-  F_judged_obj_equal, "object_equality"
+  F_a_type, "Texp";
+  F_obj_of_type, "Oexp";
+  F_judged_type_equal, "Tequal";
+  F_judged_obj_equal, "Oequal"
 ]
 
 let lf_kind_constant_table = [
