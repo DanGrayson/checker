@@ -1,0 +1,62 @@
+Mode Pairs.
+Check LF   = ∏_istype
+: Singleton(∏_istype : 
+
+  (t:(T:texp) ⟶ (U:oexp ⟶ texp) ⟶ Singleton((@[∏] T (t1 ⟼ (U t1))) : texp)) × 
+    (T:(T1:texp) × istype T1) ⟶ 
+    (U:(U1:oexp ⟶ texp) × (t1:(t2:oexp) × hastype t2 T₁) ⟶ (U2:Singleton((U1 t1₁) : texp)) × istype U2) ⟶ 
+    (t1:Singleton((t T₁ U₁) : texp)) × istype t1)
+
+Check LF   = λ_hastype
+: Singleton(λ_hastype :
+
+  (x:(T:texp) ⟶ (oexp ⟶ texp) ⟶ (o:oexp ⟶ oexp) ⟶ Singleton((@[λ] T (t ⟼ (o t))) : oexp)) × 
+    (T:(T1:texp) × istype T1) ⟶ 
+    (U:(U1:oexp ⟶ texp) × (x1:(x2:oexp) × hastype x2 T₁) ⟶ (U2:Singleton((U1 x1₁) : texp)) × istype U2) ⟶ 
+    (o:(o1:oexp ⟶ oexp) × (x1:(x2:oexp) × hastype x2 T₁) ⟶ (o2:Singleton((o1 x1₁) : oexp)) × hastype o2 (U₁ x1₁)) ⟶ 
+    (x1:Singleton((x T₁ U₁ o₁) : oexp)) × hastype x1 (@[∏] T₁ (t ⟼ (U₁ t))))
+
+Check LF   = ev_hastype
+: Singleton(ev_hastype : 
+
+  (x:texp ⟶ (U:oexp ⟶ texp) ⟶ (f:oexp) ⟶ (o:oexp) ⟶ Singleton((@[ev] f o (t ⟼ (U t))) : oexp)) × 
+    (T:(T1:texp) × istype T1) ⟶ 
+    (U:(U1:oexp ⟶ texp) × (t:(t1:oexp) × hastype t1 T₁) ⟶ (U2:Singleton((U1 t₁) : texp)) × istype U2) ⟶ 
+    (f:(f1:oexp) × hastype f1 (@[∏] T₁ (t ⟼ (U₁ t)))) ⟶ 
+    (o:(o1:oexp) × hastype o1 T₁) ⟶ 
+    (x1:Singleton((x T₁ U₁ f₁ o₁) : oexp)) × hastype x1 (U₁ o₁))
+
+Mode Relative.
+
+Check LF   = ∏_istype
+: Singleton(∏_istype : 
+  (T:texp) ⟶ 
+  (U:oexp ⟶ texp) ⟶ 
+  (t:Singleton((@[∏] T (t1 ⟼ (U t1))) : texp)) × 
+    istype T ⟶ 
+    ((t1:oexp) ⟶ hastype t1 T ⟶ istype (U t1)) ⟶ 
+    istype t)
+
+Check LF   = λ_hastype
+: Singleton(λ_hastype : 
+
+  (T:texp) ⟶ 
+  (U:oexp ⟶ texp) ⟶ 
+  (o:oexp ⟶ oexp) ⟶ 
+  (x:Singleton((@[λ] T (t ⟼ (o t))) : oexp)) × 
+    istype T ⟶ 
+    ((x1:oexp) ⟶ hastype x1 T ⟶ istype (U x1)) ⟶ 
+    ((x1:oexp) ⟶ hastype x1 T ⟶ hastype (o x1) (U x1)) ⟶ 
+    hastype x (@[∏] T (t ⟼ (U t))))
+
+Check LF   = ev_hastype
+: Singleton(ev_hastype : 
+
+  (T:texp) ⟶ 
+  (U:oexp ⟶ texp) ⟶ 
+  (f:oexp) ⟶ 
+  (o:oexp) ⟶ 
+  (x:Singleton((@[ev] f o (t ⟼ (U t))) : oexp)) × 
+    istype T ⟶ 
+    ((t:oexp) ⟶ hastype t T ⟶ istype (U t)) ⟶ 
+    hastype f (@[∏] T (t ⟼ (U t))) ⟶ hastype o T ⟶ hastype x (U o))
