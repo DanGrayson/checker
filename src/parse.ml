@@ -161,7 +161,12 @@ let pi1_relative_implication (vpos,v) t u =
       t
   | None -> raise NotImplemented
 
-let simple_implication (vpos,v) t u =
+let semi_intrinsic_implication (vpos,v) t u = 
+  let v_1 = with_pos vpos (APPLY(V v, CAR END)) in
+  let u = Substitute.subst_type (v,v_1) u in
+  bind_pi (vpos,v,t) u
+
+let simple_implication (vpos,v) t u =	(* not completely implemented yet, perhaps not needed *)
   printf " simple_implication\n\t v = %a\n\t t = %a\n\t u = %a\n%!" _v v _t t _t u;
   let (e,j) = unbind_pair t in
   printf "\t j = %a\n%!" _t j;
@@ -176,6 +181,7 @@ let simple_implication (vpos,v) t u =
 
 let pi1_implication (v,t) u = (
   match !Toplevel.binder_mode with
+  | Toplevel.Binder_mode_semiintrinsic -> semi_intrinsic_implication
   | Toplevel.Binder_mode_simple -> simple_implication
   | Toplevel.Binder_mode_relative -> pi1_relative_implication
   | Toplevel.Binder_mode_pairs -> pi1_pairs_implication

@@ -28,7 +28,7 @@
 		       "a_type" "obj_of_type" "type_equality" "object_equality"
 		       "max" "Singleton" "LF_Empty" "pair" "CAR" "CDR" "WildCard" ))
 
-(defvar ts-commands '( "Mode" "Simple" "Relative" "Pairs" "Clear" "Universes" "LF" "TS"
+(defvar ts-commands '( "Mode" "Simple" "Relative" "Pairs" "Clear" "Universes" "LF" "TS" "SemiIntrinsic"
 		       "Check" "Alpha" "End" "Clear" "Show" "Include" ))
 
 (defvar ts-mode-font-lock-keywords 

@@ -9,6 +9,7 @@ Clear.
 Mode Relative.
 Include "rules/TS0.ts".
 Check LF cast.
+Clear.
 End.
 Mode Simple.
 Include "rules/TS0.ts".

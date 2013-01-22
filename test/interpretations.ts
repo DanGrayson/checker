@@ -85,6 +85,24 @@ Theorem compose { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
 						 dU dV dg 
 						 (ev1 T U f t CDR dT dU df dt))))))))).
 
+   # Here's what the proof above looks like if we delete all the expression parts, keeping
+   # only the judgment parts, from which the expression parts can be deduced.  Then it looks
+   # as linear as in the intrinsic encoding.
+
+   # T ⟼ U ⟼ V ⟼ 
+   # (_, 
+   # dT ⟼ dU ⟼ dV ⟼ 
+   # (lambda1 _ _ _ CDR
+   # 	   (pi1 _ _ CDR dT dU)
+   # 	   (pi1 _ _ CDR (pi1 _ _ CDR dU dV) (pi1 _ _ CDR dT dV))
+   # 	   (f ⟼ df ⟼ (lambda1 _ _ _ CDR
+   # 				       (pi1 _ _ CDR dU dV)
+   # 				       (pi1 _ _ CDR dT dV)
+   # 		   (g ⟼ dg ⟼ (lambda1 _ _ _ CDR dT dV 
+   # 				  (t ⟼ dt ⟼ (ev1 _ _ g _ CDR 
+   # 						 dU dV dg 
+   # 						 (ev1 _ _ f t CDR dT dU df dt))))))))).
+
 Theorem compose' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 
 	# this time with tactics (tactics like these don't help in pairs mode)
 	T ⟼ U ⟼ V ⟼ 
@@ -111,6 +129,7 @@ Theorem compose' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
 			   	       (t ⟼ (ev1 U V g (ev1 T U f t CAR) CAR)) CDR _ _ 
 					(t ⟼ dt ⟼ (ev1 U V g (ev1 T U f t CAR) CDR 
 					               _ _ _ (ev1 T U f t CDR _ _ _ _))))))))).
+
 
 #   Local Variables:
 #   compile-command: "make -C .. interpretations DEBUG=no"

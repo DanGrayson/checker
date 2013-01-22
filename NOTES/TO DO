@@ -10,6 +10,23 @@ of "istype T".  Or not?  Insisting on such evidence will only make the proof
 terms longer, so perhaps there is some other way to check that kind of thing,
 for the convenience of those writing inference rules.
 
+Anyway, if we wanted to do it, we'd redefine this
+
+     istype : texp ⟶ judgment
+     hastype : oexp ⟶ texp ⟶ judgment
+     tequal : texp ⟶ texp ⟶ judgment
+     oequal : oexp ⟶ oexp ⟶ texp ⟶ judgment
+
+to this
+
+     istype : texp ⟶ judgment
+     hastype : (T:texp) ⟶ istype T ⟶ oexp ⟶ judgment
+     tequal : (T:texp) ⟶ istype T ⟶ (U:texp) ⟶ istype U ⟶ judgment
+and
+     oequal : (T:texp) ⟶ istype T ⟶ (x:oexp) ⟶ hastype x T ⟶ (y:oexp) ⟶ hastype y T ⟶ judgment
+or
+     oequal : (T:texp) ⟶ (x:oexp) ⟶ hastype x T ⟶ (y:oexp) ⟶ hastype y T ⟶ judgment
+
 -----------------------------------------------------------------------------
 
 Notice that u-expressions are subordinate to t- and o- expressions, in the

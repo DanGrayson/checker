@@ -29,7 +29,7 @@ open Printer
   Universes Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_CAR K_CDR Times
   Turnstile DoubleArrow DoubleArrowFromBar ColonColonEqual ColonEqual Theorem
   LeftBrace RightBrace TurnstileDouble ColonColon Include Clear Mode Simple
-  Relative Pairs EqualEqual LF_Empty
+  Relative Pairs EqualEqual LF_Empty SemiIntrinsic
 
 (* precedences, lowest first *)
 
@@ -309,13 +309,16 @@ unmarked_command:
 	{ Toplevel.End }
 
     | Mode Simple Period
-	{ Toplevel.Mode_simple }
+	{ Toplevel.Mode Toplevel.Binder_mode_simple }
 
     | Mode Pairs Period
-	{ Toplevel.Mode_pairs }
+	{ Toplevel.Mode Toplevel.Binder_mode_pairs }
+
+    | Mode SemiIntrinsic Period
+	{ Toplevel.Mode Toplevel.Binder_mode_semiintrinsic }
 
     | Mode Relative Period
-	{ Toplevel.Mode_relative }
+	{ Toplevel.Mode Toplevel.Binder_mode_relative }
 
 marked_variable:
 
@@ -386,6 +389,7 @@ unmarked_ts_judgment:
 	  match !Toplevel.binder_mode with
 	  | Toplevel.Binder_mode_simple -> unmark (hastype x t)
 	  | Toplevel.Binder_mode_relative 
+	  | Toplevel.Binder_mode_semiintrinsic 
 	  | Toplevel.Binder_mode_pairs -> unmark (this_object_of_type (get_pos x) x t)
 	}
 
@@ -395,6 +399,7 @@ unmarked_ts_judgment:
 	  match !Toplevel.binder_mode with
 	  | Toplevel.Binder_mode_simple -> unmark (istype a)
 	  | Toplevel.Binder_mode_relative 
+	  | Toplevel.Binder_mode_semiintrinsic
 	  | Toplevel.Binder_mode_pairs -> 
 	      F_Sigma(v, with_pos pos (F_Singleton(a,texp)), with_pos pos (F_Apply(F_istype, [var_to_lf_pos pos v]))) 
 	}

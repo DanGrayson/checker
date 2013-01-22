@@ -108,6 +108,7 @@ let lf_axiomCommand env pos name t =
 let show_mode () =
   printf "Mode %s.\n%!" (
   match !Toplevel.binder_mode with
+  | Toplevel.Binder_mode_semiintrinsic -> "SemiIntrinsic"
   | Toplevel.Binder_mode_simple -> "Simple"
   | Toplevel.Binder_mode_pairs -> "Pairs"
   | Toplevel.Binder_mode_relative -> "Relative")
@@ -224,20 +225,8 @@ let rec process_command env lexbuf =
     | Toplevel.CheckUniverses -> checkUniversesCommand env pos; env
     | Toplevel.Include filename -> parse_file env filename
     | Toplevel.Clear -> empty_context
-    | Toplevel.Mode_simple -> 
-	Toplevel.binder_mode := Toplevel.Binder_mode_simple; 
-	show_mode();
-	env
-    | Toplevel.Mode_pairs -> 
-	Toplevel.binder_mode := Toplevel.Binder_mode_pairs; 
-	show_mode();
-	env
-    | Toplevel.Mode_relative -> 
-	Toplevel.binder_mode := Toplevel.Binder_mode_relative; 
-	show_mode();
-	env
-    | Toplevel.SyntaxError -> 
-	env
+    | Toplevel.Mode mode -> Toplevel.binder_mode := mode; show_mode(); env
+    | Toplevel.SyntaxError -> env
     | Toplevel.End -> 
 	error_summary pos; 
 	fprintf stderr "%a: End.\n%!" _pos pos;

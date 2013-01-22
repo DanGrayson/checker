@@ -4,7 +4,7 @@ open Error
 open Variables
 open Typesystem
 
-type binder_mode = Binder_mode_relative | Binder_mode_pairs | Binder_mode_simple
+type binder_mode = Binder_mode_relative | Binder_mode_pairs | Binder_mode_simple | Binder_mode_semiintrinsic
 
 let binder_mode = ref Binder_mode_pairs
 
@@ -21,9 +21,7 @@ type command' =
   | Show of int option
   | Include of string
   | Clear
-  | Mode_simple
-  | Mode_pairs
-  | Mode_relative
+  | Mode of binder_mode
   | SyntaxError
   | End
 

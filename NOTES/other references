@@ -38,3 +38,9 @@ Proof checkers to look at:
 
 	    To download the source requires "darcs", but the Mac OS X binary for
 	    it doesn't work, and the sources for it require haskell.
+
+CoqMT
+
+	Strub
+	Coq modulo theory (pdf)
+	http://link.springer.com/chapter/10.1007%2F978-3-642-15205-4_40?LI=true
