@@ -1,4 +1,4 @@
-(** Implement the binary equivalence algorithms from sections 5 and 6 of the paper:
+(** Implement the binary equivalence algorithms from sections 5 and 6 of the paper as a type checker for LF:
 
     [EEST]: Extensional Equivalence and Singleton Types
     by Christopher A. Stone and Robert Harper

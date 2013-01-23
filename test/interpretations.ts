@@ -106,10 +106,12 @@ Theorem compose { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
 Theorem compose' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 
     # this time with micro-tactics (which don't help in pairs mode!)
     T ⟼ U ⟼ V ⟼ 
-    ((lambda1 (pi1 T U CAR) (pi1 (pi1 U V CAR) (pi1 T V CAR) CAR)
-	          (f ⟼ (lambda1 (pi1 U V CAR) (pi1 T V CAR)
-			   (g ⟼ (lambda1 T V 
-			   	       (t ⟼ (ev1 U V g (ev1 T U f t CAR) CAR)) CAR)) CAR)) CAR), 
+    ((@[λ] (@[∏] T (_ ⟼ U)) (f ⟼ (@[λ] (@[∏] U (_ ⟼ V)) (g ⟼ (@[λ] T (t ⟼ (@[ev] g (@[ev] f t (_ ⟼ U)) (_ ⟼ V))))))))
+     # (lambda1 (pi1 T U CAR) (pi1 (pi1 U V CAR) (pi1 T V CAR) CAR)
+     # 	          (f ⟼ (lambda1 (pi1 U V CAR) (pi1 T V CAR)
+     # 			   (g ⟼ (lambda1 T V 
+     # 			   	       (t ⟼ (ev1 U V g (ev1 T U f t CAR) CAR)) CAR)) CAR)) CAR)
+											       , 
     _ ⟼ _ ⟼ _ ⟼ 
     (λ_hastype (pi1 T U CAR)
 	 (_ ⟼ (pi1 (pi1 U V CAR) (pi1 T V CAR) CAR))
@@ -140,6 +142,14 @@ Theorem compose' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
   #         hastype f (@[∏] T (_ ⟼ U)) ⟶ 
   #         hastype o T ⟶ 
   #         hastype x U
+
+End.							    # working on $tscheck
+
+Theorem compose'' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 
+    T ⟼ U ⟼ V ⟼ (
+     (@[λ] (@[∏] T (_ ⟼ U)) (f ⟼ (@[λ] (@[∏] U (_ ⟼ V)) (g ⟼ (@[λ] T (t ⟼ (@[ev] g (@[ev] f t (_ ⟼ U)) (_ ⟼ V)))))))),
+     _ ⟼ _ ⟼ _ ⟼ $tscheck
+     ).
 
 #   Local Variables:
 #   compile-command: "make -C .. interpretations DEBUG=no"

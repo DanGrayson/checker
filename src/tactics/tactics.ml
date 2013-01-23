@@ -12,7 +12,8 @@ let _ = List.iter add_tactic [
   "tn1", Tn.tn1;
   "tn12", Tn.tn12;
   "check", Check.check;
-  "shuffle", Shuffle.shuffle
+  "shuffle", Shuffle.shuffle;
+  "tscheck", Tscheck.tscheck
 ] 
 
 (* 
