@@ -1,23 +1,12 @@
 # -*- coding: utf-8 -*-
 
-# fix interpretation of "cast"
-
-Mode Pairs.
-Include "rules/TS0.ts".
-Check LF ∏_istype.
-Check LF λ_hastype.
-Check LF ev_hastype.
-Clear.
-Mode Relative.
-Include "rules/TS0.ts".
-Check LF ∏_istype.
-Check LF λ_hastype.
-Check LF ev_hastype.
-Clear.
-End.
-Mode Simple.
-Include "rules/TS0.ts".
+Include "rules/TS7-relative.ts".
 Check LF cast.
+
+# This is wrong:
+#    cast : (T:texp) ⟶ (U:texp) ⟶ tequal T U ⟶ (o:oexp) ⟶ (x:Singleton(o : oexp)) × istype T ⟶ istype U ⟶ hastype o T ⟶ hastype x U
+
+End.							   # we need to fix the encoding of "cast"
 
 #   Local Variables:
 #   compile-command: "make -C .. foo "
