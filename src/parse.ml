@@ -36,17 +36,6 @@ let cdr (hd,reversed_args) = (hd, CDR reversed_args)
 
 type binder = position * var * lf_type
 
-let subst_binder sub (b:binder) = 
-  match b with
-  | (pos,v,a) -> (pos,v,Substitute.subst_type sub a)
-
-let subst_binder_list sub (b:binder list) = List.map (subst_binder sub) b
-
-let subst_binder_option sub (b:binder option) =
-  match b with
-  | Some b -> Some (subst_binder sub b)
-  | None -> None
-
 let bind_sigma binder b =
   match binder with
   | (pos,v,a) -> 
@@ -58,8 +47,6 @@ let bind_pi binder b =
   | (pos,v,a) -> 
       let (v,b) = Substitute.subst_type_fresh pos (v,b) in
       with_pos pos (F_Pi(v,a,b))
-
-let bind_arrow (pos,a) b = with_pos pos (F_Pi(newunused(),a,b))
 
 let bind_some_sigma binder b =
   match binder with
@@ -85,48 +72,6 @@ let good_var_name p v =
   | Some (pos,v,a), b -> v
   | None, b -> v
 
-let is_t_o_expr t = 
-  match unmark t with
-  | F_Apply(( F_texp | F_oexp ), _) -> true
-  | _ -> false  
-
- (** Suppose t has the form (e:E) ** J and u has the form (f:F) ** K.  We think
-     of an instance of t as providing a parametrized expression of type E
-     together with a judgment of type J about the expression, and similarly for
-     u.  We return a new type describing a parametrized expression of type E->F
-     together with a judgment about it, of type (E**J)->K.  The resulting type
-     looks like (f: (e:E)->F) ** (e : (e':E)**J)->K. *)
-let pi1_pairs_implication (vpos,v) t u =
-  let (e,j) = unbind_pair t in
-  let (f,k) = unbind_pair u in
-  match e,f with
-  | Some (epos,e,ee), Some(fpos,f,ff) ->
-      let bt = 
-	match unmark ff with
-	| F_Singleton s -> let (_,bt) = Lfcheck.strip_singleton s in bt
-	| _ -> ff in
-      let k = 
-	if is_t_o_expr bt 
-	then bind_sigma (fpos,f,with_pos fpos (F_Singleton(var_to_lf_pos fpos f,bt))) k
-	else k in
-      let v_1 = with_pos epos (APPLY(V v, CAR END)) in
-      let k = Substitute.subst_type (v,v_1) k in
-      let k = Substitute.subst_type (f,with_pos fpos (APPLY(V f, ARG (v_1, END)))) k in
-      let t = bind_sigma (epos,e,ee) j in
-      let k = bind_pi (epos,v,t) k in
-      let ff = bind_pi (epos,v,ee) ff in
-      let r = bind_sigma (fpos,f,ff) k in
-      r
-  | Some (epos,e,ee), None ->
-      let v_1 = with_pos epos (APPLY(V v, CAR END)) in
-      let k = Substitute.subst_type (v,v_1) k in
-      let t = bind_sigma (epos,e,ee) j in
-      let k = bind_pi (epos,v,t) k in
-      k
-  | _ -> 
-      printf " pi1_pairs_implication case unimplemented\n%!";
-      raise NotImplemented
-
  (** for a type p of the form (p_1:P_1) -> ... -> (p_n:P_n) -> (e:E) ** J we
      return [p_n,P_n;...;p_1,P_n],(e,E),J. *)
 let unbind_relative p : binder list * binder option * lf_type =
@@ -147,7 +92,7 @@ let unbind_relative p : binder list * binder option * lf_type =
      (P -> J) -> K.  All this goes through if t has the form P_1 -> ... -> P_n
      -> (e:E) ** J, and similarly for u, because we can rewrite t in terms of
      P = P_1 ** ... ** P_n. *)
-let pi1_relative_implication (vpos,v) t u =
+let pi1_implication (vpos,v) t u =
   let (p,e,j) = unbind_relative t in
   let (q,f,k) = unbind_relative u in
   match e with
@@ -161,31 +106,7 @@ let pi1_relative_implication (vpos,v) t u =
       t
   | None -> raise NotImplemented
 
-let semi_intrinsic_implication (vpos,v) t u = 
-  let v_1 = with_pos vpos (APPLY(V v, CAR END)) in
-  let u = Substitute.subst_type (v,v_1) u in
-  bind_pi (vpos,v,t) u
-
-let simple_implication (vpos,v) t u =	(* not completely implemented yet, perhaps not needed *)
-  printf " simple_implication\n\t v = %a\n\t t = %a\n\t u = %a\n%!" _v v _t t _t u;
-  let (e,j) = unbind_pair t in
-  printf "\t j = %a\n%!" _t j;
-  let r = match e with
-  | Some(wpos,w,a) -> 
-      printf "\t w = %a\n\t a = %a\n%!" _v w _t a;
-      let u = bind_arrow (wpos,j) u in
-      bind_pi (vpos,v,a) u
-  | None -> bind_pi (vpos,v,j) u in
-  printf "\t r = %a\n%!" _t r;
-  r
-
-let pi1_implication (v,t) u = (
-  match !Toplevel.binder_mode with
-  | Toplevel.Binder_mode_semiintrinsic -> semi_intrinsic_implication
-  | Toplevel.Binder_mode_simple -> simple_implication
-  | Toplevel.Binder_mode_relative -> pi1_relative_implication
-  | Toplevel.Binder_mode_pairs -> pi1_pairs_implication
- ) v t u
+let pi1_implication (v,t) u = pi1_implication v t u
 
 let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_type) (t2 : lf_expr -> lf_type) (u : lf_type) = 
   (* syntax is { v_1 : T_1 , ... , v_n : T_n |- v Type } u  or  { v_1 : T_1 , ... , v_n : T_n |- v:T } u *)

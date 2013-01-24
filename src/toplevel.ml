@@ -4,10 +4,6 @@ open Error
 open Variables
 open Typesystem
 
-type binder_mode = Binder_mode_relative | Binder_mode_pairs | Binder_mode_simple | Binder_mode_semiintrinsic
-
-let binder_mode = ref Binder_mode_pairs
-
 type command' = 
   | Axiom of (int list) option * string * lf_type
   | CheckLF of lf_expr
@@ -21,7 +17,6 @@ type command' =
   | Show of int option
   | Include of string
   | Clear
-  | Mode of binder_mode
   | SyntaxError
   | End
 

@@ -2,8 +2,6 @@
 # The binders are present in order to produce well-formed types.
 # ( Here "with" means a satisfactory term would be a pair. )
 
-Mode Relative.
-
 Check TS : (T:texp) =>             [ T Type ].          # a proof that T is a type
 
 Check TS : (T:texp) =>             |- T Type.           # T with a proof that T is a type

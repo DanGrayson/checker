@@ -13,15 +13,13 @@
 
  let commands = Hashtbl.create 20
  let _ = List.iter (fun (w,t) -> Hashtbl.add commands w t) [
-   "∏", Pi; "λ", Lambda; "Σ", Sigma; name_F_Pi, Pi; "lambda", Lambda; "Ulevel",
-   Ulevel; "Type", Type; "max", Kumax; "Singleton", Singleton; "Sigma", Sigma;
-   "pair", Kpair; "CAR", K_CAR; "CDR", K_CDR; "Mode", Mode; "Simple", Simple;
-   "Relative", Relative; "Pairs", Pairs; "Clear", Clear; "Universes",
-   Universes; "LF", LF; "TS", TS; "Check", Check; "Axiom", Axiom; "Alpha",
-   Alpha; "Variable", Variable; "End", End; "Include", Include; "Clear", Clear;
+   "∏", Pi; "λ", Lambda; "Σ", Sigma; name_F_Pi, Pi; "lambda", Lambda; 
+   "Ulevel", Ulevel; "Type", Type; "max", Kumax; "Singleton", Singleton; "Sigma", Sigma;
+   "pair", Kpair; "CAR", K_CAR; "CDR", K_CDR; "Clear", Clear; "Universes", Universes;
+   "LF", LF; "TS", TS; "Check", Check; "Axiom", Axiom; "Alpha", Alpha;
+   "Variable", Variable; "End", End; "Include", Include; "Clear", Clear;
    "Show", Show; "Theorem", Theorem; "Definition", Theorem; "Lemma", Theorem;
-   "Proposition", Theorem; "Corollary", Theorem; name_F_Empty, LF_Empty;
-   "SemiIntrinsic", SemiIntrinsic
+   "Proposition", Theorem; "Corollary", Theorem; name_F_Empty, LF_Empty
  ]
 
  let tab lexbuf =

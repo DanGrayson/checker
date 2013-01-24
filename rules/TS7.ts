@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-Mode Pairs.
-
 Include "rules/TS6.ts".
 
 # resizing rules
@@ -9,61 +7,88 @@ Include "rules/TS6.ts".
 
 Definition pi1 { ⊢ T U Type } ⊢ T⟶U Type
 
-	   := (_, T ⟾ U ⟾ ∏_istype₂[T,(_⟾U₁,_⟾U)]).
+   := T ⟾ U ⟾ (_,_ ⟾ _ ⟾ ∏_istype[T, _ ⟾ U, CDR, _, _]).
 
 Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ λ t:T, o[t] : T⟶U
 
-	   := (_, T ⟾ U ⟾ λ_hastype₂[T,(_⟾U₁,_⟾U)]).
+   := T ⟾ U ⟾ o ⟾ (_, _ ⟾ _ ⟾ λ_hastype[T, _ ⟾ U, o, CDR, _, _]).
 
 Definition ev1 { ⊢ T U Type, f:T⟶U, o:T } ⊢ @[ev;_][f,o,U] : U
 
-	   := (_, T ⟾ U ⟾ ev_hastype₂[T,(_⟾U₁,_⟾U)]).
+   := T ⟾ U ⟾ f ⟾ o ⟾ (_, _ ⟾ _ ⟾ ev_hastype[T, _ ⟾ U, f, o, CDR, _, _]).
 
 Definition Iscontr { ⊢ X Type } ⊢ Σ x:X, ∏ y:X, y=x  Type
 
-	   := (_, X ⟾ Σ_istype₂[X, (x ⟾ ∏ y:X₁, y=x, 
-   			                x' ⟾ ∏_istype₂[X,(y ⟾ y=x'₁, 
-			 	                    y' ⟾ Id_istype₂[X,y',x'])])]).
+   := X ⟾ (_, 
+        _ ⟾ Σ_istype[
+		X, x ⟾ ∏ y:X, y=x, CDR, 
+		_, x ⟾ _ ⟾ ∏_istype[
+				X, y ⟾ @[Id][X,y,x], CDR,
+				_, y ⟾ _ ⟾ Id_istype[X,y,x,CDR,_,_,_]]]).
 
 Definition Hfiber { ⊢ X Y Type, f:X⟶Y, y:Y } ⊢ Σ x:X, @[ev;_][f,x,Y]=y  Type 
 
-  := (_, X ⟾ Y ⟾ f ⟾ y ⟾ 
-     Σ_istype₂[X, (x ⟾ @[ev;_][f₁,x,Y₁] = y₁,
-      		   x ⟾ Id_istype₂[Y, ev1₂[X,Y,f,x], y])]).
+  := X ⟾ Y ⟾ f ⟾ y ⟾ (_, 
+      _ ⟾ _ ⟾ _ ⟾ _ ⟾ 
+      Σ_istype[
+        X, x ⟾ @[ev;_][f,x,Y] = y, CDR, 
+	_, x ⟾ _ ⟾ Id_istype[
+			Y, ev1[X,Y,f,x,CAR], y, CDR, 
+			_, ev1[X,Y,f,x,CDR,_,_,_,_],_]]).
 
-Definition Isweq { ⊢ X Y Type, f:X⟶Y } ⊢ ∏ y:Y, Iscontr₁[Hfiber₁[X,Y,f,y]] Type 
+Definition Isweq { ⊢ X Y Type, f:X⟶Y } ⊢ ∏ y:Y, Iscontr[Hfiber[X,Y,f,y,CAR],CAR] Type 
 
-   := (_,X ⟾ Y ⟾ f ⟾ ∏_istype₂[Y, (y ⟾ Iscontr₁[ Hfiber₁[X₁,Y₁,f₁,y]], 
-   				    y' ⟾ Iscontr₂[ Hfiber₂[X,Y,f,y']])]).
+   := X ⟾ Y ⟾ f ⟾ (_,
+        _ ⟾ _ ⟾ _ ⟾ 
+	  ∏_istype[
+	     Y, y ⟾     Iscontr[ 
+	     		    Hfiber[X,Y,f,y,CAR],CAR], CDR, 
+ 	     _, y ⟾ _ ⟾ Iscontr[
+	     		    Hfiber[X,Y,f,y,CAR],CDR,
+			    Hfiber[X,Y,f,y,CDR,_,_,_,_]]]).
 
-Definition Weq { ⊢ X Y Type } ⊢ Σ f:X⟶Y, Isweq₁[X,Y,f] Type 
+Definition Weq { ⊢ X Y Type } ⊢ Σ f:X⟶Y, Isweq[X,Y,f,CAR] Type 
 
-   := (_,X ⟾ Y ⟾ Σ_istype₂[pi1₂[X,Y], 
-   		(f ⟾ Isweq₁[X₁,Y₁,f], 
-   		 f' ⟾ Isweq₂[X,Y,f'])]).
+   := X ⟾ Y ⟾ (_,
+        _ ⟾ _ ⟾ Σ_istype[
+	          pi1[X,Y,CAR],     f ⟾     Isweq[X,Y,f,CAR], CDR, 
+ 	  	  pi1[X,Y,CDR,_,_], f ⟾ _ ⟾ Isweq[X,Y,f,CDR,_,_,_]]).
 
-Definition Isaprop { ⊢ X Type } ⊢ ∏ x:X, ∏ y:X, Iscontr₁[x=y] Type
+Definition Isaprop { ⊢ X Type } ⊢ ∏ x:X, ∏ y:X, Iscontr[x=y,CAR] Type
 
-   := (_,X ⟾ ∏_istype₂[X, (x ⟾ ∏ y:X₁, Iscontr₁ [ x=y ],
-   		            x' ⟾ ∏_istype₂[X, (y ⟾ Iscontr₁[ x'₁=y],
-		       		                y' ⟾ Iscontr₂[Id_istype₂[X,x',y']])])]).
+   := X ⟾ (_,
+        _ ⟾ 
+	 ∏_istype[
+ 	   X, x ⟾ ∏ y:X, Iscontr [x=y,CAR], CDR,
+	   _, x ⟾ _ ⟾ 
+	        ∏_istype[
+	  	   X, y ⟾ Iscontr[ 
+		   		@[Id][X,x,y], CAR], CDR,
+		   _, y ⟾ _ ⟾ Iscontr[
+		  		@[Id][X,x,y], CDR,
+ 				Id_istype[X,x,y,CDR,_,_,_]]]]).
 
-Definition Isaset { ⊢ X Type } ⊢ ∏ x:X, ∏ y:X, Isaprop₁[x=y] Type
+Definition Isaset { ⊢ X Type } ⊢ ∏ x:X, ∏ y:X, Isaprop[x=y,CAR] Type
 
-   := (_,X ⟾ ∏_istype₂[X, (x ⟾ ∏_istype₁[X₁, y ⟾ Isaprop₁[Id_istype₁[X₁,x,y]]], 
-   		            x' ⟾ ∏_istype₂[X, 
-			    		     (y ⟾ Isaprop₁[Id_istype₁[X₁,x'₁,y]],
-		       		              y' ⟾ Isaprop₂[Id_istype₂[X,x',y']])])]).
+   := X ⟾ (_,
+        _ ⟾ ∏_istype[
+	        X, x ⟾ ∏_istype[X, y ⟾ Isaprop[Id_istype[X,x,y,CAR],CAR],CAR], CDR,
+		_, x ⟾ _ ⟾ 
+		      ∏_istype[
+		      	X, y ⟾  Isaprop[Id_istype[X,x,y,CAR],CAR],CDR,
+			_, y ⟾ _ ⟾ 
+				Isaprop[Id_istype[X,x,y,CAR],CDR,
+					Id_istype[X,x,y,CDR,_,_,_]]]]).
 
 Definition idfun { ⊢ X Type } ⊢ λ x:X,x : X⟶X
 
-   := (_,X ⟾ lambda1₂[X,X,(x ⟾ x,x ⟾ x)]).
+   := X ⟾ (_, _ ⟾ lambda1[X,X,x ⟾ x,CDR,_,_,_]).
 
-End.
+End. # trying to prove the following theorem
 
-Theorem idisweq { ⊢ X Type } : Isweq₁[X,X,idfun₁[X]] 
-   := ??? .
+Theorem idisweq { ⊢ X Type } : Isweq[X,X,idfun[X,CAR],CAR] 
+   := _ .
 
 #   Local Variables:
-#   compile-command: "make -C .. rules7 "
+#   compile-command: "make -C .. rules7r "
 #   End:

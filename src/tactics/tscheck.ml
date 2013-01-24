@@ -4,8 +4,6 @@
     by Christopher A. Stone and Robert Harper
     ACM Transactions on Computational Logic, Vol. 7, No. 4, October 2006, Pages 676-722.
 
-    We assume Mode Relative, under which we have, e.g., 
-
 *)
 
 open Printf

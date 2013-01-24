@@ -2,13 +2,6 @@
 
 Check LF : oexp -> oexp.
 Check LF : (t:texp) -> istype t.
-
-Mode Relative.
-Include "rules/TS0.ts".
-Check LF ∏_istype.
-Clear.
-
-Mode Pairs.
 Include "rules/TS0.ts".
 Check LF ∏_istype.
 

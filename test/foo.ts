@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-Include "rules/TS7-relative.ts".
+Include "rules/TS7.ts".
 Check LF cast.
 
 # This is wrong:

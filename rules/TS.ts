@@ -1,7 +1,7 @@
 # -*- mode: ts; coding: utf-8 -*-
 
-Mode Pairs.
 Include "rules/TS7.ts".
+Check LF jj.
 Include "rules/others.ts".
 
 #   Local Variables:
