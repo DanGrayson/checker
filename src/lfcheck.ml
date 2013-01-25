@@ -13,6 +13,8 @@
 
 *)
 
+let tactic_tracing = false
+
 open Error
 open Variables
 open Typesystem
@@ -127,6 +129,14 @@ let apply_tactic surr env pos t args = function
         try List.nth env.lf_context n 
         with Failure nth -> err env pos ("index out of range: "^string_of_int n) in
       TacticSuccess (var_to_lf_pos pos v)
+
+let show_tactic_result k =
+  if tactic_tracing then
+  (
+   match k with 
+   | TacticSuccess e -> printf "tactic success: %a\n%!" _e e
+   | TacticFailure -> printf "tactic failure\n%!" );
+  k
 
 let rec natural_type (env:context) (x:lf_expr) : lf_type =
   if true then (trap(); raise Internal);          (* this function is unused, because "unfold" below does what we need for weak head reduction *)
@@ -383,7 +393,7 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
   match unmark e0, unmark t with
   | APPLY(TAC tac,args), _ -> (
       let pos = get_pos e0 in 
-      match apply_tactic surr env pos t args tac with
+      match show_tactic_result (apply_tactic surr env pos t args tac) with
       | TacticSuccess suggestion -> type_check surr env suggestion t
       | TacticFailure -> (* we may want the tactic itself to raise the error message, when tactics are chained *)
           raise (TypeCheckingFailure (env, surr, [

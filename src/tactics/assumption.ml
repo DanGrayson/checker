@@ -1,8 +1,11 @@
 open Typesystem
 open Lfcheck
+open Printer
+open Printf
 
 (** find the first variable in the context of the right type and return it *)
 let assumption surr env pos t args =
+  if tactic_tracing then printf "assumption: t = %a\n%!" _t t;
   let rec repeat = function
     | (v,u) :: envp -> (
 	try

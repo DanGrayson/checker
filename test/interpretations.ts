@@ -105,6 +105,13 @@ Theorem compose' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
 
 End.							    # working on $tscheck
 
+Definition barbara { |- T U V Type } ⊢ (T->U) -> (U->V) -> (T->V) Type ::=
+    T ⟼ U ⟼ V ⟼ (_,
+      T' ⟼ U' ⟼ V' ⟼ $tscheck
+      ).
+
+End.							    # working on $tscheck
+
 Theorem compose'' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 
     T ⟼ U ⟼ V ⟼ (
      (@[λ] (@[∏] T (_ ⟼ U)) (f ⟼ (@[λ] (@[∏] U (_ ⟼ V)) (g ⟼ (@[λ] T (t ⟼ (@[ev] g (@[ev] f t (_ ⟼ U)) (_ ⟼ V)))))))),

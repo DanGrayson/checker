@@ -6,11 +6,13 @@
 
 *)
 
+open Variables
 open Printf
 open Printer
 open Typesystem
 open Lfcheck
 open Error
+open Helpers
 
 exception Match_failure
 
@@ -89,17 +91,30 @@ and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_expr * lf_expr =
 let rec type_normalization (env:context) (t:lf_expr) : lf_expr =
   raise NotImplemented
 
-let tscheck surr env pos t args =
-  match unmark t with
-  | F_Apply(h,[x;t]) -> (
-      printf "tscheck\n\t  x = %a\n\t  t = %a\n%!" _e x _e t;
+let self = nowhere 1234 (cite_tactic (Tactic_name "tscheck") END)
+
+let tscheck surr env pos tp args =
+  if tactic_tracing then printf "tscheck: tp = %a\n%!" _t tp;
+  match unmark tp with
+  | F_Apply(F_istype,[t]) -> (
+      if tactic_tracing then see "t" t;
+      match unmark t with 
+      | APPLY(T T_Pi,args) -> (
+	  let (a,b) = args2 args in
+	  if tactic_tracing then (see "a" a; see "b" b);
+	  TacticSuccess ( with_pos_of t (APPLY(V (Var "∏_istype"), a ** b ** CDR(self ** self ** END))) )
+	 )
+      | _ -> Default.default surr env pos tp args
+      )
+  | F_Apply(F_hastype,[x;t]) -> (
+      if tactic_tracing then printf "tscheck\n\t  x = %a\n\t  t = %a\n%!" _e x _e t;
       try
 	let dt = type_validity env t in	(* we should be able to get this from the context *)
 	TacticSuccess (type_check env x t dt)
       with
 	NotImplemented|Match_failure -> TacticFailure
      )
-  | _ -> TacticFailure
+  | _ -> Default.default surr env pos tp args
 
 (* 
   Local Variables:
