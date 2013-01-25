@@ -92,7 +92,7 @@ let unbind_relative p : binder list * binder option * lf_type =
      (P -> J) -> K.  All this goes through if t has the form P_1 -> ... -> P_n
      -> (e:E) ** J, and similarly for u, because we can rewrite t in terms of
      P = P_1 ** ... ** P_n. *)
-let pi1_implication (vpos,v) t u =
+let pi1_implication ((vpos,v),t) u =
   let (p,e,j) = unbind_relative t in
   let (q,f,k) = unbind_relative u in
   match e with
@@ -106,8 +106,6 @@ let pi1_implication (vpos,v) t u =
       t
   | None -> raise NotImplemented
 
-let pi1_implication (v,t) u = pi1_implication v t u
-
 let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_type) (t2 : lf_expr -> lf_type) (u : lf_type) = 
   (* syntax is { v_1 : T_1 , ... , v_n : T_n |- v Type } u  or  { v_1 : T_1 , ... , v_n : T_n |- v:T } u *)
   (* t1 is texp or oexp; t2 is (fun t -> istype t) or (fun o -> hastype o t) *)
@@ -117,6 +115,13 @@ let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_t
   let t = List.fold_right pi1_implication c t in
   let u = pi1_implication ((vpos,v),t) u in
   unmark u
+
+let apply_judgment_binder pos (j:lf_type) (u:lf_type) =
+  printf " apply_judgment_binder j=%a u=%a\n%!" _t j _t u;
+  (* just like pi1_implication above, except t consists just of j, with no p or e *)
+  let (q,f,k) = unbind_relative u in
+  let k = arrow j k in
+  bind_pi_list_rev q (bind_some_sigma f k)
  
 (* 
   Local Variables:

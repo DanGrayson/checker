@@ -1,6 +1,5 @@
 Mode Pairs.
 Check LF   = ∏_istype
-: Singleton(∏_istype : 
 
   (t:(T:texp) ⟶ (U:oexp ⟶ texp) ⟶ Singleton((@[∏] T (t1 ⟼ (U t1))) : texp)) × 
     (T:(T1:texp) × istype T1) ⟶ 
@@ -8,7 +7,6 @@ Check LF   = ∏_istype
     (t1:Singleton((t T₁ U₁) : texp)) × istype t1)
 
 Check LF   = λ_hastype
-: Singleton(λ_hastype :
 
   (x:(T:texp) ⟶ (oexp ⟶ texp) ⟶ (o:oexp ⟶ oexp) ⟶ Singleton((@[λ] T (t ⟼ (o t))) : oexp)) × 
     (T:(T1:texp) × istype T1) ⟶ 
@@ -17,7 +15,6 @@ Check LF   = λ_hastype
     (x1:Singleton((x T₁ U₁ o₁) : oexp)) × hastype x1 (@[∏] T₁ (t ⟼ (U₁ t))))
 
 Check LF   = ev_hastype
-: Singleton(ev_hastype : 
 
   (x:texp ⟶ (U:oexp ⟶ texp) ⟶ (f:oexp) ⟶ (o:oexp) ⟶ Singleton((@[ev] f o (t ⟼ (U t))) : oexp)) × 
     (T:(T1:texp) × istype T1) ⟶ 
@@ -29,7 +26,7 @@ Check LF   = ev_hastype
 Mode Relative.
 
 Check LF   = ∏_istype
-: Singleton(∏_istype : 
+
   (T:texp) ⟶ 
   (U:oexp ⟶ texp) ⟶ 
   (t:Singleton((@[∏] T (t1 ⟼ (U t1))) : texp)) × 
@@ -38,7 +35,6 @@ Check LF   = ∏_istype
     istype t)
 
 Check LF   = λ_hastype
-: Singleton(λ_hastype : 
 
   (T:texp) ⟶ 
   (U:oexp ⟶ texp) ⟶ 
@@ -50,7 +46,6 @@ Check LF   = λ_hastype
     hastype x (@[∏] T (t ⟼ (U t))))
 
 Check LF   = ev_hastype
-: Singleton(ev_hastype : 
 
   (T:texp) ⟶ 
   (U:oexp ⟶ texp) ⟶ 
@@ -60,3 +55,15 @@ Check LF   = ev_hastype
     istype T ⟶ 
     ((t:oexp) ⟶ hastype t T ⟶ istype (U t)) ⟶ 
     hastype f (@[∏] T (t ⟼ (U t))) ⟶ hastype o T ⟶ hastype x (U o))
+
+Check LF   = cast : 
+
+  (T:texp) ⟶ 
+  (U:texp) ⟶ 
+  tequal T U ⟶ 					<---- this is wrong
+  (o:oexp) ⟶ 
+  (x:Singleton(o : oexp)) × 
+    istype T ⟶ 
+    istype U ⟶ 
+    hastype o T ⟶ 
+    hastype x U

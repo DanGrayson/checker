@@ -128,7 +128,6 @@ and bare_lf_type =
   | F_Sigma of var * lf_type * lf_type
   | F_Apply of lf_type_head * lf_expr list
   | F_Singleton of (lf_expr * lf_type)
-  | F_Empty
 
 (** Tactics *)
 and tactic_expr = 
@@ -136,7 +135,6 @@ and tactic_expr =
   | Tactic_name of string			 (* $foo *)
   | Tactic_sequence of tactic_expr * tactic_expr (* $(a;b;c) *)
 
-let name_F_Empty = "BottomJudgment"
 let name_F_Pi = "Pi"
 
 let ( @@ ) f x : lf_type = nowhere 3 (F_Apply(f,x))

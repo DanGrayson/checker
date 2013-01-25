@@ -19,7 +19,7 @@
    "LF", LF; "TS", TS; "Check", Check; "Axiom", Axiom; "Alpha", Alpha;
    "Variable", Variable; "End", End; "Include", Include; "Clear", Clear;
    "Show", Show; "Theorem", Theorem; "Definition", Theorem; "Lemma", Theorem;
-   "Proposition", Theorem; "Corollary", Theorem; name_F_Empty, LF_Empty
+   "Proposition", Theorem; "Corollary", Theorem
  ]
 
  let tab lexbuf =

@@ -29,7 +29,7 @@ Axiom 3.5.8.1 parametrized_type_equality { ⊢ T Type } { t : T ⊢ U Type } { �
 Axiom 3.5.8.2 parametrized_object_equality { ⊢ T Type, U Type } { t : T ⊢ x : U } { ⊢ t : T, t' : T }
          [ t ≡ t' : T ] ⇒ [ x[t] ≡ x[t'] : U ].
 
-Axiom 3.4.13 cast { ⊢ T U Type } [ T ≡ U ] ⇒ { ⊢ o : T } ⊢ o : U.
+Axiom 3.4.13 cast { ⊢ T U Type } [ T ≡ U ] { ⊢ o : T } ⊢ o : U.
 
 Axiom 3.4.14 oeqcast { ⊢ T U Type, x : T, y : T } [ x ≡ y : T ] ⇒ [ T ≡ U ] ⇒ [ x ≡ y : U ].
 

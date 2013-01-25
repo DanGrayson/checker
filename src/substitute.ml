@@ -88,7 +88,6 @@ and subst_type (subl : (var * lf_expr) list) (pos,t) =
        F_Sigma(v,a,b)
    | F_Apply(label,args) -> F_Apply(label, subst_list subl args)
    | F_Singleton(e,t) -> F_Singleton( subst_expr subl e, subst_type subl t )
-   | F_Empty as t -> t
   )
 
 and subst_type_fresh pos subl (v,t) =

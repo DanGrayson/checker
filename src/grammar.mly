@@ -29,7 +29,6 @@ open Printer
   Universes Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_CAR K_CDR Times
   Turnstile DoubleArrow DoubleArrowFromBar ColonColonEqual ColonEqual Theorem
   LeftBrace RightBrace TurnstileDouble ColonColon Include Clear EqualEqual
-  LF_Empty
 
 (* precedences, lowest first *)
 
@@ -95,9 +94,6 @@ unmarked_lf_type:
 
     | f= lf_type_constant args= lf_expr*
 	{ F_Apply(f,args) }
-
-    | LF_Empty
-	{ F_Empty }
 
     | Pi v= variable Colon a= lf_type Comma b= lf_type
 	%prec Reduce_binder
@@ -388,11 +384,12 @@ unmarked_ts_judgment:
 
     | j= ts_bracketed_judgment u= ts_judgment
 	%prec Reduce_binder
-	{ let pos = Position($startpos, $endpos) in
-	  ignore (j,u);
-	  printf "%a: bracketed binders not implemented yet\n%!" _pos pos;
-	  $syntaxerror
-	}
+        { 
+          let pos = Position($startpos, $endpos) in
+          let jpos = Position($startpos(j), $endpos(j)) in
+	  let w = apply_judgment_binder pos (with_pos jpos j) u in
+	  unmark w
+        }
 
     | LeftBrace c= context vbj= separated_nonempty_list(Comma,pair(marked_variable+,binder_judgment)) RightBrace u= ts_judgment
 	%prec Reduce_binder

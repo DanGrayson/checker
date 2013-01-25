@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 
+
+# both of the following lines should give an erro
+# Check LF : (t:texp) -> istype t -> oexp.
+# Axiom foo { ⊢ T U Type } [ T ≡ U ] ⇒ { ⊢ o : T } ⊢ o : U.
+
+Axiom foo1 { ⊢ T U Type } [ T ≡ U ] { ⊢ o : T } ⊢ o : U.   # then fix cast this way
+Axiom foo2 { ⊢ T U Type } { ⊢ o : T } [ T ≡ U ] ⊢ o : U.   # then fix cast this way
+Show 2.
+
 Include "rules/TS7.ts".
 Check LF cast.
-
-# This is wrong:
-#    cast : (T:texp) ⟶ (U:texp) ⟶ tequal T U ⟶ (o:oexp) ⟶ (x:Singleton(o : oexp)) × istype T ⟶ istype U ⟶ hastype o T ⟶ hastype x U
-
-End.							   # we need to fix the encoding of "cast"
 
 #   Local Variables:
 #   compile-command: "make -C .. foo "
