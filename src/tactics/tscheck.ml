@@ -93,7 +93,7 @@ let rec type_normalization (env:context) (t:lf_expr) : lf_expr =
 
 let self = nowhere 1234 (cite_tactic (Tactic_name "tscheck") END)
 
-let tscheck surr env pos tp args =
+let rec tscheck surr env pos tp args =
   if tactic_tracing then printf "tscheck: tp = %a\n%!" _t tp;
   match unmark tp with
   | F_Apply(F_istype,[t]) -> (
@@ -114,6 +114,10 @@ let tscheck surr env pos tp args =
       with
 	NotImplemented|Match_failure -> TacticFailure
      )
+  | F_Pi(v,a,b) -> (
+      match tscheck surr (lf_bind env v a) (get_pos tp) b args with 
+      | TacticSuccess e -> TacticSuccess (with_pos pos (LAMBDA(v,e)))
+      | TacticFailure as r -> r)
   | _ -> Default.default surr env pos tp args
 
 (* 

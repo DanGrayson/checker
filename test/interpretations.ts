@@ -103,12 +103,8 @@ Theorem compose' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
   #         hastype o T ⟶ 
   #         hastype x U
 
-End.							    # working on $tscheck
-
 Definition barbara { |- T U V Type } ⊢ (T->U) -> (U->V) -> (T->V) Type ::=
-    T ⟼ U ⟼ V ⟼ (_,
-      T' ⟼ U' ⟼ V' ⟼ $tscheck
-      ).
+    T ⟼ U ⟼ V ⟼ (_, $tscheck ).
 
 End.							    # working on $tscheck
 
