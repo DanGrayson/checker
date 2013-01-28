@@ -434,6 +434,15 @@ ts_bracketed_judgment:
     | LeftBracket a= ts_expr Tilde b= ts_expr Colon t= ts_expr RightBracket
 	{ unmark (object_uequality a b t) } 
 
+    | LeftBracket p= ts_expr Colon a= ts_expr EqualEqual b= ts_expr RightBracket
+	{ unmark (witnessed_type_equality p a b) }
+
+    | LeftBracket p= ts_expr Colon x= ts_expr Colon t= ts_expr RightBracket
+	{ unmark (witnessed_hastype p x t) }
+
+    | LeftBracket p= ts_expr Colon x= ts_expr EqualEqual y= ts_expr Colon t= ts_expr RightBracket
+	{ unmark (witnessed_object_equality p x y t) }
+
 binder_judgment:
 
     | Ulevel { ULEV }
