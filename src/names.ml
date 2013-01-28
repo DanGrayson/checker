@@ -22,6 +22,15 @@ let lf_expr_head_table = [
   U U_next, "next" ; U U_max, "max" ; T T_U, "U" ; O O_u, "u" ; O O_j, "j" ;
   O O_rr0, "rr0" ; O O_rr1, "rr1" ;
   T T_Pi, "Pi" ; T T_Sigma, "Sigma" ; O O_lambda, "lambda" ;
+
+  T T_El', "El'" ; 
+  W W_wd, "wd" ; W W_Wrefl, "Wrefl" ; W W_Wsymm, "Wsymm" ; W W_Wtrans, "Wtrans" ;
+  W W_wrefl, "wrefl" ; W W_wsymm, "wsymm" ; W W_wtrans, "wtrans" ; W W_wconv, "wconv" ;
+  W W_wconveq, "wconveq" ; W W_weleq, "weleq" ; W W_wpi1, "wpi1" ; W W_wpi2, "wpi2" ;
+  W W_wlam, "wlam" ; W W_wl1, "wl1" ; W W_wl2, "wl2" ; W W_wev , "wev " ;
+  W W_wevt1, "wevt1" ; W W_wevt2, "wevt2" ; W W_wevf, "wevf" ; W W_wevo, "wevo" ;
+  W W_wbeta, "wbeta" ; W W_weta, "weta"
+
 ]
 
 let expr_head_to_string h = List.assoc h lf_expr_head_table
@@ -51,14 +60,19 @@ let lf_type_constant_table = [
   F_a_type, "Texp";
   F_obj_of_type, "Oexp";
   F_judged_type_equal, "Tequal";
-  F_judged_obj_equal, "Oequal"
+  F_judged_obj_equal, "Oequal";
+  F_wexp, "wexp";
+  F_witnessed_hastype, "witnessed_hastype";
+  F_witnessed_type_equality, "witnessed_type_equality";
+  F_witnessed_object_equality, "witnessed_object_equality"
 ]
 
 let lf_kind_constant_table = [
   K_ulevel, "ulevel";
   K_expression, "expression";
   K_judgment, "judgment";
-  K_judged_expression, "judged_expression"
+  K_judged_expression, "judged_expression";
+  K_witnessed_judgment, "witnessed_judgment"
 ]
 
 let lf_type_head_to_string h = List.assoc h lf_type_constant_table
@@ -78,6 +92,7 @@ let fetch_type env pos v =
 
 let head_to_type env pos = function
   | FUN(f,t) -> t
+  | W h -> whead_to_lf_type h
   | U h -> uhead_to_lf_type h
   | T h -> thead_to_lf_type h
   | O h -> ohead_to_lf_type h

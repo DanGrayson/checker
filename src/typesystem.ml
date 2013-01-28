@@ -28,14 +28,20 @@ open Variables
 type uHead = | U_next | U_max
 
 (** Labels for t-expressions of TS. *)
-type tHead = | T_El | T_U | T_Pi | T_Sigma | T_Pt 
+type tHead = | T_El | T_El' | T_U | T_Pi | T_Sigma | T_Pt 
              | T_Coprod | T_Coprod2 | T_Empty | T_IP | T_Id
 
 (** Labels for o-expressions of TS. *)
 type oHead =
-  | O_u  | O_j  | O_ev  | O_lambda  | O_forall  | O_pair  | O_pr1  | O_pr2  | O_total
-  | O_pt  | O_pt_r  | O_tt  | O_coprod  | O_ii1  | O_ii2  | O_sum  | O_empty  | O_empty_r
-  | O_c  | O_ip_r  | O_ip  | O_paths  | O_refl  | O_J  | O_rr0  | O_rr1
+  | O_u | O_j | O_ev | O_lambda | O_forall | O_pair | O_pr1 | O_pr2 | O_total
+  | O_pt | O_pt_r | O_tt | O_coprod | O_ii1 | O_ii2 | O_sum | O_empty | O_empty_r
+  | O_c | O_ip_r | O_ip | O_paths | O_refl | O_J | O_rr0 | O_rr1
+
+(** Labels for w-expressions of TS.  They are witnesses to "extended" judgments. *)
+type wHead =
+  | W_wd | W_Wrefl | W_Wsymm | W_Wtrans | W_wrefl | W_wsymm | W_wtrans | W_wconv
+  | W_wconveq | W_weleq | W_wpi1 | W_wpi2 | W_wlam | W_wl1 | W_wl2 | W_wev 
+  | W_wevt1 | W_wevt2 | W_wevf | W_wevo | W_wbeta | W_weta
 
 (** Canonical type families of LF.
 
@@ -60,6 +66,10 @@ type lf_type_head =
   | F_obj_of_type
   | F_judged_type_equal
   | F_judged_obj_equal
+  | F_wexp
+  | F_witnessed_hastype
+  | F_witnessed_type_equality
+  | F_witnessed_object_equality
 
     (** The type [lf_expr_head] accommodates the variables of LF, and the constants of
         LF, which in turn include the labels of TS, the inference rules of TS,
@@ -83,6 +93,7 @@ type lf_expr_head =
   | U of uHead			(** labels for u-expressions of TS *)
   | T of tHead			(** labels for t-expressions of TS *)
   | O of oHead			(** labels for o-expressions of TS *)
+  | W of wHead			(** labels for w-expressions of TS *)
   | V of var			(** labels for variables of TS *)
   | TAC of tactic_expr		(** An empty hole, to be filled in later by calling a tactic routine. *)
   | FUN of lf_expr * lf_type
@@ -140,6 +151,7 @@ let name_F_Pi = "Pi"
 let ( @@ ) f x : lf_type = nowhere 3 (F_Apply(f,x))
 
 let uexp = F_uexp @@ []
+let wexp = F_wexp @@ []
 let texp = F_texp @@ []
 let oexp = F_oexp @@ []
 
@@ -153,10 +165,16 @@ let type_uequality t t' = F_type_uequality @@ [t;t']	       (* t ~ t' *)
 let type_equality t t' = F_type_equality @@ [t;t']	       (* t = t' *)
 let object_uequality o o' t = F_object_uequality @@ [o;o';t]   (* o ~ o' : t *)
 let object_equality o o' t = F_object_equality @@ [o;o';t]     (* o = o' : t *)
+let witnessed_hastype p o t = F_witnessed_hastype @@ [p;o;t]   (* p :: o : t *)
+let witnessed_type_equality p t t' = F_witnessed_type_equality @@ [p;t;t'] (* p :: t = t' *)
+let witnessed_object_equality p o o' t = F_witnessed_object_equality @@ [ p;o;o';t] (* p :: o = o' : t *)
+
 let a_type = F_a_type @@ []				       (* |- T Type *)
-let obj_of_type t = F_obj_of_type @@ [t]			       (* |- x : T *)
+let obj_of_type t = F_obj_of_type @@ [t]		       (* |- x : T *)
 let judged_type_equal t u = F_judged_type_equal @@ [t;u]       (* |- T = U *)
 let judged_obj_equal t x y = F_judged_obj_equal @@ [t;x;y]     (* |- x = y : T *)
+
+let wexp1 = oexp @-> wexp
 
 let texp1 = oexp @-> texp
 let texp2 = oexp @-> oexp @-> texp
@@ -172,6 +190,7 @@ let uhead_to_lf_type = function
 
 let thead_to_lf_type = function
   | T_El -> oexp @-> texp
+  | T_El' -> oexp @-> wexp @-> texp
   | T_U -> uexp @-> texp
   | T_Pi -> texp @-> texp1 @-> texp
   | T_Sigma -> texp @-> texp1 @-> texp
@@ -210,8 +229,34 @@ let ohead_to_lf_type = function
   | O_rr0 -> uexp @-> uexp @-> oexp @-> oexp @-> oexp @-> oexp
   | O_rr1 -> uexp @-> oexp @-> oexp @-> oexp
 
+let whead_to_lf_type = function
+  | W_wd -> wexp
+  | W_Wrefl -> wexp
+  | W_Wsymm -> wexp @-> wexp
+  | W_Wtrans -> wexp @-> wexp @-> texp @-> wexp
+  | W_wrefl -> wexp @-> wexp @-> wexp
+  | W_wsymm -> wexp @-> wexp
+  | W_wtrans -> wexp @-> wexp @-> oexp @-> wexp
+  | W_wconv -> wexp @-> wexp @-> wexp
+  | W_wconveq -> wexp @-> wexp @-> texp @-> wexp
+  | W_weleq -> wexp @-> wexp @-> wexp @-> wexp
+  | W_wpi1 -> wexp @-> wexp
+  | W_wpi2 -> wexp1 @-> wexp
+  | W_wlam -> wexp1 @-> wexp
+  | W_wl1 -> wexp @-> wexp @-> wexp
+  | W_wl2 -> wexp @-> wexp
+  | W_wev  -> wexp @-> wexp @-> wexp
+  | W_wevt1 -> wexp @-> wexp @-> wexp @-> wexp
+  | W_wevt2 -> wexp @-> wexp @-> wexp @-> wexp
+  | W_wevf -> wexp @-> wexp @-> wexp
+  | W_wevo -> wexp @-> wexp @-> wexp @-> wexp
+  | W_wbeta -> wexp @-> wexp @-> wexp
+  | W_weta -> wexp @-> wexp
+
 type vardist = int list list
 let head_to_vardist = function
+  | W W_wpi2 -> Some (1, [0] :: [])
+  | W W_wlam -> Some (1, [0] :: [])
   | T T_Coprod2 -> Some (2, [] :: [] :: [0] :: [1] :: [])
   | O O_ip_r -> Some (5, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [] :: [3;4] :: [] :: [])
   | T T_IP -> Some (3, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [])
@@ -235,6 +280,7 @@ type lf_kind =
   | K_expression
   | K_judgment
   | K_judged_expression
+  | K_witnessed_judgment
   | K_Pi of var * lf_type * lf_kind
 
 let ( @@-> ) a b = K_Pi(newunused(), a, b)
@@ -276,6 +322,12 @@ let obj_of_type_kind = a_type @@-> K_judged_expression
 
 let judged_kind_equal_kind = a_type @@-> a_type @@-> K_judged_expression
 
+let witnessed_hastype_kind = wexp @@-> oexp @@-> texp @@-> K_witnessed_judgment
+
+let witnessed_type_equality_kind = wexp @@-> texp @@-> texp @@-> K_witnessed_judgment
+
+let witnessed_object_equality_kind = wexp @@-> oexp @@-> oexp @@-> texp @@-> K_witnessed_judgment
+
 let var_to_lf v = nowhere 1 (APPLY(V v,END))
 
 let judged_obj_equal_kind = 
@@ -285,8 +337,7 @@ let judged_obj_equal_kind =
 
 let tfhead_to_kind = function
   | F_uexp -> K_ulevel
-  | F_texp -> K_expression
-  | F_oexp -> K_expression
+  | F_wexp | F_texp | F_oexp -> K_expression
   | F_istype -> istype_kind
   | F_hastype -> hastype_kind
   | F_ulevel_equality -> ulevel_equality_kind
@@ -298,6 +349,9 @@ let tfhead_to_kind = function
   | F_obj_of_type -> obj_of_type_kind
   | F_judged_type_equal -> judged_kind_equal_kind
   | F_judged_obj_equal -> judged_obj_equal_kind
+  | F_witnessed_hastype -> witnessed_hastype_kind
+  | F_witnessed_type_equality -> witnessed_type_equality_kind
+  | F_witnessed_object_equality -> witnessed_object_equality_kind
 
 (** Subordination: see section 2.4 of Mechanizing Meta-theory by Harper and Licata *)
 type kind_comparison = K_equal | K_less | K_greater | K_incomparable
@@ -306,6 +360,7 @@ let rec ultimate_kind = function
   | K_ulevel
   | K_expression
   | K_judgment
+  | K_witnessed_judgment
   | K_judged_expression as k -> k
   | K_Pi (v,t,k) -> ultimate_kind k
 
@@ -316,6 +371,8 @@ let rec compare_kinds k l =
   match k,l with
   | K_ulevel, _ | K_expression, K_judgment -> K_less
   | _, K_ulevel | K_judgment, K_expression -> K_greater
+  | K_expression, K_witnessed_judgment -> K_less
+  | K_witnessed_judgment, K_expression -> K_greater
   | _ -> K_incomparable
 
 (** Contexts. *)

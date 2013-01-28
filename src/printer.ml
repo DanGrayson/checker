@@ -37,7 +37,7 @@ and head_to_vars h =
   match h with
   | V v -> [v]
   | FUN(f,t) -> lf_expr_to_vars f @ lf_type_to_vars t
-  | U _ | T _ | O _ | TAC _ -> []
+  | U _ | T _ | W _ | O _ | TAC _ -> []
 
 and lf_expr_to_vars (pos,e) = match e with
   | LAMBDA(x,body) -> remove x (lf_expr_to_vars body)
@@ -54,7 +54,7 @@ and lf_type_to_vars (_,t) = match t with
   | F_Apply(hd,args) -> vars_in_list lf_expr_to_vars args
 
 let rec lf_kind_to_vars = function
-  | K_ulevel | K_expression | K_judgment | K_judged_expression -> []
+  | K_ulevel | K_expression | K_witnessed_judgment | K_judgment | K_judged_expression -> []
   | K_Pi(v,t,k) -> lf_type_to_vars t @ remove v (lf_kind_to_vars k)
 
 (** Whether [x] occurs as a free variable in an expression. *)
@@ -63,7 +63,7 @@ let rec occurs_in_head w h =
   match h with 
   | V v -> w = v
   | FUN(f,t) -> occurs_in_expr w f || occurs_in_type w t
-  | U _ | T _ | O _ | TAC _ -> false
+  | W _ | U _ | T _ | O _ | TAC _ -> false
 
 and occurs_in_expr w e = 
   match unmark e with 
@@ -78,7 +78,7 @@ and occurs_in_type w (_,t) = match t with
   | F_Apply(h,args) -> List.exists (occurs_in_expr w) args
 
 let rec occurs_in_kind w = function
-  | K_ulevel | K_expression | K_judgment | K_judged_expression -> false
+  | K_ulevel | K_expression | K_witnessed_judgment | K_judgment | K_judged_expression -> false
   | K_Pi(v,t,k) -> occurs_in_type w t || w <> v && occurs_in_kind w k
 
 (** Printing of LF and TS expressions. 
@@ -234,7 +234,7 @@ let application_to_lf_string p_arg head args : smart_string =
 let rec lf_head_to_string_with_subs subs h : string =
   match h with
   | V v -> vartostring (var_sub subs v)
-  | U _ | T _ | O _ -> "@[" ^ expr_head_to_string h ^ "]"
+  | W _ | U _ | T _ | O _ -> "@[" ^ expr_head_to_string h ^ "]"
   | TAC tac -> tactic_to_string tac
   | FUN(f,t) ->
       let f = lf_expr_to_string_with_subs subs f in
@@ -282,7 +282,7 @@ and lf_type_to_string_with_subs subs (_,t) : smart_string = match t with
       list_application_to_string (mark_top <<- lf_type_head_to_string) (lf_expr_to_string_with_subs subs) (hd,args)
 
 let rec lf_kind_to_string_with_subs subs = function
-  | ( K_ulevel | K_expression | K_judgment | K_judged_expression ) as k -> top_prec, List.assoc k lf_kind_constant_table
+  | ( K_ulevel | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ) as k -> top_prec, List.assoc k lf_kind_constant_table
   | K_Pi(v,t,k) -> 
       let used = occurs_in_kind v k in
       let w,subs = var_chooser v subs occurs_in_kind k in
