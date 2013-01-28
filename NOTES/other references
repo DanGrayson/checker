@@ -44,3 +44,33 @@ CoqMT
 	Strub
 	Coq modulo theory (pdf)
 	http://link.springer.com/chapter/10.1007%2F978-3-642-15205-4_40?LI=true
+
+
+
+LambdaPi
+
+	recommended by Bas:
+
+	http://strathprints.strath.ac.uk/36006/
+
+	http://www.andres-loeh.de/LambdaPi/
+
+	A Tutorial Implementation of a Dependently Typed Lambda Calculus
+
+	Andres Löh, Conor McBride and Wouter Swierstra
+
+	We present the type rules for a dependently-typed core calculus together with a
+	straightforward implementation in Haskell. We explicitly highlight the changes
+	necessary to shift from a simply-typed lambda calculus to the dependently-typed
+	lambda calculus. We also describe how to extend our core language with data
+	types and write several small example programs. The paper is accompanied by an
+	executable interpreter and example code that allows immediate experimentation
+	with the system we describe.
+
+proper implementation of meta-variables
+
+	recommended by Bas:
+
+	Here is how it is done in agda:
+
+	http://www.cse.chalmers.se/~ulfn/papers/meta-variables.pdf
