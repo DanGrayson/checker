@@ -86,23 +86,17 @@ let add_tVars env tvars =
   { ts_context_length = env.ts_context_length + List.length tvars;
     ts_context = List.rev_append (List.map (fun t -> Var "_", var_to_lf (Var t)) tvars) env.ts_context;
     lf_context = List.rev_append 
-      (List.flatten
-	 (List.map
-	    (fun t -> 
-	      [
-	       (Var t, texp);
-	       (newfresh (Var "ist"), istype (var_to_lf (Var t)));
-	     ]
-	    )
-	    tvars
-	 )
-      )
-      env.lf_context }
+      (List.flatten (List.map (fun t -> [ (Var t, texp); (newfresh (Var "ist"), istype (var_to_lf (Var t))); ] ) tvars))
+      env.lf_context
+  }
 
 let add_oVars env ovars t =
-  { env with 
+  { 
     ts_context_length = env.ts_context_length + List.length ovars;
     ts_context = List.rev_append (List.map (fun o -> Var o, t) ovars) env.ts_context;
+    lf_context = List.rev_append 
+      (List.flatten (List.map (fun o -> [ (Var o, oexp); (newfresh (Var "hast"), hastype (var_to_lf (Var o)) t); ] ) ovars))
+      env.lf_context
   }
 
 let lf_axiomCommand env pos name t =
@@ -167,7 +161,8 @@ let checkWitnessedJudgmentCommand env t =
   let t' = Lfcheck.type_validity [] env t in
   if not (Alpha.UEqual.type_equiv empty_uContext t t') then
     printf "           : %a [after tactics]\n%!" _t t';
-  Wlfcheck.check env t
+  Wlfcheck.check env t;
+  printf "           : okay\n%!"
 
 let checkTSCommand env x =
   printf "Check      : %a\n%!" _ts x;

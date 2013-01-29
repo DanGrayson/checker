@@ -529,7 +529,7 @@ let print_context n file (c:context) =
   try iteri
       (fun i (v,t) ->
         if i = n then raise Limit;
-	fprintf file "     %a : %a\n%!" _v v  _e t
+	fprintf file "   %d: %a : %a\n%!" i _v v  _e t
       ) 
       env
   with Limit -> ()

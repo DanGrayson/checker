@@ -391,6 +391,10 @@ let lf_bind env v t = { env with lf_context = (v,t) :: env.lf_context }
 
 let ts_bind env v t = { env with ts_context = (v,t) :: env.ts_context ; ts_context_length = env.ts_context_length + 1 }
 
+let ts_fetch env i = List.nth env.ts_context i
+
+let ts_fetch_from_top env i = List.nth env.ts_context (env.ts_context_length - i - 1)
+
 type uContext = UContext of var marked list * (lf_expr * lf_expr) marked list
 
 let empty_uContext = UContext([],[])
