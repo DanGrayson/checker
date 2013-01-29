@@ -256,8 +256,11 @@ command:
 
 unmarked_command:
 
+    | Variable vars= IDENTIFIER+ Colon t= ts_expr Period
+	{ Toplevel.OVariable (vars,t) }
+
     | Variable vars= IDENTIFIER+ Type Period
-	{ Toplevel.Variable vars }
+	{ Toplevel.TVariable vars }
 
     | Variable vars= IDENTIFIER+ Ulevel eqns= preceded(Semicolon,uEquation)* Period
 	{ Toplevel.UVariable (vars,eqns) }

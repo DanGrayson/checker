@@ -11,7 +11,8 @@ type command' =
   | CheckLFtype of lf_type
   | CheckTS of lf_expr
   | UVariable of string list * (lf_expr * lf_expr) list
-  | Variable of string list
+  | TVariable of string list
+  | OVariable of string list * lf_expr
   | Alpha of lf_expr * lf_expr
   | Theorem of (position * string * lf_expr * lf_type)
   | CheckUniverses

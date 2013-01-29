@@ -82,9 +82,10 @@ let protect f posfun =
       print_inconsistency (posfun ()) lhs rhs;
       raise_switch ex Error_Handled
 
-let add_tVars c tvars = 
-  { c with lf_context =   
-    List.rev_append 
+let add_tVars env tvars = 
+  { ts_context_length = env.ts_context_length + List.length tvars;
+    ts_context = List.rev_append (List.map (fun t -> Var "_", var_to_lf (Var t)) tvars) env.ts_context;
+    lf_context = List.rev_append 
       (List.flatten
 	 (List.map
 	    (fun t -> 
@@ -96,7 +97,13 @@ let add_tVars c tvars =
 	    tvars
 	 )
       )
-      c.lf_context }
+      env.lf_context }
+
+let add_oVars env ovars t =
+  { env with 
+    ts_context_length = env.ts_context_length + List.length ovars;
+    ts_context = List.rev_append (List.map (fun o -> Var o, t) ovars) env.ts_context;
+  }
 
 let lf_axiomCommand env pos name t =
   if show_rules then ( printf "Axiom LF %s: %a\n%!" name  _t t );
@@ -213,7 +220,8 @@ let rec process_command env lexbuf =
   match c with (pos,c) ->
     match c with
     | Toplevel.UVariable (uvars,eqns) -> ubind env uvars eqns
-    | Toplevel.Variable tvars -> add_tVars env tvars
+    | Toplevel.TVariable tvars -> add_tVars env tvars
+    | Toplevel.OVariable (ovars,t) -> add_oVars env ovars t
     | Toplevel.Axiom (num,name,t) -> lf_axiomCommand env pos name t
     | Toplevel.CheckLF x -> checkLFCommand env pos x; env
     | Toplevel.CheckLFtype x -> checkLFtypeCommand env x; env

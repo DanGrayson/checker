@@ -12,10 +12,11 @@ Check TS : [ p : T ≡ T' ].
 Check TS Witness : [ p : o ≡ o' : T ].
 
 Variable T U Type.
-Axiom xo : T.
-Axiom xf : T -> U.
+Variable V Type.
+Variable xo : T.					    # Eventually we'll be checking that the type
+Variable xf : T -> U.					    # to the right of the colon is valid here.
 
-Check TS : [ @[wd_1234] : T ≡ T' ].
+Check TS : [ @[wd_0] : T ≡ T' ].
 
 Show.
 
