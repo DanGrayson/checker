@@ -150,10 +150,17 @@ let checkLFtypeCommand env t =
   let t' = Lfcheck.type_validity [] env t in
   if not (Alpha.UEqual.type_equiv empty_uContext t t') then
     printf "           : %a [after tactics]\n%!" _t t';
-  if try_normalization then
+  if try_normalization then (
     let t'' = Lfcheck.type_normalization env t' in
     if not (Alpha.UEqual.type_equiv empty_uContext t' t'') then
-      printf "           : %a [after normalization]\n%!" _t t''
+      printf "           : %a [after normalization]\n%!" _t t'')
+
+let checkWitnessedJudgmentCommand env t =
+  printf "Check      : %a\n%!" _t t;
+  let t' = Lfcheck.type_validity [] env t in
+  if not (Alpha.UEqual.type_equiv empty_uContext t t') then
+    printf "           : %a [after tactics]\n%!" _t t';
+  Wlfcheck.check env t
 
 let checkTSCommand env x =
   printf "Check      : %a\n%!" _ts x;
@@ -210,6 +217,7 @@ let rec process_command env lexbuf =
     | Toplevel.Axiom (num,name,t) -> lf_axiomCommand env pos name t
     | Toplevel.CheckLF x -> checkLFCommand env pos x; env
     | Toplevel.CheckLFtype x -> checkLFtypeCommand env x; env
+    | Toplevel.CheckWitness x -> checkWitnessedJudgmentCommand env x; env
     | Toplevel.CheckTS x -> checkTSCommand env x; env
     | Toplevel.Alpha (x,y) -> alphaCommand env (x,y); env
     | Toplevel.Theorem (pos,name,deriv,thm) -> defCommand env [ Var name, pos, deriv, thm ]

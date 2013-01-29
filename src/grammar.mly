@@ -29,6 +29,7 @@ open Printer
   Universes Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_CAR K_CDR Times
   Turnstile DoubleArrow DoubleArrowFromBar ColonColonEqual ColonEqual Theorem
   LeftBrace RightBrace TurnstileDouble ColonColon Include Clear EqualEqual
+  Witness K_wd_underscore
 
 (* precedences, lowest first *)
 
@@ -66,7 +67,7 @@ open Printer
      thus might be involved in the decision about reducing an application: *)
 
   IDENTIFIER Underscore LeftParen Kumax CONSTANT_SEMI CONSTANT Lambda
-  Sigma Pi VARIABLE Dollar
+  Sigma Pi VARIABLE Dollar K_wd_underscore
 
 %nonassoc
 
@@ -276,6 +277,10 @@ unmarked_command:
     | Check TS? Colon t= ts_judgment Period
     | Check LF Colon t= lf_type Period
 	{ Toplevel.CheckLFtype t }
+
+    | Check TS? Witness Colon t= ts_judgment Period
+    | Check LF Witness Colon t= lf_type Period
+	{ Toplevel.CheckWitness t }
 
     | Check Universes Period
 	{ Toplevel.CheckUniverses }
@@ -564,6 +569,9 @@ unmarked_ts_expr:
 
     | LeftParen a= ts_expr Comma b= ts_expr RightParen
 	{ CONS(a,b) }
+
+    | K_wd_underscore i= NUMBER RightBracket
+	{ APPLY(V (Var_wd i), END) }
 
     | name= CONSTANT_SEMI vars= separated_list(Comma,marked_variable_or_unused) RightBracket args= arglist
 	{

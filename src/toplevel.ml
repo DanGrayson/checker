@@ -7,6 +7,7 @@ open Typesystem
 type command' = 
   | Axiom of (int list) option * string * lf_type
   | CheckLF of lf_expr
+  | CheckWitness of lf_type
   | CheckLFtype of lf_type
   | CheckTS of lf_expr
   | UVariable of string list * (lf_expr * lf_expr) list

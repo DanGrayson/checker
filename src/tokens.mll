@@ -19,7 +19,7 @@
    "LF", LF; "TS", TS; "Check", Check; "Axiom", Axiom; "Alpha", Alpha;
    "Variable", Variable; "End", End; "Include", Include; "Clear", Clear;
    "Show", Show; "Theorem", Theorem; "Definition", Theorem; "Lemma", Theorem;
-   "Proposition", Theorem; "Corollary", Theorem
+   "Proposition", Theorem; "Corollary", Theorem; "Witness", Witness
  ]
 
  let tab lexbuf =
@@ -127,6 +127,7 @@ rule expr_tokens = parse
 
   | "@[" (ident as id) "]" { utf8_fix lexbuf id; CONSTANT id }
   | "@[" (ident as id) ";" { utf8_fix lexbuf id; CONSTANT_SEMI id }
+  | "@[wd_" { K_wd_underscore }
   | ident as id { utf8_fix lexbuf id; try Hashtbl.find commands id with Not_found -> IDENTIFIER id }
   | (ident as name) '$' (digit+ as gen) { utf8_fix lexbuf name; VARIABLE (VarGen(int_of_string gen,name)) }
 

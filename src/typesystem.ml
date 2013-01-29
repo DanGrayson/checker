@@ -33,14 +33,14 @@ type tHead = | T_El | T_El' | T_U | T_Pi | T_Sigma | T_Pt
 
 (** Labels for o-expressions of TS. *)
 type oHead =
-  | O_u | O_j | O_ev | O_lambda | O_forall | O_pair | O_pr1 | O_pr2 | O_total
+  | O_u | O_j | O_ev | O_ev' | O_lambda | O_forall | O_pair | O_pr1 | O_pr2 | O_total
   | O_pt | O_pt_r | O_tt | O_coprod | O_ii1 | O_ii2 | O_sum | O_empty | O_empty_r
   | O_c | O_ip_r | O_ip | O_paths | O_refl | O_J | O_rr0 | O_rr1
 
 (** Labels for w-expressions of TS.  They are witnesses to "extended" judgments. *)
 type wHead =
   | W_wd | W_Wrefl | W_Wsymm | W_Wtrans | W_wrefl | W_wsymm | W_wtrans | W_wconv
-  | W_wconveq | W_weleq | W_wpi1 | W_wpi2 | W_wlam | W_wl1 | W_wl2 | W_wev 
+  | W_wconveq | W_weleq | W_wpi1 | W_wpi2 | W_wlam | W_wl1 | W_wl2 | W_wev
   | W_wevt1 | W_wevt2 | W_wevf | W_wevo | W_wbeta | W_weta
 
 (** Canonical type families of LF.
@@ -205,6 +205,7 @@ let ohead_to_lf_type = function
   | O_u -> uexp @-> oexp
   | O_j -> uexp @-> uexp @-> oexp
   | O_ev -> oexp @-> oexp @-> texp1 @-> oexp
+  | O_ev' -> oexp @-> oexp @-> texp @-> texp1 @-> oexp
   | O_lambda -> texp @-> oexp1 @-> oexp
   | O_forall -> uexp @-> uexp @-> oexp @-> oexp1 @-> oexp
   | O_pair -> oexp @-> oexp @-> texp1 @-> oexp
@@ -245,7 +246,7 @@ let whead_to_lf_type = function
   | W_wlam -> wexp1 @-> wexp
   | W_wl1 -> wexp @-> wexp @-> wexp
   | W_wl2 -> wexp @-> wexp
-  | W_wev  -> wexp @-> wexp @-> wexp
+  | W_wev -> wexp @-> wexp @-> wexp
   | W_wevt1 -> wexp @-> wexp @-> wexp @-> wexp
   | W_wevt2 -> wexp @-> wexp @-> wexp @-> wexp
   | W_wevf -> wexp @-> wexp @-> wexp
@@ -261,6 +262,7 @@ let head_to_vardist = function
   | O O_ip_r -> Some (5, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [] :: [3;4] :: [] :: [])
   | T T_IP -> Some (3, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [])
   | O O_ev -> Some (1, [] :: [] :: [0] :: [])
+  | O O_ev' -> Some (1, [] :: [] :: [] :: [0] :: [])
   | T T_Pi | T T_Sigma | O O_lambda -> Some (1, [] :: [0] :: [])
   | O O_forall -> Some (1, [] :: [] :: [] :: [0] :: [])
   | O O_pair -> Some (1, [] :: [] :: [0] :: [])
@@ -380,13 +382,14 @@ let rec compare_kinds k l =
 type context = {
     lf_context : (var * lf_type) list;
     ts_context : (var * lf_expr) list;
+    ts_context_length : int;
   }
 
-let empty_context = { lf_context = []; ts_context = [] }
+let empty_context = { lf_context = []; ts_context = [];  ts_context_length = 0 }
 
 let lf_bind env v t = { env with lf_context = (v,t) :: env.lf_context }
 
-let ts_bind env v t = { env with ts_context = (v,t) :: env.ts_context }
+let ts_bind env v t = { env with ts_context = (v,t) :: env.ts_context ; ts_context_length = env.ts_context_length + 1 }
 
 type uContext = UContext of var marked list * (lf_expr * lf_expr) marked list
 

@@ -66,7 +66,7 @@ let rec tau (env:context) e : lf_expr =
           | O_tt -> Helpers.make_T_Pt
           | O_pair | O_pr1 | O_pr2 | O_total | O_pt | O_pt_r | O_coprod | O_ii1
           | O_ii2 | O_sum | O_empty | O_empty_r | O_c | O_ip_r | O_ip
-          | O_paths | O_refl | O_J | O_rr0 | O_rr1
+          | O_paths | O_refl | O_J | O_rr0 | O_rr1 | O_ev'
             -> raise NotImplemented
          ) )
   | _ -> raise (TypeCheckingFailure(env, [], [pos, "a canonical LF expression has no TS type"]))

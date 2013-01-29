@@ -28,7 +28,7 @@
 		       "Texp" "Oexp" "Tequal" "Oequal"
 		       "max" "Singleton" "LF_Empty" "pair" "CAR" "CDR" "WildCard" ))
 
-(defvar ts-commands '( "Mode" "Simple" "Relative" "Pairs" "Clear" "Universes" "LF" "TS" "SemiIntrinsic"
+(defvar ts-commands '( "Clear" "Universes" "LF" "TS" "Witness"
 		       "Check" "Alpha" "End" "Clear" "Show" "Include" ))
 
 (defvar ts-mode-font-lock-keywords 

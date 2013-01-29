@@ -122,6 +122,7 @@ let var_tester w subs occurs_in e =
 let var_chooser x subs occurs_in e =
   if not enable_variable_prettification then x, subs else
   match x with
+  | Var_wd _ -> raise Internal
   | Var name 
   | VarGen(_,name) -> 
       if not (occurs_in x e) then Var "_", subs else
@@ -509,7 +510,7 @@ let print_context n file (c:context) =
   let n = match n with None -> -1 | Some n -> n in
   fprintf file "LF Context:\n";
   let env = c.lf_context in
-  let env = if n < 0 then List.rev env else env in
+  let env = if n < 0 then List.rev env else env in (
   try iteri
       (fun i (v,t) ->
         if i = n then raise Limit;
@@ -521,7 +522,7 @@ let print_context n file (c:context) =
             fprintf file "     %a : %a\n%!" _v v  _t t
       ) 
       env
-  with Limit -> fprintf file "     ...\n";
+  with Limit -> fprintf file "     ...\n");
   fprintf file "TS Context:\n";
   let env = c.ts_context in
   let env = if n < 0 then List.rev env else env in
