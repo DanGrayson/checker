@@ -10,6 +10,28 @@ let isunused_variable_expression x =
   | APPLY(V v, END) -> isunused v
   | _ -> false
 
+exception Args_match_failure
+
+let args1 s =
+  match s with
+  | ARG(x,END) -> x
+  | _ -> raise Args_match_failure
+
+let args2 s =
+  match s with
+  | ARG(x,ARG(y,END)) -> x,y
+  | _ -> raise Args_match_failure
+
+let args3 s =
+  match s with
+  | ARG(x,ARG(y,ARG(z,END))) -> x,y,z
+  | _ -> raise Args_match_failure
+
+let args4 s =
+  match s with
+  | ARG(x,ARG(y,ARG(z,ARG(a,END)))) -> x,y,z,a
+  | _ -> raise Args_match_failure
+
 let cite_tactic tac args = APPLY(TAC tac, args)
 
 let ( ** ) x s = ARG(x,s)		(* right associative *)

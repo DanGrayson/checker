@@ -23,7 +23,6 @@ let ohash = function
   | O_rr1 -> 97
 
 let whash = function
-  | W_wd -> 12
   | W_Wrefl -> 12
   | W_Wsymm -> 12
   | W_Wtrans -> 12

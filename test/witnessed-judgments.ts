@@ -17,7 +17,9 @@ Variable xf : T -> U.					    # to the right of the colon is valid here.
 Show.
 
 Check TS Witness : [ @[wd_3] : xf : T -> U ].
+Check TS Witness : [ @[wd_2] : xo : T ].
 End.							    # working on the witness checker
+Check TS Witness : [ @[wev][@[wd_3],@[wd_2]] : @[ev';_][xf,xo,T,U] : U ].
 
 #   Local Variables:
 #   compile-command: "make -C .. witnessed-judgments "

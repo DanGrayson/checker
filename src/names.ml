@@ -24,7 +24,7 @@ let lf_expr_head_table = [
   T T_Pi, "Pi"; T T_Sigma, "Sigma"; O O_lambda, "lambda";
 
   T T_El', "El'"; O O_ev', "ev'";
-  W W_wd, "wd"; W W_Wrefl, "Wrefl"; W W_Wsymm, "Wsymm"; W W_Wtrans, "Wtrans";
+  W W_Wrefl, "Wrefl"; W W_Wsymm, "Wsymm"; W W_Wtrans, "Wtrans";
   W W_wrefl, "wrefl"; W W_wsymm, "wsymm"; W W_wtrans, "wtrans"; W W_wconv, "wconv";
   W W_wconveq, "wconveq"; W W_weleq, "weleq"; W W_wpi1, "wpi1"; W W_wpi2, "wpi2";
   W W_wlam, "wlam"; W W_wl1, "wl1"; W W_wl2, "wl2"; W W_wev, "wev";

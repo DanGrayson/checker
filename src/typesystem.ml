@@ -39,7 +39,7 @@ type oHead =
 
 (** Labels for w-expressions of TS.  They are witnesses to "extended" judgments. *)
 type wHead =
-  | W_wd | W_Wrefl | W_Wsymm | W_Wtrans | W_wrefl | W_wsymm | W_wtrans | W_wconv
+  | W_Wrefl | W_Wsymm | W_Wtrans | W_wrefl | W_wsymm | W_wtrans | W_wconv
   | W_wconveq | W_weleq | W_wpi1 | W_wpi2 | W_wlam | W_wl1 | W_wl2 | W_wev
   | W_wevt1 | W_wevt2 | W_wevf | W_wevo | W_wbeta | W_weta
 
@@ -231,7 +231,6 @@ let ohead_to_lf_type = function
   | O_rr1 -> uexp @-> oexp @-> oexp @-> oexp
 
 let whead_to_lf_type = function
-  | W_wd -> wexp
   | W_Wrefl -> wexp
   | W_Wsymm -> wexp @-> wexp
   | W_Wtrans -> wexp @-> wexp @-> texp @-> wexp

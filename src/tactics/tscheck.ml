@@ -14,14 +14,7 @@ open Lfcheck
 open Error
 open Helpers
 
-exception Match_failure
-
 let see n x = printf "\t  %s = %a\n%!" n _e x
-
-let args2 s =
-  match s with
-  | ARG(x,ARG(y,END)) -> x,y
-  | _ -> raise Match_failure
 
 (** returns a term y and a derivation of hastype y t and a derivation of oequal x y t *)
 let rec head_reduction (env:context) (t:lf_expr) (dt:lf_expr) (x:lf_expr) (dx:lf_expr) : lf_expr * lf_expr * lf_expr =
@@ -112,7 +105,7 @@ let rec tscheck surr env pos tp args =
 	let dt = type_validity env t in	(* we should be able to get this from the context *)
 	TacticSuccess (type_check env x t dt)
       with
-	NotImplemented|Match_failure -> TacticFailure
+	NotImplemented|Args_match_failure -> TacticFailure
      )
   | F_Pi(v,a,b) -> (
       match tscheck surr (lf_bind env v a) (get_pos tp) b args with 
