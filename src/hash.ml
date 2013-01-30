@@ -11,7 +11,7 @@ let uhash = function
 
 let thash = function
   | T_El' -> 458
-  | T_El -> 45 | T_U -> 55 | T_Pi -> 561 | T_Sigma -> 667 | T_Pt -> 5461 | T_Coprod -> 67
+  | T_El -> 45 | T_U -> 55 | T_U' -> 551 | T_Pi -> 561 | T_Sigma -> 667 | T_Pt -> 5461 | T_Coprod -> 67
   | T_Coprod2 -> 121 | T_Empty -> 33 | T_IP -> 47 | T_Id -> 5867
 
 let ohash = function

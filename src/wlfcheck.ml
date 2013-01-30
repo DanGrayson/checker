@@ -21,7 +21,30 @@ let compare_var_to_expr v e =
   | APPLY(V w, END) -> v = w
   | _ -> false
 
-let rec check_hastype env p o t =
+let uuu = nowhere 187 (APPLY(T T_U', END))
+
+let rec check_istype env t =
+  if not (List.exists (fun (v,u) -> equivalence t u) env.ts_context)
+  then 
+    match unmark t with
+    | APPLY(T th, args) -> (
+	match th with
+	| T_Pi -> 
+	    let (t1,t2) = args2 args in
+	    check_istype env t1;
+	    let w = newfresh (Var "t") in
+	    let env = ts_bind env w t1 in
+	    let w = var_to_lf w in
+	    let t2 = Substitute.apply_args t2 (w ** END) in
+	    check_istype env t2
+	| T_U' -> ()
+	| T_El' ->
+	    let (o,p) = args2 args in
+	    check_hastype env p o uuu
+	| _ -> Lfcheck.err env (get_pos t) "invalid type, or not implemented yet")
+    | _ -> Lfcheck.err env (get_pos t) "invalid type, or not implemented yet"
+
+and check_hastype env p o t =
   if false then printf "check_hastype\n p = %a\n o = %a\n t = %a\n%!" _e p _e o _e t;
   match unmark p with
   | APPLY(V (Var_wd i), END) -> (
@@ -45,7 +68,7 @@ let rec check_hastype env p o t =
 	      let u = nowhere 123 (APPLY(T T_Pi,t1 ** t2 ** END)) in
 	      check_hastype env pf f u;
 	      let t2' = Substitute.subst_expr (Var_wd env.ts_context_length, po) (Substitute.apply_args t2 (o ** END)) in
-	      if not (equivalence t2' t) then raise FalseWitness
+	      if not (equivalence t2' t) then Lfcheck.mismatch_term env (get_pos t2') t2' (get_pos t) t;
 	  | _ -> raise FalseWitness)
       | W_wlam -> 
 	  let p = args1 pargs in (
@@ -95,6 +118,7 @@ and check_object_equality env p o o' t =
 let check (env:context) (t:lf_type) =
   (* try *)
     match unmark t with 
+    | F_Apply(F_istype,[t]) -> check_istype env t
     | F_Apply(F_witnessed_hastype,[p;o;t]) -> check_hastype env p o t
     | F_Apply(F_witnessed_type_equality,[p;t;t']) -> check_type_equality env p t t'
     | F_Apply(F_witnessed_object_equality,[p;o;o';t]) -> check_object_equality env p o o' t

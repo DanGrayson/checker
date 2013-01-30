@@ -28,7 +28,7 @@ open Variables
 type uHead = | U_next | U_max
 
 (** Labels for t-expressions of TS. *)
-type tHead = | T_El | T_El' | T_U | T_Pi | T_Sigma | T_Pt 
+type tHead = | T_El | T_El' | T_U | T_U' | T_Pi | T_Sigma | T_Pt 
              | T_Coprod | T_Coprod2 | T_Empty | T_IP | T_Id
 
 (** Labels for o-expressions of TS. *)
@@ -192,6 +192,7 @@ let thead_to_lf_type = function
   | T_El -> oexp @-> texp
   | T_El' -> oexp @-> wexp @-> texp
   | T_U -> uexp @-> texp
+  | T_U' -> texp
   | T_Pi -> texp @-> texp1 @-> texp
   | T_Sigma -> texp @-> texp1 @-> texp
   | T_Pt -> texp
@@ -249,13 +250,14 @@ let whead_to_lf_type = function
   | W_wevt2 -> wexp @-> wexp @-> wexp @-> wexp
   | W_wevf -> wexp @-> wexp @-> wexp
   | W_wevo -> wexp @-> wexp @-> wexp @-> wexp
-  | W_wbeta -> wexp @-> wexp @-> wexp
+  | W_wbeta -> wexp @-> wexp1 @-> wexp
   | W_weta -> wexp @-> wexp
 
 type vardist = int list list
 let head_to_vardist = function
   | W W_wpi2 -> Some (1, [0] :: [])
   | W W_wlam -> Some (1, [0] :: [])
+  | W W_wbeta -> Some (1, [] :: [0] :: [])
   | T T_Coprod2 -> Some (2, [] :: [] :: [0] :: [1] :: [])
   | O O_ip_r -> Some (5, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [] :: [3;4] :: [] :: [])
   | T T_IP -> Some (3, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [])

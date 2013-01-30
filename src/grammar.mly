@@ -527,7 +527,7 @@ unmarked_ts_expr:
     | tac= closed_tactic_expr
 	{ cite_tactic tac END }
 
-    | f= ts_expr LeftBracket o= separated_nonempty_list(Comma,ts_spine_member) RightBracket
+    | f= ts_expr LeftBracket o= separated_list(Comma,ts_spine_member) RightBracket
 	{ unmark (Substitute.apply_args f (spine_member_list_to_spine o)) }
 
     | variable
@@ -567,8 +567,8 @@ unmarked_ts_expr:
     | Kumax LeftParen u= ts_expr Comma v= ts_expr RightParen
 	{ APPLY(U U_max, u**v**END)  }
 
-    | label= tsterm_head args= arglist
-	{ APPLY(label,list_to_spine args) }
+    | label= tsterm_head
+	{ APPLY(label, END ) }
 
     | LeftParen a= ts_expr Comma b= ts_expr RightParen
 	{ CONS(a,b) }

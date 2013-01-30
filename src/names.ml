@@ -19,7 +19,7 @@ let lf_expr_head_table = [
   T T_IP, "IP"; O O_ip_r, "ip_r"; O O_ip, "ip"; O O_c, "c";
   O O_coprod, "coprod"; O O_ii1, "ii1"; O O_ii2, "ii2";
   O O_sum, "sum"; 
-  U U_next, "next"; U U_max, "max"; T T_U, "U"; O O_u, "u"; O O_j, "j";
+  U U_next, "next"; U U_max, "max"; T T_U, "U"; T T_U', "U'"; O O_u, "u"; O O_j, "j";
   O O_rr0, "rr0"; O O_rr1, "rr1";
   T T_Pi, "Pi"; T T_Sigma, "Sigma"; O O_lambda, "lambda";
 
