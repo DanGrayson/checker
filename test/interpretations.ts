@@ -12,7 +12,7 @@ Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ @[λ][T,o] : @[∏;_
 
    T ⟼ U ⟼ o ⟼ ((@[λ] T o), T' ⟼ U' ⟼ (λ_hastype T (_ ⟼ U) o CDR T' (_ ⟼ _ ⟼ U'))).
 
-Definition ev1 { ⊢ T U Type, f : @[∏;_][T,U], o : T } ⊢ @[ev;_][f,o,U] : U ::=
+Definition ev1 { ⊢ T U Type, f : @[∏;_][T,U], o : T } ⊢ @[ev;_][f,o,T,U] : U ::=
 
    T ⟼ U ⟼ f ⟼ o ⟼ 
    ((ev_hastype T (_ ⟼ U) f o CAR), T' ⟼ U' ⟼ (ev_hastype T (_ ⟼ U) f o CDR T' (_ ⟼ _ ⟼ U'))).
@@ -66,7 +66,7 @@ Theorem compose { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
 Theorem compose' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 
     # this time with micro-tactics (which don't help in pairs mode!)
     T ⟼ U ⟼ V ⟼ 
-    ((@[λ] (@[∏] T (_ ⟼ U)) (f ⟼ (@[λ] (@[∏] U (_ ⟼ V)) (g ⟼ (@[λ] T (t ⟼ (@[ev] g (@[ev] f t (_ ⟼ U)) (_ ⟼ V))))))))
+    ((@[λ] (@[∏] T (_ ⟼ U)) (f ⟼ (@[λ] (@[∏] U (_ ⟼ V)) (g ⟼ (@[λ] T (t ⟼ (@[ev] g (@[ev] f t T (_ ⟼ U)) U (_ ⟼ V))))))))
      # (lambda1 (pi1 T U CAR) (pi1 (pi1 U V CAR) (pi1 T V CAR) CAR)
      # 	          (f ⟼ (lambda1 (pi1 U V CAR) (pi1 T V CAR)
      # 			   (g ⟼ (lambda1 T V 
@@ -110,7 +110,7 @@ End.							    # working on $tscheck
 
 Theorem compose'' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 
     T ⟼ U ⟼ V ⟼ (
-     (@[λ] (@[∏] T (_ ⟼ U)) (f ⟼ (@[λ] (@[∏] U (_ ⟼ V)) (g ⟼ (@[λ] T (t ⟼ (@[ev] g (@[ev] f t (_ ⟼ U)) (_ ⟼ V)))))))),
+     (@[λ] (@[∏] T (_ ⟼ U)) (f ⟼ (@[λ] (@[∏] U (_ ⟼ V)) (g ⟼ (@[λ] T (t ⟼ (@[ev] g (@[ev] f t T (_ ⟼ U)) U (_ ⟼ V)))))))),
      _ ⟼ _ ⟼ _ ⟼ $tscheck
      ).
 

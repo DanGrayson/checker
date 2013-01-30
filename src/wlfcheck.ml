@@ -24,28 +24,51 @@ let compare_var_to_expr v e =
 let rec check_hastype env p o t =
   if false then printf "check_hastype\n p = %a\n o = %a\n t = %a\n%!" _e p _e o _e t;
   match unmark p with
-  | APPLY(V (Var_wd i), END) ->
-      let (v,u) = ts_fetch_from_top env i in
+  | APPLY(V (Var_wd i), END) -> (
+      let (v,u) =
+	try
+	  ts_fetch_from_top env i 
+	with
+	  Invalid_argument _ -> Lfcheck.err env (get_pos p) ("non-existent context position " ^ string_of_int i)
+      in
       if false then printf " v = %a\n u = %a\n%!" _v v _e u;
       if not (compare_var_to_expr v o) then Lfcheck.err env (get_pos o) ("expected variable " ^ vartostring v);
-      if not (equality t u) then Lfcheck.mismatch_term env (get_pos t) t (get_pos u) u      
+      if not (equality t u) then Lfcheck.mismatch_term env (get_pos t) t (get_pos u) u)
   | APPLY(W wh, pargs) -> (
       match wh with 
       | W_wev -> ( 
 	  let (pf,po) = args2 pargs in
 	  match unmark o with
-	  | APPLY(O O_ev',args) ->
+	  | APPLY(O O_ev,args) ->
 	      let (f,o,t1,t2) = args4 args in
 	      check_hastype env po o t1;
-	      (* check_hastype env pf f (...); *)
-	      raise NotImplemented
+	      let u = nowhere 123 (APPLY(T T_Pi,t1 ** t2 ** END)) in
+	      check_hastype env pf f u;
+	      let t2' = Substitute.subst_expr (Var_wd env.ts_context_length, po) (Substitute.apply_args t2 (o ** END)) in
+	      if not (equivalence t2' t) then raise FalseWitness
 	  | _ -> raise FalseWitness)
+      | W_wlam -> 
+	  let p = args1 pargs in (
+	  match unmark o with
+	  | APPLY(O O_lambda,args) ->
+	      let (t1',o) = args2 args in (
+	      match unmark t with
+	      | APPLY(T T_Pi, ARG(t1,ARG(t2,END))) -> (
+		  if not (equivalence t1' t1) then Lfcheck.mismatch_term env (get_pos t) t (get_pos t1) t1;
+		  let v = newfresh (Var "x") in
+		  let env = ts_bind env v t1 in
+		  let v = var_to_lf v ** END in 
+		  let p = Substitute.apply_args p v in
+		  let o = Substitute.apply_args o v in
+		  let t2 = Substitute.apply_args t2 v in
+		  check_hastype env p o t2)
+	      | _ -> Lfcheck.err env (get_pos t) "expected a function type")
+	  | _ -> Lfcheck.err env (get_pos o) "expected a function")
       | W_wconv -> raise NotImplemented
       | W_wconveq -> raise NotImplemented
       | W_weleq -> raise NotImplemented
       | W_wpi1 -> raise NotImplemented
       | W_wpi2 -> raise NotImplemented
-      | W_wlam -> raise NotImplemented
       | W_wl1 -> raise NotImplemented
       | W_wl2 -> raise NotImplemented
       | W_wevt1 -> raise NotImplemented
@@ -61,7 +84,7 @@ let rec check_hastype env p o t =
       | W_wtrans
       | W_Wrefl -> raise FalseWitness
      )
-  | _ -> raise FalseWitness
+  | _ -> Lfcheck.err env (get_pos p) ("expected a witness expression: " ^ lf_expr_to_string p)
 
 and check_type_equality env p t t' =
   raise NotImplemented

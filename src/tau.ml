@@ -48,25 +48,25 @@ let rec tau (env:context) e : lf_expr =
               | _ -> raise (TypeCheckingFailure(env, [], [pos, "expected [j] to have two branches"])))
           | O_ev -> (
               match args with 
-              | ARG(f,ARG(o,ARG((_,LAMBDA(x,t)),END))) ->
-                  unmark (Substitute.subst_expr (x,o) t)
-              | _ -> raise (TypeCheckingFailure(env, [], [pos, "[ev] with malformed branches"])))
+              | ARG(f,ARG(o,ARG(t1,ARG((_,LAMBDA(x,t2)),END)))) ->
+                  unmark (Substitute.subst_expr (x,o) t2)
+              | _ -> raise Internal)
           | O_lambda -> (
               match args with 
               | ARG(t,ARG(o,END)) ->
 		  let x = newfresh (Var "x") in
 		  let x' = var_to_lf x in
                   Helpers.make_T_Pi t (x, tau (ts_bind env x t) (Substitute.apply_args o (ARG(x',END))))
-              | _ -> raise (TypeCheckingFailure(env, [], [pos, "[lambda] with malformed branches: " ^ lf_expr_to_string e])))
+              | _ -> raise Internal)
           | O_forall -> (
               match args with 
               | ARG(u,ARG(u',_)) ->
                   Helpers.make_T_U (nowhere 6 (Helpers.make_U_max u u'))
-              | _ -> raise (TypeCheckingFailure(env, [], [pos, "[forall] with malformed branches"])))
+              | _ -> raise Internal)
           | O_tt -> Helpers.make_T_Pt
           | O_pair | O_pr1 | O_pr2 | O_total | O_pt | O_pt_r | O_coprod | O_ii1
           | O_ii2 | O_sum | O_empty | O_empty_r | O_c | O_ip_r | O_ip
-          | O_paths | O_refl | O_J | O_rr0 | O_rr1 | O_ev'
+          | O_paths | O_refl | O_J | O_rr0 | O_rr1
             -> raise NotImplemented
          ) )
   | _ -> raise (TypeCheckingFailure(env, [], [pos, "a canonical LF expression has no TS type"]))

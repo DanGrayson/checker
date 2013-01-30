@@ -117,7 +117,6 @@ let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_t
   unmark u
 
 let apply_judgment_binder pos (j:lf_type) (u:lf_type) =
-  printf " apply_judgment_binder j=%a u=%a\n%!" _t j _t u;
   (* just like pi1_implication above, except t consists just of j, with no p or e *)
   let (q,f,k) = unbind_relative u in
   let k = arrow j k in

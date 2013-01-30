@@ -33,7 +33,7 @@ type tHead = | T_El | T_El' | T_U | T_Pi | T_Sigma | T_Pt
 
 (** Labels for o-expressions of TS. *)
 type oHead =
-  | O_u | O_j | O_ev | O_ev' | O_lambda | O_forall | O_pair | O_pr1 | O_pr2 | O_total
+  | O_u | O_j | O_ev | O_lambda | O_forall | O_pair | O_pr1 | O_pr2 | O_total
   | O_pt | O_pt_r | O_tt | O_coprod | O_ii1 | O_ii2 | O_sum | O_empty | O_empty_r
   | O_c | O_ip_r | O_ip | O_paths | O_refl | O_J | O_rr0 | O_rr1
 
@@ -204,8 +204,7 @@ let thead_to_lf_type = function
 let ohead_to_lf_type = function
   | O_u -> uexp @-> oexp
   | O_j -> uexp @-> uexp @-> oexp
-  | O_ev -> oexp @-> oexp @-> texp1 @-> oexp
-  | O_ev' -> oexp @-> oexp @-> texp @-> texp1 @-> oexp
+  | O_ev -> oexp @-> oexp @-> texp @-> texp1 @-> oexp
   | O_lambda -> texp @-> oexp1 @-> oexp
   | O_forall -> uexp @-> uexp @-> oexp @-> oexp1 @-> oexp
   | O_pair -> oexp @-> oexp @-> texp1 @-> oexp
@@ -260,8 +259,7 @@ let head_to_vardist = function
   | T T_Coprod2 -> Some (2, [] :: [] :: [0] :: [1] :: [])
   | O O_ip_r -> Some (5, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [] :: [3;4] :: [] :: [])
   | T T_IP -> Some (3, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [])
-  | O O_ev -> Some (1, [] :: [] :: [0] :: [])
-  | O O_ev' -> Some (1, [] :: [] :: [] :: [0] :: [])
+  | O O_ev -> Some (1, [] :: [] :: [] :: [0] :: [])
   | T T_Pi | T T_Sigma | O O_lambda -> Some (1, [] :: [0] :: [])
   | O O_forall -> Some (1, [] :: [] :: [] :: [0] :: [])
   | O O_pair -> Some (1, [] :: [] :: [0] :: [])
