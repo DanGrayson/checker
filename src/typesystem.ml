@@ -244,7 +244,7 @@ let whead_to_lf_type = function
   | W_wtrans -> wexp @-> wexp @-> oexp @-> wexp
   | W_wconv -> wexp @-> wexp @-> wexp
   | W_wconveq -> wexp @-> wexp @-> texp @-> wexp
-  | W_weleq -> wexp @-> wexp @-> wexp @-> wexp
+  | W_weleq -> wexp @-> wexp
   | W_wpi1 -> wexp @-> wexp
   | W_wpi2 -> wexp_w @-> wexp
   | W_wlam -> wexp_w @-> wexp

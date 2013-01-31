@@ -28,10 +28,24 @@ Check TS Witness : [
     @[U']].
 
 Check TS Witness : [ 
+  @[El'][
+    @[wev][@[wlam;o][@[wev][xf$,o$]],xo$],
+    @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]
+  ] Type ].
+
+Check TS Witness : [ 
       @[wbeta;y][xo$,@[wev][xf$,y$]]
       : @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]
       ≡ @[ev';_][xf,xo,T,@[U']]
       : @[U']
+      ].
+
+Check TS Witness : [ 
+      @[weleq][ @[wbeta;y][xo$,@[wev][xf$,y$]] ]
+      : @[El'][ @[wev][@[wlam;o][@[wev][xf$,o$]],xo$],
+		@[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]]
+      ≡ @[El'][ @[wev][xf$,xo$],
+      		@[ev';_][xf,xo,T,@[U']]]
       ].
 
 End.							    # working on the witness checker

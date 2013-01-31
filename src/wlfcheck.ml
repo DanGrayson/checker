@@ -33,6 +33,28 @@ let open_context t1 (env,p,o,t2) =
   let t2 = Substitute.apply_args t2 e in
   (env,p,o,t2)
 
+let unpack_El' t =
+  match unmark t with
+  | APPLY(T T_El',args) -> args2 args
+  | _ -> raise FalseWitness
+
+let unpack_Pi' t =
+  match unmark t with
+  | APPLY(T T_Pi',args) -> args2 args
+  | _ -> raise FalseWitness
+
+let unpack_ev' o =
+  match unmark o with
+  | APPLY(O O_ev',args) -> args4 args
+  | _ -> raise FalseWitness
+
+let unpack_lambda' o =
+  match unmark o with
+  | APPLY(O O_lambda',args) -> args2 args
+  | _ -> raise FalseWitness
+
+let apply_2 f x y = Substitute.apply_args f (x ** y ** END)
+
 let rec check_istype env t =
   if not (List.exists (fun (v,u) -> equivalence t u) env.ts_context)
   then 
@@ -67,88 +89,75 @@ and check_hastype env p o t =
       if not (equality t t') then Lfcheck.mismatch_term env (get_pos t) t (get_pos t') t')
   | APPLY(W wh, pargs) -> (
       match wh with 
-      | W_wev -> ( 
+      | W_wev ->
 	  let (pf,po) = args2 pargs in
-	  match unmark o with
-	  | APPLY(O O_ev',args) ->
-              let (f,o,t1,t2) = args4 args in
-              check_hastype env po o t1;
-              let u = nowhere 123 (APPLY(T T_Pi', t1 ** t2 ** END)) in
-              check_hastype env pf f u;
-              let t2' = Substitute.apply_args t2 (po ** o ** END) in
-              if not (equivalence t2' t) then Lfcheck.mismatch_term env (get_pos t2') t2' (get_pos t) t;
-          | _ -> raise FalseWitness)
+          let (f,o,t1,t2) = unpack_ev' o in
+          check_hastype env po o t1;
+          let u = nowhere 123 (APPLY(T T_Pi', t1 ** t2 ** END)) in
+          check_hastype env pf f u;
+          let t2' = Substitute.apply_args t2 (po ** o ** END) in
+          if not (equivalence t2' t) then Lfcheck.mismatch_term env (get_pos t2') t2' (get_pos t) t
       | W_wlam -> 
-	  let p = args1 pargs in (
-	  match unmark o with
-	  | APPLY(O O_lambda',args) ->
-	      let (t1',o) = args2 args in (
-	      match unmark t with
-	      | APPLY(T T_Pi', ARG(t1,ARG(t2,END))) -> (
-		  if not (equivalence t1' t1) then Lfcheck.mismatch_term env (get_pos t) t (get_pos t1) t1;
-		  let (env,p,o,t2) = open_context t1 (env,p,o,t2) in
-		  check_hastype env p o t2)
-	      | _ -> Lfcheck.err env (get_pos t) "expected a function type")
-	  | _ -> Lfcheck.err env (get_pos o) "expected a function")
-      | W_wconv -> raise NotImplemented
-      | W_wconveq -> raise NotImplemented
-      | W_weleq -> raise NotImplemented
-      | W_wpi1 -> raise NotImplemented
-      | W_wpi2 -> raise NotImplemented
-      | W_wl1 -> raise NotImplemented
-      | W_wl2 -> raise NotImplemented
-      | W_wevt1 -> raise NotImplemented
-      | W_wevt2 -> raise NotImplemented
-      | W_wevf -> raise NotImplemented
-      | W_wevo -> raise NotImplemented
-      | W_wbeta -> raise NotImplemented
-      | W_weta -> raise NotImplemented
-      | W_Wsymm
-      | W_Wtrans
-      | W_wrefl
-      | W_wsymm
-      | W_wtrans
-      | W_Wrefl -> raise FalseWitness
+	  let p = args1 pargs in
+	  let (t1',o) = unpack_lambda' o in
+	  let (t1,t2) = unpack_Pi' t in
+	  if not (equivalence t1' t1) then Lfcheck.mismatch_term env (get_pos t) t (get_pos t1) t1;
+	  let (env,p,o,t2) = open_context t1 (env,p,o,t2) in
+	  check_hastype env p o t2
+      | W_wconv | W_wconveq | W_weleq | W_wpi1 | W_wpi2 | W_wl1 | W_wl2 | W_wevt1 | W_wevt2
+      | W_wevf | W_wevo | W_wbeta | W_weta | W_Wsymm | W_Wtrans | W_wrefl | W_wsymm | W_wtrans
+      | W_Wrefl
+	-> raise FalseWitness
      )
   | _ -> Lfcheck.err env (get_pos p) ("expected a witness expression: " ^ lf_expr_to_string p)
 
 and check_type_equality env p t t' =
-  raise NotImplemented
+  match unmark p with
+  | APPLY(W wh, pargs) -> (
+      match wh with 
+      | W_weleq ->
+	  let peq = args1 pargs in
+	  let (p,o) = unpack_El' t in
+	  let (p',o') = unpack_El' t' in
+	  check_object_equality env peq o o' uuu;
+	  check_hastype env p o uuu;
+	  check_hastype env p' o' uuu
+      | W_Wrefl | W_Wsymm | W_Wtrans | W_wrefl | W_wsymm | W_wtrans | W_wconv
+      | W_wconveq | W_wpi1 | W_wpi2 | W_wlam | W_wl1 | W_wl2 | W_wev
+      | W_wevt1 | W_wevt2 | W_wevf | W_wevo | W_wbeta | W_weta
+	-> raise FalseWitness
+     )
+  | _ -> Lfcheck.err env (get_pos p) ("expected a witness expression: " ^ lf_expr_to_string p)
+
 
 and check_object_equality env p o o' t =
   match unmark p with
   | APPLY(W wh, pargs) -> (
       match wh with 
-      | W_wbeta -> (
+      | W_wbeta ->
 	  let (p1,p2) = args2 pargs in
-	  match unmark o with 
-	  | APPLY(O O_ev',args) ->
-              let (f,o1,t1,t2) = args4 args in (
-	      match unmark f with 
-	      | APPLY(O O_lambda',fargs) ->
-		  let (t1,o2) = args2 fargs in
-		  check_hastype env p1 o1 t1;
-		  let (env,p2',o2',t2') = open_context t1 (env,p2,o2,t2) in
-		  check_hastype env p2' o2' t2';
-		  let t2'' = Substitute.apply_args t2 (p1 ** o1 ** END) in
-		  if not (equivalence t2'' t) then Lfcheck.mismatch_term env (get_pos t2'') t2'' (get_pos t) t;
-		  let o2' = Substitute.apply_args o2 (p1 ** o1 ** END) in
-		  if not (equivalence o2' o') then Lfcheck.mismatch_term env (get_pos o2') o2' (get_pos o') o';
-	      | _ -> raise FalseWitness)
-          | _ -> raise FalseWitness)
+	  let (f,o1,t1,t2) = unpack_ev' o in
+	  let (t1,o2) = unpack_lambda' f in
+	  check_hastype env p1 o1 t1;
+	  let (env,p2',o2',t2') = open_context t1 (env,p2,o2,t2) in
+	  check_hastype env p2' o2' t2';
+	  let t2'' = apply_2 t2 p1 o1 in
+	  if not (equivalence t2'' t) then Lfcheck.mismatch_term env (get_pos t2'') t2'' (get_pos t) t;
+	  let o2' = apply_2 o2 p1 o1 in
+	  if not (equivalence o2' o') then Lfcheck.mismatch_term env (get_pos o2') o2' (get_pos o') o'
       | _ -> raise FalseWitness)
   | _ -> raise FalseWitness
 
 let check (env:context) (t:lf_type) =
-  (* try *)
+  try
     match unmark t with 
     | F_Apply(F_istype,[t]) -> check_istype env t
     | F_Apply(F_witnessed_hastype,[p;o;t]) -> check_hastype env p o t
     | F_Apply(F_witnessed_type_equality,[p;t;t']) -> check_type_equality env p t t'
     | F_Apply(F_witnessed_object_equality,[p;o;o';t]) -> check_object_equality env p o o' t
     | _ -> Lfcheck.err env (get_pos t) "expected a witnessed judgment"
-  (* with *)
-  (*   FalseWitness -> Lfcheck.err env (get_pos t) "incorrect witness" *)
+  with
+    FalseWitness -> Lfcheck.err env (get_pos t) "incorrect witness"
 
 (* 
   Local Variables:
