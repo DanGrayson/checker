@@ -29,7 +29,7 @@ open Printer
   Universes Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_CAR K_CDR Times
   Turnstile DoubleArrow DoubleArrowFromBar ColonColonEqual ColonEqual Theorem
   LeftBrace RightBrace TurnstileDouble ColonColon Include Clear EqualEqual
-  Witness K_wd_underscore
+  Witness
 
 (* precedences, lowest first *)
 
@@ -67,7 +67,7 @@ open Printer
      thus might be involved in the decision about reducing an application: *)
 
   IDENTIFIER Underscore LeftParen Kumax CONSTANT_SEMI CONSTANT Lambda
-  Sigma Pi VARIABLE Dollar K_wd_underscore
+  Sigma Pi VARIABLE Dollar
 
 %nonassoc
 
@@ -573,9 +573,6 @@ unmarked_ts_expr:
     | LeftParen a= ts_expr Comma b= ts_expr RightParen
 	{ CONS(a,b) }
 
-    | K_wd_underscore i= NUMBER RightBracket
-	{ APPLY(V (Var_wd i), END) }
-
     | name= CONSTANT_SEMI vars= separated_list(Comma,marked_variable_or_unused) RightBracket args= arglist
 	{
 	 let label = 
@@ -597,12 +594,24 @@ unmarked_ts_expr:
 			  "expected " ^ string_of_int nargs ^ " argument" ^ if nargs != 1 then "s" else ""));
 	     let args = List.map2 (
 	       fun indices arg ->
-		 (* example: indices = [0;1], change arg to (LAMBDA v_0, (LAMBDA v_1, arg)) *)
+		 (* examples:
+		    1: if indices = [ SingleVariable 0; SingleVariable 1], change arg to (LAMBDA v0 , (LAMBDA v1, arg)) 
+		    2: if indices = [ WitnessPair 0                     ], change arg to (LAMBDA v0$, (LAMBDA v0, arg)) 
+		  *)
 		 List.fold_right (
-		 fun index arg -> with_pos (get_pos arg) (
-		   let (pos,v) = List.nth vars index in
-		   let (v,arg) = Substitute.subst_fresh pos (v,arg) in 
-		   LAMBDA(v,arg))
+		 fun wrapped_index arg -> with_pos (get_pos arg) (
+		   match wrapped_index with 
+		   | SingleVariable index ->
+		       let (pos,v) = List.nth vars index in
+		       let (v,arg) = Substitute.subst_fresh pos (v,arg) in 
+		       LAMBDA(v,arg)
+		   | WitnessPair index ->
+		       let (pos,v) = List.nth vars index in
+		       let p = witness_var v in
+		       let (v,arg) = Substitute.subst_fresh pos (v,arg) in 
+		       let (p,arg) = Substitute.subst_fresh pos (p,arg) in 
+		       LAMBDA(p, with_pos_of arg (LAMBDA(v,arg)))
+		  )
 		) indices arg
 	      ) varindices args
 	     in

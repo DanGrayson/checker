@@ -83,8 +83,8 @@ let protect f posfun =
       raise_switch ex Error_Handled
 
 let add_tVars env tvars = 
-  { ts_context_length = env.ts_context_length + List.length tvars;
-    ts_context = List.rev_append (List.map (fun t -> Var "_", var_to_lf (Var t)) tvars) env.ts_context;
+  { tts_context = List.rev_append (List.map (fun t -> newunused_wd(), newunused(), var_to_lf (Var t)) tvars) env.tts_context;
+    ts_context = List.rev_append (List.map (fun t -> newunused(), var_to_lf (Var t)) tvars) env.ts_context;
     lf_context = List.rev_append 
       (List.flatten (List.map (fun t -> [ (Var t, texp); (newfresh (Var "ist"), istype (var_to_lf (Var t))); ] ) tvars))
       env.lf_context
@@ -92,7 +92,7 @@ let add_tVars env tvars =
 
 let add_oVars env ovars t =
   { 
-    ts_context_length = env.ts_context_length + List.length ovars;
+    tts_context = List.rev_append (List.map (fun o -> Var_wd o, Var o, t) ovars) env.tts_context;
     ts_context = List.rev_append (List.map (fun o -> Var o, t) ovars) env.ts_context;
     lf_context = List.rev_append 
       (List.flatten (List.map (fun o -> [ (Var o, oexp); (newfresh (Var "hast"), hastype (var_to_lf (Var o)) t); ] ) ovars))

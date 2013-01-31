@@ -14,25 +14,23 @@ Check TS : [ p : o ≡ o' : T ].
 Variable W Type.
 Check TS Witness : [ @[U'] Type ].
 Variable xo : T.				      # Eventually we'll be checking that the type
-Check TS Witness : [ T -> @[U'] Type ].
-Variable xf : T -> @[U'].			      # to the right of the colon is valid here.
+Check TS Witness : [ @[Pi';_][T,@[U']] Type ].
+Variable xf : @[Pi';_][T,@[U']].			      # to the right of the colon is valid here.
 Show.
-Check TS Witness : [ @[wd_2] : xf : T -> @[U'] ].
-Check TS Witness : [ @[wd_1] : xo : T ].
-Check TS Witness : [ @[wev][@[wd_2],@[wd_1]] : @[ev;_][xf,xo,T,@[U']] : @[U'] ].
-Check TS Witness : [ @[El'][@[ev;_][xf,xo,T,@[U']],@[wev][@[wd_2],@[wd_1]]] Type ].
+Check TS Witness : [ xf$ : xf : @[Pi';_][T,@[U']] ].
+Check TS Witness : [ xo$ : xo : T ].
+Check TS Witness : [ @[wev][xf$,xo$] : @[ev';_][xf,xo,T,@[U']] : @[U'] ].
+Check TS Witness : [ @[El'][@[ev';_][xf,xo,T,@[U']],@[wev][xf$,xo$]] Type ].
 
 Check TS Witness : [ 
-      @[wev][ @[wlam;_][@[wev][ @[wd_2],@[wd_3]]],           @[wd_1]] : 
-      @[ev;_][@[λ;y][T, @[ev;_][xf,     y,        T,@[U']]], xo,    T,@[U']] : 
-      @[U'] ].
-
-End.							    # working on the witness checker
+    @[wev][@[wlam;o][@[wev][xf$,o$]],xo$]:
+    @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]:
+    @[U']].
 
 Check TS Witness : [ 
-      @[wbeta;_][@[wd_1],@[wev][@[wd_2],@[wd_1]]]
-      : @[ev;_][@[λ;y][T,@[ev;_][xf,y,T,@[U']]],xo,T,@[U']]
-      ≡ @[ev;_][xf,xo,T,@[U']]
+      @[wbeta;y][xo$,@[wev][xf$,y$]]
+      : @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]
+      ≡ @[ev';_][xf,xo,T,@[U']]
       : @[U']
       ].
 

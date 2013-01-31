@@ -11,11 +11,11 @@ let uhash = function
 
 let thash = function
   | T_El' -> 458
-  | T_El -> 45 | T_U -> 55 | T_U' -> 551 | T_Pi -> 561 | T_Sigma -> 667 | T_Pt -> 5461 | T_Coprod -> 67
+  | T_El -> 45 | T_U -> 55 | T_U' -> 551 | T_Pi -> 561 | T_Pi' -> 563 | T_Sigma -> 667 | T_Pt -> 5461 | T_Coprod -> 67
   | T_Coprod2 -> 121 | T_Empty -> 33 | T_IP -> 47 | T_Id -> 5867
 
 let ohash = function
-  | O_u -> 347 | O_j -> 587 | O_ev -> 689 | O_lambda -> 123 | O_forall -> 4345
+  | O_u -> 347 | O_j -> 587 | O_ev -> 689 | O_ev' -> 6891 | O_lambda -> 123 | O_lambda' -> 121 | O_forall -> 4345
   | O_pair -> 345 | O_pr1 -> 101 | O_pr2 -> 103 | O_total -> 107 | O_pt -> 109
   | O_pt_r -> 345 | O_tt -> 345 | O_coprod -> 2345 | O_ii1 -> 457 | O_ii2 -> 9218
   | O_sum -> 47 | O_empty -> 465 | O_empty_r -> 7456 | O_c -> 473 | O_ip_r -> 347

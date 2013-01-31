@@ -9,7 +9,8 @@ exception Unimplemented_expr of lf_expr
 exception TypeCheckingFailure of context * surrounding * (position * string) list
 
 let lf_expr_head_table = [
-  T T_Pi, "∏"; O O_lambda, "λ"; O O_ev, "ev"; O O_forall, "forall"; 
+  T T_Pi, "∏"; O O_lambda, "λ"; O O_ev, "ev"; 
+  O O_forall, "forall"; 
   T T_El, "El"; 
   T T_Id, "Id"; O O_paths, "paths"; O O_refl, "refl"; O O_J, "J";
   T T_Sigma, "Σ"; O O_pair, "pair"; O O_pr1, "pr1"; O O_pr2, "pr2"; O O_total, "total"; 
@@ -23,7 +24,8 @@ let lf_expr_head_table = [
   O O_rr0, "rr0"; O O_rr1, "rr1";
   T T_Pi, "Pi"; T T_Sigma, "Sigma"; O O_lambda, "lambda";
 
-  T T_El', "El'";
+  T T_El', "El'"; T T_Pi', "Pi'"; T T_Pi', "∏'"; 
+  O O_lambda', "λ'"; O O_lambda', "lambda'"; O O_ev', "ev'"; 
   W W_Wrefl, "Wrefl"; W W_Wsymm, "Wsymm"; W W_Wtrans, "Wtrans";
   W W_wrefl, "wrefl"; W W_wsymm, "wsymm"; W W_wtrans, "wtrans"; W W_wconv, "wconv";
   W W_wconveq, "wconveq"; W W_weleq, "weleq"; W W_wpi1, "wpi1"; W W_wpi2, "wpi2";
@@ -87,7 +89,7 @@ let var_to_lf_pos pos v = with_pos pos (APPLY(V v,END))
 
 let fetch_type env pos v = 
   match v with 
-  | Var_wd _ -> wexp
+  | Var_wd _ | VarGen_wd _ -> wexp
   | _ ->
       try List.assoc v env.lf_context
       with Not_found -> 

@@ -28,12 +28,12 @@ open Variables
 type uHead = | U_next | U_max
 
 (** Labels for t-expressions of TS. *)
-type tHead = | T_El | T_El' | T_U | T_U' | T_Pi | T_Sigma | T_Pt 
+type tHead = | T_El | T_El' | T_U | T_U' | T_Pi | T_Pi' | T_Sigma | T_Pt 
              | T_Coprod | T_Coprod2 | T_Empty | T_IP | T_Id
 
 (** Labels for o-expressions of TS. *)
 type oHead =
-  | O_u | O_j | O_ev | O_lambda | O_forall | O_pair | O_pr1 | O_pr2 | O_total
+  | O_u | O_j | O_ev | O_ev' | O_lambda | O_lambda' | O_forall | O_pair | O_pr1 | O_pr2 | O_total
   | O_pt | O_pt_r | O_tt | O_coprod | O_ii1 | O_ii2 | O_sum | O_empty | O_empty_r
   | O_c | O_ip_r | O_ip | O_paths | O_refl | O_J | O_rr0 | O_rr1
 
@@ -174,8 +174,6 @@ let obj_of_type t = F_obj_of_type @@ [t]		       (* |- x : T *)
 let judged_type_equal t u = F_judged_type_equal @@ [t;u]       (* |- T = U *)
 let judged_obj_equal t x y = F_judged_obj_equal @@ [t;x;y]     (* |- x = y : T *)
 
-let wexp1 = oexp @-> wexp
-
 let texp1 = oexp @-> texp
 let texp2 = oexp @-> oexp @-> texp
 let texp3 = oexp @-> oexp @-> oexp @-> texp
@@ -183,6 +181,10 @@ let texp3 = oexp @-> oexp @-> oexp @-> texp
 let oexp1 = oexp @-> oexp
 let oexp2 = oexp @-> oexp @-> oexp
 let oexp3 = oexp @-> oexp @-> oexp @-> oexp
+
+let wexp_w = wexp @-> oexp @-> wexp
+let texp_w = wexp @-> oexp @-> texp
+let oexp_w = wexp @-> oexp @-> oexp
 
 let uhead_to_lf_type = function
   | U_next -> uexp @-> uexp
@@ -194,6 +196,7 @@ let thead_to_lf_type = function
   | T_U -> uexp @-> texp
   | T_U' -> texp
   | T_Pi -> texp @-> texp1 @-> texp
+  | T_Pi' -> texp @-> texp_w @-> texp
   | T_Sigma -> texp @-> texp1 @-> texp
   | T_Pt -> texp
   | T_Coprod -> texp @-> texp @-> texp
@@ -206,7 +209,9 @@ let ohead_to_lf_type = function
   | O_u -> uexp @-> oexp
   | O_j -> uexp @-> uexp @-> oexp
   | O_ev -> oexp @-> oexp @-> texp @-> texp1 @-> oexp
+  | O_ev' -> oexp @-> oexp @-> texp @-> texp_w @-> oexp
   | O_lambda -> texp @-> oexp1 @-> oexp
+  | O_lambda' -> texp @-> oexp_w @-> oexp
   | O_forall -> uexp @-> uexp @-> oexp @-> oexp1 @-> oexp
   | O_pair -> oexp @-> oexp @-> texp1 @-> oexp
   | O_pr1 -> texp @-> texp1 @-> oexp @-> oexp
@@ -241,8 +246,8 @@ let whead_to_lf_type = function
   | W_wconveq -> wexp @-> wexp @-> texp @-> wexp
   | W_weleq -> wexp @-> wexp @-> wexp @-> wexp
   | W_wpi1 -> wexp @-> wexp
-  | W_wpi2 -> wexp1 @-> wexp
-  | W_wlam -> wexp1 @-> wexp
+  | W_wpi2 -> wexp_w @-> wexp
+  | W_wlam -> wexp_w @-> wexp
   | W_wl1 -> wexp @-> wexp @-> wexp
   | W_wl2 -> wexp @-> wexp
   | W_wev -> wexp @-> wexp @-> wexp
@@ -250,27 +255,33 @@ let whead_to_lf_type = function
   | W_wevt2 -> wexp @-> wexp @-> wexp @-> wexp
   | W_wevf -> wexp @-> wexp @-> wexp
   | W_wevo -> wexp @-> wexp @-> wexp @-> wexp
-  | W_wbeta -> wexp @-> wexp1 @-> wexp
+  | W_wbeta -> wexp @-> wexp_w @-> wexp
   | W_weta -> wexp @-> wexp
+
+type vartype =
+  | SingleVariable of int
+  | WitnessPair of int
 
 type vardist = int list list
 let head_to_vardist = function
-  | W W_wpi2 -> Some (1, [0] :: [])
-  | W W_wlam -> Some (1, [0] :: [])
-  | W W_wbeta -> Some (1, [] :: [0] :: [])
-  | T T_Coprod2 -> Some (2, [] :: [] :: [0] :: [1] :: [])
-  | O O_ip_r -> Some (5, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [] :: [3;4] :: [] :: [])
-  | T T_IP -> Some (3, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [])
-  | O O_ev -> Some (1, [] :: [] :: [] :: [0] :: [])
-  | T T_Pi | T T_Sigma | O O_lambda -> Some (1, [] :: [0] :: [])
-  | O O_forall -> Some (1, [] :: [] :: [] :: [0] :: [])
-  | O O_pair -> Some (1, [] :: [] :: [0] :: [])
-  | O O_pr1 | O O_pr2 -> Some (1, [] :: [0] :: [] :: [])
-  | O O_total -> Some (1, [] :: [] :: [] :: [0] :: [])
-  | O O_pt_r -> Some (1, [] :: [0] :: [])
-  | O O_c -> Some (3, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [] :: [] :: [])
-  | O O_ip -> Some (3, [] :: [] :: [0] :: [0;1] :: [0;1;2] :: [])
-  | O O_J -> Some (2, [] :: [] :: [] :: [] :: [] :: [0;1] :: [])
+  | W W_wpi2 -> Some (1, [ WitnessPair 0] :: [])
+  | W W_wlam -> Some (1, [ WitnessPair 0] :: [])
+  | W W_wbeta -> Some (1, [] :: [ WitnessPair 0 ] :: [])
+  | T T_Coprod2 -> Some (2, [] :: [] :: [ SingleVariable 0] :: [ SingleVariable 1] :: [])
+  | O O_ip_r -> Some (5, [] :: [] :: [ SingleVariable 0] :: [ SingleVariable 0; SingleVariable 1] :: [ SingleVariable 0; SingleVariable 1; SingleVariable 2] :: [] :: [ SingleVariable 3; SingleVariable 4] :: [] :: [])
+  | T T_IP -> Some (3, [] :: [] :: [ SingleVariable 0] :: [ SingleVariable 0; SingleVariable 1] :: [ SingleVariable 0; SingleVariable 1; SingleVariable 2] :: [])
+  | O O_ev -> Some (1, [] :: [] :: [] :: [ SingleVariable 0] :: [])
+  | O O_ev' -> Some (1, [] :: [] :: [] :: [ WitnessPair 0 ] :: [])
+  | T T_Pi | T T_Sigma | O O_lambda -> Some (1, [] :: [ SingleVariable 0] :: [])
+  | T T_Pi' | O O_lambda' -> Some (1, [] :: [ WitnessPair 0] :: [])
+  | O O_forall -> Some (1, [] :: [] :: [] :: [ SingleVariable 0] :: [])
+  | O O_pair -> Some (1, [] :: [] :: [ SingleVariable 0] :: [])
+  | O O_pr1 | O O_pr2 -> Some (1, [] :: [ SingleVariable 0] :: [] :: [])
+  | O O_total -> Some (1, [] :: [] :: [] :: [ SingleVariable 0] :: [])
+  | O O_pt_r -> Some (1, [] :: [ SingleVariable 0] :: [])
+  | O O_c -> Some (3, [] :: [] :: [ SingleVariable 0] :: [ SingleVariable 0; SingleVariable 1] :: [ SingleVariable 0; SingleVariable 1; SingleVariable 2] :: [] :: [] :: [])
+  | O O_ip -> Some (3, [] :: [] :: [ SingleVariable 0] :: [ SingleVariable 0; SingleVariable 1] :: [ SingleVariable 0; SingleVariable 1; SingleVariable 2] :: [])
+  | O O_J -> Some (2, [] :: [] :: [] :: [] :: [] :: [ SingleVariable 0; SingleVariable 1] :: [])
   | _ -> None
 
 (** The "kinds" of LF. 
@@ -379,20 +390,32 @@ let rec compare_kinds k l =
 (** Contexts. *)
 
 type context = {
-    lf_context : (var * lf_type) list;
-    ts_context : (var * lf_expr) list;
-    ts_context_length : int;
+    lf_context : (var * lf_type) list;	      (* e:E -- example: t:texp *)
+    ts_context : (var * lf_expr) list;	      (* o:T -- example: n:nat *)
+    tts_context : (var * var * lf_expr) list; (* p:o:T -- here p is the witness *)
   }
 
-let empty_context = { lf_context = []; ts_context = [];  ts_context_length = 0 }
+let empty_context = { lf_context = []; ts_context = []; tts_context = [] }
 
 let lf_bind env v t = { env with lf_context = (v,t) :: env.lf_context }
 
-let ts_bind env v t = { env with ts_context = (v,t) :: env.ts_context ; ts_context_length = env.ts_context_length + 1 }
+let ts_bind env v t = { env with ts_context = (v,t) :: env.ts_context }
 
-let ts_fetch env i = List.nth env.ts_context i
+let ts_fetch env v = List.assoc v env.ts_context
 
-let ts_fetch_from_top env i = List.nth env.ts_context (env.ts_context_length - i - 1)
+let tts_bind env p v t = { env with tts_context = (p,v,t) :: env.tts_context }
+
+let tts_fetch v env =
+  let rec repeat = function
+      [] -> raise Not_found
+    | (p,o,t)::l -> if compare o v = 0 then (p,t) else repeat l in
+  repeat env.tts_context
+
+let tts_fetch_w w env = 
+  let rec repeat = function
+      [] -> raise Not_found
+    | (p,o,t)::l -> if compare p w = 0 then (o,t) else repeat l in
+  repeat env.tts_context
 
 type uContext = UContext of var marked list * (lf_expr * lf_expr) marked list
 

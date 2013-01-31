@@ -46,11 +46,13 @@ let rec tau (env:context) e : lf_expr =
                     (with_pos_of m1 (Helpers.make_T_U m1))
                     (newunused(), (with_pos_of m2 (Helpers.make_T_U m2)))
               | _ -> raise (TypeCheckingFailure(env, [], [pos, "expected [j] to have two branches"])))
+          | O_ev' -> raise NotImplemented
           | O_ev -> (
               match args with 
               | ARG(f,ARG(o,ARG(t1,ARG((_,LAMBDA(x,t2)),END)))) ->
                   unmark (Substitute.subst_expr (x,o) t2)
               | _ -> raise Internal)
+          | O_lambda' -> raise NotImplemented
           | O_lambda -> (
               match args with 
               | ARG(t,ARG(o,END)) ->

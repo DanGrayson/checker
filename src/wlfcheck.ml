@@ -23,67 +23,70 @@ let compare_var_to_expr v e =
 
 let uuu = nowhere 187 (APPLY(T T_U', END))
 
+let open_context t1 (env,p,o,t2) =
+  let v = newfresh (Var "x") in
+  let v' = newfresh (Var_wd "x") in
+  let env = tts_bind env v' v t1 in
+  let e = var_to_lf v' ** var_to_lf v ** END in 
+  let p = Substitute.apply_args p e in
+  let o = Substitute.apply_args o e in
+  let t2 = Substitute.apply_args t2 e in
+  (env,p,o,t2)
+
 let rec check_istype env t =
   if not (List.exists (fun (v,u) -> equivalence t u) env.ts_context)
   then 
     match unmark t with
     | APPLY(T th, args) -> (
 	match th with
-	| T_Pi -> 
+	| T_Pi' -> 
 	    let (t1,t2) = args2 args in
 	    check_istype env t1;
-	    let w = newfresh (Var "t") in
-	    let env = ts_bind env w t1 in
-	    let w = var_to_lf w in
-	    let t2 = Substitute.apply_args t2 (w ** END) in
+	    let p = newfresh (Var_wd "o") in
+	    let o = newfresh (Var "o") in
+	    let env = tts_bind env p o t1 in
+	    let p = var_to_lf p in
+	    let o = var_to_lf o in
+	    let t2 = Substitute.apply_args t2 (p ** o ** END) in
 	    check_istype env t2
 	| T_U' -> ()
 	| T_El' ->
 	    let (o,p) = args2 args in
 	    check_hastype env p o uuu
-	| _ -> Lfcheck.err env (get_pos t) "invalid type, or not implemented yet")
-    | _ -> Lfcheck.err env (get_pos t) "invalid type, or not implemented yet"
+	| _ -> Lfcheck.err env (get_pos t) "invalid type, or not implemented yet.")
+    | _ -> Lfcheck.err env (get_pos t) ("invalid type, or not implemented yet: " ^ ts_expr_to_string t)
 
 and check_hastype env p o t =
   if false then printf "check_hastype\n p = %a\n o = %a\n t = %a\n%!" _e p _e o _e t;
   match unmark p with
-  | APPLY(V (Var_wd i), END) -> (
-      let (v,u) =
-	try
-	  ts_fetch_from_top env i 
-	with
-	  Invalid_argument _ -> Lfcheck.err env (get_pos p) ("non-existent context position " ^ string_of_int i)
-      in
-      if false then printf " v = %a\n u = %a\n%!" _v v _e u;
-      if not (compare_var_to_expr v o) then Lfcheck.err env (get_pos o) ("expected variable " ^ vartostring v);
-      if not (equality t u) then Lfcheck.mismatch_term env (get_pos t) t (get_pos u) u)
+  | APPLY(V (Var_wd _ | VarGen_wd _ as w), END) -> (
+      let (o',t') = 
+	try tts_fetch_w w env
+	with Not_found -> Lfcheck.err env (get_pos p) "variable not in context" in
+      if not (compare_var_to_expr o' o) then Lfcheck.err env (get_pos o) ("expected variable " ^ vartostring o');
+      if not (equality t t') then Lfcheck.mismatch_term env (get_pos t) t (get_pos t') t')
   | APPLY(W wh, pargs) -> (
       match wh with 
       | W_wev -> ( 
 	  let (pf,po) = args2 pargs in
 	  match unmark o with
-	  | APPLY(O O_ev,args) ->
-	      let (f,o,t1,t2) = args4 args in
-	      check_hastype env po o t1;
-	      let u = nowhere 123 (APPLY(T T_Pi,t1 ** t2 ** END)) in
-	      check_hastype env pf f u;
-	      let t2' = Substitute.subst_expr (Var_wd env.ts_context_length, po) (Substitute.apply_args t2 (o ** END)) in
-	      if not (equivalence t2' t) then Lfcheck.mismatch_term env (get_pos t2') t2' (get_pos t) t;
-	  | _ -> raise FalseWitness)
+	  | APPLY(O O_ev',args) ->
+              let (f,o,t1,t2) = args4 args in
+              check_hastype env po o t1;
+              let u = nowhere 123 (APPLY(T T_Pi', t1 ** t2 ** END)) in
+              check_hastype env pf f u;
+              let t2' = Substitute.apply_args t2 (po ** o ** END) in
+              if not (equivalence t2' t) then Lfcheck.mismatch_term env (get_pos t2') t2' (get_pos t) t;
+          | _ -> raise FalseWitness)
       | W_wlam -> 
 	  let p = args1 pargs in (
 	  match unmark o with
-	  | APPLY(O O_lambda,args) ->
+	  | APPLY(O O_lambda',args) ->
 	      let (t1',o) = args2 args in (
 	      match unmark t with
-	      | APPLY(T T_Pi, ARG(t1,ARG(t2,END))) -> (
+	      | APPLY(T T_Pi', ARG(t1,ARG(t2,END))) -> (
 		  if not (equivalence t1' t1) then Lfcheck.mismatch_term env (get_pos t) t (get_pos t1) t1;
-		  let v = newfresh (Var "x") in
-		  let env = ts_bind env v t1 in
-		  let v = var_to_lf v ** END in 
-		  let p = Substitute.apply_args p v in
-		  let o = Substitute.apply_args o v in
-		  let t2 = Substitute.apply_args t2 v in
+		  let (env,p,o,t2) = open_context t1 (env,p,o,t2) in
 		  check_hastype env p o t2)
 	      | _ -> Lfcheck.err env (get_pos t) "expected a function type")
 	  | _ -> Lfcheck.err env (get_pos o) "expected a function")
@@ -113,7 +116,28 @@ and check_type_equality env p t t' =
   raise NotImplemented
 
 and check_object_equality env p o o' t =
-  raise NotImplemented
+  match unmark p with
+  | APPLY(W wh, pargs) -> (
+      match wh with 
+      | W_wbeta -> (
+	  let (p1,p2) = args2 pargs in
+	  match unmark o with 
+	  | APPLY(O O_ev',args) ->
+              let (f,o1,t1,t2) = args4 args in (
+	      match unmark f with 
+	      | APPLY(O O_lambda',fargs) ->
+		  let (t1,o2) = args2 fargs in
+		  check_hastype env p1 o1 t1;
+		  let (env,p2',o2',t2') = open_context t1 (env,p2,o2,t2) in
+		  check_hastype env p2' o2' t2';
+		  let t2'' = Substitute.apply_args t2 (p1 ** o1 ** END) in
+		  if not (equivalence t2'' t) then Lfcheck.mismatch_term env (get_pos t2'') t2'' (get_pos t) t;
+		  let o2' = Substitute.apply_args o2 (p1 ** o1 ** END) in
+		  if not (equivalence o2' o') then Lfcheck.mismatch_term env (get_pos o2') o2' (get_pos o') o';
+	      | _ -> raise FalseWitness)
+          | _ -> raise FalseWitness)
+      | _ -> raise FalseWitness)
+  | _ -> raise FalseWitness
 
 let check (env:context) (t:lf_type) =
   (* try *)

@@ -122,9 +122,16 @@ let var_tester w subs occurs_in e =
 let var_chooser x subs occurs_in e =
   if not enable_variable_prettification then x, subs else
   match x with
-  | Var_wd _ -> raise Internal
-  | Var name 
-  | VarGen(_,name) -> 
+  | Var_wd name | VarGen_wd(_,name) -> 
+      if not (occurs_in x e) then Var_wd "_", subs else
+      let w = Var_wd name in
+      if x = w && not( in_range w subs ) || var_tester w subs occurs_in e then w, (x,w) :: subs
+      else let rec repeat i =
+        let w = Var_wd (name ^ (if i = 0 then "'" else string_of_int i)) in
+        if var_tester w subs occurs_in e then w, (x,w) :: subs
+        else repeat (i+1)
+      in repeat 1			(*omit the "'" case*)
+  | Var name | VarGen(_,name) -> 
       if not (occurs_in x e) then Var "_", subs else
       let w = Var name in
       if x = w && not( in_range w subs ) || var_tester w subs occurs_in e then w, (x,w) :: subs
@@ -345,8 +352,8 @@ let rec application_to_ts_string hd args = top_prec, (
     possible_comma accu ^ paren_right comma_prec (ts_expr_to_string arg))
     (fun accu -> possible_comma accu ^ "CAR")	(*not right*)
     (fun accu -> possible_comma accu ^ "CDR")
-    (hd ^ "(")
-    args) ^ ")"
+    (hd ^ "[")
+    args) ^ "]"
 
 and lf_atomic_p h args = application_to_ts_string (lf_head_to_string h) args
 
@@ -525,14 +532,24 @@ let print_context n file (c:context) =
   with Limit -> fprintf file "     ...\n");
   fprintf file "TS Context:\n";
   let env = c.ts_context in
-  let env = if n < 0 then List.rev env else env in
+  let env = if n < 0 then List.rev env else env in (
   try iteri
       (fun i (v,t) ->
         if i = n then raise Limit;
-	fprintf file "   %d: %a : %a\n%!" i _v v  _e t
+	fprintf file "   %a : %a\n%!" _v v  _e t
       ) 
       env
-  with Limit -> ()
+  with Limit -> fprintf file "     ...\n");
+  fprintf file "TTS Context:\n";
+  let env = c.tts_context in
+  let env = if n < 0 then List.rev env else env in (
+  try iteri
+      (fun i (p,o,t) ->
+        if i = n then raise Limit;
+	fprintf file "   %a : %a : %a\n%!" _v p _v o _e t
+      ) 
+      env
+  with Limit -> fprintf file "     ...\n")
 
 let print_surroundings (surr:surrounding) = 
   printf "Surroundings:\n";
