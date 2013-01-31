@@ -192,7 +192,7 @@ let uhead_to_lf_type = function
 
 let thead_to_lf_type = function
   | T_El -> oexp @-> texp
-  | T_El' -> oexp @-> wexp @-> texp
+  | T_El' -> wexp @-> oexp @-> texp
   | T_U -> uexp @-> texp
   | T_U' -> texp
   | T_Pi -> texp @-> texp1 @-> texp

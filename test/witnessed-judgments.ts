@@ -20,7 +20,7 @@ Show.
 Check TS Witness : [ xf$ : xf : @[Pi';_][T,@[U']] ].
 Check TS Witness : [ xo$ : xo : T ].
 Check TS Witness : [ @[wev][xf$,xo$] : @[ev';_][xf,xo,T,@[U']] : @[U'] ].
-Check TS Witness : [ @[El'][@[ev';_][xf,xo,T,@[U']],@[wev][xf$,xo$]] Type ].
+Check TS Witness : [ @[El'][@[wev][xf$,xo$],@[ev';_][xf,xo,T,@[U']]] Type ].
 
 Check TS Witness : [ 
     @[wev][@[wlam;o][@[wev][xf$,o$]],xo$]:

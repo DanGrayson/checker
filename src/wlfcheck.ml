@@ -51,7 +51,7 @@ let rec check_istype env t =
 	    check_istype env t2
 	| T_U' -> ()
 	| T_El' ->
-	    let (o,p) = args2 args in
+	    let (p,o) = args2 args in
 	    check_hastype env p o uuu
 	| _ -> Lfcheck.err env (get_pos t) "invalid type, or not implemented yet.")
     | _ -> Lfcheck.err env (get_pos t) ("invalid type, or not implemented yet: " ^ ts_expr_to_string t)
