@@ -9,9 +9,9 @@ let assumption surr env pos t args =
   let rec repeat = function
     | (v,u) :: envp -> (
 	try
-	  Lfcheck.type_equivalence env t u;
+	  Lfcheck.subtype env u t;
 	  TacticSuccess(var_to_lf v)
-	with TypeEquivalenceFailure -> 
+	with SubtypeFailure -> 
 	  repeat envp)
     | [] -> TacticFailure
   in repeat env.lf_context
