@@ -20,7 +20,7 @@ let ohash = function
   | O_pt_r -> 345 | O_tt -> 345 | O_coprod -> 2345 | O_ii1 -> 457 | O_ii2 -> 9218
   | O_sum -> 47 | O_empty -> 465 | O_empty_r -> 7456 | O_c -> 473 | O_ip_r -> 347
   | O_ip -> 3841 | O_paths -> 3845  | O_refl -> 376 | O_J -> 77 | O_rr0 -> 91
-  | O_rr1 -> 97
+  | O_rr1 -> 97 | O_nat -> 971 | O_nat_r -> 972 | O_O -> 973 | O_S -> 974
 
 let whash = function
   | W_Wrefl -> 12

@@ -21,6 +21,14 @@ Definition LF tt : oexp := @[tt].
 
 Definition LF El : oexp ⟶ texp := @[El].
 
+Definition LF nat : oexp := @[nat].
+
+Definition LF Nat : texp := (El nat).
+
+Definition LF O : oexp := @[O].
+
+Definition LF S : oexp := @[S].
+
 #   Local Variables:
 #   compile-command: "make -C .. abbreviations "
 #   End:

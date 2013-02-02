@@ -36,6 +36,7 @@ type oHead =
   | O_u | O_j | O_ev | O_ev' | O_lambda | O_lambda' | O_forall | O_pair | O_pr1 | O_pr2 | O_total
   | O_pt | O_pt_r | O_tt | O_coprod | O_ii1 | O_ii2 | O_sum | O_empty | O_empty_r
   | O_c | O_ip_r | O_ip | O_paths | O_refl | O_J | O_rr0 | O_rr1
+  | O_nat | O_nat_r | O_O | O_S
 
 (** Labels for w-expressions of TS.  They are witnesses to "extended" judgments. *)
 type wHead =
@@ -235,6 +236,10 @@ let ohead_to_lf_type = function
   | O_J -> texp @-> oexp @-> oexp @-> oexp @-> oexp @-> texp2 @-> oexp
   | O_rr0 -> uexp @-> uexp @-> oexp @-> oexp @-> oexp @-> oexp
   | O_rr1 -> uexp @-> oexp @-> oexp @-> oexp
+  | O_nat -> oexp
+  | O_O -> oexp
+  | O_S -> oexp
+  | O_nat_r -> oexp @-> oexp @-> oexp @-> texp1 @-> oexp
 
 let whead_to_lf_type = function
   | W_Wrefl -> wexp

@@ -10,7 +10,6 @@ Axiom 101 oeq_empty_eta { ⊢ a : Empty, T Type, o : T, o' : T } [ o ≡ o' : T 
 
 Axiom 102 Empty_istype ⊢ Empty Type .
 
-
 #   Local Variables:
 #   compile-command: "make -C .. rules4 "
 #   End:

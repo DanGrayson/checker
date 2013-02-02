@@ -25,6 +25,7 @@ let lf_expr_head_table = [
   T T_Pi, "Pi"; T T_Sigma, "Sigma"; O O_lambda, "lambda";
   T T_Proof, "Proof";
   T T_El', "El'"; T T_Pi', "Pi'"; T T_Pi', "∏'"; 
+  O O_nat, "nat"; O O_nat_r, "nat_r"; O O_O, "O"; O O_S, "S";
   O O_lambda', "λ'"; O O_lambda', "lambda'"; O O_ev', "ev'"; 
   W W_Wrefl, "Wrefl"; W W_Wsymm, "Wsymm"; W W_Wtrans, "Wtrans";
   W W_wrefl, "wrefl"; W W_wsymm, "wsymm"; W W_wtrans, "wtrans"; W W_wconv, "wconv";
