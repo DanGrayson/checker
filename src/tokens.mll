@@ -16,10 +16,10 @@
    "∏", Pi; "λ", Lambda; "Σ", Sigma; name_F_Pi, Pi; "lambda", Lambda; 
    "Ulevel", Ulevel; "Type", Type; "max", Kumax; "Singleton", Singleton; "Sigma", Sigma;
    "pair", Kpair; "CAR", K_CAR; "CDR", K_CDR; "Clear", Clear; "Universes", Universes;
-   "LF", LF; "TS", TS; "Check", Check; "Axiom", Axiom; "Alpha", Alpha;
+   "LF", LF; "TS", TS; "TTS", TTS; "Check", Check; "Axiom", Axiom; "Alpha", Alpha;
    "Variable", Variable; "End", End; "Include", Include; "Clear", Clear;
    "Show", Show; "Theorem", Theorem; "Definition", Theorem; "Lemma", Theorem;
-   "Proposition", Theorem; "Corollary", Theorem; "Witness", Witness
+   "Proposition", Theorem; "Corollary", Theorem
  ]
 
  let tab lexbuf =

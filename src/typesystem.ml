@@ -29,7 +29,7 @@ type uHead = | U_next | U_max
 
 (** Labels for t-expressions of TS. *)
 type tHead = | T_El | T_El' | T_U | T_U' | T_Pi | T_Pi' | T_Sigma | T_Pt 
-             | T_Coprod | T_Coprod2 | T_Empty | T_IP | T_Id
+             | T_Coprod | T_Coprod2 | T_Empty | T_IP | T_Id | T_Proof
 
 (** Labels for o-expressions of TS. *)
 type oHead =
@@ -192,7 +192,7 @@ let uhead_to_lf_type = function
 
 let thead_to_lf_type = function
   | T_El -> oexp @-> texp
-  | T_El' -> wexp @-> oexp @-> texp
+  | T_El' -> oexp @-> wexp @-> texp
   | T_U -> uexp @-> texp
   | T_U' -> texp
   | T_Pi -> texp @-> texp1 @-> texp
@@ -204,6 +204,7 @@ let thead_to_lf_type = function
   | T_Empty -> texp
   | T_IP -> texp @-> oexp @-> texp1 @-> texp2 @-> oexp3 @-> texp
   | T_Id -> texp @-> oexp @-> oexp @-> texp
+  | T_Proof -> wexp @-> oexp @-> texp @-> texp
 
 let ohead_to_lf_type = function
   | O_u -> uexp @-> oexp

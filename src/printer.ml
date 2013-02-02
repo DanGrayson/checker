@@ -340,7 +340,7 @@ let apply n f =                         (* generate f 0 :: f 1 :: f 2 :: ... :: 
     else f i :: repeat (i+1)
   in repeat 0
     
-let ends_in_paren s = s.[String.length s - 1] = '('
+let ends_in_paren s = s.[String.length s - 1] = '['
 
 let lf_head_to_string h = lf_head_to_string_with_subs [] h
 

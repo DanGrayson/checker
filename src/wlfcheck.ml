@@ -6,6 +6,13 @@ open Printer
 open Printf
 open Error
 open Helpers
+open Names
+
+let mismatch_term_tstype_tstype env e s t =
+  raise (TypeCheckingFailure (env, [], [
+               get_pos e, "error: expected term\n\t" ^ ts_expr_to_string e;
+               get_pos s, "of type\n\t" ^ ts_expr_to_string s;
+               get_pos t, "to be compatible with type\n\t" ^ ts_expr_to_string t]))
 
 exception FalseWitness
 
@@ -73,8 +80,11 @@ let rec check_istype env t =
 	    check_istype env t2
 	| T_U' -> ()
 	| T_El' ->
-	    let (p,o) = args2 args in
+	    let (o,p) = args2 args in
 	    check_hastype env p o uuu
+	| T_Proof ->
+	    let (p,o,t) = args3 args in
+	    check_hastype env p o t
 	| _ -> Lfcheck.err env (get_pos t) "invalid type, or not implemented yet.")
     | _ -> Lfcheck.err env (get_pos t) ("invalid type, or not implemented yet: " ^ ts_expr_to_string t)
 
@@ -86,7 +96,7 @@ and check_hastype env p o t =
 	try tts_fetch_w w env
 	with Not_found -> Lfcheck.err env (get_pos p) "variable not in context" in
       if not (compare_var_to_expr o' o) then Lfcheck.err env (get_pos o) ("expected variable " ^ vartostring o');
-      if not (equality t t') then Lfcheck.mismatch_term env (get_pos t) t (get_pos t') t')
+      if not (equivalence t t') then mismatch_term_tstype_tstype env o t' t)
   | APPLY(W wh, pargs) -> (
       match wh with 
       | W_wev ->
@@ -96,7 +106,7 @@ and check_hastype env p o t =
           let u = nowhere 123 (APPLY(T T_Pi', t1 ** t2 ** END)) in
           check_hastype env pf f u;
           let t2' = Substitute.apply_args t2 (po ** o ** END) in
-          if not (equivalence t2' t) then Lfcheck.mismatch_term env (get_pos t2') t2' (get_pos t) t
+          if not (equivalence t2' t) then mismatch_term_tstype_tstype env o t t2'
       | W_wlam -> 
 	  let p = args1 pargs in
 	  let (t1',o) = unpack_lambda' o in
@@ -117,8 +127,8 @@ and check_type_equality env p t t' =
       match wh with 
       | W_weleq ->
 	  let peq = args1 pargs in
-	  let (p,o) = unpack_El' t in
-	  let (p',o') = unpack_El' t' in
+	  let (o,p) = unpack_El' t in
+	  let (o',p') = unpack_El' t' in
 	  check_object_equality env peq o o' uuu;
 	  check_hastype env p o uuu;
 	  check_hastype env p' o' uuu

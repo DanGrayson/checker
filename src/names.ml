@@ -23,7 +23,7 @@ let lf_expr_head_table = [
   U U_next, "next"; U U_max, "max"; T T_U, "U"; T T_U', "U'"; O O_u, "u"; O O_j, "j";
   O O_rr0, "rr0"; O O_rr1, "rr1";
   T T_Pi, "Pi"; T T_Sigma, "Sigma"; O O_lambda, "lambda";
-
+  T T_Proof, "Proof";
   T T_El', "El'"; T T_Pi', "Pi'"; T T_Pi', "∏'"; 
   O O_lambda', "λ'"; O O_lambda', "lambda'"; O O_ev', "ev'"; 
   W W_Wrefl, "Wrefl"; W W_Wsymm, "Wsymm"; W W_Wtrans, "Wtrans";
@@ -32,7 +32,6 @@ let lf_expr_head_table = [
   W W_wlam, "wlam"; W W_wl1, "wl1"; W W_wl2, "wl2"; W W_wev, "wev";
   W W_wevt1, "wevt1"; W W_wevt2, "wevt2"; W W_wevf, "wevf"; W W_wevo, "wevo";
   W W_wbeta, "wbeta"; W W_weta, "weta"
-
 ]
 
 let expr_head_to_string h = List.assoc h lf_expr_head_table

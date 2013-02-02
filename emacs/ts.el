@@ -23,12 +23,12 @@
   (setq case-fold-search nil)
   )
 
-(defvar ts-keywords '( "lambda" "Pi" "Sigma" "∏" "λ" "Σ" "Pi" "lambda" "Ulevel" "Type"
+(defvar ts-keywords '( "lambda" "Pi" "Sigma" "∏" "λ" "Σ" "Pi" "lambda" "Ulevel" "Type" "Proof"
 		       "uexp" "texp" "oexp" "istype" "hastype" "uequal" "tequal" "oequal" "tuequal" "ouequal" 
 		       "Texp" "Oexp" "Tequal" "Oequal"
 		       "max" "Singleton" "LF_Empty" "pair" "CAR" "CDR" "WildCard" ))
 
-(defvar ts-commands '( "Clear" "Universes" "LF" "TS" "Witness"
+(defvar ts-commands '( "Clear" "Universes" "LF" "TS" "TTS"
 		       "Check" "Alpha" "End" "Clear" "Show" "Include" ))
 
 (defvar ts-mode-font-lock-keywords 

@@ -29,7 +29,7 @@ open Printer
   Universes Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_CAR K_CDR Times
   Turnstile DoubleArrow DoubleArrowFromBar ColonColonEqual ColonEqual Theorem
   LeftBrace RightBrace TurnstileDouble ColonColon Include Clear EqualEqual
-  Witness
+  TTS
 
 (* precedences, lowest first *)
 
@@ -281,8 +281,7 @@ unmarked_command:
     | Check LF Colon t= lf_type Period
 	{ Toplevel.CheckLFtype t }
 
-    | Check TS? Witness Colon t= ts_judgment Period
-    | Check LF Witness Colon t= lf_type Period
+    | Check TTS Colon t= ts_judgment Period
 	{ Toplevel.CheckWitness t }
 
     | Check Universes Period
