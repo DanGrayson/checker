@@ -51,14 +51,14 @@ Check TTS : [
 # Check TTS : [ @[El'][A,A$] Type ].
 
 Check TTS : [ 
-      @[wbeta;y][xo$,@[wev][xf$,y$]]
+        @[wbeta;y][xo$,@[wev][xf$,y$]]
       : @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]
       ≡ @[ev';_][xf,xo,T,@[U']]
       : @[U']
       ].
 
 Check TTS : [ 
-      @[weleq][ @[wbeta;y][xo$,@[wev][xf$,y$]] ]
+        @[weleq][ @[wbeta;y][xo$,@[wev][xf$,y$]] ]
       : @[El'][ @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']],
 		@[wev][@[wlam;o][@[wev][xf$,o$]],xo$]]
       ≡ @[El'][ @[ev';_][xf,xo,T,@[U']],
