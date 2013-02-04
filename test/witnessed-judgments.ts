@@ -1,6 +1,6 @@
-Check LF : (p:wexp) -> (t:texp) -> (o:oexp) -> witnessed_hastype p o t.
-Check LF : (p:wexp) -> (t:texp) -> (t':texp) -> witnessed_type_equality p t t'.
-Check LF : (p:wexp) -> (t:texp) -> (o:oexp) -> (o':oexp) -> witnessed_object_equality p o o' t.
+Check LF : (p:wexp) -> (t:texp) -> (o:oexp) -> w_hastype p o t.
+Check LF : (p:wexp) -> (t:texp) -> (t':texp) -> w_type_equality p t t'.
+Check LF : (p:wexp) -> (t:texp) -> (o:oexp) -> (o':oexp) -> w_object_equality p o o' t.
 
 Axiom LF p : wexp.
 Axiom LF T : texp.
@@ -16,7 +16,8 @@ Check TTS : [ @[U'] Type ].
 Variable xo : T.				      # Eventually we'll be checking that the type
 Check TTS : [ @[Pi';_][T,@[U']] Type ].
 Variable xf : @[Pi';_][T,@[U']].			      # to the right of the colon is valid here.
-Show.
+Axiom LF xf$ : wexp.
+Axiom LF xo$ : wexp.
 Check TTS : [ xf$ : xf : @[Pi';_][T,@[U']] ].
 Check TTS : [ xo$ : xo : T ].
 Check TTS : [ @[wev][xf$,xo$] : @[ev';_][xf,xo,T,@[U']] : @[U'] ].

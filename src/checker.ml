@@ -100,11 +100,10 @@ let add_oVars env ovars t =
   }
 
 let lf_axiomCommand env pos name t =
-  if show_rules then ( printf "Axiom LF %s: %a\n%!" name  _t t );
+  if show_rules then ( printf "Axiom LF %a: %a\n%!" _v name _t t );
   let t = Lfcheck.type_validity [] env t in
-  let v = Var name in
-  ensure_new_name env pos v;
-  lf_bind env v t
+  ensure_new_name env pos name;
+  lf_bind env name t
 
 let defCommand env defs = 
   List.fold_left

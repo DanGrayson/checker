@@ -166,9 +166,9 @@ let type_uequality t t' = F_type_uequality @@ [t;t']	       (* t ~ t' *)
 let type_equality t t' = F_type_equality @@ [t;t']	       (* t = t' *)
 let object_uequality o o' t = F_object_uequality @@ [o;o';t]   (* o ~ o' : t *)
 let object_equality o o' t = F_object_equality @@ [o;o';t]     (* o = o' : t *)
-let witnessed_hastype p o t = F_witnessed_hastype @@ [p;o;t]   (* p :: o : t *)
-let witnessed_type_equality p t t' = F_witnessed_type_equality @@ [p;t;t'] (* p :: t = t' *)
-let witnessed_object_equality p o o' t = F_witnessed_object_equality @@ [ p;o;o';t] (* p :: o = o' : t *)
+let witnessed_hastype p o t = F_witnessed_hastype @@ [p;o;t]   (* p : o : t *)
+let witnessed_type_equality p t t' = F_witnessed_type_equality @@ [p;t;t'] (* p : t = t' *)
+let witnessed_object_equality p o o' t = F_witnessed_object_equality @@ [ p;o;o';t] (* p : o = o' : t *)
 
 let a_type = F_a_type @@ []				       (* |- T Type *)
 let obj_of_type t = F_obj_of_type @@ [t]		       (* |- x : T *)
@@ -297,6 +297,7 @@ let head_to_vardist = function
 type lf_kind =
   | K_ulevel
   | K_expression
+  | K_primitive_judgment
   | K_judgment
   | K_judged_expression
   | K_witnessed_judgment
@@ -321,7 +322,7 @@ let k_pi t k =
   let v' = nowhere 126 (APPLY(V v,END)) in
   K_Pi(v,t,k v')
 
-let istype_kind = texp @@-> K_judgment
+let istype_kind = texp @@-> K_primitive_judgment
 
 let hastype_kind = oexp @@-> texp @@-> K_judgment
 
@@ -331,15 +332,21 @@ let object_equality_kind = oexp @@-> oexp @@-> texp @@-> K_judgment
 
 let ulevel_equality_kind = uexp @@-> uexp @@-> K_judgment
 
-let type_uequality_kind = texp @@-> texp @@-> K_judgment
+let type_uequality_kind = texp @@-> texp @@-> K_primitive_judgment
 
-let object_uequality_kind = oexp @@-> oexp @@-> texp @@-> K_judgment
+let object_uequality_kind = oexp @@-> oexp @@-> texp @@-> K_primitive_judgment
 
 let a_type_kind = K_judged_expression
 
 let obj_of_type_kind = a_type @@-> K_judged_expression
 
 let judged_kind_equal_kind = a_type @@-> a_type @@-> K_judged_expression
+
+let w_hastype_kind = oexp @@-> texp @@-> K_witnessed_judgment
+
+let w_type_equality_kind = texp @@-> texp @@-> K_witnessed_judgment
+
+let w_object_equality_kind = oexp @@-> oexp @@-> texp @@-> K_witnessed_judgment
 
 let witnessed_hastype_kind = wexp @@-> oexp @@-> texp @@-> K_witnessed_judgment
 
@@ -380,6 +387,7 @@ let rec ultimate_kind = function
   | K_expression
   | K_judgment
   | K_witnessed_judgment
+  | K_primitive_judgment
   | K_judged_expression as k -> k
   | K_Pi (v,t,k) -> ultimate_kind k
 
@@ -388,10 +396,21 @@ let rec compare_kinds k l =
   let l = ultimate_kind l in
   if k = l then K_equal else
   match k,l with
-  | K_ulevel, _ | K_expression, K_judgment -> K_less
-  | _, K_ulevel | K_judgment, K_expression -> K_greater
-  | K_expression, K_witnessed_judgment -> K_less
-  | K_witnessed_judgment, K_expression -> K_greater
+  | K_primitive_judgment, K_judgment
+  | K_judgment,           K_primitive_judgment
+      -> K_equal
+  | K_ulevel,             _
+  | K_expression,         K_judgment
+  | K_expression,         K_primitive_judgment
+  | K_expression,         K_witnessed_judgment 
+  | K_primitive_judgment, K_witnessed_judgment
+    -> K_less
+  | _,                    K_ulevel 
+  | K_judgment,           K_expression
+  | K_primitive_judgment, K_expression
+  | K_witnessed_judgment, K_expression 
+  | K_witnessed_judgment, K_primitive_judgment
+    -> K_greater
   | _ -> K_incomparable
 
 (** Contexts. *)

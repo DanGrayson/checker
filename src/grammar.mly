@@ -265,10 +265,10 @@ unmarked_command:
     | Variable vars= IDENTIFIER+ Ulevel eqns= preceded(Semicolon,uEquation)* Period
 	{ Toplevel.UVariable (vars,eqns) }
 
-    | Axiom num= dotted_number? name= IDENTIFIER t= ts_judgment Period
+    | Axiom num= dotted_number? name= variable t= ts_judgment Period
 	{ Toplevel.Axiom (num,name,t) }
 
-    | Axiom LF num= dotted_number? name= IDENTIFIER Colon t= lf_type Period
+    | Axiom LF num= dotted_number? name= variable Colon t= lf_type Period
 	{ Toplevel.Axiom (num,name,t) }
 
     | Check TS? o= ts_expr Period
@@ -410,9 +410,34 @@ unmarked_ts_judgment:
 		     if c <> [] then $syntaxerror;
 		     (fun v u -> with_pos_of v (add_single (unmark v) uexp u))
 		 | IST -> 
-		     (fun v u -> with_pos_of v (apply_binder pos c v texp istype u))
+		     (fun v u -> with_pos_of v 
+			 (apply_binder pos c v texp 
+			    (fun pos t -> let t = var_to_lf_pos pos t in istype t) u))
 		 | HAST t -> 
-		     (fun v u -> with_pos_of v (apply_binder pos c v oexp (fun o -> hastype o t) u)) in
+		     (fun v u -> with_pos_of v 
+			 (apply_binder pos c v oexp 
+			    (fun pos o -> let o = var_to_lf_pos pos o in hastype o t) u)) 
+		 | W_HAST(o,t) ->
+		     (fun v u ->
+		       let ov = (
+			 match unmark o with
+			 | APPLY(V ov, END) -> with_pos_of o ov
+			 | _ ->
+			     fprintf stderr "%a: expected a variable\n%!" _pos (get_pos o);
+			     $syntaxerror)
+		       in
+		       ignore ov;
+		       raise NotImplemented (* should rewrite and simplify apply_binder first, so it can be adapted here *)
+		     ) 
+		 | W_TEQ(t1,t2) ->
+		     (fun v u -> with_pos_of v 
+			 (apply_binder pos c v wexp 
+			    (fun pos p -> let p = var_to_lf_pos pos p in witnessed_type_equality p t1 t2 ) u)) 
+		 | W_OEQ(o1,o2,t) ->
+		     (fun v u -> with_pos_of v 
+			 (apply_binder pos c v wexp 
+			    (fun pos p -> let p = var_to_lf_pos pos p in witnessed_object_equality p o1 o2 t ) u)) 
+		 in
 		 List.fold_right f v u)
 	      vbj u in
 	  unmark r
@@ -457,6 +482,12 @@ binder_judgment:
     | Type { IST }
 
     | Colon t= ts_expr { HAST t }
+
+    | Colon o= ts_expr Colon t= ts_expr { W_HAST(o,t) }
+
+    | Colon x= ts_expr EqualEqual y= ts_expr { W_TEQ(x,y) }
+
+    | Colon x= ts_expr EqualEqual y= ts_expr Colon t= ts_expr { W_OEQ(x,y,t) }
 
 context:
 

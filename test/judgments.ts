@@ -45,10 +45,6 @@ Check TS : (T:texp) => (t:oexp) =>
 Check TS : (T:texp) => (U:texp) => [ T ~ U Type ].      # ulevel equivalence for t-expressions
 Check TS : (u:uexp) => (v:uexp) => [ u ~ v Ulevel ].    # ulevel equivalence for u-expressions
 
-Check TS : { |- T Type, t u:T }    [ t ~ u : T ].       # ulevel equivalence for o-expressions
-Check TS : { |- T U Type }         [ T ~ U Type ].      # ulevel equivalence for t-expressions
-Check TS : { |- u v Ulevel }       [ u ~ v Ulevel ].    # ulevel equivalence for u-expressions
-
 #   Local Variables:
 #   compile-command: "make -C .. judgments "
 #   End:

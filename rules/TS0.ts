@@ -4,19 +4,13 @@ Include "rules/abbreviations.ts".
 
 Variable uu0 Ulevel.
 
-Axiom 3.4.7 tsimeq { ⊢ T U Type } [ T ~ U Type ] ⇒ [ T ≡ U ].
-
-# not in Voevodsky's paper; we may not need it
-Axiom teqrefl { ⊢ T Type } [ T ≡ T ].
+Axiom 3.4.7 trefl { ⊢ T U Type } [ T ~ U Type ] ⇒ [ T ≡ U ].
 
 Axiom 3.4.8 teqsymm { ⊢ T U Type } [ T ≡ U ] ⇒ [ U ≡ T ].
 
 Axiom 3.4.9 teqtrans { ⊢ T U V Type } [ T ≡ U ] ⇒ [ U ≡ V ] ⇒ [ T ≡ V ].
 
-Axiom 3.4.10 osimeq { ⊢ T Type, x y : T } [ x ~ y : T ] ⇒ [ x ≡ y : T ].
-
-# not in Voevodsky's paper; we may not need it:
-Axiom oeqrefl { ⊢ T Type, x : T } [ x ≡ x : T ].
+Axiom 3.4.10 orefl { ⊢ T Type, x y : T } [ x ~ y : T ] ⇒ [ x ≡ y : T ].
 
 Axiom 3.4.11 oeqsymm { ⊢ T Type, x : T, y : T } [ x ≡ y : T ] ⇒ [ y ≡ x : T ].
 

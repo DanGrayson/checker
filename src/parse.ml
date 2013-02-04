@@ -24,7 +24,13 @@ let lookup_type_constant pos name =
   try List.assoc name Names.string_to_type_constant
   with Not_found as e -> Printf.fprintf stderr "%a: unknown type constant %s\n%!" _pos pos name; raise e
 
-type binder_judgment = ULEV | IST | HAST of lf_expr
+type binder_judgment = 
+  | ULEV
+  | IST
+  | HAST of lf_expr 
+  | W_HAST of lf_expr * lf_expr
+  | W_TEQ of lf_expr * lf_expr
+  | W_OEQ of lf_expr * lf_expr * lf_expr
 
 let add_single v t u = F_Pi(v, t, u)
 
@@ -106,12 +112,12 @@ let pi1_implication ((vpos,v),t) u =
       t
   | None -> raise NotImplemented
 
-let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_type) (t2 : lf_expr -> lf_type) (u : lf_type) = 
+let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_type) (t2 : position -> var -> lf_type) (u : lf_type) = 
   (* syntax is { v_1 : T_1 , ... , v_n : T_n |- v Type } u  or  { v_1 : T_1 , ... , v_n : T_n |- v:T } u *)
   (* t1 is texp or oexp; t2 is (fun t -> istype t) or (fun o -> hastype o t) *)
   let (vpos,v) = v in
   let c = List.map (fun ((vpos,v),t) -> (vpos,v), (vpos, F_Sigma(v,oexp,hastype (var_to_lf_pos pos v) t))) c in
-  let t = pos, F_Sigma(v,t1,t2 (var_to_lf_pos pos v)) in
+  let t = pos, F_Sigma(v, t1, t2 pos v) in
   let t = List.fold_right pi1_implication c t in
   let u = pi1_implication ((vpos,v),t) u in
   unmark u

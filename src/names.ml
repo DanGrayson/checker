@@ -64,15 +64,16 @@ let lf_type_constant_table = [
   F_judged_type_equal, "Tequal";
   F_judged_obj_equal, "Oequal";
   F_wexp, "wexp";
-  F_witnessed_hastype, "witnessed_hastype";
-  F_witnessed_type_equality, "witnessed_type_equality";
-  F_witnessed_object_equality, "witnessed_object_equality"
+  F_witnessed_hastype, "w_hastype";
+  F_witnessed_type_equality, "w_type_equality";
+  F_witnessed_object_equality, "w_object_equality";
 ]
 
 let lf_kind_constant_table = [
   K_ulevel, "ulevel";
   K_expression, "expression";
   K_judgment, "judgment";
+  K_primitive_judgment, "primitive_judgment";
   K_judged_expression, "judged_expression";
   K_witnessed_judgment, "witnessed_judgment"
 ]
@@ -89,7 +90,6 @@ let var_to_lf_pos pos v = with_pos pos (APPLY(V v,END))
 
 let fetch_type env pos v = 
   match v with 
-  | Var_wd _ | VarGen_wd _ -> wexp
   | _ ->
       try List.assoc v env.lf_context
       with Not_found -> 

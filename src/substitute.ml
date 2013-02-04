@@ -99,7 +99,7 @@ let rec subst_kind_list (subl : (var * lf_expr) list) ts = List.map (subst_kind 
 
 and subst_kind (subl : (var * lf_expr) list) k = 
    match k with
-   | K_ulevel | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression -> k
+   | K_primitive_judgment | K_ulevel | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression -> k
    | K_Pi(v,a,b) -> 
        let a = subst_type subl a in
        let (v,b) = subst_kind_fresh (get_pos a) subl (v,b) in K_Pi(v, a, b)
