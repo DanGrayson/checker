@@ -66,17 +66,8 @@ let rec find_w_hastype env o t : tactic_return = (
 
 let witness (surr:surrounding) (env:context) (pos:position) (t:lf_type) (args:spine) : tactic_return = 
   match surr with 
-  | (S_argument 1, None, Some j) :: _ -> (
-      match unmark j with
-      | F_Apply(F_witnessed_hastype,[_;o;t]) -> find_w_hastype env o t
-      | _ -> TacticFailure)
-  | (S_argument 1, Some t, None) :: (S_argument 1, None, Some j) :: _ -> (
-      match unmark j with
-      | F_Apply(F_istype,[_]) -> (
-	  match unmark t with 
-	  | APPLY(T T_El', ARG(o, _)) -> find_w_hastype env o uuu
-	  | _ -> TacticFailure)
-      | _ -> TacticFailure)
+  | (S_argument 1, None, Some (pos,F_Apply(F_witnessed_hastype,[_;o;t]))) :: _ -> find_w_hastype env o t
+  | (S_argument 1, Some (pos,APPLY(T T_El', ARG(o, _))), None) :: _ -> find_w_hastype env o uuu
   | _ -> TacticFailure
 
 (* 
