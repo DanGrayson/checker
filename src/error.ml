@@ -22,6 +22,7 @@ exception Internal
 exception VariableNotInContext
 exception NoMatchingRule
 exception Eof
+exception FalseWitness
 
 type position =
   | Position of Lexing.position * Lexing.position (** start, end *)

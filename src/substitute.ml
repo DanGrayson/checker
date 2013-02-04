@@ -9,12 +9,8 @@ open Printer
 open Printf
 
 let fresh pos v subl =
-  if isunused v 
-  then
-    v, subl
-  else
-    let v' = newfresh v in
-    v', (v,var_to_lf_pos pos v') :: subl
+  let v' = newfresh v in
+  v', (v,var_to_lf_pos pos v') :: subl
 
 let show_subs (subl : (var * lf_expr) list) =
   printf " subs =\n";
@@ -45,14 +41,9 @@ and subst_expr subl e =
       pos, LAMBDA(v, body)
 
 and subst_fresh pos subl (v,e) =
-  if isunused v
-  then
-    let e' = subst_expr subl e in
-    v, e'
-  else
-    let (v',subl) = fresh pos v subl in
-    let e' = subst_expr subl e in
-    v', e'
+  let (v',subl) = fresh pos v subl in
+  let e' = subst_expr subl e in
+  v', e'
 
 and apply_args e args =
   let rec repeat e args = 

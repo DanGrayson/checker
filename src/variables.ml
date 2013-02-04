@@ -15,14 +15,12 @@ let vartostring = function
   | VarGen_wd(i,x) -> x ^ "$$" ^ string_of_int i
 
 let base_var = function
-  | Var _ | VarGen _ -> raise Internal
   | Var_wd x -> Var x
-  | VarGen_wd(i,x) -> VarGen(i,x)
+  | VarGen_wd _ | Var _ | VarGen _ -> raise Internal
 
 let witness_var = function
   | Var x -> Var_wd x
-  | VarGen(i,x) -> VarGen_wd(i,x)
-  | Var_wd _ | VarGen_wd _ -> raise Internal
+  | VarGen _ | Var_wd _ | VarGen_wd _ -> raise Internal
 
 exception GensymCounterOverflow
 
@@ -41,10 +39,8 @@ let next_genctr =
 
 let newfresh = function
   | Var x | VarGen(_,x) -> (
-      assert(x <> "_");
       VarGen (next_genctr(), x))
   | Var_wd x | VarGen_wd(_,x) -> (
-      assert(x <> "_");
       VarGen_wd (next_genctr(), x))
 
 let newunused () = VarGen (next_genctr(), "_")

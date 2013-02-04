@@ -510,7 +510,7 @@ arglist:
 
 empty_hole: Underscore { cite_tactic (Tactic_name "default") END }
 
-unused_variable: Underscore { newunused() }
+unused_variable: Underscore { (* newunused() *) Var "_" }
 
 variable_or_unused: variable {$1} | unused_variable {$1}
 
@@ -635,11 +635,11 @@ unmarked_ts_expr:
 		       let (pos,v) = List.nth vars index in
 		       let (v,arg) = Substitute.subst_fresh pos (v,arg) in 
 		       LAMBDA(v,arg)
-		   | WitnessPair index ->
-		       let (pos,v) = List.nth vars index in
-		       let p = witness_var v in
-		       let (v,arg) = Substitute.subst_fresh pos (v,arg) in 
-		       let (p,arg) = Substitute.subst_fresh pos (p,arg) in 
+                   | WitnessPair index ->
+                       let (pos,v) = List.nth vars index in
+                       let p = witness_var v in
+                       let (v,arg) = Substitute.subst_fresh pos (v,arg) in 
+                       let (p,arg) = Substitute.subst_fresh pos (p,arg) in 
 		       LAMBDA(p, with_pos_of arg (LAMBDA(v,arg)))
 		  )
 		) indices arg
