@@ -134,9 +134,13 @@ let make_Var c = Var c
 let make_U h a = APPLY(U h, a)
 let make_T h a = APPLY(T h, a)
 let make_O h a = APPLY(O h, a)
+let make_W h a = APPLY(W h, a)
 
 let make_U_next x = make_U U_next (x ** END)
 let make_U_max x y = make_U U_max (x **  y ** END)
+
+let uuu = nowhere 187 (APPLY(T T_U', END))
+
 let make_T_El x = make_T T_El (x ** END)
 let make_T_U x = make_T T_U ( x ** END)
 let make_T_Pi    t1 (x,t2) = make_T T_Pi    (t1 ** lambda1 x t2 ** END)
@@ -176,6 +180,8 @@ let make_O_refl t o = make_O O_refl (t ** o ** END)
 let make_O_J tT a b q i (x,(e,tS)) = make_O O_J (tT ** a ** b ** q ** i ** lambda2 x e tS ** END)
 let make_O_rr0 m2 m1 s t e = make_O O_rr0 (m2 ** m1 ** s ** t ** e ** END)
 let make_O_rr1 m a p = make_O O_rr1 (m ** a ** p ** END)
+
+let make_W_wev p q = make_W W_wev (p ** q ** END)
 
 (* 
   Local Variables:

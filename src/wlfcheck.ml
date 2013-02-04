@@ -28,8 +28,6 @@ let compare_var_to_expr v e =
   | APPLY(V w, END) -> v = w
   | _ -> false
 
-let uuu = nowhere 187 (APPLY(T T_U', END))
-
 let open_context t1 (env,p,o,t2) =
   let v = newfresh (Var "x") in
   let v' = newfresh (Var_wd "x") in

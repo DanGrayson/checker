@@ -20,9 +20,14 @@ Axiom LF xf$ : wexp.
 Axiom LF xo$ : wexp.
 Check TTS : [ _ : xf : @[Pi';_][T,@[U']] ].
 Check TTS : [ _ : xo : T ].
-Check TTS : [ @[wev][xf$,xo$] : @[ev';_][xf,xo,T,@[U']] : @[U'] ].
-Check TTS : [ @[El'][@[ev';_][xf,xo,T,@[U']],@[wev][xf$,xo$]] Type ].
-
+Check TTS : [ _ : @[ev';_][xf,xo,T,@[U']] : @[U'] ].
+Check TTS : [ @[El'][@[ev';_][xf,xo,T,@[U']],_] Type ].
+End.							    # working on tactic $witness
+Check TTS : [ 
+    _ :
+    @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]:
+    @[U']].
+End.							    # working on tactic $witness
 Check TTS : [ 
     @[wev][@[wlam;o][@[wev][xf$,o$]],xo$]:
     @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]:
