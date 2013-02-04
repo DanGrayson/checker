@@ -18,8 +18,8 @@ Check TTS : [ @[Pi';_][T,@[U']] Type ].
 Variable xf : @[Pi';_][T,@[U']].			      # to the right of the colon is valid here.
 Axiom LF xf$ : wexp.
 Axiom LF xo$ : wexp.
-Check TTS : [ xf$ : xf : @[Pi';_][T,@[U']] ].
-Check TTS : [ xo$ : xo : T ].
+Check TTS : [ _ : xf : @[Pi';_][T,@[U']] ].
+Check TTS : [ _ : xo : T ].
 Check TTS : [ @[wev][xf$,xo$] : @[ev';_][xf,xo,T,@[U']] : @[U'] ].
 Check TTS : [ @[El'][@[ev';_][xf,xo,T,@[U']],@[wev][xf$,xo$]] Type ].
 
