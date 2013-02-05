@@ -74,3 +74,9 @@ proper implementation of meta-variables
 	Here is how it is done in agda:
 
 	http://www.cse.chalmers.se/~ulfn/papers/meta-variables.pdf
+
+type checking, unification, etc.:
+
+       Ulf Norell's thesis (recommended by Dan L)
+            http://www.cse.chalmers.se/~ulfn/#papers
+	    http://www.cse.chalmers.se/~ulfn/papers/thesis.pdf
