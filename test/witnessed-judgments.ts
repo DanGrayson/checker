@@ -64,10 +64,8 @@ Check TTS : [
 #       ].
 
 Check TTS : [ 
-    _ : @[El'][ @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']],
-		@[wev][@[wlam;o][@[wev][xf$,o$]],xo$]]
-      ≡ @[El'][ @[ev';_][xf,xo,T,@[U']],
-      		@[wev][xf$,xo$]]
+    _ : @[El'][ @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']], _]
+      ≡ @[El'][ @[ev';_][xf,xo,T,@[U']], _]
       ].
 
 End. # working on the witness checker
