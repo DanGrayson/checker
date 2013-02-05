@@ -185,6 +185,8 @@ let make_W_wev p q = make_W W_wev (p ** q ** END)
 let make_W_wbeta p q = make_W W_wbeta (p ** q ** END)
 let make_W_wlam p = make_W W_wlam (p ** END)
 let make_W_wrefl p p' = make_W W_wrefl (p ** p' ** END)
+let make_W_weleq peq = make_W W_weleq (peq ** END)
+let make_W_Wrefl = make_W W_wrefl END
 let make_T_Pi' t1 t2 = make_T T_Pi' (t1 ** t2 ** END)
 
 (* 

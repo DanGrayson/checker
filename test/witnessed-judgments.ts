@@ -18,11 +18,13 @@ Check TTS : [ @[Pi';_][T,@[U']] Type ].
 Variable xf : @[Pi';_][T,@[U']].			      # to the right of the colon is valid here.
 Axiom LF xf$ : wexp.
 Axiom LF xo$ : wexp.
+
 Check TTS : [ _ : xf : @[Pi';_][T,@[U']] ].
 Check TTS : [ _ : xo : T ].
 Check TTS : [ _ : @[ev';_][xf,xo,T,@[U']] : @[U'] ].
-Check TTS : [ @[El'][@[ev';_][xf,xo,T,@[U']],_] Type ].
 Check TTS : [ _ : @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]: @[U']].
+
+Check TTS : [ @[El'][@[ev';_][xf,xo,T,@[U']],_] Type ].
 
 Check TTS : [ @[Proof][ 
     @[wev][@[wlam;o][@[wev][xf$,o$]],xo$],
@@ -41,20 +43,20 @@ Check TTS : [ @[El'][ @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']], _
 
 # Check TTS : [ @[El'][A,A$] Type ].
 
-Check TTS : [ _ 
-      : @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]
+Check TTS : [
+    _ : @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]
       ≡ @[ev';_][@[λ';z][T,@[ev';_][xf,z,T,@[U']]],xo,T,@[U']]
       : @[U']
       ].
 
-Check TTS : [ _ 
-      : @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]
+Check TTS : [
+    _ : @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]
       ≡ @[ev';_][xf,xo,T,@[U']]
       : @[U']
       ].
 
-      # working on tactic $witness
-
+# Make head reduction work.
+# This one is the same as the one above, with objects reversed.
 # Check TTS : [ _ 
 #       : @[ev';_][xf,xo,T,@[U']]
 #       ≡ @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]
@@ -62,8 +64,7 @@ Check TTS : [ _
 #       ].
 
 Check TTS : [ 
-        @[weleq][ @[wbeta;y][xo$,@[wev][xf$,y$]] ]
-      : @[El'][ @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']],
+    _ : @[El'][ @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']],
 		@[wev][@[wlam;o][@[wev][xf$,o$]],xo$]]
       ≡ @[El'][ @[ev';_][xf,xo,T,@[U']],
       		@[wev][xf$,xo$]]

@@ -72,7 +72,20 @@ and find_w_hastype env o t : lf_expr = (
       raise WitnessNotFound
  )
 
-let rec find_w_object_equality env o o' t =
+let rec find_w_type_equality env t t' =
+  if equivalence t t' then (
+    nowhere 206 make_W_Wrefl)
+  else (
+    match unmark t, unmark t' with
+    | APPLY(T T_El', args), APPLY(T T_El', args') -> (
+	let o,p = args2 args in
+	let o',p' = args2 args' in
+	let peq = find_w_object_equality env o o' uuu in
+	let w = make_W_weleq peq in
+	nowhere 208 w)
+    | _ -> raise WitnessNotFound)
+
+and find_w_object_equality env o o' t =
   if equivalence o o' then (
     let p = find_w_hastype env o t in
     let p' = find_w_hastype env o' t in
@@ -97,6 +110,8 @@ let witness (surr:surrounding) (env:context) (pos:position) (t:lf_type) (args:sp
 	TacticSuccess (find_w_hastype env o t)
     | (S_argument 1, None, Some (pos,F_Apply(F_witnessed_object_equality,[_;o;o';t]))) :: _ -> 
 	TacticSuccess (find_w_object_equality env o o' t)
+    | (S_argument 1, None, Some (pos,F_Apply(F_witnessed_type_equality,[_;t;t']))) :: _ -> 
+	TacticSuccess (find_w_type_equality env t t')
     | (S_argument 1, Some (pos,APPLY(T T_El', ARG(o, _))), None) :: _ -> 
 	TacticSuccess (find_w_hastype env o uuu)
     | _ -> TacticFailure
