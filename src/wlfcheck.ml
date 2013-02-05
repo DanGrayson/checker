@@ -14,8 +14,6 @@ let mismatch_term_tstype_tstype env e s t =
                get_pos s, "of type\n\t" ^ ts_expr_to_string s;
                get_pos t, "to be compatible with type\n\t" ^ ts_expr_to_string t]))
 
-exception FalseWitness
-
 let equality = Alpha.UEqual.term_equiv empty_uContext
     (* Here equality is alpha-equivalence *)
 
@@ -67,7 +65,7 @@ let rec check_istype env t =
     | APPLY(T th, args) -> (
 	match th with
 	| T_Pi' -> 
-	    let (t1,t2) = args2 args in
+	    let t1,t2 = args2 args in
 	    check_istype env t1;
 	    let p = newfresh (Var_wd "o") in
 	    let o = newfresh (Var "o") in
@@ -78,10 +76,10 @@ let rec check_istype env t =
 	    check_istype env t2
 	| T_U' -> ()
 	| T_El' ->
-	    let (o,p) = args2 args in
+	    let o,p = args2 args in
 	    check_hastype env p o uuu
 	| T_Proof ->
-	    let (p,o,t) = args3 args in
+	    let p,o,t = args3 args in
 	    check_hastype env p o t
 	| _ -> Lfcheck.err env (get_pos t) "invalid type, or not implemented yet.")
     | _ -> Lfcheck.err env (get_pos t) ("invalid type, or not implemented yet: " ^ ts_expr_to_string t)
@@ -90,7 +88,7 @@ and check_hastype env p o t =
   if false then printf "check_hastype\n p = %a\n o = %a\n t = %a\n%!" _e p _e o _e t;
   match unmark p with
   | APPLY(V (Var_wd _ | VarGen_wd _ as w), END) -> (
-      let (o',t') = 
+      let o',t' = 
 	try tts_fetch_w w env
 	with Not_found -> Lfcheck.err env (get_pos p) "variable not in context" in
       if not (compare_var_to_expr o' o) then Lfcheck.err env (get_pos o) ("expected variable " ^ vartostring o');
@@ -98,8 +96,8 @@ and check_hastype env p o t =
   | APPLY(W wh, pargs) -> (
       match wh with 
       | W_wev ->
-	  let (pf,po) = args2 pargs in
-          let (f,o,t1,t2) = unpack_ev' o in
+	  let pf,po = args2 pargs in
+          let f,o,t1,t2 = unpack_ev' o in
           check_hastype env po o t1;
           let u = nowhere 123 (APPLY(T T_Pi', t1 ** t2 ** END)) in
           check_hastype env pf f u;
@@ -107,10 +105,10 @@ and check_hastype env p o t =
           if not (equivalence t2' t) then mismatch_term_tstype_tstype env o t t2'
       | W_wlam -> 
 	  let p = args1 pargs in
-	  let (t1',o) = unpack_lambda' o in
-	  let (t1,t2) = unpack_Pi' t in
+	  let t1',o = unpack_lambda' o in
+	  let t1,t2 = unpack_Pi' t in
 	  if not (equivalence t1' t1) then Lfcheck.mismatch_term env (get_pos t) t (get_pos t1) t1;
-	  let (env,p,o,t2) = open_context t1 (env,p,o,t2) in
+	  let env,p,o,t2 = open_context t1 (env,p,o,t2) in
 	  check_hastype env p o t2
       | W_wconv | W_wconveq | W_weleq | W_wpi1 | W_wpi2 | W_wl1 | W_wl2 | W_wevt1 | W_wevt2
       | W_wevf | W_wevo | W_wbeta | W_weta | W_Wsymm | W_Wtrans | W_wrefl | W_wsymm | W_wtrans
@@ -125,12 +123,12 @@ and check_type_equality env p t t' =
       match wh with 
       | W_weleq ->
 	  let peq = args1 pargs in
-	  let (o,p) = unpack_El' t in
-	  let (o',p') = unpack_El' t' in
+	  let o,p = unpack_El' t in
+	  let o',p' = unpack_El' t' in
 	  check_object_equality env peq o o' uuu;
 	  check_hastype env p o uuu;
 	  check_hastype env p' o' uuu
-      | W_Wrefl | W_Wsymm | W_Wtrans | W_wrefl | W_wsymm | W_wtrans | W_wconv
+      | W_wrefl | W_Wrefl | W_Wsymm | W_Wtrans | W_wsymm | W_wtrans | W_wconv
       | W_wconveq | W_wpi1 | W_wpi2 | W_wlam | W_wl1 | W_wl2 | W_wev
       | W_wevt1 | W_wevt2 | W_wevf | W_wevo | W_wbeta | W_weta
 	-> raise FalseWitness
@@ -143,16 +141,23 @@ and check_object_equality env p o o' t =
   | APPLY(W wh, pargs) -> (
       match wh with 
       | W_wbeta ->
-	  let (p1,p2) = args2 pargs in
-	  let (f,o1,t1,t2) = unpack_ev' o in
-	  let (t1,o2) = unpack_lambda' f in
+	  let p1,p2 = args2 pargs in
+	  let f,o1,t1',t2 = unpack_ev' o in
+	  let t1,o2 = unpack_lambda' f in
+	  if not (equivalence t1 t1') then Lfcheck.mismatch_term env (get_pos t1) t1 (get_pos t1') t1';
 	  check_hastype env p1 o1 t1;
-	  let (env,p2',o2',t2') = open_context t1 (env,p2,o2,t2) in
+	  let env,p2',o2',t2' = open_context t1 (env,p2,o2,t2) in
 	  check_hastype env p2' o2' t2';
 	  let t2'' = apply_2 t2 p1 o1 in
 	  if not (equivalence t2'' t) then Lfcheck.mismatch_term env (get_pos t2'') t2'' (get_pos t) t;
 	  let o2' = apply_2 o2 p1 o1 in
 	  if not (equivalence o2' o') then Lfcheck.mismatch_term env (get_pos o2') o2' (get_pos o') o'
+      | W_wrefl -> (
+	  let p,p' = args2 pargs in
+	  check_hastype env p o t;
+	  check_hastype env p' o' t;
+	  if not (equivalence o o') then Lfcheck.mismatch_term env (get_pos o) o (get_pos o') o';
+	 )
       | _ -> raise FalseWitness)
   | _ -> raise FalseWitness
 

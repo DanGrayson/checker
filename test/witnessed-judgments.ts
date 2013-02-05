@@ -41,21 +41,25 @@ Check TTS : [ @[El'][ @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']], _
 
 # Check TTS : [ @[El'][A,A$] Type ].
 
-End.							    # working on tactic $witness
+Check TTS : [ _ 
+      : @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]
+      ≡ @[ev';_][@[λ';z][T,@[ev';_][xf,z,T,@[U']]],xo,T,@[U']]
+      : @[U']
+      ].
 
-Check TTS : [ 
-        _ 
+Check TTS : [ _ 
       : @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]
       ≡ @[ev';_][xf,xo,T,@[U']]
       : @[U']
       ].
 
-Check TTS : [ 
-        @[wbeta;y][xo$,@[wev][xf$,y$]]
-      : @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]
-      ≡ @[ev';_][xf,xo,T,@[U']]
-      : @[U']
-      ].
+      # working on tactic $witness
+
+# Check TTS : [ _ 
+#       : @[ev';_][xf,xo,T,@[U']]
+#       ≡ @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]
+#       : @[U']
+#       ].
 
 Check TTS : [ 
         @[weleq][ @[wbeta;y][xo$,@[wev][xf$,y$]] ]
@@ -65,7 +69,7 @@ Check TTS : [
       		@[wev][xf$,xo$]]
       ].
 
-End.							    # working on the witness checker
+End. # working on the witness checker
 
 #   Local Variables:
 #   compile-command: "make -C .. witnessed-judgments "

@@ -84,10 +84,10 @@ Definition idfun { ⊢ X Type } ⊢ λ x:X,x : X⟶X
 
    := X ⟾ (_, _ ⟾ lambda1[X,X,x ⟾ x,CDR,_,_,_]).
 
-End. # trying to prove the following theorem
+# trying to prove the following theorem
 
-Theorem idisweq { ⊢ X Type } : Isweq[X,X,idfun[X,CAR],CAR] 
-   := _ .
+# Theorem idisweq { ⊢ X Type } : Isweq[X,X,idfun[X,CAR],CAR] 
+#    := _ .
 
 #   Local Variables:
 #   compile-command: "make -C .. rules7r "

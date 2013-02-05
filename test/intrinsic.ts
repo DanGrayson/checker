@@ -343,8 +343,6 @@ Check LF # Theorem LF idisweq
 
 # to do: give a proof.
 
-End.
-
 #   Local Variables:
 #   compile-command: "make -C .. intrinsic "
 #   End:

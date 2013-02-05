@@ -106,13 +106,13 @@ Theorem compose' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
 Definition barbara { |- T U V Type } ⊢ (T->U) -> (U->V) -> (T->V) Type ::=
     T ⟼ U ⟼ V ⟼ (_, $tscheck ).
 
-End.							    # working on $tscheck
+    # working on $tscheck
 
-Theorem compose'' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 
-    T ⟼ U ⟼ V ⟼ (
-     (@[λ] (@[∏] T (_ ⟼ U)) (f ⟼ (@[λ] (@[∏] U (_ ⟼ V)) (g ⟼ (@[λ] T (t ⟼ (@[ev] g (@[ev] f t T (_ ⟼ U)) U (_ ⟼ V)))))))),
-     _ ⟼ _ ⟼ _ ⟼ $tscheck
-     ).
+# Theorem compose'' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::= 
+#     T ⟼ U ⟼ V ⟼ (
+#      (@[λ] (@[∏] T (_ ⟼ U)) (f ⟼ (@[λ] (@[∏] U (_ ⟼ V)) (g ⟼ (@[λ] T (t ⟼ (@[ev] g (@[ev] f t T (_ ⟼ U)) U (_ ⟼ V)))))))),
+#      _ ⟼ _ ⟼ _ ⟼ $tscheck
+#      ).
 
 #   Local Variables:
 #   compile-command: "make -C .. interpretations DEBUG=no"

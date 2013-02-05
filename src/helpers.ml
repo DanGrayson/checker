@@ -182,7 +182,10 @@ let make_O_rr0 m2 m1 s t e = make_O O_rr0 (m2 ** m1 ** s ** t ** e ** END)
 let make_O_rr1 m a p = make_O O_rr1 (m ** a ** p ** END)
 
 let make_W_wev p q = make_W W_wev (p ** q ** END)
+let make_W_wbeta p q = make_W W_wbeta (p ** q ** END)
 let make_W_wlam p = make_W W_wlam (p ** END)
+let make_W_wrefl p p' = make_W W_wrefl (p ** p' ** END)
+let make_T_Pi' t1 t2 = make_T T_Pi' (t1 ** t2 ** END)
 
 (* 
   Local Variables:
