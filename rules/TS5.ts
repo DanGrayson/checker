@@ -67,7 +67,7 @@ Axiom 15.3.1.3 nat_S_reduction { x : Nat ⊢ T Type } { ⊢ o1 : T[O] } { ⊢ o2
 	  :
 	  T[@[ev;_][S,n,Nat,Nat]] ].
 
-Lemma nat_eta_sanity { x : Nat ⊢ T Type }
+Lemma nat_equality_sanity { x : Nat ⊢ T Type }
       { ⊢ o1 : T[O] } 
       { ⊢ o2 : ∏ x:Nat, T[x] -> T[ @[ev;_][S,x,Nat,Nat] ] }
       { ⊢ n : Nat } { ⊢ t : T[n] } [ 
@@ -85,7 +85,7 @@ Lemma nat_eta_sanity { x : Nat ⊢ T Type }
 	  _, x⟾x'⟾∏_istype[T[x],_⟾T[@[ev;_][S,x,Nat,Nat]],CDR,T'[x,_],_⟾_⟾T'[@[ev;_][S,x,Nat,Nat],ev_hastype[Nat,_⟾Nat,S,x,CDR,_,_,_,_]]], _, _],
       _].
 
-Axiom nat_eta 
+Axiom nat_equality
       { x : Nat ⊢ T Type }
       { ⊢ o1 o1' : T[O] } [ o1 ≡ o1' : T[O] ]
       { ⊢ o2 o2' : ∏ x:Nat, T[x] -> T[ @[ev;_][S,x,Nat,Nat] ] }
@@ -97,6 +97,12 @@ Axiom nat_eta
 		T[@[ev;_][S,n,Nat,Nat]] ]) ⇒
       { ⊢ n : Nat }
       [ @[nat_r][o1,o2,n,T] ≡ @[nat_r][o1',o2',n,T] : T[n] ].
+
+Axiom nat_eta
+      { n : Nat ⊢ T Type, f g : T[n] }
+      [ f[O] ≡ g[O] : T[O] ] ⇒
+      ({ ⊢ n : Nat } [ f[n] ≡ g[n] : T[n] ] ⇒ [ f[@[ev;_][S,n,Nat,Nat]] ≡ g[@[ev;_][S,n,Nat,Nat]] : T[@[ev;_][S,n,Nat,Nat]] ]) ⇒
+      { ⊢ n : Nat } [ f[n] ≡ g[n] : T[n] ].
 
 #   Local Variables:
 #   compile-command: "make -C .. rules5 "
