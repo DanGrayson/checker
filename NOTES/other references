@@ -80,3 +80,10 @@ type checking, unification, etc.:
        Ulf Norell's thesis (recommended by Dan L)
             http://www.cse.chalmers.se/~ulfn/#papers
 	    http://www.cse.chalmers.se/~ulfn/papers/thesis.pdf
+
+
+Inductive families need not store their indices
+	  (recommended by Dan L)
+ 	  http://www.cs.st-andrews.ac.uk/~james/RESEARCH/indices.pdf
+ 	  Brady, McBride, McKinna
+
