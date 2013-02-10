@@ -87,3 +87,8 @@ Inductive families need not store their indices
  	  http://www.cs.st-andrews.ac.uk/~james/RESEARCH/indices.pdf
  	  Brady, McBride, McKinna
 
+
+Idris, a General Purpose Dependently Typed Programming Language: Design and Implementation
+	(recommended by Dan L)
+	http://www.cs.st-andrews.ac.uk/~eb/drafts/impldtp.pdf
+	Edwin Brady
