@@ -92,3 +92,20 @@ Idris, a General Purpose Dependently Typed Programming Language: Design and Impl
 	(recommended by Dan L)
 	http://www.cs.st-andrews.ac.uk/~eb/drafts/impldtp.pdf
 	Edwin Brady
+
+Lumsdaine
+
+	MODEL STRUCTURES FROM HIGHER INDUCTIVE TYPES
+	PETER LEFANU LUMSDAINE
+
+	Abstract. We show that for any dependent type theory with Martin-Lof
+	identity types and mapping cylinders (dened as certain higher-dimensional
+	inductive types), the category of contexts carries a pre-model-structure, i.e.
+	a model structure minus the completeness conditions. The (trivial cobra-
+	tions,brations) are the Gambino-Garner weak factorisation system of [GG08],
+	while the weak equivalences are equivalences in the sense of Voevodsky [Voe].
+	It follows that any categorical model of this type theory carries a pre-model-
+	structure, and so, if it is additionally complete and co-complete, is a model
+	category.
+	
+	http://www.mathstat.dal.ca/~p.l.lumsdaine/research/Lumsdaine-Model-strux-from-HITs.pdf
