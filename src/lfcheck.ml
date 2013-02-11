@@ -16,6 +16,7 @@
 let tactic_tracing = false
 
 open Error
+open Errorcheck
 open Variables
 open Typesystem
 open Names
@@ -25,10 +26,7 @@ open Printf
 open Helpers
 open Tau
 open Printer
-
-exception TermEquivalenceFailure
-exception TypeEquivalenceFailure
-exception SubtypeFailure
+open Wlfcheck
 
 let abstraction1 pos (env:context) = function
   | ARG(t,ARG((_,LAMBDA(x, _)),_)) -> ts_bind env x t
@@ -69,42 +67,6 @@ let apply_ts_binder env i e =
   | _ -> (trap(); raise Internal)
 
 let try_alpha = true
-
-let err env pos msg = raise (TypeCheckingFailure (env, [], [pos, msg]))
-
-let errmissingarg env pos a = err env pos ("missing next argument, of type "^lf_type_to_string a)
-
-let mismatch_type env pos t pos' t' = 
-  raise (TypeCheckingFailure (env, [], [
-         pos , "expected type " ^ lf_type_to_string t;
-         pos', "to match      " ^ lf_type_to_string t']))
-
-let mismatch_term_type env e t =
-  raise (TypeCheckingFailure (env, [], [
-               get_pos e, "error: expected term\n\t" ^ lf_expr_to_string e;
-               get_pos t, "to be compatible with type\n\t" ^ lf_type_to_string t]))
-
-let mismatch_term_type_type env e s t =
-  raise (TypeCheckingFailure (env, [], [
-               get_pos e, "error: expected term\n\t" ^ lf_expr_to_string e;
-               get_pos s, "of type\n\t" ^ lf_type_to_string s;
-               get_pos t, "to be compatible with type\n\t" ^ lf_type_to_string t]))
-
-let mismatch_term_t env pos x pos' x' t = 
-  raise (TypeCheckingFailure (env, [], [
-                    pos , "error: expected term\n\t" ^ lf_expr_to_string x ;
-                    pos',      "to match\n\t" ^ lf_expr_to_string x';
-               get_pos t,       "of type\n\t" ^ lf_type_to_string t]))
-
-let mismatch_term env pos x pos' x' = 
-  raise (TypeCheckingFailure (env, [], [
-                    pos , "error: expected term\n\t" ^ lf_expr_to_string x;
-                    pos',      "to match\n\t" ^ lf_expr_to_string x']))
-
-let function_expected env f t =
-  raise (TypeCheckingFailure (env, [], [
-                    get_pos f, "error: encountered a non-function\n\t" ^ lf_expr_to_string f;
-                    get_pos t, "of type\n\t" ^ lf_type_to_string t]))
 
 let rec strip_singleton ((_,(_,t)) as u) = match t with
 | F_Singleton a -> strip_singleton a
@@ -406,6 +368,7 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
       raise (TypeCheckingFailure (env, surr, [
 				  get_pos e0, "error: expected a pair but got a function:\n\t" ^ lf_expr_to_string e0]))
   | LAMBDA _, _ -> 
+      (* we don't have singleton kinds, so if t is definitionally equal to a product type, it already looks like one *)
       raise (TypeCheckingFailure (env, surr, [
 				  get_pos t, "error: expected something of type\n\t" ^ lf_type_to_string t;
 				  get_pos e0, "but got a function\n\t" ^ lf_expr_to_string e0]))
@@ -417,6 +380,10 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
       let b = subst_type (w,x) b in
       let y = type_check ((S_projection 2,Some e0,Some t) :: surr) env y b in
       pos, CONS(x,y)
+
+  | _, F_Apply(F_hastype_witness, [o;t]) -> check_hastype env e0 o t; e0 (* should apply possible tactics somehow here *)
+  | _, F_Apply(F_type_equality_witness,[t;t']) -> check_type_equality env e0 t t'; e0
+  | _, F_Apply(F_object_equality_witness,[o;o';t]) -> check_object_equality env e0 o o' t; e0
 
   | _, _  ->
       let (e,s) = type_synthesis surr env e0 in 

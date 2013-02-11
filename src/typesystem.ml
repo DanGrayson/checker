@@ -68,6 +68,13 @@ type lf_type_head =
   | F_judged_type_equal
   | F_judged_obj_equal
   | F_wexp
+      (* the next four are types, whose objects are witnesses *)
+  | F_istype_witness
+  | F_hastype_witness
+  | F_type_equality_witness
+  | F_object_equality_witness
+      (* the next four are statements, with no objects *)
+  | F_witnessed_istype
   | F_witnessed_hastype
   | F_witnessed_type_equality
   | F_witnessed_object_equality
@@ -166,6 +173,13 @@ let type_uequality t t' = F_type_uequality @@ [t;t']	       (* t ~ t' *)
 let type_equality t t' = F_type_equality @@ [t;t']	       (* t = t' *)
 let object_uequality o o' t = F_object_uequality @@ [o;o';t]   (* o ~ o' : t *)
 let object_equality o o' t = F_object_equality @@ [o;o';t]     (* o = o' : t *)
+
+let istype_witness t = F_istype_witness @@ [t]		       (* t Type *)
+let hastype_witness o t = F_hastype_witness @@ [o;t]	       (* o : t *)
+let type_equality_witness t t' = F_type_equality_witness @@ [t;t'] (* t = t' *)
+let object_equality_witness o o' t = F_object_equality_witness @@ [ o;o';t] (* o = o' : t *)
+
+let witnessed_istype p t = F_witnessed_istype @@ [p;t]	       (* p : t Type *)
 let witnessed_hastype p o t = F_witnessed_hastype @@ [p;o;t]   (* p : o : t *)
 let witnessed_type_equality p t t' = F_witnessed_type_equality @@ [p;t;t'] (* p : t = t' *)
 let witnessed_object_equality p o o' t = F_witnessed_object_equality @@ [ p;o;o';t] (* p : o = o' : t *)
@@ -342,16 +356,14 @@ let obj_of_type_kind = a_type @@-> K_judged_expression
 
 let judged_kind_equal_kind = a_type @@-> a_type @@-> K_judged_expression
 
-let w_hastype_kind = oexp @@-> texp @@-> K_witnessed_judgment
+let istype_witness_kind = texp @@-> K_witnessed_judgment (* unused by VV *)
+let hastype_witness_kind = oexp @@-> texp @@-> K_witnessed_judgment
+let type_equality_witness_kind = texp @@-> texp @@-> K_witnessed_judgment
+let object_equality_witness_kind = oexp @@-> oexp @@-> texp @@-> K_witnessed_judgment
 
-let w_type_equality_kind = texp @@-> texp @@-> K_witnessed_judgment
-
-let w_object_equality_kind = oexp @@-> oexp @@-> texp @@-> K_witnessed_judgment
-
+let witnessed_istype_kind = wexp @@-> texp @@-> K_witnessed_judgment (* unused by VV *)
 let witnessed_hastype_kind = wexp @@-> oexp @@-> texp @@-> K_witnessed_judgment
-
 let witnessed_type_equality_kind = wexp @@-> texp @@-> texp @@-> K_witnessed_judgment
-
 let witnessed_object_equality_kind = wexp @@-> oexp @@-> oexp @@-> texp @@-> K_witnessed_judgment
 
 let var_to_lf v = nowhere 1 (APPLY(V v,END))
@@ -375,6 +387,13 @@ let tfhead_to_kind = function
   | F_obj_of_type -> obj_of_type_kind
   | F_judged_type_equal -> judged_kind_equal_kind
   | F_judged_obj_equal -> judged_obj_equal_kind
+
+  | F_istype_witness -> istype_witness_kind
+  | F_hastype_witness -> hastype_witness_kind
+  | F_type_equality_witness -> type_equality_witness_kind
+  | F_object_equality_witness -> object_equality_witness_kind
+
+  | F_witnessed_istype -> witnessed_istype_kind
   | F_witnessed_hastype -> witnessed_hastype_kind
   | F_witnessed_type_equality -> witnessed_type_equality_kind
   | F_witnessed_object_equality -> witnessed_object_equality_kind

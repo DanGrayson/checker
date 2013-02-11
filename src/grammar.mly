@@ -466,11 +466,26 @@ ts_bracketed_judgment:
     | LeftBracket a= ts_expr Tilde b= ts_expr Colon t= ts_expr RightBracket
 	{ unmark (object_uequality a b t) } 
 
-    | LeftBracket p= ts_expr Colon a= ts_expr EqualEqual b= ts_expr RightBracket
-	{ unmark (witnessed_type_equality p a b) }
+    | LeftBracket Colon t= ts_expr Type RightBracket
+	{ unmark (istype_witness t) }
+
+    | LeftBracket Colon x= ts_expr Colon t= ts_expr RightBracket
+	{ unmark (hastype_witness x t) }
+
+    | LeftBracket Colon a= ts_expr EqualEqual b= ts_expr RightBracket
+	{ unmark (type_equality_witness a b) }
+
+    | LeftBracket Colon x= ts_expr EqualEqual y= ts_expr Colon t= ts_expr RightBracket
+	{ unmark (object_equality_witness x y t) }
+
+    | LeftBracket p= ts_expr Colon t= ts_expr Type RightBracket
+	{ unmark (witnessed_istype p t) }
 
     | LeftBracket p= ts_expr Colon x= ts_expr Colon t= ts_expr RightBracket
 	{ unmark (witnessed_hastype p x t) }
+
+    | LeftBracket p= ts_expr Colon a= ts_expr EqualEqual b= ts_expr RightBracket
+	{ unmark (witnessed_type_equality p a b) }
 
     | LeftBracket p= ts_expr Colon x= ts_expr EqualEqual y= ts_expr Colon t= ts_expr RightBracket
 	{ unmark (witnessed_object_equality p x y t) }

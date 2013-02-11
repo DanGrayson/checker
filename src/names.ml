@@ -64,9 +64,16 @@ let lf_type_constant_table = [
   F_judged_type_equal, "Tequal";
   F_judged_obj_equal, "Oequal";
   F_wexp, "wexp";
-  F_witnessed_hastype, "w_hastype";
-  F_witnessed_type_equality, "w_type_equality";
-  F_witnessed_object_equality, "w_object_equality";
+
+  F_istype_witness, "istype_witness";
+  F_hastype_witness, "hastype_witness";
+  F_type_equality_witness, "type_equality_witness";
+  F_object_equality_witness, "object_equality_witness";
+
+  F_witnessed_istype, "witnessed_istype";
+  F_witnessed_hastype, "witnessed_hastype";
+  F_witnessed_type_equality, "witnessed_type_equality";
+  F_witnessed_object_equality, "witnessed_object_equality";
 ]
 
 let lf_kind_constant_table = [

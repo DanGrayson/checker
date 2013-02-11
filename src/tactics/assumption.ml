@@ -2,6 +2,7 @@ open Typesystem
 open Lfcheck
 open Printer
 open Printf
+open Errorcheck
 
 (** find the first variable in the context of the right type and return it *)
 let assumption surr env pos t args =

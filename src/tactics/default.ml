@@ -13,6 +13,15 @@ let rec default surr env pos t args =
       | TacticSuccess e -> TacticSuccess (with_pos pos (LAMBDA(v,e)))
       | TacticFailure as r -> r)
   | F_Apply((F_hastype|F_istype),_) -> Assumption.assumption surr env pos t args
+  | F_Apply(F_hastype_witness,[o;t]) -> (
+      try TacticSuccess (Witness.find_w_hastype env o t)
+      with Witness.WitnessNotFound -> TacticFailure)
+  | F_Apply(F_object_equality_witness,[o;o';t]) -> (
+      try TacticSuccess (Witness.find_w_object_equality env o o' t) 
+      with Witness.WitnessNotFound -> TacticFailure)
+  | F_Apply(F_type_equality_witness,[t;t']) -> (
+      try TacticSuccess (Witness.find_w_type_equality env t t') 
+      with Witness.WitnessNotFound -> TacticFailure)
   | F_Apply(F_wexp,[]) -> Witness.witness surr env pos t args
   | _ -> TacticFailure
 

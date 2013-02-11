@@ -1,6 +1,6 @@
-Check LF : (p:wexp) -> (t:texp) -> (o:oexp) -> w_hastype p o t.
-Check LF : (p:wexp) -> (t:texp) -> (t':texp) -> w_type_equality p t t'.
-Check LF : (p:wexp) -> (t:texp) -> (o:oexp) -> (o':oexp) -> w_object_equality p o o' t.
+Check LF : (p:wexp) -> (t:texp) -> (o:oexp) -> witnessed_hastype p o t.
+Check LF : (p:wexp) -> (t:texp) -> (t':texp) -> witnessed_type_equality p t t'.
+Check LF : (p:wexp) -> (t:texp) -> (o:oexp) -> (o':oexp) -> witnessed_object_equality p o o' t.
 
 Axiom LF p : wexp.
 Axiom LF T : texp.
@@ -23,6 +23,9 @@ Check TTS : [ _ : xf : @[Pi';_][T,@[U']] ].
 Check TTS : [ _ : xo : T ].
 Check TTS : [ _ : @[ev';_][xf,xo,T,@[U']] : @[U'] ].
 Check TTS : [ _ : @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]: @[U']].
+
+Lemma a1 [ : xf : @[Pi';_][T,@[U']] ] ::= xf$ .
+Lemma a2 [ : xf : @[Pi';_][T,@[U']] ] ::= _ .
 
 Check TTS : [ @[El'][@[ev';_][xf,xo,T,@[U']],_] Type ].
 
@@ -55,6 +58,12 @@ Check TTS : [
       : @[U']
       ].
 
+Lemma a4 [
+      : @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]
+      ≡ @[ev';_][xf,xo,T,@[U']]
+      : @[U']
+      ] := _.
+
 # Make head reduction work.
 # This one is the same as the one above, with objects reversed.
 # Check TTS : [ _ 
@@ -67,6 +76,11 @@ Check TTS : [
     _ : @[El'][ @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']], _]
       ≡ @[El'][ @[ev';_][xf,xo,T,@[U']], _]
       ].
+
+Lemma a3 [ 
+      : @[El'][ @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']], _]
+      ≡ @[El'][ @[ev';_][xf,xo,T,@[U']], _]
+      ] := _ .
 
 End. # working on the witness checker
 
