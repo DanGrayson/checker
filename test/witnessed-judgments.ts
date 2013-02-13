@@ -26,7 +26,8 @@ Check TTS : [ _ : @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]: @[U']
 
 Lemma a1 [ : xf : @[Pi';_][T,@[U']] ] ::= xf$ .
 Lemma a2 [ : xf : @[Pi';_][T,@[U']] ] ::= _ .
-
+Check TTS : [ @[El'][@[ev';_][xf,xo,T,@[U']],@[wev][xf$,xo$]] Type ].
+Check TTS : [ @[El'][@[ev';_][xf,xo,T,@[U']],@[wev][a1,xo$]] Type ].
 Check TTS : [ @[El'][@[ev';_][xf,xo,T,@[U']],_] Type ].
 
 Check TTS : [ @[Proof][ 
@@ -84,7 +85,7 @@ Lemma a3 [
 
 Check LF a3.
 
-# Lemma a2a [ : xf : @[Pi';_][T,@[U']] ] := a2 .
+Lemma a2a [ : xf : @[Pi';_][T,@[U']] ] := a2 .
 End. # working on definitions
 
 #   Local Variables:

@@ -161,7 +161,7 @@ let checkWitnessedJudgmentCommand env t =
   let t' = Lfcheck.type_validity [] env t in
   if not (Alpha.UEqual.type_equiv empty_uContext t t') then
     printf "           : %a [after tactics]\n%!" _t t';
-  Wlfcheck.check env t';
+  Lfcheck.check env t';
   printf "           : okay\n%!"
 
 let checkTSCommand env x =

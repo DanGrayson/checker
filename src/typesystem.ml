@@ -201,11 +201,11 @@ let wexp_w = wexp @-> oexp @-> wexp
 let texp_w = wexp @-> oexp @-> texp
 let oexp_w = wexp @-> oexp @-> oexp
 
-let uhead_to_lf_type = function
+let uhead_to_lf_type = function	(* optimize later by precomputing the constant return values *)
   | U_next -> uexp @-> uexp
   | U_max -> uexp @-> uexp @-> uexp
 
-let thead_to_lf_type = function
+let thead_to_lf_type = function	(* optimize later by precomputing the constant return values *)
   | T_El -> oexp @-> texp
   | T_El' -> oexp @-> wexp @-> texp
   | T_U -> uexp @-> texp
@@ -221,7 +221,7 @@ let thead_to_lf_type = function
   | T_Id -> texp @-> oexp @-> oexp @-> texp
   | T_Proof -> wexp @-> oexp @-> texp @-> texp
 
-let ohead_to_lf_type = function
+let ohead_to_lf_type = function	(* optimize later by precomputing the constant return values *)
   | O_u -> uexp @-> oexp
   | O_j -> uexp @-> uexp @-> oexp
   | O_ev -> oexp @-> oexp @-> texp @-> texp1 @-> oexp
@@ -255,7 +255,7 @@ let ohead_to_lf_type = function
   | O_S -> oexp
   | O_nat_r -> oexp @-> oexp @-> oexp @-> texp1 @-> oexp
 
-let whead_to_lf_type = function
+let whead_to_lf_type = function	(* optimize later by precomputing the constant return values *)
   | W_Wrefl -> wexp
   | W_Wsymm -> wexp @-> wexp
   | W_Wtrans -> wexp @-> wexp @-> texp @-> wexp
@@ -283,7 +283,7 @@ type vartype =
   | WitnessPair of int
 
 type vardist = int list list
-let head_to_vardist = function
+let head_to_vardist = function (* optimize later by precomputing the constant return values *)
   | W W_wpi2 -> Some (1, [ WitnessPair 0] :: [])
   | W W_wlam -> Some (1, [ WitnessPair 0] :: [])
   | W W_wbeta -> Some (1, [] :: [ WitnessPair 0 ] :: [])
@@ -305,7 +305,9 @@ let head_to_vardist = function
   | O O_nat_r -> Some(1, [] :: [] :: [] :: [SingleVariable 0] :: [])
   | _ -> None
 
-(** The "kinds" of LF. 
+(** The "kinds" of LF.  
+
+    Objects are classified by their type, and (parametrized) types are classified by their kind.
 
     Notation: constructors starting with "K_" refer to kinds of LF. *)
 type lf_kind =

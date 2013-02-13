@@ -100,7 +100,7 @@ let show_tactic_result k =
   k
 
 let rec natural_type (env:environment) (x:lf_expr) : lf_type =
-  if true then (trap(); raise Internal);          (* this function is unused, because "unfold" below does what we need for weak head reduction *)
+  if true then raise Internal;          (* this function is unused *)
   (* assume nothing *)
   (* see figure 9 page 696 [EEST] *)
   let pos = get_pos x in 
@@ -150,7 +150,7 @@ let rec head_reduction (env:environment) (x:lf_expr) : lf_expr =
 	  let args_passed = END in
 	  let rec repeat t args_passed args =
 	    match unmark t, args with
-	    | F_Singleton s, args -> let (x,t) = strip_singleton s in apply_args x args
+	    | F_Singleton s, args -> let (x,t) = strip_singleton s in apply_args x args (* here we unfold a definition *)
 	    | F_Pi(v,a,b), ARG(x,args) -> repeat (subst_type (v,x) b) (ARG(x,args_passed)) args
 	    | F_Sigma(v,a,b), CAR args -> repeat a (CAR args_passed) args
 	    | F_Sigma(v,a,b), CDR args -> repeat (subst_car_passed_term v pos head args_passed b) (CDR args_passed) args
@@ -167,6 +167,171 @@ let rec head_normalization (env:environment) (x:lf_expr) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
   try head_normalization env (head_reduction env x)
   with Not_found -> x
+
+(** Witness checking *)
+
+let equality = Alpha.UEqual.term_equiv empty_uContext
+    (* Here equality is alpha-equivalence *)
+
+let equivalence = equality
+    (* We still have to implement the relation called ~ in the paper, which ignores inessential subterms. *)
+    (* For now we use equality. *)
+
+let compare_var_to_expr v e =
+  match unmark e with
+  | APPLY(V w, END) -> v = w
+  | _ -> false
+
+let open_context t1 (env,p,o,t2) =
+  let v = newfresh (Var "x") in
+  let v' = newfresh (Var_wd "x") in
+  let env = tts_bind env v' v t1 in
+  let e = var_to_lf v' ** var_to_lf v ** END in 
+  let p = Substitute.apply_args p e in
+  let o = Substitute.apply_args o e in
+  let t2 = Substitute.apply_args t2 e in
+  (env,p,o,t2)
+
+let unpack_El' t =
+  match unmark t with
+  | APPLY(T T_El',args) -> args2 args
+  | _ -> raise FalseWitness
+
+let unpack_Pi' t =
+  match unmark t with
+  | APPLY(T T_Pi',args) -> args2 args
+  | _ -> raise FalseWitness
+
+let unpack_ev' o =
+  match unmark o with
+  | APPLY(O O_ev',args) -> args4 args
+  | _ -> raise FalseWitness
+
+let unpack_lambda' o =
+  match unmark o with
+  | APPLY(O O_lambda',args) -> args2 args
+  | _ -> raise FalseWitness
+
+let apply_2 f x y = Substitute.apply_args f (x ** y ** END)
+
+let rec check_istype env t =
+  if not (List.exists (fun (v,u) -> equivalence t u) env.ts_context)
+  then 
+    match unmark t with
+    | APPLY(T th, args) -> (
+	match th with
+	| T_Pi' -> 
+	    let t1,t2 = args2 args in
+	    check_istype env t1;
+	    let p = newfresh (Var_wd "o") in
+	    let o = newfresh (Var "o") in
+	    let env = tts_bind env p o t1 in
+	    let p = var_to_lf p in
+	    let o = var_to_lf o in
+	    let t2 = Substitute.apply_args t2 (p ** o ** END) in
+	    check_istype env t2
+	| T_U' -> ()
+	| T_El' ->
+	    let o,p = args2 args in
+	    check_hastype env p o uuu
+	| T_Proof ->
+	    let p,o,t = args3 args in
+	    check_hastype env p o t
+	| _ -> err env (get_pos t) "invalid type, or not implemented yet.")
+    | _ -> err env (get_pos t) ("invalid type, or not implemented yet: " ^ ts_expr_to_string t)
+
+and check_hastype env p o t =
+  if false then printf "check_hastype\n p = %a\n o = %a\n t = %a\n%!" _e p _e o _e t;
+  match unmark p with
+  | APPLY(V (Var_wd _ | VarGen_wd _ as w), END) -> (
+      let o',t' = 
+	try tts_fetch_w w env
+	with Not_found -> err env (get_pos p) "variable not in context" in
+      if not (compare_var_to_expr o' o) then err env (get_pos o) ("expected variable " ^ vartostring o');
+      if not (equivalence t t') then mismatch_term_tstype_tstype env o t' t)
+  | APPLY(W wh, pargs) -> (
+      match wh with 
+      | W_wev ->
+	  let pf,po = args2 pargs in
+          let f,o,t1,t2 = unpack_ev' o in
+          check_hastype env po o t1;
+          let u = nowhere 123 (APPLY(T T_Pi', t1 ** t2 ** END)) in
+          check_hastype env pf f u;
+          let t2' = Substitute.apply_args t2 (po ** o ** END) in
+          if not (equivalence t2' t) then mismatch_term_tstype_tstype env o t t2'
+      | W_wlam -> 
+	  let p = args1 pargs in
+	  let t1',o = unpack_lambda' o in
+	  let t1,t2 = unpack_Pi' t in
+	  if not (equivalence t1' t1) then mismatch_term env (get_pos t) t (get_pos t1) t1;
+	  let env,p,o,t2 = open_context t1 (env,p,o,t2) in
+	  check_hastype env p o t2
+      | W_wconv | W_wconveq | W_weleq | W_wpi1 | W_wpi2 | W_wl1 | W_wl2 | W_wevt1 | W_wevt2
+      | W_wevf | W_wevo | W_wbeta | W_weta | W_Wsymm | W_Wtrans | W_wrefl | W_wsymm | W_wtrans
+      | W_Wrefl
+	-> raise FalseWitness
+     )
+  | _ -> 
+      try
+	check_hastype env (head_reduction env p) o t
+      with 
+	Not_found -> err env (get_pos p) ("expected a witness expression: " ^ lf_expr_to_string p)
+
+and check_type_equality env p t t' =
+  match unmark p with
+  | APPLY(W wh, pargs) -> (
+      match wh with 
+      | W_weleq ->
+	  let peq = args1 pargs in
+	  let o,p = unpack_El' t in
+	  let o',p' = unpack_El' t' in
+	  check_object_equality env peq o o' uuu;
+	  check_hastype env p o uuu;
+	  check_hastype env p' o' uuu
+      | W_wrefl | W_Wrefl | W_Wsymm | W_Wtrans | W_wsymm | W_wtrans | W_wconv
+      | W_wconveq | W_wpi1 | W_wpi2 | W_wlam | W_wl1 | W_wl2 | W_wev
+      | W_wevt1 | W_wevt2 | W_wevf | W_wevo | W_wbeta | W_weta
+	-> raise FalseWitness
+     )
+  | _ -> err env (get_pos p) ("expected a witness expression : " ^ lf_expr_to_string p)
+
+
+and check_object_equality env p o o' t =
+  match unmark p with
+  | APPLY(W wh, pargs) -> (
+      match wh with 
+      | W_wbeta ->
+	  let p1,p2 = args2 pargs in
+	  let f,o1,t1',t2 = unpack_ev' o in
+	  let t1,o2 = unpack_lambda' f in
+	  if not (equivalence t1 t1') then mismatch_term env (get_pos t1) t1 (get_pos t1') t1';
+	  check_hastype env p1 o1 t1;
+	  let env,p2',o2',t2' = open_context t1 (env,p2,o2,t2) in
+	  check_hastype env p2' o2' t2';
+	  let t2'' = apply_2 t2 p1 o1 in
+	  if not (equivalence t2'' t) then mismatch_term env (get_pos t2'') t2'' (get_pos t) t;
+	  let o2' = apply_2 o2 p1 o1 in
+	  if not (equivalence o2' o') then mismatch_term env (get_pos o2') o2' (get_pos o') o'
+      | W_wrefl -> (
+	  let p,p' = args2 pargs in
+	  check_hastype env p o t;
+	  check_hastype env p' o' t;
+	  if not (equivalence o o') then mismatch_term env (get_pos o) o (get_pos o') o';
+	 )
+      | _ -> raise FalseWitness)
+  | _ -> raise FalseWitness
+
+let check (env:environment) (t:lf_type) =
+  try
+    match unmark t with 
+    | F_Apply(F_istype,[t]) -> check_istype env t
+    | F_Apply(F_witnessed_istype,[w;t]) -> raise NotImplemented
+    | F_Apply(F_witnessed_hastype,[w;o;t]) -> check_hastype env w o t
+    | F_Apply(F_witnessed_type_equality,[w;t;t']) -> check_type_equality env w t t'
+    | F_Apply(F_witnessed_object_equality,[w;o;o';t]) -> check_object_equality env w o o' t
+    | _ -> err env (get_pos t) "expected a witnessed judgment"
+  with
+    FalseWitness -> err env (get_pos t) "incorrect witness"
 
 (** Subordination *)
 
@@ -331,6 +496,10 @@ and subtype (env:environment) (t:lf_type) (u:lf_type) : unit =
         subtype env a c;                        (* covariant *)
         let w = newfresh (Var "w") in
         subtype (lf_bind env w a) (subst_type (x,var_to_lf w) b) (subst_type (y,var_to_lf w) d)
+    | F_Apply(F_istype_witness,_), F_Apply(F_wexp,[])
+    | F_Apply(F_hastype_witness,_), F_Apply(F_wexp,[])
+    | F_Apply(F_type_equality_witness,_), F_Apply(F_wexp,[])
+    | F_Apply(F_object_equality_witness,_), F_Apply(F_wexp,[]) -> ()
     | _ -> type_equivalence env (tpos,t0) (upos,u0)
   with TypeEquivalenceFailure -> raise SubtypeFailure
 
@@ -381,9 +550,9 @@ let rec type_check (surr:surrounding) (env:environment) (e0:lf_expr) (t:lf_type)
       pos, CONS(x,y)
 
   | _, F_Apply(F_istype_witness, [t]) -> raise NotImplemented
-  | _, F_Apply(F_hastype_witness, [o;t]) -> Wlfcheck.check_hastype env e0 o t; e0 (* should apply possible tactics somehow here *)
-  | _, F_Apply(F_type_equality_witness,[t;t']) -> Wlfcheck.check_type_equality env e0 t t'; e0
-  | _, F_Apply(F_object_equality_witness,[o;o';t]) -> Wlfcheck.check_object_equality env e0 o o' t; e0
+  | _, F_Apply(F_hastype_witness, [o;t]) -> check_hastype env e0 o t; e0 (* should apply possible tactics somehow here *)
+  | _, F_Apply(F_type_equality_witness,[t;t']) -> check_type_equality env e0 t t'; e0
+  | _, F_Apply(F_object_equality_witness,[o;o';t]) -> check_object_equality env e0 o o' t; e0
 
   | _, _  ->
       let (e,s) = type_synthesis surr env e0 in 
