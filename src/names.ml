@@ -6,7 +6,7 @@ open Typesystem
 
 exception Internal_expr of lf_expr
 exception Unimplemented_expr of lf_expr
-exception TypeCheckingFailure of context * surrounding * (position * string) list
+exception TypeCheckingFailure of environment * surrounding * (position * string) list
 
 let lf_expr_head_table = [
   T T_Pi, "∏"; O O_lambda, "λ"; O O_ev, "ev"; 
@@ -116,7 +116,7 @@ let ensure_new_name env pos v =
       raise (MarkedError (pos, "variable already defined: " ^ vartostring v))
   with Not_found -> ()
 
-let def_bind v (pos:position) o t (env:context) = 
+let def_bind v (pos:position) o t (env:environment) = 
   ensure_new_name env pos v;
   lf_bind env v (pos,F_Singleton(o,t))
 

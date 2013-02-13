@@ -5,7 +5,7 @@ open Variables
 open Typesystem
 open Names
 
-let rec tau (env:context) e : lf_expr = 
+let rec tau (env:environment) e : lf_expr = 
   let pos = get_pos e in
   match unmark e with
   | APPLY(V v,CAR END) -> (		(* pi1 v *)

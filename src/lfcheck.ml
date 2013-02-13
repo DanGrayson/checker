@@ -26,17 +26,16 @@ open Printf
 open Helpers
 open Tau
 open Printer
-open Wlfcheck
 
-let abstraction1 pos (env:context) = function
+let abstraction1 pos (env:environment) = function
   | ARG(t,ARG((_,LAMBDA(x, _)),_)) -> ts_bind env x t
   | _ -> env
 
-let abstraction2 pos (env:context) = function
+let abstraction2 pos (env:environment) = function
   | ARG(_,ARG(_,ARG(n,ARG((_,LAMBDA(x,_)),_)))) -> ts_bind env x (get_pos n, make_T_El n)
   | _ -> env
 
-let abstraction3 pos (env:context) = function
+let abstraction3 pos (env:environment) = function
   | ARG(f,ARG(_,ARG((_,LAMBDA(x, _)),_))) -> (
       try
 	let tf = tau env f in (
@@ -100,7 +99,7 @@ let show_tactic_result k =
    | TacticFailure -> printf "tactic failure\n%!" );
   k
 
-let rec natural_type (env:context) (x:lf_expr) : lf_type =
+let rec natural_type (env:environment) (x:lf_expr) : lf_type =
   if true then (trap(); raise Internal);          (* this function is unused, because "unfold" below does what we need for weak head reduction *)
   (* assume nothing *)
   (* see figure 9 page 696 [EEST] *)
@@ -126,7 +125,7 @@ let car_passed_term pos head args_passed = with_pos pos (APPLY(head,reverse_spin
 
 let subst_car_passed_term v pos head args_passed b = subst_type (v, car_passed_term pos head args_passed) b
 
-let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
+let rec head_reduction (env:environment) (x:lf_expr) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
   (* assume x is not a pair or a function *)
   (* raises Not_found if there is no head reduction *)
@@ -164,7 +163,7 @@ let rec head_reduction (env:context) (x:lf_expr) : lf_expr =
      )
   | CONS _ | LAMBDA _ -> (trap(); raise Internal)	(* head reduction is not defined for pairs or functions *)
 
-let rec head_normalization (env:context) (x:lf_expr) : lf_expr =
+let rec head_normalization (env:environment) (x:lf_expr) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
   try head_normalization env (head_reduction env x)
   with Not_found -> x
@@ -202,7 +201,7 @@ let rec min_target_kind t =
 
 (** Type checking and equivalence routines. *)
 
-let rec term_equivalence (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : unit =
+let rec term_equivalence (env:environment) (x:lf_expr) (y:lf_expr) (t:lf_type) : unit =
   (* assume x and y have already been verified to be of type t *)
   (* see figure 11, page 711 [EEST] *)
   if !debug_mode then printf " term_equivalence\n\t x=%a\n\t y=%a\n\t t=%a\n%!" _e x _e y _t t;
@@ -234,7 +233,7 @@ let rec term_equivalence (env:context) (x:lf_expr) (y:lf_expr) (t:lf_type) : uni
 	  ));
   if !debug_mode then printf " term_equivalence okay\n%!"
 
-and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
+and path_equivalence (env:environment) (x:lf_expr) (y:lf_expr) : lf_type =
   (* assume x and y are head reduced *)
   (* see figure 11, page 711 [EEST] *)
   if !debug_mode then printf " path_equivalence\n\t x=%a\n\t y=%a\n%!" _e x _e y;
@@ -269,7 +268,7 @@ and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_type =
   if !debug_mode then printf " path_equivalence okay, type = %a\n%!" _t t;
   t
 
-and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
+and type_equivalence (env:environment) (t:lf_type) (u:lf_type) : unit =
   (* see figure 11, page 711 [EEST] *)
   (* assume t and u have already been verified to be types *)
   if !debug_mode then printf " type_equivalence\n\t t=%a\n\t u=%a\n%!" _t t _t u;
@@ -306,7 +305,7 @@ and type_equivalence (env:context) (t:lf_type) (u:lf_type) : unit =
     | _ -> raise TypeEquivalenceFailure
   with TermEquivalenceFailure -> raise TypeEquivalenceFailure
 
-and subtype (env:context) (t:lf_type) (u:lf_type) : unit =
+and subtype (env:environment) (t:lf_type) (u:lf_type) : unit =
   (* assume t and u have already been verified to be types *)
   (* driven by syntax *)
   (* see figure 12, page 715 [EEST] *)
@@ -341,7 +340,7 @@ let rec is_product_type env t =
   | F_Singleton(_,t) -> is_product_type env t
   | F_Sigma _ | F_Apply _ -> false
 
-let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : lf_expr = 
+let rec type_check (surr:surrounding) (env:environment) (e0:lf_expr) (t:lf_type) : lf_expr = 
   (* assume t has been verified to be a type *)
   (* see figure 13, page 716 [EEST] *)
   (* we modify the algorithm to return a possibly modified expression e, with holes filled in by tactics *)
@@ -381,9 +380,10 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
       let y = type_check ((S_projection 2,Some e0,Some t) :: surr) env y b in
       pos, CONS(x,y)
 
-  | _, F_Apply(F_hastype_witness, [o;t]) -> check_hastype env e0 o t; e0 (* should apply possible tactics somehow here *)
-  | _, F_Apply(F_type_equality_witness,[t;t']) -> check_type_equality env e0 t t'; e0
-  | _, F_Apply(F_object_equality_witness,[o;o';t]) -> check_object_equality env e0 o o' t; e0
+  | _, F_Apply(F_istype_witness, [t]) -> raise NotImplemented
+  | _, F_Apply(F_hastype_witness, [o;t]) -> Wlfcheck.check_hastype env e0 o t; e0 (* should apply possible tactics somehow here *)
+  | _, F_Apply(F_type_equality_witness,[t;t']) -> Wlfcheck.check_type_equality env e0 t t'; e0
+  | _, F_Apply(F_object_equality_witness,[o;o';t]) -> Wlfcheck.check_object_equality env e0 o o' t; e0
 
   | _, _  ->
       let (e,s) = type_synthesis surr env e0 in 
@@ -393,7 +393,7 @@ let rec type_check (surr:surrounding) (env:context) (e0:lf_expr) (t:lf_type) : l
         e
       with SubtypeFailure -> mismatch_term_type_type env e0 (un_singleton s) t
 
-and type_synthesis (surr:surrounding) (env:context) (m:lf_expr) : lf_expr * lf_type =
+and type_synthesis (surr:surrounding) (env:environment) (m:lf_expr) : lf_expr * lf_type =
   (* assume nothing *)
   (* see figure 13, page 716 [EEST] *)
   (* return a pair consisting of the original expression with any tactic holes filled in, 
@@ -457,7 +457,7 @@ let rec check_less_equal t u =
       in
       repeat t  
 
-let type_validity (surr:surrounding) (env:context) (t:lf_type) : lf_type =
+let type_validity (surr:surrounding) (env:environment) (t:lf_type) : lf_type =
   (* assume the kinds of constants, and the types in them, have been checked *)
   (* driven by syntax *)
   (* return the same type t, but with tactic holes replaced *)
@@ -519,7 +519,7 @@ let bound_var_override f w =		(* just to get a good variable name *)
   | LAMBDA(v,_) -> if isunused v then if isunused w then Var "m" else w else v
   | _ -> if isunused w then Var "n" else w
 
-let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
+let rec term_normalization (env:environment) (x:lf_expr) (t:lf_type) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
   let (pos,t0) = t in
   match t0 with 
@@ -547,7 +547,7 @@ let rec term_normalization (env:context) (x:lf_expr) (t:lf_type) : lf_expr =
       x
   | F_Singleton(x',t) -> term_normalization env x t
       
-and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_type =
+and path_normalization (env:environment) (x:lf_expr) : lf_expr * lf_type =
   (* returns the normalized term x and the inferred type of x *)
   (* see figure 9 page 696 [EEST] *)
   (* assume x is head normalized *)
@@ -601,7 +601,7 @@ and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_type =
 	repeat t0 args_passed args in
       ((pos,APPLY(head,args)), t))
 
-let rec type_normalization (env:context) (t:lf_type) : lf_type =
+let rec type_normalization (env:environment) (t:lf_type) : lf_type =
   (* see figure 9 page 696 [EEST] *)
   let (pos,t0) = t in
   let t = match t0 with

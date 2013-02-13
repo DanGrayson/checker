@@ -103,7 +103,7 @@ and find_w_object_equality env o o' t =
       )
    )
 
-let witness (surr:surrounding) (env:context) (pos:position) (t:lf_type) (args:spine) : tactic_return = 
+let witness (surr:surrounding) (env:environment) (pos:position) (t:lf_type) (args:spine) : tactic_return = 
   try 
     match surr with 
     | (S_argument 1, None, Some (pos,F_Apply(F_witnessed_hastype,[_;o;t]))) :: _ -> 

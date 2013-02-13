@@ -513,7 +513,7 @@ let print_signature env file =
   flush file
 
 (** Print the context. *)
-let print_context n file (c:context) = 
+let print_context n file (c:environment) = 
   let n = match n with None -> -1 | Some n -> n in
   fprintf file "LF Context:\n";
   let env = c.lf_context in

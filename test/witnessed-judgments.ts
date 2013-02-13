@@ -82,7 +82,10 @@ Lemma a3 [
       ≡ @[El'][ @[ev';_][xf,xo,T,@[U']], _]
       ] := _ .
 
-End. # working on the witness checker
+Check LF a3.
+
+# Lemma a2a [ : xf : @[Pi';_][T,@[U']] ] := a2 .
+End. # working on definitions
 
 #   Local Variables:
 #   compile-command: "make -C .. witnessed-judgments "

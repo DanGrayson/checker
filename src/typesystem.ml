@@ -434,13 +434,14 @@ let rec compare_kinds k l =
 
 (** Contexts. *)
 
-type context = {
-    lf_context : (var * lf_type) list;	      (* e:E -- example: t:texp *)
-    ts_context : (var * lf_expr) list;	      (* o:T -- example: n:nat *)
+type environment = {
     tts_context : (var * var * lf_expr) list; (* p:o:T -- here p is the witness *)
+    global_context : (var, lf_expr) Hashtbl.t;
+    ts_context : (var * lf_expr) list;	      (* o:T -- example: n:nat *)
+    lf_context : (var * lf_type) list;	      (* e:E -- example: t:texp *)
   }
 
-let empty_context = { lf_context = []; ts_context = []; tts_context = [] }
+let empty_context = { lf_context = []; ts_context = []; tts_context = []; global_context = Hashtbl.create 0 }
 
 let lf_bind env v t = { env with lf_context = (v,t) :: env.lf_context }
 
@@ -481,7 +482,7 @@ type tactic_return =
 
 type tactic_function =
        surrounding         (* the ambient APPLY(...), if any, and the index among its head and arguments of the hole *)        
-    -> context							      (* the active context *)
+    -> environment						      (* the active context *)
     -> position							      (* the source code position of the tactic hole *)
     -> lf_type							      (* the type of the hole, e.g., [texp] *)
     -> spine							      (* the arguments *)

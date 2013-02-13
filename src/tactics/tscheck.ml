@@ -17,36 +17,36 @@ open Helpers
 let see n x = printf "\t  %s = %a\n%!" n _e x
 
 (** returns a term y and a derivation of hastype y t and a derivation of oequal x y t *)
-let rec head_reduction (env:context) (t:lf_expr) (dt:lf_expr) (x:lf_expr) (dx:lf_expr) : lf_expr * lf_expr * lf_expr =
+let rec head_reduction (env:environment) (t:lf_expr) (dt:lf_expr) (x:lf_expr) (dx:lf_expr) : lf_expr * lf_expr * lf_expr =
   (* dt : istype t *)
   (* dx : hastype x t *)
   raise NotImplemented
 
 (** returns a term y and a derivation of hastype y t and a derivation of oequal x y t *)
-let rec head_normalization (env:context) (t:lf_expr) (dt:lf_expr) (x:lf_expr) (dx:lf_expr) : lf_expr * lf_expr * lf_expr =
+let rec head_normalization (env:environment) (t:lf_expr) (dt:lf_expr) (x:lf_expr) (dx:lf_expr) : lf_expr * lf_expr * lf_expr =
   (* dt : istype t *)
   (* dx : hastype x t *)
   raise NotImplemented
 
 (** returns a derivation of oequal x y t *)
-let rec term_equivalence (env:context) (x:lf_expr) (dx:lf_expr) (y:lf_expr) (dy:lf_expr) (t:lf_expr) (dt:lf_expr) : lf_expr =
+let rec term_equivalence (env:environment) (x:lf_expr) (dx:lf_expr) (y:lf_expr) (dy:lf_expr) (t:lf_expr) (dt:lf_expr) : lf_expr =
   (* dt : istype t *)
   (* dx : hastype x t *)
   (* dy : hastype y t *)
   raise NotImplemented
 
 (** returns a type t and derivation of hastype x t, hastype y t, oequal x y t *)
-and path_equivalence (env:context) (x:lf_expr) (y:lf_expr) : lf_expr * lf_expr * lf_expr =
+and path_equivalence (env:environment) (x:lf_expr) (y:lf_expr) : lf_expr * lf_expr * lf_expr =
   raise NotImplemented
 
 (** returns a derivation of tequal t u *)
-and type_equivalence (env:context) (t:lf_expr) (dt:lf_expr) (u:lf_expr) (du:lf_expr) : lf_expr =
+and type_equivalence (env:environment) (t:lf_expr) (dt:lf_expr) (u:lf_expr) (du:lf_expr) : lf_expr =
   (* dt : istype t *)
   (* du : istype u *)
   raise NotImplemented
 
 (** returns a derivation of hastype e t *)
-let rec type_check (env:context) (e:lf_expr) (t:lf_expr) (dt:lf_expr) : lf_expr =
+let rec type_check (env:environment) (e:lf_expr) (t:lf_expr) (dt:lf_expr) : lf_expr =
   (* dt : istype t *)
   (* see figure 13, page 716 [EEST] *)
   let (s,ds,h) = type_synthesis env e in	(* ds : istype x ; h : hastype e s *)
@@ -57,7 +57,7 @@ let rec type_check (env:context) (e:lf_expr) (t:lf_expr) (dt:lf_expr) : lf_expr 
   raise NotImplemented			(* here we'll apply the rule "cast" *)
 
 (** returns a type t and derivations of istype t and hastype x t *)
-and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_expr * lf_expr =
+and type_synthesis (env:environment) (x:lf_expr) : lf_expr * lf_expr * lf_expr =
   (* assume nothing *)
   (* see figure 13, page 716 [EEST] *)
 
@@ -68,20 +68,20 @@ and type_synthesis (env:context) (x:lf_expr) : lf_expr * lf_expr * lf_expr =
   raise NotImplemented
 
 (** returns a derivation of istype t *)
-let type_validity (env:context) (t:lf_expr) : lf_expr =
+let type_validity (env:environment) (t:lf_expr) : lf_expr =
   raise NotImplemented
 
 (** returns a term y and a derivation of hastype y t and a derivation of oequal x y t *)
-let rec term_normalization (env:context) (t:lf_expr) (dt:lf_expr) (x:lf_expr) (dx:lf_expr) : lf_expr * lf_expr * lf_expr =
+let rec term_normalization (env:environment) (t:lf_expr) (dt:lf_expr) (x:lf_expr) (dx:lf_expr) : lf_expr * lf_expr * lf_expr =
   (* dt : istype t *)
   (* dx : hastype x t *)
   raise NotImplemented
 
 (** returns the type t of x and derivations of istype t and hastype x t  *)
-and path_normalization (env:context) (x:lf_expr) : lf_expr * lf_expr * lf_expr =
+and path_normalization (env:environment) (x:lf_expr) : lf_expr * lf_expr * lf_expr =
   raise NotImplemented
 
-let rec type_normalization (env:context) (t:lf_expr) : lf_expr =
+let rec type_normalization (env:environment) (t:lf_expr) : lf_expr =
   raise NotImplemented
 
 let self = nowhere 1234 (cite_tactic (Tactic_name "tscheck") END)

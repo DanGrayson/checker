@@ -162,7 +162,7 @@ and check_object_equality env p o o' t =
       | _ -> raise FalseWitness)
   | _ -> raise FalseWitness
 
-let check (env:context) (t:lf_type) =
+let check (env:environment) (t:lf_type) =
   try
     match unmark t with 
     | F_Apply(F_istype,[t]) -> check_istype env t

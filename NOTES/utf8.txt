@@ -7,8 +7,6 @@ a palette of utf8-encoded characters
 	⇒
 	⟼
 	⟾
-	₁
-	₂
 	≡
 	⊢
 	⊨
@@ -17,5 +15,5 @@ a palette of utf8-encoded characters
 	Σ
 	λ
 	≣
-
 	[₁₂]
+	▷
