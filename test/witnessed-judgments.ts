@@ -43,10 +43,6 @@ Variable A : @[Proof][
 
 Check TTS : [ @[El'][ @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']], _ ] Type ].
 
-# working on definitions:
-
-# Check TTS : [ @[El'][A,A$] Type ].
-
 Check TTS : [
     _ : @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]
       ≡ @[ev';_][@[λ';z][T,@[ev';_][xf,z,T,@[U']]],xo,T,@[U']]
@@ -86,6 +82,8 @@ Lemma a3 [
 Check LF a3.
 
 Lemma a2a [ : xf : @[Pi';_][T,@[U']] ] := a2 .
+
+# Check TTS : [ @[El'][A,A$] Type ].
 End. # working on definitions
 
 #   Local Variables:

@@ -536,13 +536,13 @@ let print_context n file (c:environment) =
         if i = n then raise Limit;
         match unmark t with
         | F_Singleton(e,t) ->
-            fprintf file "     %a := %a\n"   _v v          _e e;
-            fprintf file "     %a  : %a\n%!" _v_phantom v  _t t
+            fprintf file "   %a := %a\n"   _v v          _e e;
+            fprintf file "   %a  : %a\n%!" _v_phantom v  _t t
         | _ -> 
-            fprintf file "     %a : %a\n%!" _v v  _t t
+            fprintf file "   %a : %a\n%!" _v v  _t t
       ) 
       env
-  with Limit -> fprintf file "     ...\n");
+  with Limit -> fprintf file "   ...\n");
   fprintf file "TS Context:\n";
   let env = c.ts_context in
   let env = if n < 0 then List.rev env else env in (
