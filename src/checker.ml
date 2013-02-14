@@ -103,8 +103,7 @@ let add_oVars env ovars t =
 let lf_axiomCommand env pos name t =
   if show_rules then ( printf "Axiom LF %a: %a\n%!" _v name _t t );
   let t = Lfcheck.type_validity [] env t in
-  ensure_new_name env pos name;
-  lf_bind env name t
+  axiom_bind name pos t env
 
 let defCommand env defs = 
   List.fold_left
@@ -191,8 +190,8 @@ let checkUniversesCommand env pos =
   with Universe.Inconsistency (p,q) -> print_inconsistency pos p q
 
 let show_command env n = 
-  ( match n with None -> print_signature env stdout | _ -> () );
-  print_context n stdout env
+  print_context n stdout env;
+  ( match n with None -> print_signature env stdout | _ -> () )
 
 let chk_u env u =
   let u = Lfcheck.type_check [] env u uexp in

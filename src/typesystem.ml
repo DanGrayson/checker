@@ -438,14 +438,18 @@ let rec compare_kinds k l =
 
 type environment = {
     tts_context : (var * var * lf_expr) list; (* p:o:T -- here p is the witness *)
-    global_context : (var, lf_expr) Hashtbl.t;
     ts_context : (var * lf_expr) list;	      (* o:T -- example: n:nat *)
     lf_context : (var * lf_type) list;	      (* e:E -- example: t:texp *)
+    global_lf_context : (var, lf_type) Hashtbl.t;
   }
 
-let empty_context = { lf_context = []; ts_context = []; tts_context = []; global_context = Hashtbl.create 0 }
+let empty_context = { lf_context = []; ts_context = []; tts_context = []; global_lf_context = Hashtbl.create 0 }
 
 let lf_bind env v t = { env with lf_context = (v,t) :: env.lf_context }
+
+let global_lf_bind env v t = 
+  Hashtbl.add env.global_lf_context v t;
+  env
 
 let ts_bind env v t = { env with ts_context = (v,t) :: env.ts_context }
 

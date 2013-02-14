@@ -503,6 +503,10 @@ and subtype (env:environment) (t:lf_type) (u:lf_type) : unit =
     | _ -> type_equivalence env (tpos,t0) (upos,u0)
   with TypeEquivalenceFailure -> raise SubtypeFailure
 
+let is_subtype (env:environment) (t:lf_type) (u:lf_type) : bool =
+  try subtype env t u; true
+  with SubtypeFailure -> false
+
 let rec is_product_type env t = 
   match unmark t with 
   | F_Pi _ -> true

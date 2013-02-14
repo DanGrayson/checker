@@ -513,6 +513,19 @@ let print_signature env file =
   flush file
 
 (** Print the context. *)
+
+let print_global_lf_context file env = 
+  fprintf file "Global LF Context (definitions and axioms):\n";
+  Hashtbl.iter 
+    (fun v t -> (
+      match unmark t with
+      | F_Singleton(e,t) ->
+          fprintf file "     %a := %a\n"   _v v          _e e;
+          fprintf file "     %a  : %a\n%!" _v_phantom v  _t t
+      | _ -> 
+          fprintf file "     %a : %a\n%!" _v v  _t t))
+    env.global_lf_context
+
 let print_context n file (c:environment) = 
   let n = match n with None -> -1 | Some n -> n in
   fprintf file "LF Context:\n";
@@ -549,7 +562,8 @@ let print_context n file (c:environment) =
 	fprintf file "   %a : %a : %a\n%!" _v p _v o _e t
       ) 
       env
-  with Limit -> fprintf file "     ...\n")
+  with Limit -> fprintf file "     ...\n");
+  if n = -1 then print_global_lf_context file c
 
 let print_surroundings (surr:surrounding) = 
   printf "Surroundings:\n";
