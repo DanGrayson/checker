@@ -1,0 +1,44 @@
+Let 
+
+        v :: T
+
+be an abbreviation for the judgment
+
+	v'' : v' : T
+
+of TTS, where v' and v'' are distinct variables.
+
+It entails
+
+	v'  : oexp
+	v'' : hastype_witness v T
+
+If there's a value, it's a pair of values, and the value of v' may need to be
+unfolded, but not the value of v'', because its type suffices.
+
+Instead of two variables and one type, what about one variable and two types?
+
+	v : oexp : hastype_witness v T
+
+And a definition would be accomplished by a pair of singleton types:
+
+	v : S(o,oexp) : S(p,hastype_witness v' T)
+
+so that two unfoldings would be possible:
+
+        v'  -> o
+	v'' -> p
+
+This is different from Sigma-types, because there are two variables, and they
+participate in substitutions independently.
+
+Then a relative index into the context would be a pair (n,i) of numbers, with
+i=0 or 1.  That suggests that a lambda expression would look like
+
+        f := v |-> ( ... v' ... v'' ... )
+
+and that application of it would always involve a pair of values.  That would
+entail a new datastructure for this sort of lambda.
+
+
+	
