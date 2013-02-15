@@ -1,0 +1,13 @@
+recommended by Bas:
+
+	Designing a state transaction machine for Coq
+	Bruno Barras, Enrico Tassi
+	http://paral-itp.lri.fr/papers/files/coq-workshop-paper.pdf
+	http://paral-itp.lri.fr/papers/files/coq-workshop-slides.pdf
+	(coq now supports this)
+
+
+	READ-EVAL-PRINT in Parallel and Asynchronous Proof-checking
+	Makarius Wenzel
+	http://www4.in.tum.de/~wenzelm/papers/async-repl.pdf
+	(a critique)
