@@ -100,7 +100,7 @@ let fetch_type env pos v =
   | _ ->
       try List.assoc v env.lf_context
       with Not_found -> 
-	try Hashtbl.find env.global_lf_context v 
+	try VarMap.find v env.global_lf_context
 	with Not_found -> 
 	  raise (TypeCheckingFailure (env, [], [pos, "unbound variable: " ^ vartostring v]))
 
@@ -114,7 +114,7 @@ let head_to_type env pos = function
   | TAC _ -> (trap(); raise Internal)
 
 let ensure_new_name env pos v =
-  if Hashtbl.mem env.global_lf_context v then 
+  if VarMap.mem v env.global_lf_context then 
     raise (MarkedError (pos, "variable already defined: " ^ vartostring v))
 
 let axiom_bind v (pos:position) t (env:environment) = 

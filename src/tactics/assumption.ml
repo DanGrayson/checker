@@ -17,7 +17,7 @@ let assumption surr env pos t args =
 	else repeat envp)
     | [] -> (
 	try
-	  Hashtbl.iter
+	  VarMap.iter
 	    (fun v u -> if is_subtype env u t then raise (FoundOne v))
 	    env.global_lf_context;
 	  TacticFailure

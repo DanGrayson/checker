@@ -90,5 +90,5 @@ Definition idfun { ⊢ X Type } ⊢ λ x:X,x : X⟶X
 #    := _ .
 
 #   Local Variables:
-#   compile-command: "make -C .. rules7r "
+#   compile-command: "make -C .. rules7 "
 #   End:

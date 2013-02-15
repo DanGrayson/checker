@@ -516,12 +516,12 @@ let print_signature env file =
 
 let print_global_lf_context file env = 
   fprintf file "Global LF Context (definitions and axioms):\n";
-  Hashtbl.iter 
+  VarMap.iter 
     (fun v t -> (
       match unmark t with
       | F_Singleton(e,t) ->
           fprintf file "     %a := %a\n"   _v v          _e e;
-          fprintf file "     %a  : %a\n%!" _v_phantom v  _t t
+          fprintf file "     %a :  %a\n%!" _v_phantom v  _t t
       | _ -> 
           fprintf file "     %a : %a\n%!" _v v  _t t))
     env.global_lf_context

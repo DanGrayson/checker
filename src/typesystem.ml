@@ -436,20 +436,20 @@ let rec compare_kinds k l =
 
 (** Contexts. *)
 
+module VarMap = Map.Make(VarOrd)
+
 type environment = {
     tts_context : (var * var * lf_expr) list; (* p:o:T -- here p is the witness *)
     ts_context : (var * lf_expr) list;	      (* o:T -- example: n:nat *)
     lf_context : (var * lf_type) list;	      (* e:E -- example: t:texp *)
-    global_lf_context : (var, lf_type) Hashtbl.t;
+    global_lf_context : lf_type VarMap.t;
   }
 
-let empty_context = { lf_context = []; ts_context = []; tts_context = []; global_lf_context = Hashtbl.create 0 }
+let empty_context = { lf_context = []; ts_context = []; tts_context = []; global_lf_context = VarMap.empty }
 
 let lf_bind env v t = { env with lf_context = (v,t) :: env.lf_context }
 
-let global_lf_bind env v t = 
-  Hashtbl.add env.global_lf_context v t;
-  env
+let global_lf_bind env v t = { env with global_lf_context = VarMap.add v t env.global_lf_context }
 
 let ts_bind env v t = { env with ts_context = (v,t) :: env.ts_context }
 
