@@ -205,6 +205,8 @@ let ubind env uvars ueqns =
   chk_ueqns env ueqns;
   env
 
+exception Back of int
+
 let rec process_command env lexbuf = 
   let c = 
     (* try *)
@@ -224,6 +226,9 @@ let rec process_command env lexbuf =
     | Toplevel.Alpha (x,y) -> alphaCommand env (x,y); env
     | Toplevel.Theorem (pos,name,deriv,thm) -> defCommand env [ Var name, pos, deriv, thm ]
     | Toplevel.Show n -> show_command env n; env
+    | Toplevel.Back n -> 
+	let n = match n with Some n -> n | None -> 1 in
+	if n > 0 then raise (Back n) else env
     | Toplevel.CheckUniverses -> checkUniversesCommand env pos; env
     | Toplevel.Include filename -> parse_file env filename
     | Toplevel.Clear -> empty_context
@@ -238,6 +243,7 @@ and read_eval_command context lexbuf =
     try 
       repeat ( protect (fun () -> process_command context lexbuf) (fun () -> lexbuf_position lexbuf) )
     with
+    | Back i -> if i <= 0 then repeat context else raise (Back (i-1))
     | Error_Handled -> repeat context
     | StopParsingFile -> context
   in repeat context

@@ -17,6 +17,7 @@ type command' =
   | Theorem of (position * string * lf_expr * lf_type)
   | CheckUniverses
   | Show of int option
+  | Back of int option
   | Include of string
   | Clear
   | SyntaxError

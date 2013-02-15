@@ -2,6 +2,8 @@
 
 let lesser_debug_mode = true
 
+let proof_general_mode = ref false
+
 let debug_mode = ref false
 
 let internal_location_trap = 0

@@ -7,7 +7,9 @@
 
 Axiom foo1 { ⊢ T U Type } [ T ≡ U ] { ⊢ o : T } ⊢ o : U.   # then fix cast this way
 Axiom foo2 { ⊢ T U Type } { ⊢ o : T } [ T ≡ U ] ⊢ o : U.   # then fix cast this way
-Show 2.
+Show.
+Back 2.
+Show.
 
 Include "rules/TS7.ts".
 Check LF cast.
