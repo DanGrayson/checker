@@ -29,7 +29,7 @@ open Printer
   Universes Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_CAR K_CDR Times
   Turnstile DoubleArrow DoubleArrowFromBar ColonColonEqual ColonEqual Theorem
   LeftBrace RightBrace TurnstileDouble ColonColon Include Clear EqualEqual
-  TTS Back
+  TTS Back BackTo
 
 (* precedences, lowest first *)
 
@@ -307,7 +307,10 @@ unmarked_command:
 	{ Toplevel.Show n }
 
     | Back n= NUMBER? Period
-	{ Toplevel.Back n }
+	{ let n = match n with Some n -> n | None -> 1 in Toplevel.Back n }
+
+    | BackTo n= NUMBER Period
+	{ Toplevel.BackTo n }
 
     | End Period
 	{ Toplevel.End }

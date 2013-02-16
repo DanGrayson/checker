@@ -7,7 +7,6 @@ open Printer
 open Printf
 open Typesystem
 open Lfcheck
-open Wlfcheck
 open Error
 
 exception WitnessNotFound

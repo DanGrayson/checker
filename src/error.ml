@@ -25,6 +25,8 @@ exception VariableNotInContext
 exception NoMatchingRule
 exception Eof
 exception FalseWitness
+exception GoBack of int
+exception GoBackTo of int
 
 type position =
   | Position of Lexing.position * Lexing.position (** start, end *)

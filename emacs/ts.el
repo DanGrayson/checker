@@ -29,7 +29,7 @@
 		       "max" "Singleton" "LF_Empty" "pair" "CAR" "CDR" "WildCard" ))
 
 (defvar ts-commands '( "Clear" "Universes" "LF" "TS" "TTS"
-		       "Check" "Alpha" "End" "Clear" "Show" "Include" "Undo"))
+		       "Check" "Alpha" "End" "Clear" "Show" "Include" "Back" "BackTo"))
 
 (defvar ts-mode-font-lock-keywords 
   `(
