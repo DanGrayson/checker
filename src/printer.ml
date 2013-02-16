@@ -582,6 +582,9 @@ let print_surroundings (surr:surrounding) =
   List.iter show_surr surr;
   flush stdout
 
+let prompt env =
+  printf "i%d = %!" env.state
+
 (* 
   Local Variables:
   compile-command: "make -C .. src/printer.cmo "

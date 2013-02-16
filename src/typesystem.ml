@@ -440,15 +440,23 @@ module VarMap = Map.Make(VarOrd)
 
 type environment = {
     state : int;
+    interactive : bool;
     tts_context : (var * var * lf_expr) list; (* p:o:T -- here p is the witness *)
     ts_context : (var * lf_expr) list;	      (* o:T -- example: n:nat *)
     lf_context : (var * lf_type) list;	      (* e:E -- example: t:texp *)
     global_lf_context : lf_type VarMap.t;
   }
 
-let empty_context = { state = 0; lf_context = []; ts_context = []; tts_context = []; global_lf_context = VarMap.empty }
+let empty_context = { 
+  state = 0; interactive = false; 
+  lf_context = []; ts_context = []; tts_context = []; 
+  global_lf_context = VarMap.empty 
+}
 
-let incr_state context = { context with state = context.state + 1 }
+let incr_state context = 
+  if context.interactive
+  then { context with state = context.state + 1 }
+  else context
 
 let lf_bind env v t = { env with lf_context = (v,t) :: env.lf_context }
 

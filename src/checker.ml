@@ -206,6 +206,7 @@ let ubind env uvars ueqns =
   env
 
 let rec process_command env lexbuf = 
+  if env.interactive then prompt env;
   let c = 
     (* try *)
       Grammar.command Tokens.expr_tokens lexbuf
@@ -225,9 +226,15 @@ let rec process_command env lexbuf =
     | Toplevel.Theorem (pos,name,deriv,thm) -> defCommand env [ Var name, pos, deriv, thm ]
     | Toplevel.Show n -> show_command env n; env
     | Toplevel.Back n -> if n > 0 then raise (GoBack n) else env
-    | Toplevel.BackTo n -> if n < env.state then raise (GoBackTo n) else env
+    | Toplevel.BackTo n -> 
+        if env.state <= n then env else raise (GoBackTo n)
     | Toplevel.CheckUniverses -> checkUniversesCommand env pos; env
-    | Toplevel.Include filename -> parse_file env filename
+    | Toplevel.Include filename -> 
+	let interactive = env.interactive in
+	let env = { env with interactive = false } in
+	let env = parse_file env filename in
+	let env = { env with interactive = interactive } in
+	env
     | Toplevel.Clear -> empty_context
     | Toplevel.SyntaxError -> env
     | Toplevel.End -> 
@@ -235,22 +242,23 @@ let rec process_command env lexbuf =
 	fprintf stderr "%a: End.\n%!" _pos pos;
 	raise StopParsingFile
 
-and read_eval_command context lexbuf = 
-  let rec repeat context = 
+and read_eval_command env lexbuf = 
+  let rec repeat env = 
     try 
       repeat (incr_state 
 		(protect
-		   (fun () -> process_command context lexbuf)
+		   (fun () -> process_command env lexbuf)
 		   (fun () -> lexbuf_position lexbuf)))
     with
-    | GoBack i -> if i <= 0 then repeat context else raise (GoBack (i-1))
-    | GoBackTo n as e -> if n <= context.state then repeat context else raise e
-    | Error_Handled -> repeat context
-    | StopParsingFile -> context
-  in repeat context
+    | GoBack i -> if i <= 0 then repeat env else raise (GoBack (i-1))
+    | GoBackTo n as e -> 
+	if env.state <= n then repeat env else raise e
+    | Error_Handled -> repeat env
+    | StopParsingFile -> env
+  in repeat env
 
 and parse_file env filename =
-  let lexbuf = Lexing.from_channel (open_in filename) in
+  let lexbuf = Lexing.from_channel (if filename = "-" then stdin else open_in filename) in
   lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = filename};
   let env = read_eval_command env lexbuf in
   (* printf "done parsing file %s\n%!" filename; *)
@@ -279,6 +287,7 @@ let toplevel() =
     Arg.parse 
       (Arg.align
 	 [
+	  ("--proof-general" , Arg.Set proof_general_mode, " Turn on Proof General mode");
 	  ("--debug" , Arg.Set debug_mode, " Turn on debug mode");
 	  ("--no-debug" , Arg.Clear debug_mode, " Turn off debug mode")
 	])
@@ -289,6 +298,15 @@ let toplevel() =
       )
       ("usage: " ^ (Filename.basename Sys.argv.(0)) ^ " [option|filename] ...");
   with FileFinished -> ());
+  if !proof_general_mode 
+  then (
+    env := { !env with interactive = true };
+    try
+      env := parse_file !env "-"
+    with Failure _ -> exit 1	(* after too many errors in a file, we don't parse the other files *)
+   )
+
+let unused env =
   if false then
   let env = !env in 
   protect 
