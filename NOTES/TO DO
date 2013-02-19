@@ -1,3 +1,23 @@
+
+	THINGS THAT NEED DOING:
+
+-----------------------------------------------------------------------------
+Switch to de Bruijn indices for bound variables.  Advantage: fewer
+substitutions of a variable by a fresh variable will be needed; comparison
+of terms will be simpler.
+-----------------------------------------------------------------------------
+Implement ~-equivalence.
+-----------------------------------------------------------------------------
+Implement the rest of TTS, starting with witness checking.
+-----------------------------------------------------------------------------
+Implement "proof mode" and make it work with ProofGeneral. 
+-----------------------------------------------------------------------------
+Generate "derivation trees" from "witnessed expressions", as an experiment.
+-----------------------------------------------------------------------------
+
+	FURTHER IDEAS:
+
+-----------------------------------------------------------------------------
 The need for the cast when stating the axiom pr2_pair_reduction in intrinsic.ts
 uncovers a misfeature in our LF encoding of TS, namely, a judgment "tequal T U"
 should not be considered well-formed unless "istype T" and "istype U" are
@@ -34,11 +54,6 @@ sense that no inference rule or object constant that forms a u-expression
 requires a t- or o- expression as a premise or argument.  This suggests that
 "judged" names of types might need a projection operator to extract the ulevel
 component. (?)
-
------------------------------------------------------------------------------
-
-Switch to de Bruijn indices for bound variables.  Advantage: fewer
-substitutions of a variable by a fresh variable will be needed.
 
 -----------------------------------------------------------------------------
 
@@ -94,7 +109,7 @@ and
 	    (o:oexp) ⟶ 
 	    (x:Singleton(o : oexp)) × 
 	    	istype T ⟶ istype U ⟶ hastype o T ⟶ tequal T U ⟶ hastype x U
-
+-----------------------------------------------------------------------------
 Idea:
 
 	introduce new syntax for binders by judgments: 
