@@ -101,7 +101,8 @@ let add_oVars env ovars t =
   }
 
 let lf_axiomCommand env pos name t =
-  if show_rules then ( printf "Axiom LF %a: %a\n%!" _v name _t t );
+  if show_rules then printf "Axiom LF %a: %a\n%!" _v name _t t;
+  if !proof_general_mode then printf "%a is declared\n%!" _v name;
   let t = Lfcheck.type_validity [] env t in
   axiom_bind name pos t env
 
@@ -127,7 +128,9 @@ let defCommand env defs =
 	if show_definitions then printf "       %a : %a [normalized]\n%!" _v v  _t tp'';
 	let _ = type_validity [] env tp'' in ();
        );
-      def_bind v pos tm' tp' env
+      let env = def_bind v pos tm' tp' env in
+      if !proof_general_mode then printf "%a is defined\n%!" _v v;
+      env
     ) 
     env defs
 
