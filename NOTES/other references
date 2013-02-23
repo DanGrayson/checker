@@ -23,11 +23,12 @@ POPLmark Challenge
 
 Proof checkers to look at:
 
-	Matita
+	Matita (modeled after coq)
 	    http://matita.cs.unibo.it/
 	    http://matita.cs.unibo.it/documentation.shtml
 	    http://matita.cs.unibo.it/PAPERS/system_description2011.pdf
 	    http://matita.cs.unibo.it/PAPERS/plmms09.pdf (A new type for tactics)
+	    http://www.cs.unibo.it/~sacerdot/PAPERS/sadhana.pdf (a description of the kernel)
 
 	Epigram
 	    http://www.e-pig.org/epilogue/
