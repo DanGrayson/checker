@@ -8,3 +8,14 @@ TAGS: $(SRCFILES) $(RULES_FILES) $(TSFILES) scripts/ts.etags Makefile rules/Make
 	( scripts/etags.ocaml $(SRCFILES) \
 	  && \
 	  etags --language=none --regex=@scripts/ts.etags $(RULES_FILES) $(TSFILES) -o - ) >$@
+
+
+
+install_dirs = $(prefix)/share/emacs/site-lisp $(prefix)/bin $(prefix)/share/checker
+
+$(install_dirs) :; mkdir -p $@
+
+install: | $(install_dirs)
+	cp checker.byte $(prefix)/bin/checker
+	cp -a rules test $(prefix)/share/checker/.
+	cp -a emacs/*.el $(prefix)/share/emacs/site-lisp/.
