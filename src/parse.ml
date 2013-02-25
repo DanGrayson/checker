@@ -22,7 +22,7 @@ let lookup_label pos name =
 
 let lookup_type_constant pos name =
   try List.assoc name Names.string_to_type_constant
-  with Not_found as e -> Printf.fprintf stderr "%a: unknown type constant %s\n%!" _pos pos name; raise e
+  with Not_found -> F_undeclared_type_constant(pos,name)
 
 type binder_judgment = 
   | ULEV

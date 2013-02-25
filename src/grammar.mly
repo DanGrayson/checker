@@ -152,7 +152,7 @@ unmarked_lf_type:
 lf_type_constant:
 
     | l= IDENTIFIER 
-	{ let pos = Position($startpos, $endpos) in try lookup_type_constant pos l with Not_found -> $syntaxerror }
+	{ let pos = Position($startpos, $endpos) in lookup_type_constant pos l }
 
 lf_expr:
 

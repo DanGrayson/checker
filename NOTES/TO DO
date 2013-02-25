@@ -2,6 +2,8 @@
 	THINGS THAT NEED DOING:
 
 -----------------------------------------------------------------------------
+Stop using $syntaxerror in the parser.
+-----------------------------------------------------------------------------
 Switch to de Bruijn indices for bound variables.  Advantage: fewer
 substitutions of a variable by a fresh variable will be needed; comparison
 of terms will be simpler.
