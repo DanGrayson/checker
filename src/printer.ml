@@ -140,6 +140,7 @@ let var_chooser x subs occurs_in e =
         if var_tester w subs occurs_in e then w, (x,w) :: subs
         else repeat (i+1)
       in repeat 1			(*omit the "'" case*)
+  | VarRel _ -> raise Internal
 
 let occurs_in_list occurs_in x args = List.exists (occurs_in x) args
 

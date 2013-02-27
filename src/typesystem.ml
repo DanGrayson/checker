@@ -68,14 +68,14 @@ type lf_type_head =
   | F_judged_type_equal
   | F_judged_obj_equal
   | F_wexp
-      (* the next four are types, whose objects are witnesses *)
+      (* the next four are types, whose objects are witnesses; we use these as containers for the judgments of TTS *)
   | F_istype_witness
-  | F_hastype_witness
+  | F_hastype_witness			(* i.e., p:o:T means p is of type o:T and is a witness that o is of type T *)
   | F_type_equality_witness
   | F_object_equality_witness
-      (* the next four are statements, with no objects *)
+      (* the next four are judgments, with no objects when running in TTS mode, or with LF derivation trees as objects when running in LF mode *)
   | F_witnessed_istype
-  | F_witnessed_hastype
+  | F_witnessed_hastype			(* i.e., p:o:T is a judgment, which must be derived *)
   | F_witnessed_type_equality
   | F_witnessed_object_equality
       (* the next one is needed just to accommodate undefined type constants encountered by the parser *)
@@ -445,8 +445,8 @@ module VarMap = Map.Make(VarOrd)
 type environment = {
     state : int;
     interactive : bool;
-    tts_context : (var * var * lf_expr) list; (* p:o:T -- here p is the witness *)
-    ts_context : (var * lf_expr) list;	      (* o:T -- example: n:nat *)
+    tts_context : (var * var * lf_expr) list; (* p:o:T -- here p is the witness; the index of p is 2n+1 and the index of o is 2n *)
+    ts_context : (var * lf_expr) list;	      (* o:T -- example: n:nat; perhaps we can do away with this one *)
     lf_context : (var * lf_type) list;	      (* e:E -- example: t:texp *)
     global_lf_context : lf_type VarMap.t;
   }
