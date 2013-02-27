@@ -102,9 +102,10 @@ let add_oVars env ovars t =
 
 let lf_axiomCommand env pos name t =
   if show_rules then printf "Axiom LF %a: %a\n%!" _v name _t t;
-  if !proof_general_mode then printf "%a is declared\n%!" _v name;
   let t = Lfcheck.type_validity [] env t in
-  axiom_bind name pos t env
+  let r = axiom_bind name pos t env in
+  if !proof_general_mode then printf "%a is declared\n%!" _v name;
+  r
 
 let defCommand env defs = 
   List.fold_left
@@ -253,7 +254,10 @@ and read_eval_command env lexbuf =
 		   (fun () -> process_command env lexbuf)
 		   (fun () -> lexbuf_position lexbuf)))
     with
-    | GoBack i -> if i <= 0 then repeat env else raise (GoBack (i-1))
+    | GoBack i -> 
+	if i <= 0 then repeat env
+	else if env.state = 0 then ( printf "warning: can back up no further\n%!"; repeat env )
+	else raise (GoBack (i-1))
     | GoBackTo n as e -> 
 	if env.state <= n then repeat env else raise e
     | Error_Handled -> repeat env

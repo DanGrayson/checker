@@ -245,8 +245,9 @@ command:
     | c= unmarked_command 
 	{ Position($startpos, $endpos), c }
 
-    | error Period
-    | error EOF
+    | error				(* instant error return for the sake of Proof General *)
+    (* | error Period *)
+    (* | error EOF *)
 	{ let pos = Position($startpos, $endpos) in
 	  fprintf stderr "%a: syntax error\n%!" _pos pos; 
 	  bump_error_count pos;

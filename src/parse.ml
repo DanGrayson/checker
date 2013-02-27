@@ -11,7 +11,7 @@ let error_count = ref 0
 
 let bump_error_count pos =
   incr error_count;
-  if !error_count >= 5 then (
+  if not !proof_general_mode && !error_count >= 5 then (
     Printf.fprintf stderr "%a: too many errors, exiting.\n%!" _pos pos;
     raise (Failure "exiting"));
   flush stderr; flush stdout		(*just in case*)
