@@ -11,7 +11,7 @@ let error_count = ref 0
 
 let bump_error_count pos =
   incr error_count;
-  if !error_count >= 5 then (
+  if not !proof_general_mode && !error_count >= 5 then (
     Printf.fprintf stderr "%a: too many errors, exiting.\n%!" _pos pos;
     raise (Failure "exiting"));
   flush stderr; flush stdout		(*just in case*)
@@ -22,7 +22,7 @@ let lookup_label pos name =
 
 let lookup_type_constant pos name =
   try List.assoc name Names.string_to_type_constant
-  with Not_found as e -> Printf.fprintf stderr "%a: unknown type constant %s\n%!" _pos pos name; raise e
+  with Not_found -> F_undeclared_type_constant(pos,name)
 
 type binder_judgment = 
   | ULEV

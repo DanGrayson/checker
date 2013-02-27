@@ -2,7 +2,7 @@ TSNAMES = demo judgments miscellaneous foo interpretations intrinsic theorem-bin
 TSFILES = $(patsubst %,test/%.ts,$(TSNAMES))
 all: tests
 tests : $(TSNAMES)
-$(TSNAMES): src/$(CHECKER_EXE) ; $(CHECKER) test/$@.ts
+$(TSNAMES): src/$(CHECKER_EXE) ; $(CHECKER) $(TSFLAGS) test/$@.ts
 
 #  Local Variables:
 #  compile-command: "make -C .. tests "

@@ -78,6 +78,8 @@ type lf_type_head =
   | F_witnessed_hastype
   | F_witnessed_type_equality
   | F_witnessed_object_equality
+      (* the next one is needed just to accommodate undefined type constants encountered by the parser *)
+  | F_undeclared_type_constant of position * string
 
     (** The type [lf_expr_head] accommodates the variables of LF, and the constants of
         LF, which in turn include the labels of TS, the inference rules of TS,
@@ -399,6 +401,8 @@ let tfhead_to_kind = function
   | F_witnessed_hastype -> witnessed_hastype_kind
   | F_witnessed_type_equality -> witnessed_type_equality_kind
   | F_witnessed_object_equality -> witnessed_object_equality_kind
+
+  | F_undeclared_type_constant(pos,name) -> raise (UndeclaredTypeConstant(pos,name))
 
 (** Subordination: see section 2.4 of Mechanizing Meta-theory by Harper and Licata *)
 type kind_comparison = K_equal | K_less | K_greater | K_incomparable

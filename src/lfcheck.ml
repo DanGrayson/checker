@@ -658,7 +658,10 @@ let type_validity (surr:surrounding) (env:environment) (t:lf_type) : lf_type =
           let u = type_validity ((S_argument 2,None,Some t0) :: surr) (lf_bind env v t) u in
           F_Sigma(v,t,u)
       | F_Apply(head,args) ->
-          let kind = tfhead_to_kind head in
+          let kind = 
+	    try tfhead_to_kind head 
+	    with UndeclaredTypeConstant(pos,name) -> err env pos ("undeclared type constant: " ^ name)
+	  in
           let rec repeat i env kind (args:lf_expr list) = 
             match kind, args with 
             | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), [] -> []
