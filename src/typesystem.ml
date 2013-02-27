@@ -446,14 +446,13 @@ type environment = {
     state : int;
     interactive : bool;
     tts_context : (var * var * lf_expr) list; (* p:o:T -- here p is the witness; the index of p is 2n+1 and the index of o is 2n *)
-    ts_context : (var * lf_expr) list;	      (* o:T -- example: n:nat; perhaps we can do away with this one *)
     lf_context : (var * lf_type) list;	      (* e:E -- example: t:texp *)
     global_lf_context : lf_type VarMap.t;
   }
 
 let empty_context = { 
   state = 0; interactive = false; 
-  lf_context = []; ts_context = []; tts_context = []; 
+  lf_context = []; tts_context = []; 
   global_lf_context = VarMap.empty 
 }
 
@@ -466,19 +465,23 @@ let lf_bind env v t = { env with lf_context = (v,t) :: env.lf_context }
 
 let global_lf_bind env v t = { env with global_lf_context = VarMap.add v t env.global_lf_context }
 
-let ts_bind env v t = { env with ts_context = (v,t) :: env.ts_context }
-
-let ts_fetch env v = List.assoc v env.ts_context
-
 let tts_bind env p v t = { env with tts_context = (p,v,t) :: env.tts_context }
 
-let tts_fetch v env =
+let ts_bind env v t = 
+  let v' = witness_var v in
+  { env with tts_context = (v',v,t) :: env.tts_context }
+
+let tts_fetch env v =
   let rec repeat = function
       [] -> raise Not_found
     | (p,o,t)::l -> if compare o v = 0 then (p,t) else repeat l in
   repeat env.tts_context
 
-let tts_fetch_w w env = 
+let ts_fetch env v = 
+  let (p,t) = tts_fetch env v in
+  t
+
+let tts_fetch_w env w = 
   let rec repeat = function
       [] -> raise Not_found
     | (p,o,t)::l -> if compare p w = 0 then (o,t) else repeat l in

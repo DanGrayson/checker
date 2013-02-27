@@ -544,16 +544,6 @@ let print_context n file (c:environment) =
       ) 
       env
   with Limit -> fprintf file "   ...\n");
-  fprintf file "TS Context:\n";
-  let env = c.ts_context in
-  let env = if n < 0 then List.rev env else env in (
-  try iteri
-      (fun i (v,t) ->
-        if i = n then raise Limit;
-	fprintf file "   %a : %a\n%!" _v v  _e t
-      ) 
-      env
-  with Limit -> fprintf file "     ...\n");
   fprintf file "TTS Context:\n";
   let env = c.tts_context in
   let env = if n < 0 then List.rev env else env in (

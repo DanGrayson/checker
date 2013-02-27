@@ -34,7 +34,8 @@ let base_var = function
 let witness_var = function
   | Var x -> Var_wd x
   | VarRel i -> if i mod 2 = 0 then VarRel (i+1) else raise Internal
-  | VarGen _ | Var_wd _ | VarGen_wd _ -> raise Internal
+  | VarGen(i,x) -> VarGen_wd(i,x)
+  | Var_wd _ | VarGen_wd _ -> raise Internal
 
 exception GensymCounterOverflow
 

@@ -215,7 +215,7 @@ let unpack_lambda' o =
 let apply_2 f x y = Substitute.apply_args f (x ** y ** END)
 
 let rec check_istype env t =
-  if not (List.exists (fun (v,u) -> equivalence t u) env.ts_context)
+  if not (List.exists (fun (p,o,u) -> equivalence t u) env.tts_context)
   then 
     match unmark t with
     | APPLY(T th, args) -> (
@@ -245,7 +245,7 @@ and check_hastype env p o t =
   match unmark p with
   | APPLY(V (Var_wd _ | VarGen_wd _ as w), END) -> (
       let o',t' = 
-	try tts_fetch_w w env
+	try tts_fetch_w env w
 	with Not_found -> err env (get_pos p) "variable not in context" in
       if not (compare_var_to_expr o' o) then err env (get_pos o) ("expected variable " ^ vartostring o');
       if not (equivalence t t') then mismatch_term_tstype_tstype env o t' t)

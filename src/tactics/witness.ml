@@ -50,7 +50,7 @@ let rec this_head_reduces env o =   (* returns (p,o'), where p : o == o' : _ *)
 and find_w_hastype env o t : lf_expr = (
   match unmark o with
   | APPLY(V v, END) ->
-      let (p,_) = tts_fetch v env in
+      let (p,_) = tts_fetch env v in
       var_to_lf_pos (get_pos o) p
   | APPLY(O O_ev',args) ->
       let (f,o,t1,t2) = args4 args in

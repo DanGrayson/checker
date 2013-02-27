@@ -85,7 +85,6 @@ let protect f posfun =
 let add_tVars env tvars = 
   { env with
     tts_context = List.rev_append (List.map (fun t -> newunused_wd(), newunused(), var_to_lf (Var t)) tvars) env.tts_context;
-    ts_context = List.rev_append (List.map (fun t -> newunused(), var_to_lf (Var t)) tvars) env.ts_context;
     lf_context = List.rev_append 
       (List.flatten (List.map (fun t -> [ (Var t, texp); (newfresh (Var "ist"), istype (var_to_lf (Var t))); ] ) tvars))
       env.lf_context
@@ -94,7 +93,6 @@ let add_tVars env tvars =
 let add_oVars env ovars t =
   { env with
     tts_context = List.rev_append (List.map (fun o -> Var_wd o, Var o, t) ovars) env.tts_context;
-    ts_context = List.rev_append (List.map (fun o -> Var o, t) ovars) env.ts_context;
     lf_context = List.rev_append 
       (List.flatten (List.map (fun o -> [ (Var o, oexp); (newfresh (Var "hast"), hastype (var_to_lf (Var o)) t); ] ) ovars))
       env.lf_context
