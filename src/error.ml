@@ -2,8 +2,6 @@
 
 let lesser_debug_mode = true
 
-let proof_general_mode = ref false
-
 let debug_mode = ref false
 
 let internal_location_trap = 0
@@ -15,6 +13,10 @@ let genctr_exception = 0                (* raise a trap and an exception when a 
 let trap () = ()			(* set a break point here *)
 
 let notail x = x			(* insert into code to termporarily prevent tail recursion *)
+
+let error_count = ref 0
+
+let proof_general_mode = ref false
 
 exception DebugMe
 exception GeneralError of string
@@ -51,6 +53,15 @@ let errfmt = function
 	 then "character " ^ string_of_int i
          else "characters " ^ string_of_int i ^ "-" ^ string_of_int j)
   | Nowhere(i,j) -> "internal:" ^ string_of_int i ^ ":" ^ string_of_int j
+
+let _pos file x = output_string file (errfmt x)
+
+let bump_error_count pos =
+  incr error_count;
+  if not !proof_general_mode && !error_count >= 5 then (
+    Printf.fprintf stderr "%a: too many errors, exiting.\n%!" _pos pos;
+    raise (Failure "exiting"));
+  flush stderr; flush stdout		(*just in case*)
 
 type 'a marked = position * 'a
 

@@ -32,7 +32,7 @@ exception WithPosition of position * exn
 let raise_switch ex1 ex2 = raise (if debug then ex1 else ex2)
 
 let error_summary pos =
-  let n = !Parse.error_count in
+  let n = !error_count in
   if n > 0 
   then (
     fprintf stderr "%s: %d error%s encountered, see messages above\n%!" (errfmt pos) n (if n == 1 then "" else "s");
@@ -43,7 +43,7 @@ let print_inconsistency pos lhs rhs =
   Printf.fprintf stderr "%a: universe inconsistency:\n" _pos_of lhs;
   Printf.fprintf stderr "%a:         %a\n"  _pos_of lhs  _ts lhs;
   Printf.fprintf stderr "%a:      != %a\n%!"  _pos_of rhs  _ts rhs;
-  Parse.bump_error_count pos
+  bump_error_count pos
 
 let protect f posfun =
   let spos () = errfmt (posfun ()) in 
@@ -58,25 +58,25 @@ let protect f posfun =
       raise (Failure "exiting")
   | GeneralError s as ex ->
       fprintf stderr "%s: %s\n%!" (spos ()) s;
-      Parse.bump_error_count (posfun ());
+      bump_error_count (posfun ());
       raise_switch ex Error_Handled
   | Grammar.Error | Parsing.Parse_error as ex -> 
       fprintf stderr "%s: syntax error\n%!" (spos ());
-      Parse.bump_error_count (posfun ());
+      bump_error_count (posfun ());
       raise_switch ex Error_Handled
   | TypeCheckingFailure (env,surr,ps) as ex -> 
       List.iter (fun (spos,s) -> fprintf stderr "%s: %s\n%!" (errfmt spos) s) ps;
       print_surroundings surr;
       print_context env_limit stderr env;
-      Parse.bump_error_count (posfun ());
+      bump_error_count (posfun ());
       raise_switch ex Error_Handled
   | MarkedError (p,s) as ex ->
       fprintf stderr "%s: %s\n%!" (errfmt p) s;
-      Parse.bump_error_count (posfun ());
+      bump_error_count (posfun ());
       raise_switch ex Error_Handled
   | Unimplemented s as ex ->
       fprintf stderr "%s: feature not yet implemented: %s\n%!" (spos ()) s;
-      Parse.bump_error_count (posfun ());
+      bump_error_count (posfun ());
       raise_switch ex Error_Handled
   | Universe.Inconsistency (lhs,rhs) as ex ->
       print_inconsistency (posfun ()) lhs rhs;
@@ -208,7 +208,7 @@ let ubind env uvars ueqns =
   env
 
 let rec process_command env lexbuf = 
-  if env.interactive then prompt env;
+  if !interactive then prompt env;
   let c = 
     (* try *)
       Grammar.command Tokens.expr_tokens lexbuf
@@ -232,10 +232,9 @@ let rec process_command env lexbuf =
         if env.state <= n then env else raise (GoBackTo n)
     | Toplevel.CheckUniverses -> checkUniversesCommand env pos; env
     | Toplevel.Include filename -> 
-	let interactive = env.interactive in
-	let env = { env with interactive = false } in
+	let save_interactive = !interactive in
 	let env = parse_file env filename in
-	let env = { env with interactive = interactive } in
+	interactive := save_interactive;
 	env
     | Toplevel.Clear -> empty_context
     | Toplevel.SyntaxError -> env
@@ -305,7 +304,7 @@ let toplevel() =
   with FileFinished -> ());
   if !proof_general_mode 
   then (
-    env := { !env with interactive = true };
+    interactive := true;
     try
       env := parse_file !env "-"
     with Failure _ -> exit 1	(* after too many errors in a file, we don't parse the other files *)

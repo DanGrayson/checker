@@ -491,8 +491,6 @@ let _k file x = output_string file (lf_kind_to_string x)
 
 let _th file x = output_string file (lf_type_head_to_string x)
 
-let _pos file x = output_string file (errfmt x)
-
 let _pos_of file x = output_string file (errfmt (get_pos x))
 
 (** Display the signature. *)
