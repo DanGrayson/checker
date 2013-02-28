@@ -22,13 +22,13 @@ let first_w_var env =
   | _ -> raise Internal
 
 let abstract env x =
-  nowhere 202 (LAMBDA(first_w_var env, nowhere 203 (LAMBDA(first_var env, x))))
+  nowhere 202 (LAMBDA(first_var env, nowhere 203 (LAMBDA(first_w_var env, x))))
 
 let open_context t1 (env,o,t2) =
   let v = newfresh (Var "x") in
   let v' = newfresh (Var_wd "x") in
   let env = tts_bind env v' v t1 in
-  let e = var_to_lf v' ** var_to_lf v ** END in 
+  let e = var_to_lf v ** var_to_lf v' ** END in 
   let o = Substitute.apply_args o e in
   let t2 = Substitute.apply_args t2 e in
   (env,o,t2)
@@ -41,7 +41,7 @@ let rec this_head_reduces env o =   (* returns (p,o'), where p : o == o' : _ *)
     let p1 = find_w_hastype env o1 t1 in
     let env,o2',t2' = open_context t1 (env,o2,t2) in
     let p2 = find_w_hastype env o2' t2' in
-    let o' = apply_2 o2 p1 o1 in
+    let o' = apply_2 o2 o1 p1 in
     let p = make_W_wbeta p1 (abstract env p2) in
     nowhere 207 p, o'
   with

@@ -469,6 +469,8 @@ let phantom s = String.make (String.length s) ' '
 
 (** The following routines can be used with [printf "%a"], and are convenient for debugging. *)
 
+let _pos file x = output_string file (errfmt x)
+
 let _v file x = output_string file (vartostring x)
 
 let _v_phantom file x = output_string file (phantom (vartostring x))

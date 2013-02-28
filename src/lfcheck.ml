@@ -186,7 +186,7 @@ let open_context t1 (env,p,o,t2) =
   let v = newfresh (Var "x") in
   let v' = newfresh (Var_wd "x") in
   let env = tts_bind env v' v t1 in
-  let e = var_to_lf v' ** var_to_lf v ** END in 
+  let e = var_to_lf v ** var_to_lf v' ** END in 
   let p = Substitute.apply_args p e in
   let o = Substitute.apply_args o e in
   let t2 = Substitute.apply_args t2 e in
@@ -228,7 +228,7 @@ let rec check_istype env t =
 	    let env = tts_bind env p o t1 in
 	    let p = var_to_lf p in
 	    let o = var_to_lf o in
-	    let t2 = Substitute.apply_args t2 (p ** o ** END) in
+	    let t2 = Substitute.apply_args t2 (o ** p ** END) in
 	    check_istype env t2
 	| T_U' -> ()
 	| T_El' ->
@@ -308,9 +308,9 @@ and check_object_equality env p o o' t =
 	  check_hastype env p1 o1 t1;
 	  let env,p2',o2',t2' = open_context t1 (env,p2,o2,t2) in
 	  check_hastype env p2' o2' t2';
-	  let t2'' = apply_2 t2 p1 o1 in
+	  let t2'' = apply_2 t2 o1 p1 in
 	  if not (equivalence t2'' t) then mismatch_term env (get_pos t2'') t2'' (get_pos t) t;
-	  let o2' = apply_2 o2 p1 o1 in
+	  let o2' = apply_2 o2 o1 p1 in
 	  if not (equivalence o2' o') then mismatch_term env (get_pos o2') o2' (get_pos o') o'
       | W_wrefl -> (
 	  let p,p' = args2 pargs in

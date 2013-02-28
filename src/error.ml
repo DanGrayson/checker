@@ -6,7 +6,7 @@ let debug_mode = ref false
 
 let internal_location_trap = 0
 
-let genctr_trap = 2945			(* raise an exception when a fresh variable with this number is created *)
+let genctr_trap = 0			(* raise an exception when a fresh variable with this number is created *)
 
 let genctr_exception = 0                (* raise a trap and an exception when a fresh variable with this number is created *)
 
@@ -54,12 +54,10 @@ let errfmt = function
          else "characters " ^ string_of_int i ^ "-" ^ string_of_int j)
   | Nowhere(i,j) -> "internal:" ^ string_of_int i ^ ":" ^ string_of_int j
 
-let _pos file x = output_string file (errfmt x)
-
 let bump_error_count pos =
   incr error_count;
   if not !proof_general_mode && !error_count >= 5 then (
-    Printf.fprintf stderr "%a: too many errors, exiting.\n%!" _pos pos;
+    Printf.fprintf stderr "%s: too many errors, exiting.\n%!" (errfmt pos);
     raise (Failure "exiting"));
   flush stderr; flush stdout		(*just in case*)
 

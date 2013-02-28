@@ -660,7 +660,7 @@ unmarked_ts_expr:
                        let p = witness_var v in
                        let (v,arg) = Substitute.subst_fresh pos (v,arg) in 
                        let (p,arg) = Substitute.subst_fresh pos (p,arg) in 
-		       LAMBDA(p, with_pos_of arg (LAMBDA(v,arg)))
+		       LAMBDA(v, with_pos_of arg (LAMBDA(p,arg)))
 		  )
 		) indices arg
 	      ) varindices args

@@ -199,9 +199,9 @@ let oexp1 = oexp @-> oexp
 let oexp2 = oexp @-> oexp @-> oexp
 let oexp3 = oexp @-> oexp @-> oexp @-> oexp
 
-let wexp_w = wexp @-> oexp @-> wexp
-let texp_w = wexp @-> oexp @-> texp
-let oexp_w = wexp @-> oexp @-> oexp
+let wexp_w = oexp @-> wexp @-> wexp
+let texp_w = oexp @-> wexp @-> texp
+let oexp_w = oexp @-> wexp @-> oexp
 
 let uhead_to_lf_type = function	(* optimize later by precomputing the constant return values *)
   | U_next -> uexp @-> uexp
@@ -476,7 +476,11 @@ let ts_bind env v t =
 let tts_fetch env v =
   let rec repeat = function
       [] -> raise Not_found
-    | (p,o,t)::l -> if compare o v = 0 then (p,t) else repeat l in
+    | (p,o,t)::l -> 
+        if compare o v = 0 then (p,t) else
+        if compare p v = 0 then raise Internal else (*debugging only*)
+        repeat l 
+  in
   repeat env.tts_context
 
 let ts_fetch env v = 
@@ -486,7 +490,11 @@ let ts_fetch env v =
 let tts_fetch_w env w = 
   let rec repeat = function
       [] -> raise Not_found
-    | (p,o,t)::l -> if compare p w = 0 then (o,t) else repeat l in
+    | (p,o,t)::l -> 
+        if compare p w = 0 then (o,t) else
+        if compare o w = 0 then raise Internal else (*debugging only*)
+        repeat l
+  in
   repeat env.tts_context
 
 type uContext = UContext of var marked list * (lf_expr * lf_expr) marked list
