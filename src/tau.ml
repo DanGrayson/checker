@@ -49,7 +49,7 @@ let rec tau (env:environment) e : lf_expr =
           | O_ev -> (
               match args with
               | ARG(f,ARG(o,ARG(t1,ARG((_,LAMBDA(x,t2)),END)))) ->
-                  unmark (Substitute.subst_expr (x,o) t2)
+                  unmark (Substitute.subst_expr o t2)
               | _ -> raise Internal)
           | O_lambda' -> raise NotImplemented
           | O_lambda -> (

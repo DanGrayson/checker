@@ -109,7 +109,7 @@ let rec natural_type (env:environment) (x:lf_expr) : lf_type =
       let t = head_to_type env pos l in
       let rec repeat i args t =
         match args, unmark t with
-        | ARG(x,args), F_Pi(v,a,b) -> repeat (i+1) args (subst_type (v,x) b)
+        | ARG(x,args), F_Pi(v,a,b) -> repeat (i+1) args (subst_type x b)
         | ARG _, _ -> err env pos "at least one argument too many"
         | CAR args, F_Sigma(v,a,b) -> repeat (i+1) args a
         | CAR _, _ -> err env pos "pi1 expected a pair (2)"
@@ -123,7 +123,7 @@ let rec natural_type (env:environment) (x:lf_expr) : lf_type =
 
 let car_passed_term pos head args_passed = with_pos pos (APPLY(head,reverse_spine (CAR args_passed)))
 
-let subst_car_passed_term v pos head args_passed b = subst_type (v, car_passed_term pos head args_passed) b
+let subst_car_passed_term pos head args_passed b = subst_type (car_passed_term pos head args_passed) b
 
 let rec head_reduction (env:environment) (x:lf_expr) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
@@ -143,9 +143,9 @@ let rec head_reduction (env:environment) (x:lf_expr) : lf_expr =
 	  let rec repeat t args_passed args =
 	    match unmark t, args with
 	    | F_Singleton s, args -> let (x,t) = strip_singleton s in apply_args x args (* here we unfold a definition *)
-	    | F_Pi(v,a,b), ARG(x,args) -> repeat (subst_type (v,x) b) (ARG(x,args_passed)) args
+	    | F_Pi(v,a,b), ARG(x,args) -> repeat (subst_type x b) (ARG(x,args_passed)) args
 	    | F_Sigma(v,a,b), CAR args -> repeat a (CAR args_passed) args
-	    | F_Sigma(v,a,b), CDR args -> repeat (subst_car_passed_term v pos head args_passed b) (CDR args_passed) args
+	    | F_Sigma(v,a,b), CDR args -> repeat (subst_car_passed_term pos head args_passed b) (CDR args_passed) args
 	    | _, END -> raise Not_found
 	    | _ -> raise Internal
 	  in repeat t args_passed args
@@ -365,11 +365,11 @@ let rec term_equivalence (env:environment) (x:lf_expr) (y:lf_expr) (t:lf_type) :
   | F_Singleton _ -> ()
   | F_Sigma (v,a,b) ->
       term_equivalence env (pi1 x) (pi1 y) a;
-      term_equivalence env (pi2 x) (pi2 y) (subst_type (v,(pi1 x)) b)
+      term_equivalence env (pi2 x) (pi2 y) (subst_type (pi1 x) b)
   | F_Pi (v,a,b) ->
       let w = Var "e" in
       let w' = var_to_lf w in
-      let b = subst_type (v,w') b in
+      let b = subst_type w' b in
       let env = lf_bind env w a in
       let xres = apply_args x (ARG(w',END)) in
       let yres = apply_args y (ARG(w',END)) in
@@ -403,13 +403,13 @@ and path_equivalence (env:environment) (x:lf_expr) (y:lf_expr) : lf_type =
         match t,args,args' with
         | (pos,F_Pi(v,a,b)), ARG(x,args), ARG(y,args') ->
             term_equivalence env x y a;
-	    let b' = subst_type (v,x) b in
+	    let b' = subst_type x b in
             repeat b' (ARG(x,args_passed)) args args'
         | (pos,F_Sigma(v,a,b)), CAR args, CAR args' ->
 	    let args_passed' = CAR args_passed in
 	    repeat a args_passed' args args'
         | (pos,F_Sigma(v,a,b)), CDR args, CDR args' ->
-	    let b' = subst_car_passed_term v pos head args_passed b in
+	    let b' = subst_car_passed_term pos head args_passed b in
 	    let args_passed' = CDR args_passed in
 	    repeat b' args_passed' args args'
         | t, END, END -> t
@@ -441,8 +441,8 @@ and type_equivalence (env:environment) (t:lf_type) (u:lf_type) : unit =
     | F_Pi(v,a,b), F_Pi(w,c,d) ->
         type_equivalence env a c;
         let x = v in			(*??*)
-        let b = subst_type (v, var_to_lf x) b in
-        let d = subst_type (w, var_to_lf x) d in
+        let b = subst_type (var_to_lf x) b in
+        let d = subst_type (var_to_lf x) d in
         let env = lf_bind env x a in
         type_equivalence env b d
     | F_Apply(h,args), F_Apply(h',args') ->
@@ -453,7 +453,7 @@ and type_equivalence (env:environment) (t:lf_type) (u:lf_type) : unit =
           match k,args,args' with
           | K_Pi(v,t,k), x :: args, x' :: args' ->
               term_equivalence env x x' t;
-              repeat (subst_kind (v,x) k) args args'
+              repeat (subst_kind x k) args args'
           | ( K_expression | K_judgment | K_primitive_judgment | K_judged_expression ), [], [] -> ()
           | _ -> (trap(); raise Internal)
         in repeat k args args'
@@ -481,11 +481,11 @@ and subtype (env:environment) (t:lf_type) (u:lf_type) : unit =
     | F_Pi(x,a,b) , F_Pi(y,c,d) ->
         subtype env c a;                        (* contravariant *)
         let w = Var "w" in
-        subtype (lf_bind env w c) (subst_type (x,var_to_lf w) b) (subst_type (y,var_to_lf w) d)
+        subtype (lf_bind env w c) (subst_type (var_to_lf w) b) (subst_type (var_to_lf w) d)
     | F_Sigma(x,a,b) , F_Sigma(y,c,d) ->
         subtype env a c;                        (* covariant *)
         let w = Var "w" in
-        subtype (lf_bind env w a) (subst_type (x,var_to_lf w) b) (subst_type (y,var_to_lf w) d)
+        subtype (lf_bind env w a) (subst_type (var_to_lf w) b) (subst_type (var_to_lf w) d)
     | F_Apply(F_istype_witness,_), F_Apply(F_wexp,[])
     | F_Apply(F_hastype_witness,_), F_Apply(F_wexp,[])
     | F_Apply(F_type_equality_witness,_), F_Apply(F_wexp,[])
@@ -523,7 +523,7 @@ let rec type_check (surr:surrounding) (env:environment) (e0:lf_expr) (t:lf_type)
                                    and theirs does *)
       let surr = (S_body,Some e0,Some t) :: surr in
       let body =
-	let (b,env) = subst_type (w,var_to_lf v) b, lf_bind env v a in
+	let (b,env) = subst_type (var_to_lf v) b, lf_bind env v a in
 	type_check surr env body b in
       pos, LAMBDA(v,body)
   | LAMBDA _, F_Sigma _ ->
@@ -539,7 +539,7 @@ let rec type_check (surr:surrounding) (env:environment) (e0:lf_expr) (t:lf_type)
                             type checking as long as possible. *)
       let (x,y) = (pi1 e0,pi2 e0) in
       let x = type_check ((S_projection 1,Some e0,Some t) :: surr) env x a in
-      let b = subst_type (w,x) b in
+      let b = subst_type x b in
       let y = type_check ((S_projection 2,Some e0,Some t) :: surr) env y b in
       pos, CONS(x,y)
 
@@ -579,14 +579,14 @@ and type_synthesis (surr:surrounding) (env:environment) (m:lf_expr) : lf_expr * 
             let surr = (S_argument i,Some m,None) :: surr in
             let env = apply_ts_binder env i m in
             let m' = type_check surr env m' a' in
-            let (args'',u) = repeat (i+1) env (subst_type (v,m') a'') (ARG(m',args_passed)) args' in
+            let (args'',u) = repeat (i+1) env (subst_type m' a'') (ARG(m',args_passed)) args' in
             ARG(m',args''), u
         | F_Singleton(e,t), args -> repeat i env t args_passed args
         | F_Sigma(v,a,b), CAR args ->
             let (args',t) = repeat (i+1) env a (CAR args_passed) args in
             (CAR args', t)
         | F_Sigma(v,a,b), CDR args ->
-            let b' = subst_car_passed_term v pos head args_passed b in
+            let b' = subst_car_passed_term pos head args_passed b in
             let (args',t) = repeat (i+1) env b' (CDR args_passed) args in
             (CDR args', t)
         | t, END -> END, (pos,t)
@@ -658,7 +658,7 @@ let type_validity (surr:surrounding) (env:environment) (t:lf_type) : lf_type =
             | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), x :: args -> err env pos "at least one argument too many";
             | K_Pi(v,a,kind'), x :: args ->
                 let x' = type_check ((S_argument i,None,Some t0) :: surr) env x a in
-                x' :: repeat (i+1) env (subst_kind (v,x') kind') args
+                x' :: repeat (i+1) env (subst_kind x' kind') args
             | K_Pi(_,a,_), [] -> errmissingarg env pos a
           in
           let args' = repeat 1 env kind args in
@@ -700,7 +700,7 @@ let rec term_normalization (env:environment) (x:lf_expr) (t:lf_type) : lf_expr =
       let x = pi1 p in
       let y = pi2 p in
       let x = term_normalization env x a in
-      let b = subst_type (v,x) b in
+      let b = subst_type x b in
       let y = term_normalization env y b in
       pos, CONS(x,y)
   | F_Apply _ ->
@@ -734,7 +734,7 @@ and path_normalization (env:environment) (x:lf_expr) : lf_expr * lf_type =
               | CAR args -> err env pos "pi1 expected a pair (4)"
               | CDR args -> err env pos "pi2 expected a pair (4)"
               | ARG(x, args) ->
-                  let b = subst_type (v,x) b in
+                  let b = subst_type x b in
                   let x = term_normalization env x a in
                   let (c,args) = repeat b (ARG(x,args_passed)) args in
                   (c, ARG(x,args)))
@@ -749,7 +749,7 @@ and path_normalization (env:environment) (x:lf_expr) : lf_expr * lf_type =
                   let (c,args) = repeat a (CAR args_passed) args in
                   (c, CAR args)
               | CDR args ->
-                  let b = subst_car_passed_term v pos head args_passed b in
+                  let b = subst_car_passed_term pos head args_passed b in
                   let (c,args) = repeat b (CDR args_passed) args in
                   (c, CDR args)
               | ARG(x,_) -> err env (get_pos x) "unexpected argument")

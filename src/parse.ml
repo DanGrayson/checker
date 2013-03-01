@@ -105,7 +105,7 @@ let pi1_implication ((vpos,v),t) u =
   printf " k = %a\n%!" _t k;
   match e with
   | Some (pos,e,ee) ->
-      let j = Substitute.subst_type (e, with_pos pos (apply_vars (VarRel (m+1+n)) (List.rev p))) j in
+      let j = Substitute.subst_type (with_pos pos (apply_vars (VarRel (m+1+n)) (List.rev p))) j in
       printf " j = %a\n%!" _t j;
       let ee = bind_pi_list_rev p ee in
       printf " ee = %a\n%!" _t ee;

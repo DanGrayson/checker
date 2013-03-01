@@ -10,28 +10,29 @@ open Printf
 
 (** Routines for replacing relative variables (deBruijn index variables) by expressions.
 
-    Coming soon ...
+    In these routines, [subs] is an array of expressions, whose i-th element is
+    to replace (VarRel i), if i is small enough, otherwise i is decreased by the
+    length of [subs].
  *)
 
-(** Routines for replacing named variables by expressions. *)
-
-let show_subs (subl : (var * lf_expr) list) =
+let show_subs (subs : lf_expr array) =
   printf " subs =\n";
-  List.iter (fun (v,e) -> printf "   %a => %a\n" _v v _e e) subl
+  Array.iteri (fun i e -> printf "   %a => %a\n" _v (VarRel i) _e e) subs
 
-let rec subst_expr subl e =
+let rec subst_expr subs e =
   let pos = get_pos e in
   match unmark e with
   | APPLY(h,args) -> (
-      let args = map_spine (subst_expr subl) args in
+      let args = map_spine (subst_expr subs) args in
       match h with
-      | V v -> (
-	  try apply_args (new_pos pos (List.assoc v subl)) args
-	  with Not_found -> pos, APPLY(h,args))
-      | W _ | U _ | T _ | O _ | TAC _ -> pos, APPLY(h,args))
-  | CONS(x,y) -> pos, CONS(subst_expr subl x,subst_expr subl y)
+      | V (VarRel i) ->
+	  if i < Array.length subs 
+	  then apply_args (new_pos pos subs.(i)) args
+	  else pos, APPLY(V (VarRel (i - Array.length subs)),args)
+      | _ -> pos, APPLY(h,args))
+  | CONS(x,y) -> pos, CONS(subst_expr subs x,subst_expr subs y)
   | LAMBDA(v, body) ->
-      let body' = subst_expr subl body in
+      let body' = subst_expr subs body in
       if body' == body then e else pos, LAMBDA(v, body')
 
 and apply_args e args =
@@ -47,42 +48,42 @@ and apply_args e args =
         | END -> e)
     | LAMBDA(v,body) -> (
         match args with
-        | ARG(x,args) -> repeat (subst_expr [(v,x)] body) args
+        | ARG(x,args) -> repeat (subst_expr [|x|] body) args
         | CAR args -> raise (GeneralError "pi1 expected a pair (1)")
 	| CDR args -> raise (GeneralError "pi2 expected a pair (1)")
         | END -> e)
   in repeat e args
 
-and subst_type_list (subl : (var * lf_expr) list) ts = List.map (subst_type subl) ts
+and subst_type_list subs ts = List.map (subst_type subs) ts
 
-and subst_type (subl : (var * lf_expr) list) (pos,t) =
+and subst_type subs (pos,t) =
   (pos,
    match t with
    | F_Pi(v,a,b) ->
-       let a = subst_type subl a in
-       let b = subst_type subl b in
+       let a = subst_type subs a in
+       let b = subst_type subs b in
        F_Pi(v,a,b)
    | F_Sigma(v,a,b) ->
-       let a = subst_type subl a in
-       let b = subst_type subl b in
+       let a = subst_type subs a in
+       let b = subst_type subs b in
        F_Sigma(v,a,b)
-   | F_Apply(label,args) -> F_Apply(label, List.map (subst_expr subl) args)
-   | F_Singleton(e,t) -> F_Singleton( subst_expr subl e, subst_type subl t )
+   | F_Apply(label,args) -> F_Apply(label, List.map (subst_expr subs) args)
+   | F_Singleton(e,t) -> F_Singleton( subst_expr subs e, subst_type subs t )
   )
 
-let rec subst_kind subl k =
+let rec subst_kind subs k =
    match k with
    | K_primitive_judgment | K_ulevel | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression -> k
    | K_Pi(v,a,b) ->
-       let a = subst_type subl a in
-       let b = subst_kind subl b in
+       let a = subst_type subs a in
+       let b = subst_kind subs b in
        K_Pi(v, a, b)
 
-let subst_l subs e = if subs = [] then e else subst_expr subs e
+let subst_l subs e = if Array.length subs = 0 then e else subst_expr subs e
 
-let subst_type_l subs t = if subs = [] then t else subst_type subs t
+let subst_type_l subs t = if Array.length subs = 0 then t else subst_type subs t
 
-let preface subber (v,x) e = subber [(v,x)] e
+let preface subber x e = subber [|x|] e
 
 let subst_expr = preface subst_expr
 
