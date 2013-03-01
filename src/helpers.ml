@@ -137,6 +137,56 @@ let locate x l =
     | [] -> raise Not_found
     in repeat 0 l
 
+let rec rel_shift_expr shift e =
+  match unmark e with
+  | APPLY(h,args) -> (
+      let args' = map_spine (rel_shift_expr shift) args in
+      match h with
+      | V (VarRel i) -> get_pos e, APPLY(V (VarRel (i + shift)),args')
+      | _ -> if args == args' then e else get_pos e, APPLY(h,args'))
+  | CONS(x,y) ->
+      let x' = rel_shift_expr shift x in
+      let y' = rel_shift_expr shift y in
+      if x' == x && y' == y then e else get_pos e, CONS(x',y')
+  | LAMBDA(v, body) ->
+      let shift = shift + 1 in
+      let body' = rel_shift_expr shift body in
+      if body' == body then e else get_pos e, LAMBDA(v, body')
+
+and rel_shift_type shift t =
+  match unmark t with
+  | F_Pi(v,a,b) ->
+      let a' = rel_shift_type shift a in
+      let shift = shift + 1 in
+      let b' = rel_shift_type shift b in
+      if a' == a && b' == b then t else get_pos t, F_Pi(v,a',b')
+  | F_Sigma(v,a,b) ->
+      let a' = rel_shift_type shift a in
+      let shift = shift + 1 in
+      let b' = rel_shift_type shift b in
+      if a' == a && b' == b then t else get_pos t, F_Sigma(v,a',b')
+  | F_Apply(label,args) ->
+      let args' = List.map (rel_shift_expr shift) args in
+      if args' == args then t else get_pos t, F_Apply(label, args')
+  | F_Singleton(e,u) ->
+      let e' = rel_shift_expr shift e in
+      let u' = rel_shift_type shift u in
+      if e' == e && u' == u then t else get_pos t, F_Singleton(e',u')
+
+let head_to_type env pos = function
+  | W h -> whead_to_lf_type h
+  | U h -> uhead_to_lf_type h
+  | T h -> thead_to_lf_type h
+  | O h -> ohead_to_lf_type h
+  | V (VarRel i) -> rel_shift_type (i+1) (snd (List.nth env.lf_context i))
+  | V (Var name) -> (
+      try MapString.find name env.global_lf_context
+      with Not_found ->
+	trap();
+	raise (TypeCheckingFailure (env, [], [pos, "unbound variable: " ^ name])))
+  | V _ -> raise Internal
+  | TAC _ -> raise Internal
+
 (** Routines for replacing named variables by relative index variables in expressions. *)
 let rec var_subst_expr shift subl e =
   match unmark e with

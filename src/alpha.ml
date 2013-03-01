@@ -34,10 +34,10 @@ module Make(Ueq: Universe.Equivalence) : S = struct
       | F_Singleton (x,t) , F_Singleton (x',t') -> 
 	  term_equiv uc x x' && 
 	  type_equiv uc t t'
-      | F_Pi(x,t,u), F_Pi(x',t',u') -> 
+      | F_Pi(_,t,u), F_Pi(_,t',u') -> 
 	  type_equiv uc t t' && 
 	  type_equiv uc u u'
-      | F_Sigma(x,t,u), F_Sigma(x',t',u') -> 
+      | F_Sigma(_,t,u), F_Sigma(_,t',u') -> 
 	  type_equiv uc t t' && 
 	  type_equiv uc u u'
       | F_Apply(h,args), F_Apply(h',args') -> 

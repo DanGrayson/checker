@@ -136,7 +136,7 @@ let rec head_reduction (env:environment) (x:lf_expr) : lf_expr =
   | APPLY(h,args) -> (
       match h with
       | TAC _ -> raise Internal	(* all tactics should have been handled during type checking *)
-      | (O _|T _) -> raise Not_found (* we know the constants in our signature don't involve singleton types *)
+      | (U _|O _|T _) -> raise Not_found (* we know the constants in our signature don't involve singleton types *)
       | head ->
 	  let t = head_to_type env pos head in
 	  let args_passed = END in
@@ -147,13 +147,11 @@ let rec head_reduction (env:environment) (x:lf_expr) : lf_expr =
 	    | F_Sigma(v,a,b), CAR args -> repeat a (CAR args_passed) args
 	    | F_Sigma(v,a,b), CDR args -> repeat (subst_car_passed_term v pos head args_passed b) (CDR args_passed) args
 	    | _, END -> raise Not_found
-	    | _ ->
-		printf "%a: head_reduction case not covered: head %a of type %a applied to args: %a\n%!" _pos pos _h head _t t _s args;
-		print_context (Some 10) stdout env;
-		(trap(); raise Internal) in
-	  repeat t args_passed args
+	    | _ -> raise Internal
+	  in repeat t args_passed args
      )
-  | CONS _ | LAMBDA _ -> (trap(); raise Internal)	(* head reduction is not defined for pairs or functions *)
+  | CONS _ 
+  | LAMBDA _ -> raise Internal
 
 let rec head_normalization (env:environment) (x:lf_expr) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
@@ -207,8 +205,8 @@ let unpack_lambda' o =
 let apply_2 f x y = Substitute.apply_args f (x ** y ** END)
 
 let rec check_istype env t =
-  if not (List.exists (fun (p,o,u) -> equivalence t u) env.tts_context)
-  then
+  (* if not (List.exists (fun (p,o,u) -> equivalence t u) env.tts_context) *)
+  (* then *)
     match unmark t with
     | APPLY(T th, args) -> (
 	match th with

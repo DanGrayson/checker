@@ -95,26 +95,13 @@ let marked_var_to_lf (pos,v) = pos, APPLY(V v,END)
 
 let var_to_lf_pos pos v = with_pos pos (APPLY(V v,END))
 
-let head_to_type env pos = function
-  | W h -> whead_to_lf_type h
-  | U h -> uhead_to_lf_type h
-  | T h -> thead_to_lf_type h
-  | O h -> ohead_to_lf_type h
-  | V (VarRel i) -> snd (List.nth env.lf_context i)
-  | V (Var _ as v) -> (
-      try VarMap.find v env.global_lf_context
-      with Not_found ->
-	trap();
-	raise (TypeCheckingFailure (env, [], [pos, "unbound variable: " ^ vartostring v])))
-  | V _ -> raise Internal
-  | TAC _ -> (trap(); raise Internal)
-
-let ensure_new_name env pos v =
-  if VarMap.mem v env.global_lf_context then
-    raise (MarkedError (pos, "variable already defined: " ^ vartostring v))
+let ensure_new_name env pos name =
+  if MapString.mem name env.global_lf_context then
+    raise (MarkedError (pos, "variable already defined: " ^ name))
 
 let axiom_bind v (pos:position) t (env:environment) =
-  ensure_new_name env pos v;
+  let name = vartostring v in
+  ensure_new_name env pos name;
   global_lf_bind env v t
 
 let def_bind v (pos:position) o t (env:environment) =

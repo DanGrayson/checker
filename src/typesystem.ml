@@ -418,20 +418,20 @@ let rec compare_kinds k l =
 
 (** Contexts. *)
 
-module VarMap = Map.Make(VarOrd)
+module MapString = Map.Make(String)
 
 type environment = {
     state : int;
     tts_context : (var * var * lf_expr) list; (* p:o:T -- here p is the witness; the index of p is 2n+1 and the index of o is 2n *)
     lf_context : (var * lf_type) list;	      (* e:E -- example: t:texp *)
-    global_lf_context : lf_type VarMap.t;
+    global_lf_context : lf_type MapString.t;
   }
 
 let empty_context = {
   state = 0;
   lf_context = [];
   tts_context = [];
-  global_lf_context = VarMap.empty
+  global_lf_context = MapString.empty
 }
 
 let interactive = ref false
@@ -443,7 +443,7 @@ let incr_state env =
 
 let lf_bind env v t = { env with lf_context = (v,t) :: env.lf_context }
 
-let global_lf_bind env v t = { env with global_lf_context = VarMap.add v t env.global_lf_context }
+let global_lf_bind env v t = { env with global_lf_context = MapString.add (vartostring v) t env.global_lf_context }
 
 let tts_bind env p v t = { env with tts_context = (p,v,t) :: env.tts_context }
 

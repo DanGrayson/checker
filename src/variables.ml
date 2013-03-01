@@ -7,16 +7,6 @@ type var =
   | Var_wd of string			(* variables come in pairs, with the *_wd version being the witness twin *)
   | VarRel of int			(* deBruijn index, starting with 0 *)
 
-module VarOrd = struct			(* for use with Map.Make *)
-  type t = var
-  let compare u v = match u,v with	(* this is not a total ordering, because the map will handle only declarations of global variables *)
-    | Var a, Var b -> String.compare a b
-    | Var_wd a, Var_wd b -> String.compare a b
-    | Var _, Var_wd _ -> -1
-    | Var_wd _, Var _ ->  1
-    | _ -> raise Internal
-end
-
 let vartostring = function
   | Var x -> x
   | Var_wd x -> x ^ "$"

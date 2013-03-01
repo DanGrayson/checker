@@ -467,6 +467,8 @@ let _pos file x = output_string file (errfmt x)
 
 let _v file x = output_string file (vartostring x)
 
+let _phantom file x = output_string file (phantom x)
+
 let _v_phantom file x = output_string file (phantom (vartostring x))
 
 let _ts file x = output_string file (ts_expr_to_string x)
@@ -511,14 +513,14 @@ let print_signature env file =
 
 let print_global_lf_context file env =
   fprintf file "Global LF Context (definitions and axioms):\n";
-  VarMap.iter
-    (fun v t -> (
+  MapString.iter
+    (fun name t -> (
       match unmark t with
       | F_Singleton(e,t) ->
-          fprintf file "     %a := %a\n"   _v v          _e e;
-          fprintf file "     %a :  %a\n%!" _v_phantom v  _t t
+          fprintf file "     %s := %a\n"   name          _e e;
+          fprintf file "     %a :  %a\n%!" _phantom name _t t
       | _ ->
-          fprintf file "     %a : %a\n%!" _v v  _t t))
+          fprintf file "     %s : %a\n%!" name _t t))
     env.global_lf_context
 
 let print_context n file (c:environment) =
