@@ -29,7 +29,6 @@ let rec tau (env:environment) e : lf_expr =
 	   | END -> t
 	   | _ -> raise NotImplemented
 	  )
-      | FUN _ -> raise NotImplemented
       | W wh -> raise (TypeCheckingFailure(env, [],[pos, "a w-expression doesn't have a type"]))
       | U uh -> raise (TypeCheckingFailure(env, [],[pos, "a u-expression doesn't have a type"]))
       | T th -> raise (TypeCheckingFailure(env, [], [pos, "a t-expression doesn't have a type"]))

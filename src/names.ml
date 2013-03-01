@@ -105,7 +105,6 @@ let fetch_type env pos v =
 	  raise (TypeCheckingFailure (env, [], [pos, "unbound variable: " ^ vartostring v]))
 
 let head_to_type env pos = function
-  | FUN(f,t) -> t
   | W h -> whead_to_lf_type h
   | U h -> uhead_to_lf_type h
   | T h -> thead_to_lf_type h

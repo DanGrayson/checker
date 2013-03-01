@@ -36,7 +36,6 @@ let rec vars_in_spine args =
 and head_to_vars h = 
   match h with
   | V v -> [v]
-  | FUN(f,t) -> lf_expr_to_vars f @ lf_type_to_vars t
   | U _ | T _ | W _ | O _ | TAC _ -> []
 
 and lf_expr_to_vars (pos,e) = match e with
@@ -62,7 +61,6 @@ let rec lf_kind_to_vars = function
 let rec occurs_in_head w h =
   match h with 
   | V v -> w = v
-  | FUN(f,t) -> occurs_in_expr w f || occurs_in_type w t
   | W _ | U _ | T _ | O _ | TAC _ -> false
 
 and occurs_in_expr w e = 
@@ -245,10 +243,6 @@ let rec lf_head_to_string_with_subs subs h : string =
   | V v -> vartostring (var_sub subs v)
   | W _ | U _ | T _ | O _ -> "@[" ^ expr_head_to_string h ^ "]"
   | TAC tac -> tactic_to_string tac
-  | FUN(f,t) ->
-      let f = lf_expr_to_string_with_subs subs f in
-      let t = lf_type_to_string_with_subs subs t in
-      concat["("; paren_left colon_prec f; " : "; paren_right colon_prec t; ")"]
 
 and lf_expr_to_string_with_subs subs e : smart_string = 
   match unmark e with

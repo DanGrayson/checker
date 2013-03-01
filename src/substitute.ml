@@ -8,42 +8,28 @@ open Names
 open Printer
 open Printf
 
-let fresh pos v subl =
-  let v' = newfresh v in
-  v', (v,var_to_lf_pos pos v') :: subl
+(** Routines for replacing relative variables (deBruijn index variables) by expressions.
 
+    Coming soon ...
+ *)
 let show_subs (subl : (var * lf_expr) list) =
   printf " subs =\n";
   List.iter (fun (v,e) -> printf "   %a => %a\n" _v v _e e) subl
 
-let rec subst_list (subl : (var * lf_expr) list) es = List.map (subst_expr subl) es
-
-and subst_spine subl = function
-  | ARG(x,a) -> ARG(subst_expr subl x, subst_spine subl a)
-  | CAR a -> CAR(subst_spine subl a)
-  | CDR a -> CDR(subst_spine subl a)
-  | END -> END
-
-and subst_expr subl e = 
+let rec subst_expr subl e = 
   let pos = get_pos e in
   match unmark e with 
   | APPLY(h,args) -> (
-      let args = subst_spine subl args in 
+      let args = map_spine (subst_expr subl) args in 
       match h with 
       | V v -> (
 	  try apply_args (new_pos pos (List.assoc v subl)) args
 	  with Not_found -> pos, APPLY(h,args))
-      | FUN(f,t) -> raise NotImplemented
       | W _ | U _ | T _ | O _ | TAC _ -> pos, APPLY(h,args))
   | CONS(x,y) -> pos, CONS(subst_expr subl x,subst_expr subl y)
   | LAMBDA(v, body) -> 
-      let (v,body) = subst_fresh pos subl (v,body) in
-      pos, LAMBDA(v, body)
-
-and subst_fresh pos subl (v,e) =
-  let (v',subl) = fresh pos v subl in
-  let e' = subst_expr subl e in
-  v', e'
+      let body' = subst_expr subl body in
+      if body' == body then e else pos, LAMBDA(v, body')
 
 and apply_args e args =
   let rec repeat e args = 
@@ -71,33 +57,23 @@ and subst_type (subl : (var * lf_expr) list) (pos,t) =
    match t with
    | F_Pi(v,a,b) ->
        let a = subst_type subl a in
-       let (v,b) = subst_type_fresh pos subl (v,b) in
+       let b = subst_type subl b in
        F_Pi(v,a,b)
    | F_Sigma(v,a,b) -> 
        let a = subst_type subl a in
-       let (v,b) = subst_type_fresh pos subl (v,b) in
+       let b = subst_type subl b in
        F_Sigma(v,a,b)
-   | F_Apply(label,args) -> F_Apply(label, subst_list subl args)
+   | F_Apply(label,args) -> F_Apply(label, List.map (subst_expr subl) args)
    | F_Singleton(e,t) -> F_Singleton( subst_expr subl e, subst_type subl t )
   )
 
-and subst_type_fresh pos subl (v,t) =
-  let (v,subl) = fresh pos v subl in
-  let t = subst_type subl t in
-  v,t
-
-let rec subst_kind_list (subl : (var * lf_expr) list) ts = List.map (subst_kind subl) ts
-
-and subst_kind (subl : (var * lf_expr) list) k = 
+let rec subst_kind subl k = 
    match k with
    | K_primitive_judgment | K_ulevel | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression -> k
    | K_Pi(v,a,b) -> 
        let a = subst_type subl a in
-       let (v,b) = subst_kind_fresh (get_pos a) subl (v,b) in K_Pi(v, a, b)
-
-and subst_kind_fresh pos subl (v,t) =
-  let (v,subl) = fresh pos v subl in
-  v, subst_kind subl t  
+       let b = subst_kind subl b in
+       K_Pi(v, a, b)
 
 let subst_l subs e = if subs = [] then e else subst_expr subs e
 
@@ -110,16 +86,6 @@ let subst_expr = preface subst_expr
 let subst_type = preface subst_type
 
 let subst_kind = preface subst_kind
-
-let subst_fresh pos (v,e) = 
-  if isunused v 
-  then v,e 
-  else subst_fresh pos [] (v,e)
-
-let subst_type_fresh pos (v,e) = 
-  if isunused v 
-  then v,e 
-  else subst_type_fresh pos [] (v,e)
 
 (* 
   Local Variables:

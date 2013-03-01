@@ -106,13 +106,6 @@ type lf_expr_head =
   | W of wHead			(** labels for w-expressions of TS *)
   | V of var			(** labels for variables of TS *)
   | TAC of tactic_expr		(** An empty hole, to be filled in later by calling a tactic routine. *)
-  | FUN of lf_expr * lf_type
-	(** In context with the spine, this is a [beta-redex] ready to be
-	    reduced, i.e., it's a function [f] of type [t] and an argument
-	    spine [args], and we're ready to apply [f] to [args].  The main
-	    justification for introducing it is for implementing local
-	    definitions with a head of the form [(x |-> b, (x:Singleton(a)) ->
-	    B)]. *)
 
 (** The expressions of LF, including the expressions of TS as instances of [APPLY].*)
 and lf_expr = unmarked_expr marked

@@ -70,6 +70,14 @@ let rec args_compare expr_compare a b =
   | END, END -> true
   | _ -> false
 
+let map_spine f args =
+  let rec repeat s = match s with
+  | ARG(x,a) -> let x' = f x in let a' = repeat a in if x' == x && a' == a then s else ARG(x',a')
+  | CAR a -> let a' = repeat a in if a' == a then s else CAR(a')
+  | CDR a -> let a' = repeat a in if a' == a then s else CDR(a')
+  | END -> s
+  in repeat args
+
 let rec list_to_spine = function
   | x :: a -> x ** list_to_spine a
   | [] -> END
@@ -123,11 +131,94 @@ let pi2 = function
   | pos, CONS(_,y) -> y
   | _ -> (trap(); raise Internal)
 
+(** Routines for replacing variables by variables in expressions, typically
+    replacing a named variable by a relative deBruijn index variable. *)
+let rec var_subst_expr shift subl e = 
+  match unmark e with 
+  | APPLY(h,args) -> (
+      let args' = map_spine (var_subst_expr shift subl) args in 
+      match h with 
+      | V v -> (
+	  try 
+	    get_pos e, APPLY(V (List.assoc v subl),args') 
+	  with Not_found -> 
+	    if args == args' then e else get_pos e, APPLY(h,args'))
+      | W _ | U _ | T _ | O _ | TAC _ -> 
+	  if args == args' then e else get_pos e, APPLY(h,args'))
+  | CONS(x,y) -> 
+      let x' = var_subst_expr shift subl x in
+      let y' = var_subst_expr shift subl y in
+      if x' == x && y' == y then e else get_pos e, CONS(x',y')
+  | LAMBDA(v, body) -> 
+      let shift = shift + 1 in
+      let body' = var_subst_expr shift subl body in
+      if body' == body then e else get_pos e, LAMBDA(v, body')
+
+and var_subst_type shift subl t = 
+  match unmark t with
+  | F_Pi(v,a,b) ->
+      let shift = shift + 1 in
+      let a' = var_subst_type shift subl a in
+      let b' = var_subst_type shift subl b in
+      if a' == a && b' == b then t else get_pos t, F_Pi(v,a',b')
+  | F_Sigma(v,a,b) -> 
+      let shift = shift + 1 in
+      let a' = var_subst_type shift subl a in
+      let b' = var_subst_type shift subl b in
+      if a' == a && b' == b then t else get_pos t, F_Sigma(v,a',b')
+  | F_Apply(label,args) -> 
+      let args' = List.map (var_subst_expr shift subl) args in
+      if args' == args then t else get_pos t, F_Apply(label, args')
+  | F_Singleton(e,u) -> 
+      let e' = var_subst_expr shift subl e in
+      let u' = var_subst_type shift subl u in
+      if e' == e && u' == u then t else get_pos t, F_Singleton(e',u')
+
+let rec var_subst_kind shift subl k = 
+   match k with
+   | K_primitive_judgment | K_ulevel | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression -> k
+   | K_Pi(v,a,b) -> 
+       let shift = shift + 1 in
+       let a' = var_subst_type shift subl a in
+       let b' = var_subst_kind shift subl b in
+       if a' == a && b' == b then k else K_Pi(v, a, b)
+
+let var_subst_expr subl e = var_subst_expr 0 subl e
+
+let var_subst_type subl t = var_subst_type 0 subl t
+
+let var_subst_kind subl t = var_subst_kind 0 subl t
+
 (** Helper functions for making new ts-expressions from old ts-expressions. *)
 
-let lambda1 v x = nowhere 55 (LAMBDA(v, x))
-let lambda2 v1 v2 x = lambda1 v1 (lambda1 v2 x)
-let lambda3 v1 v2 v3 x = lambda1 v1 (lambda2 v2 v3 x)
+let var0 = VarRel 0
+let var1 = VarRel 1
+let var2 = VarRel 2
+
+let rel1 v0 x = var_subst_expr [(v0,var0)] x
+
+let rel2 v0 v1 x = var_subst_expr [(v0,var0);(v1,var1)] x
+
+let rel3 v0 v1 v2 x = var_subst_expr [(v0,var0);(v1,var1);(v2,var2)] x
+
+let lambda1 v0 x = 
+  nowhere 55 (
+  LAMBDA(v0, rel1 v0 x))
+
+let lambda2 v0 v1 x = 
+  nowhere 56 (
+  LAMBDA(v0, 
+	 nowhere 57 (
+	 LAMBDA(v1, rel2 v0 v1 x))))
+
+let lambda3 v0 v1 v2 x = 
+  nowhere 58 (
+  LAMBDA(v0, 
+	 nowhere 59 (
+	 LAMBDA(v1, 
+		nowhere 60 (
+		LAMBDA(v2, 
+		       rel3 v0 v1 v2 x))))))
 
 let make_Var c = Var c
 

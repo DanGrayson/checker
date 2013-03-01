@@ -137,14 +137,6 @@ let rec head_reduction (env:environment) (x:lf_expr) : lf_expr =
       match h with
       | TAC _ -> raise Internal	(* all tactics should have been handled during type checking *)
       | (O _|T _) -> raise Not_found (* we know the constants in our signature don't involve singleton types *)
-      | FUN(f,t) -> (
-	  (* merge this case with the case below ??? *)
-	  if true then raise NotImplemented;
-	  (* if f reduces to a lambda expression, then we can apply it, so implement that case *)
-          try
-            let f = head_reduction env f in with_pos pos (APPLY(FUN(f,t),args))
-          with Not_found ->
-            apply_args f args)
       | head -> 
 	  let t = head_to_type env pos head in
 	  let args_passed = END in
