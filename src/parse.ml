@@ -32,6 +32,12 @@ let cdr (hd,reversed_args) = (hd, CDR reversed_args)
 
 type binder = position * var * lf_type
 
+let show_binders bname b ename e = 
+  iteri (fun i (pos,v,t) -> printf " %s.%d = %a:%a\n%!" bname i _v v _t t) b;
+  match e with 
+  | Some (pos,v,t) -> printf " %s = %a:%a\n%!" ename _v v _t t
+  | None -> ()
+
 let bind_sigma binder b =
   match binder with
   | (pos,v,a) -> pos, make_F_Sigma a (v,b)
@@ -85,42 +91,65 @@ let unbind_relative p : binder list * binder option * lf_type =
   in
   repeat [] p
 
- (** Suppose t has the form P -> (e:E) ** J and u has the form Q -> (f:F) ** K.
+ (** Here "**" is our notation for Sigma type.
+     
+     Suppose 
+
+        t = P_(m-1) -> ... -> P_0 -> (e:E) ** J
+
+     and
+
+        u = Q_(n-1) -> ... Q_0 -> (f:F) ** K
+
      We think of an instance of t as providing a parametrized expression of
-     type P -> E together with a judgment of type J about the expression, and
-     similarly for u.  We return a new type describing a parametrized
-     expression of type (P->E)->(Q->F) together with a judgment about it, of
-     type (P->J)->K.  The resulting type looks like (e:P -> E) -> Q -> (f:F) **
-     (P -> J) -> K.  All this goes through if t has the form P_(n-1) -> ... -> P_0
-     -> (e:E) ** J, and similarly for u, because we can rewrite t in terms of
-     P = P_1 ** ... ** P_n. *)
+     type P_(m-1) -> ... -> P_0 -> E together with a judgment of type J about
+     the expression, and similarly for u.  We return a new type describing a
+     parametrized expression of type 
+
+        (P_(m-1) -> ... -> P_0 -> E) -> Q_(n-1) -> ... Q_0 -> F
+
+     together with a judgment about it, of type 
+
+        (P_(m-1) -> ... -> P_0 -> J) -> K
+
+     The resulting type looks like 
+
+        (e':P_(m-1) -> ... -> P_0 -> E) -> Q_(n-1) -> ... Q_0 -> (f:F) ** (P_(m-1) -> ... -> P_0 -> J) -> K.
+
+     J gets rewritten by replacing each e (relative index 0) by 
+     (e' p_(m-1) ... p_0) and decrementing the relative indices of its other
+     exposed variables.
+
+     K gets rewritten by incrementing the relative indices of its exposed variables.
+  *)
 let pi1_implication ((vpos,v),t) u =
-  printf "pi1_implication:\n t = %a\n%!" _t t;
-  printf " u = %a\n%!" _t u;
+  let debug = true in 
+  if debug then printf "\npi1_implication:\n t = %a\n%!" _t t;
+  if debug then printf " u = %a\n%!" _t u;
   let (p,e,j) = unbind_relative t in
   let m = List.length p in
-  printf " j = %a\n%!" _t j;
+  if debug then show_binders "p" p "e" e;
+  if debug then printf " j = %a\n%!" _t j;
   let (q,f,k) = unbind_relative u in
-  let n = List.length q in
-  printf " k = %a\n%!" _t k;
+  let n = List.length q + match f with Some _ -> 1 | None -> 0 in
+  if debug then show_binders "q" q "f" f;
+  if debug then printf " k = %a\n%!" _t k;
   match e with
   | Some (pos,e,ee) ->
-      let j = Substitute.subst_type (with_pos pos (apply_vars (VarRel (m+1+n)) (List.rev p))) j in
-      printf " j = %a\n%!" _t j;
+      let j = Substitute.subst_type (with_pos pos (apply_vars (VarRel (m+n)) (List.rev p))) j in
+      if debug then printf " j = substituted = %a\n%!" _t j;
       let ee = bind_pi_list_rev p ee in
-      printf " ee = %a\n%!" _t ee;
+      if debug then printf " ee = bind_pi_list_rev p ee = %a\n%!" _t ee;
       let j = bind_pi_list_rev p j in
-      printf " j = %a\n%!" _t j;
-      let j = rel_shift_type (-1) j in
-      printf " j = %a\n%!" _t j;
+      if debug then printf " j = bind_pi_list_rev p j = %a\n%!" _t j;
       let k = rel_shift_type 1 k in
-      printf " k = %a\n%!" _t k;
+      if debug then printf " k = rel_shift_type 1 k = %a\n%!" _t k;
       let k = arrow j k in
-      printf " k = %a\n%!" _t k;
+      if debug then printf " k = arrow j k = %a\n%!" _t k;
       let j = bind_pi_list_rev q (bind_some_sigma f k) in
-      printf " j = %a\n%!" _t j;
+      if debug then printf " j = bind_pi_list_rev q (bind_some_sigma f k) = %a\n%!" _t j;
       let t = bind_pi (pos,v,ee) j in
-      printf " t = %a\n%!" _t t;
+      if debug then printf " t = bind_pi (pos,v,ee) j = %a\n%!" _t t;
       t
   | None -> raise NotImplemented
 

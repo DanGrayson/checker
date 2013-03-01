@@ -70,6 +70,12 @@ let rec args_compare expr_compare a b =
   | END, END -> true
   | _ -> false
 
+let map_list f args =
+  let rec repeat s = match s with
+  | x :: a -> let x' = f x in let a' = repeat a in if x' == x && a' == a then s else x' :: a'
+  | [] -> s
+  in repeat args
+
 let map_spine f args =
   let rec repeat s = match s with
   | ARG(x,a) -> let x' = f x in let a' = repeat a in if x' == x && a' == a then s else ARG(x',a')
@@ -176,16 +182,20 @@ and rel_shift_type limit shift t =
       let u' = rel_shift_type limit shift u in
       if e' == e && u' == u then t else get_pos t, F_Singleton(e',u')
 
-let rel_shift_expr shift e = rel_shift_expr 0 shift e
+let rel_shift_expr shift e = if shift = 0 then e else rel_shift_expr 0 shift e
 
-let rel_shift_type shift e = rel_shift_type 0 shift e
+let rel_shift_type shift t = if shift = 0 then t else rel_shift_type 0 shift t
 
 let head_to_type env pos = function
   | W h -> whead_to_lf_type h
   | U h -> uhead_to_lf_type h
   | T h -> thead_to_lf_type h
   | O h -> ohead_to_lf_type h
-  | V (VarRel i) -> rel_shift_type (i+1) (snd (List.nth env.lf_context i))
+  | V (VarRel i) -> 
+      rel_shift_type (i+1)
+	(snd (
+	 try List.nth env.lf_context i
+	 with Failure _ -> raise Internal))
   | V (Var name) -> (
       try MapString.find name env.global_lf_context
       with Not_found ->
