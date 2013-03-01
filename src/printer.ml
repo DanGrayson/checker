@@ -1,6 +1,6 @@
 (** Functions for converting expressions to strings for printing *)
 
-let enable_variable_prettification = true
+let enable_variable_prettification = false
 
 open Error
 open Variables
@@ -120,7 +120,7 @@ let var_tester w subs occurs_in e =
 let var_chooser x subs occurs_in e =
   if not enable_variable_prettification then x, subs else
   match x with
-  | Var_wd name | VarGen_wd(_,name) -> 
+  | Var_wd name -> 
       if not (occurs_in x e) then Var_wd "_", subs else
       let w = Var_wd name in
       if x = w && not( in_range w subs ) || var_tester w subs occurs_in e then w, (x,w) :: subs
@@ -129,7 +129,7 @@ let var_chooser x subs occurs_in e =
         if var_tester w subs occurs_in e then w, (x,w) :: subs
         else repeat (i+1)
       in repeat 1			(*omit the "'" case*)
-  | Var name | VarGen(_,name) -> 
+  | Var name -> 
       if not (occurs_in x e) then Var "_", subs else
       let w = Var name in
       if x = w && not( in_range w subs ) || var_tester w subs occurs_in e then w, (x,w) :: subs

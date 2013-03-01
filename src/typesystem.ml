@@ -158,7 +158,7 @@ let wexp = F_wexp @@ []
 let texp = F_texp @@ []
 let oexp = F_oexp @@ []
 
-let arrow a b = nowhere 4 (F_Pi(newunused(), a, b))
+let arrow a b = nowhere 4 (F_Pi(Var "_", a, b))
 let ( @-> ) = arrow
 
 let istype t = F_istype @@ [t]				       (* t Type *)
@@ -314,24 +314,13 @@ type lf_kind =
   | K_witnessed_judgment
   | K_Pi of var * lf_type * lf_kind
 
-let ( @@-> ) a b = K_Pi(newunused(), a, b)
-
-let some_type () = 
-  let v = newfresh (Var "T") in
-  nowhere 123 (F_Sigma(v,texp,istype (nowhere 124 (APPLY(V v,END)))))
-
-let some_object_of_type t = 
-  let v = newfresh (Var "x") in
-  nowhere 125 (F_Sigma(v,oexp,hastype (nowhere 126 (APPLY(V v,END))) t))
+let ( @@-> ) a b = K_Pi(Var "_", a, b)
 
 let this_object_of_type pos o t = 
-  let v = newfresh (Var "x") in
-  with_pos pos (F_Sigma(v,with_pos pos (F_Singleton(o,oexp)),hastype (nowhere 126 (APPLY(V v,END))) t))
-
-let k_pi t k =
-  let v = newfresh (Var "T") in
-  let v' = nowhere 126 (APPLY(V v,END)) in
-  K_Pi(v,t,k v')
+  let v = Var "x" in
+  let a = with_pos pos (F_Singleton(o,oexp)) in
+  let b = hastype (nowhere 126 (APPLY(V (VarRel 0),END))) t in
+  with_pos pos (F_Sigma(v,a,b))
 
 let istype_kind = texp @@-> K_primitive_judgment
 
@@ -366,9 +355,11 @@ let witnessed_object_equality_kind = wexp @@-> oexp @@-> oexp @@-> texp @@-> K_w
 let var_to_lf v = nowhere 1 (APPLY(V v,END))
 
 let judged_obj_equal_kind = 
-  let t = newfresh (Var "T") in
-  let tt = var_to_lf t in
-  K_Pi(t, a_type, obj_of_type tt @@-> obj_of_type tt @@-> K_judged_expression)
+  K_Pi(Var "T", 
+       a_type, 
+       obj_of_type (var_to_lf (VarRel 0)) 
+       @@-> obj_of_type (var_to_lf (VarRel 1)) 
+	 @@-> K_judged_expression)
 
 let tfhead_to_kind = function
   | F_uexp -> K_ulevel

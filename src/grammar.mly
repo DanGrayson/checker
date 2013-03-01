@@ -106,7 +106,7 @@ unmarked_lf_type:
 	{ F_Sigma(v,a,b) }
 
     | a= lf_type Times b= lf_type
-	{ F_Sigma(newunused(),a,b) }
+	{ F_Sigma(Var "_",a,b) }
 
     | LeftParen v= variable Colon a= lf_type RightParen Arrow b= lf_type
        { F_Pi(v,a,b) }
@@ -171,8 +171,7 @@ unmarked_lf_expr:
     | v= marked_variable_or_unused ArrowFromBar body= lf_expr
 	{ 
 	  let (pos,v) = v in
-	  let (v,body) = Substitute.subst_fresh pos (v,body) in 
-	  LAMBDA(v,body) }
+	  LAMBDA(v,rel1_expr v body) }
 
     | empty_hole 
 	{$1}
@@ -361,7 +360,7 @@ unmarked_ts_judgment:
 	{ F_Sigma(v,a,b) }
 
     | a= ts_judgment Times b= ts_judgment
-	{ F_Sigma(newunused(),a,b) }
+	{ F_Sigma(Var "_",a,b) }
 
     | a= ts_judgment TurnstileDouble b= ts_judgment
     	{ let v = good_var_name a (Var "foo") in (* the "|-" operator is not fully implemented yet *)
@@ -384,9 +383,12 @@ unmarked_ts_judgment:
 	{ unmark (this_object_of_type (get_pos x) x t) }
 
     | Turnstile a= ts_expr Type
-	{ let v = newfresh (Var "t") in
+	{ let v = Var "t" in
 	  let pos = get_pos a in
-	  F_Sigma(v, with_pos pos (F_Singleton(a,texp)), with_pos pos (F_Apply(F_istype, [var_to_lf_pos pos v]))) 
+	  let a = with_pos pos (F_Singleton(a,texp)) in
+	  let b = with_pos pos (F_Apply(F_istype, [var_to_lf_pos pos v])) in
+	  let b = rel1_type v b in
+	  F_Sigma(v, a, b) 
 	}
 
     | j= ts_bracketed_judgment 
@@ -530,7 +532,7 @@ arglist:
 
 empty_hole: Underscore { cite_tactic (Tactic_name "default") END }
 
-unused_variable: Underscore { (* newunused() *) Var "_" }
+unused_variable: Underscore { (* Var "_" *) Var "_" }
 
 variable_or_unused: variable {$1} | unused_variable {$1}
 
@@ -565,8 +567,7 @@ unmarked_ts_expr:
 
     | v= marked_variable_or_unused DoubleArrowFromBar body= ts_expr
 	{ let (pos,v) = v in
-	  let (v,body) = Substitute.subst_fresh pos (v,body) in 
-	  LAMBDA(v,body) }
+	  LAMBDA(v,rel1_expr v body) }
 
     | e= ts_expr K_1
     	{ unmark ( Substitute.apply_args e (CAR END) ) }
@@ -608,7 +609,7 @@ unmarked_ts_expr:
 	{ make_T_Id (with_pos_of x (cite_tactic (Tactic_name "tn12") END)) x y }
 
     | t= ts_expr Arrow u= ts_expr
-	{ make_T_Pi t (newunused(),u) }
+	{ make_T_Pi t (Var "_",u) }
 
     | Sigma x= variable Colon t1= ts_expr Comma t2= ts_expr
 	%prec Reduce_binder
@@ -653,14 +654,11 @@ unmarked_ts_expr:
 		   match wrapped_index with 
 		   | SingleVariable index ->
 		       let (pos,v) = List.nth vars index in
-		       let (v,arg) = Substitute.subst_fresh pos (v,arg) in 
-		       LAMBDA(v,arg)
+		       LAMBDA(v,rel1_expr v arg)
                    | WitnessPair index ->
                        let (pos,v) = List.nth vars index in
                        let p = witness_var v in
-                       let (v,arg) = Substitute.subst_fresh pos (v,arg) in 
-                       let (p,arg) = Substitute.subst_fresh pos (p,arg) in 
-		       LAMBDA(v, with_pos_of arg (LAMBDA(p,arg)))
+		       LAMBDA(v, with_pos_of arg (LAMBDA(p,rel2_expr v p arg)))
 		  )
 		) indices arg
 	      ) varindices args

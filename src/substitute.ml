@@ -12,6 +12,9 @@ open Printf
 
     Coming soon ...
  *)
+
+(** Routines for replacing named variables by expressions. *)
+
 let show_subs (subl : (var * lf_expr) list) =
   printf " subs =\n";
   List.iter (fun (v,e) -> printf "   %a => %a\n" _v v _e e) subl

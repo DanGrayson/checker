@@ -175,10 +175,10 @@ let compare_var_to_expr v e =
   | _ -> false
 
 let open_context t1 (env,p,o,t2) =
-  let v = newfresh (Var "x") in
-  let v' = newfresh (Var_wd "x") in
+  let v = Var "x" in
+  let v' = Var_wd "x" in
   let env = tts_bind env v' v t1 in
-  let e = var_to_lf v ** var_to_lf v' ** END in 
+  let e = var_to_lf v ** var_to_lf v' ** END in (*??*)
   let p = Substitute.apply_args p e in
   let o = Substitute.apply_args o e in
   let t2 = Substitute.apply_args t2 e in
@@ -215,8 +215,8 @@ let rec check_istype env t =
 	| T_Pi' -> 
 	    let t1,t2 = args2 args in
 	    check_istype env t1;
-	    let p = newfresh (Var_wd "o") in
-	    let o = newfresh (Var "o") in
+	    let o = Var "o" in
+	    let p = Var_wd "o" in
 	    let env = tts_bind env p o t1 in
 	    let p = var_to_lf p in
 	    let o = var_to_lf o in
@@ -235,7 +235,7 @@ let rec check_istype env t =
 and check_hastype env p o t =
   if false then printf "check_hastype\n p = %a\n o = %a\n t = %a\n%!" _e p _e o _e t;
   match unmark p with
-  | APPLY(V (Var_wd _ | VarGen_wd _ as w), END) -> (
+  | APPLY(V (Var_wd _ as w), END) -> (
       let o',t' = 
 	try tts_fetch_w env w
 	with Not_found -> err env (get_pos p) "variable not in context" in
@@ -369,7 +369,7 @@ let rec term_equivalence (env:environment) (x:lf_expr) (y:lf_expr) (t:lf_type) :
       term_equivalence env (pi1 x) (pi1 y) a;
       term_equivalence env (pi2 x) (pi2 y) (subst_type (v,(pi1 x)) b)
   | F_Pi (v,a,b) ->
-      let w = newfresh (Var "e") in		(* in case x or y contains v as a free variable *)
+      let w = Var "e" in
       let w' = var_to_lf w in 
       let b = subst_type (v,w') b in
       let env = lf_bind env w a in
@@ -442,7 +442,7 @@ and type_equivalence (env:environment) (t:lf_type) (u:lf_type) : unit =
     | F_Sigma(v,a,b), F_Sigma(w,c,d)
     | F_Pi(v,a,b), F_Pi(w,c,d) ->
         type_equivalence env a c;
-        let x = newfresh v in
+        let x = v in			(*??*)
         let b = subst_type (v, var_to_lf x) b in
         let d = subst_type (w, var_to_lf x) d in
         let env = lf_bind env x a in
@@ -482,11 +482,11 @@ and subtype (env:environment) (t:lf_type) (u:lf_type) : unit =
         subtype env t u
     | F_Pi(x,a,b) , F_Pi(y,c,d) ->
         subtype env c a;                        (* contravariant *)
-        let w = newfresh (Var "w") in
+        let w = Var "w" in
         subtype (lf_bind env w c) (subst_type (x,var_to_lf w) b) (subst_type (y,var_to_lf w) d)
     | F_Sigma(x,a,b) , F_Sigma(y,c,d) ->
         subtype env a c;                        (* covariant *)
-        let w = newfresh (Var "w") in
+        let w = Var "w" in
         subtype (lf_bind env w a) (subst_type (x,var_to_lf w) b) (subst_type (y,var_to_lf w) d)
     | F_Apply(F_istype_witness,_), F_Apply(F_wexp,[])
     | F_Apply(F_hastype_witness,_), F_Apply(F_wexp,[])
@@ -568,7 +568,7 @@ and type_synthesis (surr:surrounding) (env:environment) (m:lf_expr) : lf_expr * 
   | LAMBDA _ -> err env pos ("function has no type: " ^ lf_expr_to_string m)
   | CONS(x,y) ->
       let x',t = type_synthesis surr env x in
-      let y',u = type_synthesis surr env y in (pos,CONS(x',y')), (pos,F_Sigma(newunused(),t,u))
+      let y',u = type_synthesis surr env y in (pos,CONS(x',y')), (pos,F_Sigma(Var "_",t,u))
   | APPLY(head,args) ->
       match head with
       | TAC _ -> err env pos "tactic found in context where no type advice is available"
@@ -693,11 +693,11 @@ let rec term_normalization (env:environment) (x:lf_expr) (t:lf_type) : lf_expr =
   match t0 with 
   | F_Pi(v,a,b) ->
       let v' = bound_var_override x v in 
-      let w = newfresh v' in		(* in case x contains v as a free variable *)
+      let w = v' in			(*??*)
       let w' = var_to_lf w in 
       let b = subst_type (v,w') b in
       let env = lf_bind env w a in
-      let result = apply_args x (ARG(w',END)) in
+      let result = apply_args x (ARG(w',END)) in (* here w' is still a named variable, so it ends up undefined; should be a relative indexed variable *)
       let body = term_normalization env result b in
       pos, LAMBDA(w,body)
   | F_Sigma(v,a,b) ->

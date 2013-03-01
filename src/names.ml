@@ -95,21 +95,18 @@ let marked_var_to_lf (pos,v) = pos, APPLY(V v,END)
 
 let var_to_lf_pos pos v = with_pos pos (APPLY(V v,END))
 
-let fetch_type env pos v = 
-  match v with 
-  | _ ->
-      try List.assoc v env.lf_context
-      with Not_found -> 
-	try VarMap.find v env.global_lf_context
-	with Not_found -> 
-	  raise (TypeCheckingFailure (env, [], [pos, "unbound variable: " ^ vartostring v]))
-
 let head_to_type env pos = function
   | W h -> whead_to_lf_type h
   | U h -> uhead_to_lf_type h
   | T h -> thead_to_lf_type h
   | O h -> ohead_to_lf_type h
-  | V v -> fetch_type env pos v
+  | V (VarRel i) -> snd (List.nth env.lf_context i)
+  | V (Var _ as v) -> (
+      try VarMap.find v env.global_lf_context
+      with Not_found -> 
+	trap();
+	raise (TypeCheckingFailure (env, [], [pos, "unbound variable: " ^ vartostring v])))
+  | V _ -> raise Internal
   | TAC _ -> (trap(); raise Internal)
 
 let ensure_new_name env pos v =

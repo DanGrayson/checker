@@ -6,6 +6,7 @@ open Typesystem
 open Error
 open Variables
 open Names
+open Helpers
 
 let lookup_label pos name =
   try List.assoc name Names.lf_expr_head_strings 
@@ -35,15 +36,11 @@ type binder = position * var * lf_type
 
 let bind_sigma binder b =
   match binder with
-  | (pos,v,a) -> 
-      let (v,b) = Substitute.subst_type_fresh pos (v,b) in
-      with_pos pos (F_Sigma(v,a,b))
+  | (pos,v,a) -> pos, (F_Sigma(v,a,rel1_type v b))
 
 let bind_pi binder b =
   match binder with 
-  | (pos,v,a) -> 
-      let (v,b) = Substitute.subst_type_fresh pos (v,b) in
-      with_pos pos (F_Pi(v,a,b))
+  | (pos,v,a) -> pos, (F_Pi(v,a,rel1_type v b))
 
 let bind_some_sigma binder b =
   match binder with

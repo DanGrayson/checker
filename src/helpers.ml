@@ -131,19 +131,24 @@ let pi2 = function
   | pos, CONS(_,y) -> y
   | _ -> (trap(); raise Internal)
 
-(** Routines for replacing variables by variables in expressions, typically
-    replacing a named variable by a relative deBruijn index variable. *)
+let locate x l =
+    let rec repeat i = function
+    | a :: l -> if compare a x == 0 then i else repeat (i+1) l
+    | [] -> raise Not_found    
+    in repeat 0 l
+
+(** Routines for replacing named variables by relative index variables in expressions. *)
 let rec var_subst_expr shift subl e = 
   match unmark e with 
   | APPLY(h,args) -> (
       let args' = map_spine (var_subst_expr shift subl) args in 
       match h with 
-      | V v -> (
+      | V ((Var _ | Var_wd _) as v) -> (
 	  try 
-	    get_pos e, APPLY(V (List.assoc v subl),args') 
+	    get_pos e, APPLY(V (VarRel (locate v subl + shift)),args') 
 	  with Not_found -> 
 	    if args == args' then e else get_pos e, APPLY(h,args'))
-      | W _ | U _ | T _ | O _ | TAC _ -> 
+      | W _ | V _ | U _ | T _ | O _ | TAC _ -> 
 	  if args == args' then e else get_pos e, APPLY(h,args'))
   | CONS(x,y) -> 
       let x' = var_subst_expr shift subl x in
@@ -157,13 +162,13 @@ let rec var_subst_expr shift subl e =
 and var_subst_type shift subl t = 
   match unmark t with
   | F_Pi(v,a,b) ->
-      let shift = shift + 1 in
       let a' = var_subst_type shift subl a in
+      let shift = shift + 1 in
       let b' = var_subst_type shift subl b in
       if a' == a && b' == b then t else get_pos t, F_Pi(v,a',b')
   | F_Sigma(v,a,b) -> 
-      let shift = shift + 1 in
       let a' = var_subst_type shift subl a in
+      let shift = shift + 1 in
       let b' = var_subst_type shift subl b in
       if a' == a && b' == b then t else get_pos t, F_Sigma(v,a',b')
   | F_Apply(label,args) -> 
@@ -178,8 +183,8 @@ let rec var_subst_kind shift subl k =
    match k with
    | K_primitive_judgment | K_ulevel | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression -> k
    | K_Pi(v,a,b) -> 
-       let shift = shift + 1 in
        let a' = var_subst_type shift subl a in
+       let shift = shift + 1 in
        let b' = var_subst_kind shift subl b in
        if a' == a && b' == b then k else K_Pi(v, a, b)
 
@@ -191,25 +196,27 @@ let var_subst_kind subl t = var_subst_kind 0 subl t
 
 (** Helper functions for making new ts-expressions from old ts-expressions. *)
 
-let var0 = VarRel 0
-let var1 = VarRel 1
-let var2 = VarRel 2
+let rel1_expr v0 x = var_subst_expr [v0] x
 
-let rel1 v0 x = var_subst_expr [(v0,var0)] x
+let rel2_expr v0 v1 x = var_subst_expr [v0;v1] x
 
-let rel2 v0 v1 x = var_subst_expr [(v0,var0);(v1,var1)] x
+let rel3_expr v0 v1 v2 x = var_subst_expr [v0;v1;v2] x
 
-let rel3 v0 v1 v2 x = var_subst_expr [(v0,var0);(v1,var1);(v2,var2)] x
+let rel1_type v0 t = var_subst_type [v0] t
+
+let rel2_type v0 v1 t = var_subst_type [v0;v1] t
+
+let rel3_type v0 v1 v2 t = var_subst_type [v0;v1;v2] t
 
 let lambda1 v0 x = 
   nowhere 55 (
-  LAMBDA(v0, rel1 v0 x))
+  LAMBDA(v0, rel1_expr v0 x))
 
 let lambda2 v0 v1 x = 
   nowhere 56 (
   LAMBDA(v0, 
 	 nowhere 57 (
-	 LAMBDA(v1, rel2 v0 v1 x))))
+	 LAMBDA(v1, rel2_expr v0 v1 x))))
 
 let lambda3 v0 v1 v2 x = 
   nowhere 58 (
@@ -218,7 +225,7 @@ let lambda3 v0 v1 v2 x =
 	 LAMBDA(v1, 
 		nowhere 60 (
 		LAMBDA(v2, 
-		       rel3 v0 v1 v2 x))))))
+		       rel3_expr v0 v1 v2 x))))))
 
 let make_Var c = Var c
 

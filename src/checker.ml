@@ -84,9 +84,9 @@ let protect f posfun =
 
 let add_tVars env tvars = 
   { env with
-    tts_context = List.rev_append (List.map (fun t -> newunused_wd(), newunused(), var_to_lf (Var t)) tvars) env.tts_context;
+    tts_context = List.rev_append (List.map (fun t ->Var_wd "_", Var "_", var_to_lf (Var t)) tvars) env.tts_context;
     lf_context = List.rev_append 
-      (List.flatten (List.map (fun t -> [ (Var t, texp); (newfresh (Var "ist"), istype (var_to_lf (Var t))); ] ) tvars))
+      (List.flatten (List.map (fun t -> [ (Var t, texp); (Var "ist", istype (var_to_lf (Var t))); ] ) tvars))
       env.lf_context
   }
 
@@ -94,7 +94,7 @@ let add_oVars env ovars t =
   { env with
     tts_context = List.rev_append (List.map (fun o -> Var_wd o, Var o, t) ovars) env.tts_context;
     lf_context = List.rev_append 
-      (List.flatten (List.map (fun o -> [ (Var o, oexp); (newfresh (Var "hast"), hastype (var_to_lf (Var o)) t); ] ) ovars))
+      (List.flatten (List.map (fun o -> [ (Var o, oexp); (Var "hast", hastype (var_to_lf (Var o)) t); ] ) ovars))
       env.lf_context
   }
 
@@ -203,7 +203,7 @@ let ubind env uvars ueqns =
   let uvars = List.map (fun u -> Var u) uvars in 
   let env = List.fold_left (fun env u -> lf_bind env u uexp) env uvars in
   let ueqns = List.map (fun (u,v) -> (chk_u env u, chk_u env v)) ueqns in
-  let env = List.fold_left (fun env (u,v) -> lf_bind env (Variables.newfresh (Var "ueq")) (ulevel_equality u v)) env ueqns in
+  let env = List.fold_left (fun env (u,v) -> lf_bind env (Var "ueq") (ulevel_equality u v)) env ueqns in
   chk_ueqns env ueqns;
   env
 

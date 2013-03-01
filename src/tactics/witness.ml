@@ -25,10 +25,10 @@ let abstract env x =
   nowhere 202 (LAMBDA(first_var env, nowhere 203 (LAMBDA(first_w_var env, x))))
 
 let open_context t1 (env,o,t2) =
-  let v = newfresh (Var "x") in
-  let v' = newfresh (Var_wd "x") in
+  let v = Var "x" in
+  let v' = Var_wd "x" in
   let env = tts_bind env v' v t1 in
-  let e = var_to_lf v ** var_to_lf v' ** END in 
+  let e = var_to_lf v ** var_to_lf v' ** END in (*??*)
   let o = Substitute.apply_args o e in
   let t2 = Substitute.apply_args t2 e in
   (env,o,t2)
