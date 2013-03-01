@@ -98,18 +98,18 @@ unmarked_lf_type:
 
     | Pi v= variable Colon a= lf_type Comma b= lf_type
 	%prec Reduce_binder
-	{ F_Pi(v,a,b) }
+	{ make_F_Pi a (v,b) }
 
     | Sigma v= variable Colon a= lf_type Comma b= lf_type
 	%prec Reduce_binder
     | LeftParen v= variable Colon a= lf_type RightParen Times b= lf_type
-	{ F_Sigma(v,a,b) }
+	{ make_F_Sigma a (v,b) }
 
     | a= lf_type Times b= lf_type
-	{ F_Sigma(Var "_",a,b) }
+	{ make_F_Sigma_simple a b }
 
     | LeftParen v= variable Colon a= lf_type RightParen Arrow b= lf_type
-       { F_Pi(v,a,b) }
+       { make_F_Pi a (v,b) }
 
     | a= lf_type Arrow b= lf_type
        { unmark (a @-> b) }
@@ -141,13 +141,13 @@ unmarked_lf_type:
 	  unmark (pi1_implication (v,a) b) }
 
     | v= marked_variable Type
-	{ let (pos,v) = v in F_Sigma(v,texp,istype (var_to_lf_pos pos v)) }
+	{ let (pos,v) = v in make_F_Sigma texp (v,istype (var_to_lf_pos pos v)) }
 
     | v= marked_variable ColonColon t= lf_expr
-	{ let (pos,v) = v in F_Sigma(v,oexp,hastype (var_to_lf_pos pos v) t) }
+	{ let (pos,v) = v in make_F_Sigma oexp (v,hastype (var_to_lf_pos pos v) t) }
 
     | v= marked_variable ColonColonEqual e= lf_expr ColonColon t= lf_expr
-	{ let (pos,v) = v in F_Sigma(v,with_pos_of e (F_Singleton(e,oexp)),hastype (var_to_lf_pos pos v) t) }
+	{ let (pos,v) = v in make_F_Sigma (with_pos_of e (F_Singleton(e,oexp))) (v,hastype (var_to_lf_pos pos v) t) }
 
 lf_type_constant:
 
@@ -169,9 +169,7 @@ unmarked_lf_expr:
 
     | Lambda v= marked_variable_or_unused Comma body= lf_expr
     | v= marked_variable_or_unused ArrowFromBar body= lf_expr
-	{
-	  let (pos,v) = v in
-	  LAMBDA(v,rel1_expr v body) }
+	{ unmark (lambda1 (unmark v) body) }
 
     | empty_hole
 	{$1}
@@ -351,16 +349,16 @@ unmarked_ts_judgment:
 	{ F_Apply(f,[]) }
 
     | LeftParen v= variable Colon a= ts_judgment RightParen DoubleArrow b= ts_judgment
-	{ F_Pi(v,a,b) }
+	{ make_F_Pi a (v,b) }
 
     | a= ts_judgment DoubleArrow b= ts_judgment
 	{ unmark (a @-> b) }
 
     | LeftParen v= variable Colon a= ts_judgment RightParen Times b= ts_judgment
-	{ F_Sigma(v,a,b) }
+	{ make_F_Sigma a (v,b) }
 
     | a= ts_judgment Times b= ts_judgment
-	{ F_Sigma(Var "_",a,b) }
+	{ make_F_Sigma_simple a b }
 
     | a= ts_judgment TurnstileDouble b= ts_judgment
     	{ let v = good_var_name a (Var "foo") in (* the "|-" operator is not fully implemented yet *)
@@ -372,12 +370,12 @@ unmarked_ts_judgment:
     | Type
 	{ let pos = Position($startpos, $endpos) in
 	  let v = Var "T" in
-	  F_Sigma(v, texp, with_pos pos (F_Apply(F_istype, [var_to_lf_pos pos v]))) }
+	  make_F_Sigma texp (v,with_pos pos (F_Apply(F_istype, [var_to_lf_pos pos v]))) }
 
     | Colon t= ts_expr
 	{ let v = Var "o" in
 	  let pos = get_pos t in
-	  F_Sigma(v, oexp, with_pos pos (F_Apply(F_hastype, [var_to_lf_pos pos v; t]))) }
+	  make_F_Sigma oexp (v,with_pos pos (F_Apply(F_hastype, [var_to_lf_pos pos v; t]))) }
 
     | Turnstile x= ts_expr Colon t= ts_expr
 	{ unmark (this_object_of_type (get_pos x) x t) }
@@ -387,8 +385,7 @@ unmarked_ts_judgment:
 	  let pos = get_pos a in
 	  let a = with_pos pos (F_Singleton(a,texp)) in
 	  let b = with_pos pos (F_Apply(F_istype, [var_to_lf_pos pos v])) in
-	  let b = rel1_type v b in
-	  F_Sigma(v, a, b)
+	  make_F_Sigma a (v,b)
 	}
 
     | j= ts_bracketed_judgment
@@ -415,7 +412,7 @@ unmarked_ts_judgment:
 		 let f = match bj with
 		 | ULEV ->
 		     if c <> [] then $syntaxerror;
-		     (fun v u -> with_pos_of v (add_single (unmark v) uexp u))
+		     (fun v u -> with_pos_of v (make_F_Pi uexp (unmark v, u)))
 		 | IST ->
 		     (fun v u -> with_pos_of v
 			 (apply_binder pos c v texp
@@ -566,8 +563,7 @@ ts_spine_member:
 unmarked_ts_expr:
 
     | v= marked_variable_or_unused DoubleArrowFromBar body= ts_expr
-	{ let (pos,v) = v in
-	  LAMBDA(v,rel1_expr v body) }
+	{ unmark (lambda1 (unmark v) body) }
 
     | e= ts_expr K_1
     	{ unmark ( Substitute.apply_args e (CAR END) ) }
@@ -652,13 +648,11 @@ unmarked_ts_expr:
 		 List.fold_right (
 		 fun wrapped_index arg -> with_pos (get_pos arg) (
 		   match wrapped_index with
-		   | SingleVariable index ->
-		       let (pos,v) = List.nth vars index in
-		       LAMBDA(v,rel1_expr v arg)
+		   | SingleVariable index -> unmark (lambda1 (unmark (List.nth vars index)) arg)
                    | WitnessPair index ->
                        let (pos,v) = List.nth vars index in
                        let p = witness_var v in
-		       LAMBDA(v, with_pos_of arg (LAMBDA(p,rel2_expr v p arg)))
+		       unmark (lambda2 v p arg)
 		  )
 		) indices arg
 	      ) varindices args

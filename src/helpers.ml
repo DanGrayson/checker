@@ -208,26 +208,35 @@ let rel2_type v0 v1 t = var_subst_type [v0;v1] t
 
 let rel3_type v0 v1 v2 t = var_subst_type [v0;v1;v2] t
 
+let abstract_expr v x = v, rel1_expr v x
+
+let abstract_type v x = v, rel1_type v x
+
 let lambda1 v0 x =
-  nowhere 55 (
+  with_pos_of x (
   LAMBDA(v0, rel1_expr v0 x))
 
 let lambda2 v0 v1 x =
-  nowhere 56 (
+  with_pos_of x (
   LAMBDA(v0,
-	 nowhere 57 (
+	 with_pos_of x (
 	 LAMBDA(v1, rel2_expr v0 v1 x))))
 
 let lambda3 v0 v1 v2 x =
-  nowhere 58 (
+  with_pos_of x (
   LAMBDA(v0,
-	 nowhere 59 (
+	 with_pos_of x (
 	 LAMBDA(v1,
-		nowhere 60 (
+		with_pos_of x (
 		LAMBDA(v2,
 		       rel3_expr v0 v1 v2 x))))))
 
 let make_Var c = Var c
+
+let make_F_Pi t (v,u) = F_Pi(v, t, rel1_type v u)
+let make_F_Pi_simple t u = F_Pi(Var "_", t, u)
+let make_F_Sigma t (v,u) = F_Sigma(v, t, rel1_type v u)
+let make_F_Sigma_simple t u = F_Sigma(Var "_", t, u)
 
 let make_U h a = APPLY(U h, a)
 let make_T h a = APPLY(T h, a)
@@ -286,6 +295,12 @@ let make_W_wrefl p p' = make_W W_wrefl (p ** p' ** END)
 let make_W_weleq peq = make_W W_weleq (peq ** END)
 let make_W_Wrefl = make_W W_wrefl END
 let make_T_Pi' t1 t2 = make_T T_Pi' (t1 ** t2 ** END)
+
+let this_object_of_type pos o t =
+  let v = Var "x" in
+  let a = with_pos pos (F_Singleton(o,oexp)) in
+  let b = hastype (nowhere 126 (APPLY(V v,END))) t in
+  with_pos pos (make_F_Sigma a (v,b))
 
 (*
   Local Variables:

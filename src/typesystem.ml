@@ -316,12 +316,6 @@ type lf_kind =
 
 let ( @@-> ) a b = K_Pi(Var "_", a, b)
 
-let this_object_of_type pos o t =
-  let v = Var "x" in
-  let a = with_pos pos (F_Singleton(o,oexp)) in
-  let b = hastype (nowhere 126 (APPLY(V (VarRel 0),END))) t in
-  with_pos pos (F_Sigma(v,a,b))
-
 let istype_kind = texp @@-> K_primitive_judgment
 
 let hastype_kind = oexp @@-> texp @@-> K_judgment
