@@ -28,7 +28,7 @@ open Variables
 type uHead = | U_next | U_max
 
 (** Labels for t-expressions of TS. *)
-type tHead = | T_El | T_El' | T_U | T_U' | T_Pi | T_Pi' | T_Sigma | T_Pt 
+type tHead = | T_El | T_El' | T_U | T_U' | T_Pi | T_Pi' | T_Sigma | T_Pt
              | T_Coprod | T_Coprod2 | T_Empty | T_IP | T_Id | T_Proof
 
 (** Labels for o-expressions of TS. *)
@@ -144,7 +144,7 @@ and bare_lf_type =
   | F_Singleton of (lf_expr * lf_type)
 
 (** Tactics *)
-and tactic_expr = 
+and tactic_expr =
   | Tactic_index of int				 (* $3 *)
   | Tactic_name of string			 (* $foo *)
   | Tactic_sequence of tactic_expr * tactic_expr (* $(a;b;c) *)
@@ -300,7 +300,7 @@ let head_to_vardist = function (* optimize later by precomputing the constant re
   | O O_nat_r -> Some(1, [] :: [] :: [] :: [SingleVariable 0] :: [])
   | _ -> None
 
-(** The "kinds" of LF.  
+(** The "kinds" of LF.
 
     Objects are classified by their type, and (parametrized) types are classified by their kind.
 
@@ -316,7 +316,7 @@ type lf_kind =
 
 let ( @@-> ) a b = K_Pi(Var "_", a, b)
 
-let this_object_of_type pos o t = 
+let this_object_of_type pos o t =
   let v = Var "x" in
   let a = with_pos pos (F_Singleton(o,oexp)) in
   let b = hastype (nowhere 126 (APPLY(V (VarRel 0),END))) t in
@@ -354,11 +354,11 @@ let witnessed_object_equality_kind = wexp @@-> oexp @@-> oexp @@-> texp @@-> K_w
 
 let var_to_lf v = nowhere 1 (APPLY(V v,END))
 
-let judged_obj_equal_kind = 
-  K_Pi(Var "T", 
-       a_type, 
-       obj_of_type (var_to_lf (VarRel 0)) 
-       @@-> obj_of_type (var_to_lf (VarRel 1)) 
+let judged_obj_equal_kind =
+  K_Pi(Var "T",
+       a_type,
+       obj_of_type (var_to_lf (VarRel 0))
+       @@-> obj_of_type (var_to_lf (VarRel 1))
 	 @@-> K_judged_expression)
 
 let tfhead_to_kind = function
@@ -411,13 +411,13 @@ let rec compare_kinds k l =
   | K_ulevel,             _
   | K_expression,         K_judgment
   | K_expression,         K_primitive_judgment
-  | K_expression,         K_witnessed_judgment 
+  | K_expression,         K_witnessed_judgment
   | K_primitive_judgment, K_witnessed_judgment
     -> K_less
-  | _,                    K_ulevel 
+  | _,                    K_ulevel
   | K_judgment,           K_expression
   | K_primitive_judgment, K_expression
-  | K_witnessed_judgment, K_expression 
+  | K_witnessed_judgment, K_expression
   | K_witnessed_judgment, K_primitive_judgment
     -> K_greater
   | _ -> K_incomparable
@@ -433,16 +433,16 @@ type environment = {
     global_lf_context : lf_type VarMap.t;
   }
 
-let empty_context = { 
+let empty_context = {
   state = 0;
-  lf_context = []; 
-  tts_context = []; 
-  global_lf_context = VarMap.empty 
+  lf_context = [];
+  tts_context = [];
+  global_lf_context = VarMap.empty
 }
 
 let interactive = ref false
 
-let incr_state env = 
+let incr_state env =
   if !interactive
   then { env with state = env.state + 1 }
   else env
@@ -453,28 +453,28 @@ let global_lf_bind env v t = { env with global_lf_context = VarMap.add v t env.g
 
 let tts_bind env p v t = { env with tts_context = (p,v,t) :: env.tts_context }
 
-let ts_bind env v t = 
+let ts_bind env v t =
   let v' = witness_var v in
   { env with tts_context = (v',v,t) :: env.tts_context }
 
 let tts_fetch env v =
   let rec repeat = function
       [] -> raise Not_found
-    | (p,o,t)::l -> 
+    | (p,o,t)::l ->
         if compare o v = 0 then (p,t) else
         if compare p v = 0 then raise Internal else (*debugging only*)
-        repeat l 
+        repeat l
   in
   repeat env.tts_context
 
-let ts_fetch env v = 
+let ts_fetch env v =
   let (p,t) = tts_fetch env v in
   t
 
-let tts_fetch_w env w = 
+let tts_fetch_w env w =
   let rec repeat = function
       [] -> raise Not_found
-    | (p,o,t)::l -> 
+    | (p,o,t)::l ->
         if compare p w = 0 then (o,t) else
         if compare o w = 0 then raise Internal else (*debugging only*)
         repeat l
@@ -499,7 +499,7 @@ type tactic_return =
   | TacticSuccess of lf_expr
 
 type tactic_function =
-       surrounding         (* the ambient APPLY(...), if any, and the index among its head and arguments of the hole *)        
+       surrounding         (* the ambient APPLY(...), if any, and the index among its head and arguments of the hole *)
     -> environment						      (* the active context *)
     -> position							      (* the source code position of the tactic hole *)
     -> lf_type							      (* the type of the hole, e.g., [texp] *)
@@ -510,7 +510,7 @@ let tactics : (string * tactic_function) list ref = ref []
 
 let add_tactic (name,f) = tactics := (name,f) :: !tactics
 
-(* 
+(*
   Local Variables:
   compile-command: "make -C .. src/typesystem.cmo "
   End:

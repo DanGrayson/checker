@@ -2,7 +2,7 @@
 
 Include "rules/TS5.ts".
 
-Definition plus_one { ⊢ n : Nat } : Nat := 
+Definition plus_one { ⊢ n : Nat } : Nat :=
 	   n ⟾ ( @[ev;_][S,n,Nat,Nat], n' ⟾ ev_hastype[Nat,_⟾Nat,S,n,CDR,_,_,_,_] ) .
 
 Definition LF plus_one' : oexp -> oexp := n |-> (@[ev] S n Nat (_ |-> Nat)).
@@ -27,8 +27,8 @@ Definition plus : Nat -> Nat -> Nat :=
        _ ⟾ Nat -> Nat,
        m ⟾ lambda n:Nat, @[nat_r;_][ m, (lambda i:Nat, S), n, Nat ],
        CDR,
-       _, 
-       _ ⟾ _ ⟾ ∏_istype[Nat, _ ⟾ Nat, CDR, _, _], 
+       _,
+       _ ⟾ _ ⟾ ∏_istype[Nat, _ ⟾ Nat, CDR, _, _],
        m ⟾ m' ⟾ λ_hastype[
        	  Nat,
 	  _ ⟾ Nat,

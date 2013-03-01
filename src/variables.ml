@@ -39,15 +39,15 @@ let isunused v = 			(* anything using this is likely to be wrong in the presence
   | Var id | Var_wd id -> id = "_"
   | VarRel _ -> raise Internal
 
-let next_genctr = 
+let next_genctr =
   let genctr = ref 0 in
-  fun () -> incr genctr; 
+  fun () -> incr genctr;
     if !genctr < 0 then raise GensymCounterOverflow;
     if !genctr = genctr_trap then trap();
-    if !genctr = genctr_exception then (trap(); raise DebugMe); 
+    if !genctr = genctr_exception then (trap(); raise DebugMe);
     !genctr
 
-(* 
+(*
   Local Variables:
   compile-command: "make -C .. src/variables.cmo "
   End:

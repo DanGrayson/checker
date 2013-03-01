@@ -12,7 +12,7 @@ let assumption surr env pos t args =
   if tactic_tracing then printf "assumption: t = %a\n%!" _t t;
   let rec repeat = function
     | (v,u) :: envp -> (
-	if is_subtype env u t 
+	if is_subtype env u t
 	then TacticSuccess(var_to_lf v)
 	else repeat envp)
     | [] -> (
@@ -25,7 +25,7 @@ let assumption surr env pos t args =
 	)
   in repeat env.lf_context
 
-(* 
+(*
   Local Variables:
   compile-command: "make -C ../.. src/tactics/assumption.cmo "
   End:

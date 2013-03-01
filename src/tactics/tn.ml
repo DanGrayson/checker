@@ -18,7 +18,7 @@ let tn1 surr env pos t args =
 let tn12 surr env pos t args =
   if not (Alpha.UEqual.type_equiv empty_uContext t texp)
   then raise (TypeCheckingFailure(
-              env, surr, 
+              env, surr,
               [ pos, "error: tactic tn12: expected a hole of LF type texp" ;
                 get_pos t, "but found a hole of type " ^ lf_type_to_string t
               ]));
@@ -31,7 +31,7 @@ let tn12 surr env pos t args =
      )
   | _ -> TacticFailure
 
-(* 
+(*
   Local Variables:
   compile-command: "make -C ../.. src/tactics/tn.cmo "
   End:

@@ -41,12 +41,12 @@ let lexbuf_position lexbuf =
     Position ( Lexing.lexeme_start_p lexbuf, Lexing.lexeme_end_p lexbuf )
 
 let errfmt = function
-  | Position(p,q) 
-    -> "File \"" ^ p.Lexing.pos_fname ^ "\", " 
+  | Position(p,q)
+    -> "File \"" ^ p.Lexing.pos_fname ^ "\", "
       ^ (if p.Lexing.pos_lnum = q.Lexing.pos_lnum
-	 then "line " ^ string_of_int p.Lexing.pos_lnum 
+	 then "line " ^ string_of_int p.Lexing.pos_lnum
 	 else "lines " ^ string_of_int p.Lexing.pos_lnum ^ "-" ^ string_of_int q.Lexing.pos_lnum)
-      ^ ", " 
+      ^ ", "
       ^ (let i = p.Lexing.pos_cnum-p.Lexing.pos_bol+1
          and j = q.Lexing.pos_cnum-q.Lexing.pos_bol in
          if i = j
@@ -71,7 +71,7 @@ let max_pos p q =
   if p.Lexing.pos_fname != q.Lexing.pos_fname then (trap(); raise Internal);
   if p.Lexing.pos_cnum > q.Lexing.pos_cnum then p else q
 
-let merge_pos p q = 
+let merge_pos p q =
   match (p,q) with
   | Position _ , Nowhere _ -> p
   | Nowhere _ , Position _ -> q
@@ -87,14 +87,14 @@ let with_pos_of ((pos:position),_) e = (pos,e)
 let nowhere_ctr = ref 0
 let seepos pos = Printf.fprintf stderr "%s: ... debugging ...\n%!" (errfmt pos)
 
-let no_pos i = 
+let no_pos i =
   incr nowhere_ctr;
   if !nowhere_ctr = internal_location_trap then (trap(); raise DebugMe);
   Nowhere(i, !nowhere_ctr)
 let nowhere i x = (no_pos i,x)
 let nopos i = errfmt (no_pos i)
 
-(* 
+(*
   Local Variables:
   compile-command: "make -C .. src/error.cmo "
   End:

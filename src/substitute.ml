@@ -1,4 +1,4 @@
-(** Substitution. *) 
+(** Substitution. *)
 
 open Error
 open Variables
@@ -19,23 +19,23 @@ let show_subs (subl : (var * lf_expr) list) =
   printf " subs =\n";
   List.iter (fun (v,e) -> printf "   %a => %a\n" _v v _e e) subl
 
-let rec subst_expr subl e = 
+let rec subst_expr subl e =
   let pos = get_pos e in
-  match unmark e with 
+  match unmark e with
   | APPLY(h,args) -> (
-      let args = map_spine (subst_expr subl) args in 
-      match h with 
+      let args = map_spine (subst_expr subl) args in
+      match h with
       | V v -> (
 	  try apply_args (new_pos pos (List.assoc v subl)) args
 	  with Not_found -> pos, APPLY(h,args))
       | W _ | U _ | T _ | O _ | TAC _ -> pos, APPLY(h,args))
   | CONS(x,y) -> pos, CONS(subst_expr subl x,subst_expr subl y)
-  | LAMBDA(v, body) -> 
+  | LAMBDA(v, body) ->
       let body' = subst_expr subl body in
       if body' == body then e else pos, LAMBDA(v, body')
 
 and apply_args e args =
-  let rec repeat e args = 
+  let rec repeat e args =
     let pos = get_pos e in
     match unmark e with
     | APPLY(h,brgs) -> (pos, APPLY(h, join_args brgs args))
@@ -55,14 +55,14 @@ and apply_args e args =
 
 and subst_type_list (subl : (var * lf_expr) list) ts = List.map (subst_type subl) ts
 
-and subst_type (subl : (var * lf_expr) list) (pos,t) = 
+and subst_type (subl : (var * lf_expr) list) (pos,t) =
   (pos,
    match t with
    | F_Pi(v,a,b) ->
        let a = subst_type subl a in
        let b = subst_type subl b in
        F_Pi(v,a,b)
-   | F_Sigma(v,a,b) -> 
+   | F_Sigma(v,a,b) ->
        let a = subst_type subl a in
        let b = subst_type subl b in
        F_Sigma(v,a,b)
@@ -70,10 +70,10 @@ and subst_type (subl : (var * lf_expr) list) (pos,t) =
    | F_Singleton(e,t) -> F_Singleton( subst_expr subl e, subst_type subl t )
   )
 
-let rec subst_kind subl k = 
+let rec subst_kind subl k =
    match k with
    | K_primitive_judgment | K_ulevel | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression -> k
-   | K_Pi(v,a,b) -> 
+   | K_Pi(v,a,b) ->
        let a = subst_type subl a in
        let b = subst_kind subl b in
        K_Pi(v, a, b)
@@ -90,7 +90,7 @@ let subst_type = preface subst_type
 
 let subst_kind = preface subst_kind
 
-(* 
+(*
   Local Variables:
   compile-command: "make -C .. src/substitute.cmo "
   End:

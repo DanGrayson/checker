@@ -8,7 +8,7 @@ open Error
     an exception. *)
 let admit surr env pos t args = raise NotImplemented
 
-(* 
+(*
   Local Variables:
   compile-command: "make -C ../.. src/tactics/admit.cmo "
   End:

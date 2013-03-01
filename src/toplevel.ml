@@ -4,7 +4,7 @@ open Error
 open Variables
 open Typesystem
 
-type command' = 
+type command' =
   | Axiom of (int list) option * var * lf_type
   | CheckLF of lf_expr
   | CheckWitness of lf_type

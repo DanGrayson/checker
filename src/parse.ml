@@ -9,17 +9,17 @@ open Names
 open Helpers
 
 let lookup_label pos name =
-  try List.assoc name Names.lf_expr_head_strings 
+  try List.assoc name Names.lf_expr_head_strings
   with Not_found as e -> fprintf stderr "%a: unknown expression label: @[%s]\n%!" _pos pos name; raise e
 
 let lookup_type_constant pos name =
   try List.assoc name Names.string_to_type_constant
   with Not_found -> F_undeclared_type_constant(pos,name)
 
-type binder_judgment = 
+type binder_judgment =
   | ULEV
   | IST
-  | HAST of lf_expr 
+  | HAST of lf_expr
   | W_HAST of lf_expr * lf_expr
   | W_TEQ of lf_expr * lf_expr
   | W_OEQ of lf_expr * lf_expr * lf_expr
@@ -39,7 +39,7 @@ let bind_sigma binder b =
   | (pos,v,a) -> pos, (F_Sigma(v,a,rel1_type v b))
 
 let bind_pi binder b =
-  match binder with 
+  match binder with
   | (pos,v,a) -> pos, (F_Pi(v,a,rel1_type v b))
 
 let bind_some_sigma binder b =
@@ -100,7 +100,7 @@ let pi1_implication ((vpos,v),t) u =
       t
   | None -> raise NotImplemented
 
-let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_type) (t2 : position -> var -> lf_type) (u : lf_type) = 
+let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_type) (t2 : position -> var -> lf_type) (u : lf_type) =
   (* syntax is { v_1 : T_1 , ... , v_n : T_n |- v Type } u  or  { v_1 : T_1 , ... , v_n : T_n |- v:T } u *)
   (* t1 is texp or oexp; t2 is (fun t -> istype t) or (fun o -> hastype o t) *)
   let (vpos,v) = v in
@@ -115,8 +115,8 @@ let apply_judgment_binder pos (j:lf_type) (u:lf_type) =
   let (q,f,k) = unbind_relative u in
   let k = arrow j k in
   bind_pi_list_rev q (bind_some_sigma f k)
- 
-(* 
+
+(*
   Local Variables:
   compile-command: "make -C .. src/parse.cmo "
   End:

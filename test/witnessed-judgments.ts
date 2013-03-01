@@ -30,13 +30,13 @@ Check TTS : [ @[El'][@[ev';_][xf,xo,T,@[U']],@[wev][xf$,xo$]] Type ].
 Check TTS : [ @[El'][@[ev';_][xf,xo,T,@[U']],@[wev][a1,xo$]] Type ].
 Check TTS : [ @[El'][@[ev';_][xf,xo,T,@[U']],_] Type ].
 
-Check TTS : [ @[Proof][ 
+Check TTS : [ @[Proof][
     @[wev][@[wlam;o][@[wev][xf$,o$]],xo$],
     @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']],
-    @[U']] 
+    @[U']]
   Type ].
 
-Variable A : @[Proof][ 
+Variable A : @[Proof][
     @[wev][@[wlam;o][@[wev][xf$,o$]],xo$],
     @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']],
     @[U']].
@@ -63,18 +63,18 @@ Lemma a4 [
 
 # Make head reduction work.
 # This one is the same as the one above, with objects reversed.
-# Check TTS : [ _ 
+# Check TTS : [ _
 #       : @[ev';_][xf,xo,T,@[U']]
 #       ≡ @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']]
 #       : @[U']
 #       ].
 
-Check TTS : [ 
+Check TTS : [
     _ : @[El'][ @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']], _]
       ≡ @[El'][ @[ev';_][xf,xo,T,@[U']], _]
       ].
 
-Lemma a3 [ 
+Lemma a3 [
       : @[El'][ @[ev';_][@[λ';y][T,@[ev';_][xf,y,T,@[U']]],xo,T,@[U']], _]
       ≡ @[El'][ @[ev';_][xf,xo,T,@[U']], _]
       ] := _ .

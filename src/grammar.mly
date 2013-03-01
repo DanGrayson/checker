@@ -88,7 +88,7 @@ lf_type:
     | t= unmarked_lf_type
 	{ Position($startpos, $endpos), t}
 
-    | LeftParen t= lf_type RightParen 
+    | LeftParen t= lf_type RightParen
 	{ t }
 
 unmarked_lf_type:
@@ -151,12 +151,12 @@ unmarked_lf_type:
 
 lf_type_constant:
 
-    | l= IDENTIFIER 
+    | l= IDENTIFIER
 	{ let pos = Position($startpos, $endpos) in lookup_type_constant pos l }
 
 lf_expr:
 
-    | e= unmarked_lf_expr 
+    | e= unmarked_lf_expr
 	{(Position($startpos, $endpos), e)}
 
     | e= parenthesized(lf_expr) {e}
@@ -169,11 +169,11 @@ unmarked_lf_expr:
 
     | Lambda v= marked_variable_or_unused Comma body= lf_expr
     | v= marked_variable_or_unused ArrowFromBar body= lf_expr
-	{ 
+	{
 	  let (pos,v) = v in
 	  LAMBDA(v,rel1_expr v body) }
 
-    | empty_hole 
+    | empty_hole
 	{$1}
 
     | head_and_args = short_head_and_reversed_spine
@@ -239,16 +239,16 @@ tactic_expr_2:
 
 dotted_number: n= separated_nonempty_list(Period,NUMBER) {n}
 
-command: 
+command:
 
-    | c= unmarked_command 
+    | c= unmarked_command
 	{ Position($startpos, $endpos), c }
 
     | error				(* instant error return for the sake of Proof General *)
     (* | error Period *)
     (* | error EOF *)
 	{ let pos = Position($startpos, $endpos) in
-	  fprintf stderr "%a: syntax error\n%!" _pos pos; 
+	  fprintf stderr "%a: syntax error\n%!" _pos pos;
 	  bump_error_count pos;
 	  pos, Toplevel.SyntaxError }
 
@@ -290,20 +290,20 @@ unmarked_command:
     | Alpha e1= ts_expr EqualEqual e2= ts_expr Period
 	{ Toplevel.Alpha (e1, e2) }
 
-    | Theorem LF name= IDENTIFIER Colon thm= lf_type ColonEqual deriv= lf_expr Period 
-    | Theorem name= IDENTIFIER thm= ts_judgment ColonColonEqual deriv= lf_expr Period 
-    | Theorem name= IDENTIFIER thm= ts_judgment ColonEqual deriv= ts_expr Period 
-	{ 
+    | Theorem LF name= IDENTIFIER Colon thm= lf_type ColonEqual deriv= lf_expr Period
+    | Theorem name= IDENTIFIER thm= ts_judgment ColonColonEqual deriv= lf_expr Period
+    | Theorem name= IDENTIFIER thm= ts_judgment ColonEqual deriv= ts_expr Period
+	{
 	  let pos = Position($startpos, $endpos) in
 	  Toplevel.Theorem (pos, name, deriv, thm) }
 
-    | Include filename= STRING Period 
+    | Include filename= STRING Period
 	{ Toplevel.Include filename }
 
-    | Clear Period 
+    | Clear Period
 	{ Toplevel.Clear }
 
-    | Show n= NUMBER? Period 
+    | Show n= NUMBER? Period
 	{ Toplevel.Show n }
 
     | Back n= NUMBER? Period
@@ -322,15 +322,15 @@ marked_variable:
 
 uEquation:
 
-    | u= ts_expr EqualEqual v= ts_expr 
+    | u= ts_expr EqualEqual v= ts_expr
 	{ (u,v) }
 
-    | v= ts_expr GreaterEqual u= ts_expr 
-    | u= ts_expr LessEqual    v= ts_expr 
+    | v= ts_expr GreaterEqual u= ts_expr
+    | u= ts_expr LessEqual    v= ts_expr
 	{ let pos = Position($startpos, $endpos) in (pos, make_U_max u v), v }
 
-    | v= ts_expr Greater u= ts_expr 
-    | u= ts_expr Less    v= ts_expr 
+    | v= ts_expr Greater u= ts_expr
+    | u= ts_expr Less    v= ts_expr
 	{ let pos = Position($startpos, $endpos) in (pos, make_U_max (pos, make_U_next u) v), v }
 
 parenthesized(X): x= delimited(LeftParen,X,RightParen) {x}
@@ -388,17 +388,17 @@ unmarked_ts_judgment:
 	  let a = with_pos pos (F_Singleton(a,texp)) in
 	  let b = with_pos pos (F_Apply(F_istype, [var_to_lf_pos pos v])) in
 	  let b = rel1_type v b in
-	  F_Sigma(v, a, b) 
+	  F_Sigma(v, a, b)
 	}
 
-    | j= ts_bracketed_judgment 
+    | j= ts_bracketed_judgment
 	{ j }
 
 (* introduction of parameters *)
 
     | j= ts_bracketed_judgment u= ts_judgment
 	%prec Reduce_binder
-        { 
+        {
           let pos = Position($startpos, $endpos) in
           let jpos = Position($startpos(j), $endpos(j)) in
 	  let w = apply_judgment_binder pos (with_pos jpos j) u in
@@ -407,23 +407,23 @@ unmarked_ts_judgment:
 
     | LeftBrace c= context vbj= separated_nonempty_list(Comma,pair(marked_variable+,binder_judgment)) RightBrace u= ts_judgment
 	%prec Reduce_binder
-	{ 
+	{
 	  let pos = Position($startpos, $endpos) in
-	  let r = List.fold_right 
+	  let r = List.fold_right
 	      (
 	       fun (v,bj) u ->
 		 let f = match bj with
-		 | ULEV -> 
+		 | ULEV ->
 		     if c <> [] then $syntaxerror;
 		     (fun v u -> with_pos_of v (add_single (unmark v) uexp u))
-		 | IST -> 
-		     (fun v u -> with_pos_of v 
-			 (apply_binder pos c v texp 
+		 | IST ->
+		     (fun v u -> with_pos_of v
+			 (apply_binder pos c v texp
 			    (fun pos t -> let t = var_to_lf_pos pos t in istype t) u))
-		 | HAST t -> 
-		     (fun v u -> with_pos_of v 
-			 (apply_binder pos c v oexp 
-			    (fun pos o -> let o = var_to_lf_pos pos o in hastype o t) u)) 
+		 | HAST t ->
+		     (fun v u -> with_pos_of v
+			 (apply_binder pos c v oexp
+			    (fun pos o -> let o = var_to_lf_pos pos o in hastype o t) u))
 		 | W_HAST(o,t) ->
 		     (fun v u ->
 		       let ov = (
@@ -435,15 +435,15 @@ unmarked_ts_judgment:
 		       in
 		       ignore ov;
 		       raise NotImplemented (* should rewrite and simplify apply_binder first, so it can be adapted here *)
-		     ) 
+		     )
 		 | W_TEQ(t1,t2) ->
-		     (fun v u -> with_pos_of v 
-			 (apply_binder pos c v wexp 
-			    (fun pos p -> let p = var_to_lf_pos pos p in witnessed_type_equality p t1 t2 ) u)) 
+		     (fun v u -> with_pos_of v
+			 (apply_binder pos c v wexp
+			    (fun pos p -> let p = var_to_lf_pos pos p in witnessed_type_equality p t1 t2 ) u))
 		 | W_OEQ(o1,o2,t) ->
-		     (fun v u -> with_pos_of v 
-			 (apply_binder pos c v wexp 
-			    (fun pos p -> let p = var_to_lf_pos pos p in witnessed_object_equality p o1 o2 t ) u)) 
+		     (fun v u -> with_pos_of v
+			 (apply_binder pos c v wexp
+			    (fun pos p -> let p = var_to_lf_pos pos p in witnessed_object_equality p o1 o2 t ) u))
 		 in
 		 List.fold_right f v u)
 	      vbj u in
@@ -471,7 +471,7 @@ ts_bracketed_judgment:
 	{ unmark (type_uequality a b) }
 
     | LeftBracket a= ts_expr Tilde b= ts_expr Colon t= ts_expr RightBracket
-	{ unmark (object_uequality a b t) } 
+	{ unmark (object_uequality a b t) }
 
     | LeftBracket Colon t= ts_expr Type RightBracket
 	{ unmark (istype_witness t) }
@@ -554,13 +554,13 @@ ts_expr:
 
 ts_spine_member:
 
-    | x= ts_expr 
+    | x= ts_expr
 	{ Spine_arg x }
 
-    | K_CAR 
+    | K_CAR
 	{ Spine_car }
 
-    | K_CDR 
+    | K_CDR
 	{ Spine_cdr }
 
 unmarked_ts_expr:
@@ -588,7 +588,7 @@ unmarked_ts_expr:
 
     | f= ts_expr o= ts_expr
 	%prec Reduce_application
-	{ let pos = Position($startpos, $endpos) in 
+	{ let pos = Position($startpos, $endpos) in
 	  APPLY(O O_ev, f ** o ** (pos, cite_tactic (Tactic_name "ev3") END) ** END) }
 
     | Lambda x= variable Colon t= ts_expr Comma o= ts_expr
@@ -626,7 +626,7 @@ unmarked_ts_expr:
 
     | name= CONSTANT_SEMI vars= separated_list(Comma,marked_variable_or_unused) RightBracket args= arglist
 	{
-	 let label = 
+	 let label =
 	   let pos = Position($startpos, $endpos) in
 	   try lookup_label pos name with Not_found -> $syntaxerror
 	 in
@@ -646,12 +646,12 @@ unmarked_ts_expr:
 	     let args = List.map2 (
 	       fun indices arg ->
 		 (* examples:
-		    1: if indices = [ SingleVariable 0; SingleVariable 1], change arg to (LAMBDA v0 , (LAMBDA v1, arg)) 
-		    2: if indices = [ WitnessPair 0                     ], change arg to (LAMBDA v0$, (LAMBDA v0, arg)) 
+		    1: if indices = [ SingleVariable 0; SingleVariable 1], change arg to (LAMBDA v0 , (LAMBDA v1, arg))
+		    2: if indices = [ WitnessPair 0                     ], change arg to (LAMBDA v0$, (LAMBDA v0, arg))
 		  *)
 		 List.fold_right (
 		 fun wrapped_index arg -> with_pos (get_pos arg) (
-		   match wrapped_index with 
+		   match wrapped_index with
 		   | SingleVariable index ->
 		       let (pos,v) = List.nth vars index in
 		       LAMBDA(v,rel1_expr v arg)
@@ -665,8 +665,8 @@ unmarked_ts_expr:
 	     in
 	     APPLY(label,list_to_spine args)
        }
- 
-(* 
+
+(*
   Local Variables:
   compile-command: "make -C .. src/grammar.cmo "
   End:

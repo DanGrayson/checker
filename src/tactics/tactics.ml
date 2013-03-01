@@ -15,9 +15,9 @@ let _ = List.iter add_tactic [
   "shuffle", Shuffle.shuffle;
   "tscheck", Tscheck.tscheck;
   "w", Witness.witness
-] 
+]
 
-(* 
+(*
   Local Variables:
   compile-command: "make -C ../.. build "
   End:

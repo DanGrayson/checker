@@ -14,7 +14,7 @@ Axiom 3.4.10 orefl { ⊢ T Type, x y : T } [ x ~ y : T ] ⇒ [ x ≡ y : T ].
 
 Axiom 3.4.11 oeqsymm { ⊢ T Type, x : T, y : T } [ x ≡ y : T ] ⇒ [ y ≡ x : T ].
 
-Axiom 3.4.12 oeqtrans { ⊢ T Type, x : T, y : T, z : T } [ x ≡ y : T ] 
+Axiom 3.4.12 oeqtrans { ⊢ T Type, x : T, y : T, z : T } [ x ≡ y : T ]
       	⇒ [ y ≡ z : T ] ⇒ [ x ≡ z : T ].
 
 Axiom 3.5.8.1 parametrized_type_equality { ⊢ T Type } { t : T ⊢ U Type } { ⊢ t : T, t' : T }
@@ -49,7 +49,7 @@ Axiom 3.4.23 λ_hastype { ⊢ T Type } { x : T ⊢ U Type, o : U[x] } ⊢ λ t:T
 
 Axiom 3.4.24 λ_equality { ⊢ T T' Type } { x : T ⊢ U U' Type, o o' : U[x] }
 
-     			[ T ≡ T' ] ⇒ ( { ⊢ x : T } [ o[x] ≡ o'[x] : U[x] ] ) ⇒ 
+     			[ T ≡ T' ] ⇒ ( { ⊢ x : T } [ o[x] ≡ o'[x] : U[x] ] ) ⇒
 
 			[ λ t:T, o[t] ≡ λ t':T', o'[t'] : ∏ t:T, U[t] ].
 
@@ -57,9 +57,9 @@ Axiom 3.4.24.1 λ_equality1 { ⊢ T T' Type } { x : T ⊢ U Type, o : U[x] }
 
      			[ λ t:T, o[t] ≡ λ t':T', o[t'] : ∏ t:T, U[t] ].
 
-Axiom 3.4.24.2 λ_equality2 { ⊢ T Type } { x : T ⊢ U U' Type, o o' : U[x] } 
+Axiom 3.4.24.2 λ_equality2 { ⊢ T Type } { x : T ⊢ U U' Type, o o' : U[x] }
 
-     			( { ⊢ x : T } [ o[x] ≡ o'[x] : U[x] ] ) ⇒ 
+     			( { ⊢ x : T } [ o[x] ≡ o'[x] : U[x] ] ) ⇒
 
 			[ λ t:T, o[t] ≡ λ t:T, o'[t] : ∏ t:T, U[t] ].
 
@@ -67,17 +67,17 @@ Axiom 3.4.25 ev_hastype { ⊢ T Type } { t : T ⊢ U Type } { ⊢ f : ∏ t:T, U
 
        ⊢ @[ev;t][f,o,T,U[t]] : U[o].
 
-Axiom 3.4.26 ev_eq { ⊢ T Type, o o' : T } { t : T ⊢ U U' Type } { ⊢ f f' : ∏ t:T, U[t] } 
+Axiom 3.4.26 ev_eq { ⊢ T Type, o o' : T } { t : T ⊢ U U' Type } { ⊢ f f' : ∏ t:T, U[t] }
 
 	      [ f ≡ f' : ∏ t:T, U[t] ] ⇒ [ o ≡ o' : T ] ⇒ ( { ⊢ x : T } [ U[x] ≡ U'[x] ] ) ⇒
 
 	      [ @[ev][f,o,T,U] ≡ @[ev][f',o',T,U'] : U[o] ].
 
-Axiom 3.4.27 beta_reduction { ⊢ T Type, o1 : T } { x : T ⊢ U Type, o2 : U[x] } 
+Axiom 3.4.27 beta_reduction { ⊢ T Type, o1 : T } { x : T ⊢ U Type, o2 : U[x] }
 
       [ @[ev;t][(λ t:T, o2[t]), o1, T, U[t]] ≡ o2[o1] : U[o1] ].
 
-Axiom 3.4.28 eta_reduction { ⊢ T Type } { t : T ⊢ U Type } { ⊢ f : ∏ t:T, U[t] } 
+Axiom 3.4.28 eta_reduction { ⊢ T Type } { t : T ⊢ U Type } { ⊢ f : ∏ t:T, U[t] }
 
       [ λ x:T, @[ev;t][f,x,T,U[t]] ≡ f : ∏ t:T, U[t] ].
 
@@ -85,7 +85,7 @@ Axiom 3.4.29 jj_hastype { ⊢ M1 M2 Ulevel } [ umax[M1,M2] ~ M2 Ulevel ]
 
        ⇒ [ jj[M1,M2] : UU[M1] -> UU[M2] ].
 
-Axiom 3.4.30 El_j_reduction { ⊢ M1 M2 Ulevel, o : UU[M1] } 
+Axiom 3.4.30 El_j_reduction { ⊢ M1 M2 Ulevel, o : UU[M1] }
 
   	[ umax[M1,M2] ~ M2 Ulevel ] ⇒ [ *@[ev;_][jj[M1,M2],o,UU[M1],UU[M2]] ≡ *o ].
 

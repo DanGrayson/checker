@@ -5,8 +5,8 @@ open Variables
 open Typesystem
 open Names
 
-let isunused_variable_expression x = 
-  match unmark x with 
+let isunused_variable_expression x =
+  match unmark x with
   | APPLY(V v, END) -> isunused v
   | _ -> false
 
@@ -134,55 +134,55 @@ let pi2 = function
 let locate x l =
     let rec repeat i = function
     | a :: l -> if compare a x == 0 then i else repeat (i+1) l
-    | [] -> raise Not_found    
+    | [] -> raise Not_found
     in repeat 0 l
 
 (** Routines for replacing named variables by relative index variables in expressions. *)
-let rec var_subst_expr shift subl e = 
-  match unmark e with 
+let rec var_subst_expr shift subl e =
+  match unmark e with
   | APPLY(h,args) -> (
-      let args' = map_spine (var_subst_expr shift subl) args in 
-      match h with 
+      let args' = map_spine (var_subst_expr shift subl) args in
+      match h with
       | V ((Var _ | Var_wd _) as v) -> (
-	  try 
-	    get_pos e, APPLY(V (VarRel (locate v subl + shift)),args') 
-	  with Not_found -> 
+	  try
+	    get_pos e, APPLY(V (VarRel (locate v subl + shift)),args')
+	  with Not_found ->
 	    if args == args' then e else get_pos e, APPLY(h,args'))
-      | W _ | V _ | U _ | T _ | O _ | TAC _ -> 
+      | W _ | V _ | U _ | T _ | O _ | TAC _ ->
 	  if args == args' then e else get_pos e, APPLY(h,args'))
-  | CONS(x,y) -> 
+  | CONS(x,y) ->
       let x' = var_subst_expr shift subl x in
       let y' = var_subst_expr shift subl y in
       if x' == x && y' == y then e else get_pos e, CONS(x',y')
-  | LAMBDA(v, body) -> 
+  | LAMBDA(v, body) ->
       let shift = shift + 1 in
       let body' = var_subst_expr shift subl body in
       if body' == body then e else get_pos e, LAMBDA(v, body')
 
-and var_subst_type shift subl t = 
+and var_subst_type shift subl t =
   match unmark t with
   | F_Pi(v,a,b) ->
       let a' = var_subst_type shift subl a in
       let shift = shift + 1 in
       let b' = var_subst_type shift subl b in
       if a' == a && b' == b then t else get_pos t, F_Pi(v,a',b')
-  | F_Sigma(v,a,b) -> 
+  | F_Sigma(v,a,b) ->
       let a' = var_subst_type shift subl a in
       let shift = shift + 1 in
       let b' = var_subst_type shift subl b in
       if a' == a && b' == b then t else get_pos t, F_Sigma(v,a',b')
-  | F_Apply(label,args) -> 
+  | F_Apply(label,args) ->
       let args' = List.map (var_subst_expr shift subl) args in
       if args' == args then t else get_pos t, F_Apply(label, args')
-  | F_Singleton(e,u) -> 
+  | F_Singleton(e,u) ->
       let e' = var_subst_expr shift subl e in
       let u' = var_subst_type shift subl u in
       if e' == e && u' == u then t else get_pos t, F_Singleton(e',u')
 
-let rec var_subst_kind shift subl k = 
+let rec var_subst_kind shift subl k =
    match k with
    | K_primitive_judgment | K_ulevel | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression -> k
-   | K_Pi(v,a,b) -> 
+   | K_Pi(v,a,b) ->
        let a' = var_subst_type shift subl a in
        let shift = shift + 1 in
        let b' = var_subst_kind shift subl b in
@@ -208,23 +208,23 @@ let rel2_type v0 v1 t = var_subst_type [v0;v1] t
 
 let rel3_type v0 v1 v2 t = var_subst_type [v0;v1;v2] t
 
-let lambda1 v0 x = 
+let lambda1 v0 x =
   nowhere 55 (
   LAMBDA(v0, rel1_expr v0 x))
 
-let lambda2 v0 v1 x = 
+let lambda2 v0 v1 x =
   nowhere 56 (
-  LAMBDA(v0, 
+  LAMBDA(v0,
 	 nowhere 57 (
 	 LAMBDA(v1, rel2_expr v0 v1 x))))
 
-let lambda3 v0 v1 v2 x = 
+let lambda3 v0 v1 v2 x =
   nowhere 58 (
-  LAMBDA(v0, 
+  LAMBDA(v0,
 	 nowhere 59 (
-	 LAMBDA(v1, 
+	 LAMBDA(v1,
 		nowhere 60 (
-		LAMBDA(v2, 
+		LAMBDA(v2,
 		       rel3_expr v0 v1 v2 x))))))
 
 let make_Var c = Var c
@@ -267,7 +267,7 @@ let make_O_ii2 t t' o = make_O O_ii2 (t **t'**o ** END)
 let make_O_sum tT tT' s s' o (x,tS) = make_O O_sum (tT ** tT'** s ** s'** o ** lambda1 x tS ** END)
 let make_O_empty = make_O O_empty END
 let make_O_empty_r t o = make_O O_empty_r (t ** o ** END)
-let make_O_c tA a (x,tB,(y,tD,(z,q))) b f = make_O O_c ( 
+let make_O_c tA a (x,tB,(y,tD,(z,q))) b f = make_O O_c (
   a ** lambda1 x tB ** lambda2 x y tD ** lambda3 x y z q  ** END)
 let make_O_ip_r tA a (x,tB,(y,tD,(z,q))) i (x',(v,tS)) t = make_O O_ip_r (
   tA ** a ** lambda1 x tB ** lambda2 x y tD ** lambda3 x y z q ** i ** lambda2  x' v tS ** t ** END)
@@ -287,7 +287,7 @@ let make_W_weleq peq = make_W W_weleq (peq ** END)
 let make_W_Wrefl = make_W W_wrefl END
 let make_T_Pi' t1 t2 = make_T T_Pi' (t1 ** t2 ** END)
 
-(* 
+(*
   Local Variables:
   compile-command: "make -C .. src/helpers.cmo "
   End:

@@ -12,7 +12,7 @@ let err env pos msg = raise (TypeCheckingFailure (env, [], [pos, msg]))
 
 let errmissingarg env pos a = err env pos ("missing next argument, of type "^lf_type_to_string a)
 
-let mismatch_type env pos t pos' t' = 
+let mismatch_type env pos t pos' t' =
   raise (TypeCheckingFailure (env, [], [
          pos , "expected type " ^ lf_type_to_string t;
          pos', "to match      " ^ lf_type_to_string t']))
@@ -28,13 +28,13 @@ let mismatch_term_type_type env e s t =
                get_pos s, "of type\n\t" ^ lf_type_to_string s;
                get_pos t, "to be compatible with type\n\t" ^ lf_type_to_string t]))
 
-let mismatch_term_t env pos x pos' x' t = 
+let mismatch_term_t env pos x pos' x' t =
   raise (TypeCheckingFailure (env, [], [
                     pos , "error: expected term\n\t" ^ lf_expr_to_string x ;
                     pos',      "to match\n\t" ^ lf_expr_to_string x';
                get_pos t,       "of type\n\t" ^ lf_type_to_string t]))
 
-let mismatch_term env pos x pos' x' = 
+let mismatch_term env pos x pos' x' =
   raise (TypeCheckingFailure (env, [], [
                     pos , "error: expected term\n\t" ^ lf_expr_to_string x;
                     pos',      "to match\n\t" ^ lf_expr_to_string x']))

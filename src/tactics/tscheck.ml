@@ -51,7 +51,7 @@ let rec type_check (env:environment) (e:lf_expr) (t:lf_expr) (dt:lf_expr) : lf_e
   (* see figure 13, page 716 [EEST] *)
   let (s,ds,h) = type_synthesis env e in	(* ds : istype x ; h : hastype e s *)
   if Alpha.UEqual.term_equiv empty_uContext s t then h
-  else 
+  else
   let e = type_equivalence env s ds t dt in	(* e : tequal s t *)
   ignore e;
   raise NotImplemented			(* here we'll apply the rule "cast" *)
@@ -91,7 +91,7 @@ let rec tscheck surr env pos tp args =
   match unmark tp with
   | F_Apply(F_istype,[t]) -> (
       if tactic_tracing then see "t" t;
-      match unmark t with 
+      match unmark t with
       | APPLY(T T_Pi,args) -> (
 	  let (a,b) = args2 args in
 	  if tactic_tracing then (see "a" a; see "b" b);
@@ -108,12 +108,12 @@ let rec tscheck surr env pos tp args =
 	NotImplemented|Args_match_failure -> TacticFailure
      )
   | F_Pi(v,a,b) -> (
-      match tscheck surr (lf_bind env v a) (get_pos tp) b args with 
+      match tscheck surr (lf_bind env v a) (get_pos tp) b args with
       | TacticSuccess e -> TacticSuccess (with_pos pos (LAMBDA(v,e)))
       | TacticFailure as r -> r)
   | _ -> Default.default surr env pos tp args
 
-(* 
+(*
   Local Variables:
   compile-command: "make -C ../.. src/tactics/tscheck.cmo "
   End:

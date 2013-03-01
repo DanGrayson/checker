@@ -4,9 +4,9 @@ Include "rules/TS1.ts".
 
 # Pt, pt, tt
 
-Axiom 5.3.1 Pt_istype ⊢ Pt Type. 
+Axiom 5.3.1 Pt_istype ⊢ Pt Type.
 
-Axiom 5.3.2 tt_hastype ⊢ tt : Pt. 
+Axiom 5.3.2 tt_hastype ⊢ tt : Pt.
 
 Axiom 5.3.3 Pt_eta { ⊢ o : Pt } [ o ≡ tt : Pt ].
 
