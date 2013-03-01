@@ -122,35 +122,37 @@ let unbind_relative p : binder list * binder option * lf_type =
 
      K gets rewritten by incrementing the relative indices of its exposed variables.
   *)
+
+let pi1_debug = true
+
 let pi1_implication ((vpos,v),t) u =
-  let debug = true in 
-  if debug then printf "\npi1_implication:\n t = %a\n%!" _t t;
-  if debug then printf " u = %a\n%!" _t u;
+  if pi1_debug then printf "\npi1_implication:\n t = %a\n%!" _t t;
+  if pi1_debug then printf " u = %a\n%!" _t u;
   let (p,e,j) = unbind_relative t in
   let m = List.length p in
-  if debug then show_binders "p" p "e" e;
-  if debug then printf " j = %a\n%!" _t j;
+  if pi1_debug then show_binders "p" p "e" e;
+  if pi1_debug then printf " j = %a\n%!" _t j;
   let (q,f,k) = unbind_relative u in
   let n = List.length q + match f with Some _ -> 1 | None -> 0 in
-  if debug then show_binders "q" q "f" f;
-  if debug then printf " k = %a\n%!" _t k;
+  if pi1_debug then show_binders "q" q "f" f;
+  if pi1_debug then printf " k = %a\n%!" _t k;
   match e with
   | Some (pos,e,ee) ->
       let j = Substitute.subst_type (with_pos pos (apply_vars (VarRel (m+n)) (List.rev p))) j in
-      if debug then printf " j = substituted = %a\n%!" _t j;
+      if pi1_debug then printf " j = substituted = %a\n%!" _t j;
       let ee = bind_pi_list_rev p ee in
-      if debug then printf " ee = bind_pi_list_rev p ee = %a\n%!" _t ee;
+      if pi1_debug then printf " ee = bind_pi_list_rev p ee = %a\n%!" _t ee;
       let j = bind_pi_list_rev p j in
-      if debug then printf " j = bind_pi_list_rev p j = %a\n%!" _t j;
+      if pi1_debug then printf " j = bind_pi_list_rev p j = %a\n%!" _t j;
       let k = rel_shift_type 1 k in
-      if debug then printf " k = rel_shift_type 1 k = %a\n%!" _t k;
+      if pi1_debug then printf " k = rel_shift_type 1 k = %a\n%!" _t k;
       let k = arrow j k in
-      if debug then printf " k = arrow j k = %a\n%!" _t k;
+      if pi1_debug then printf " k = arrow j k = %a\n%!" _t k;
       let j = bind_pi_list_rev q (bind_some_sigma f k) in
-      if debug then printf " j = bind_pi_list_rev q (bind_some_sigma f k) = %a\n%!" _t j;
-      let t = bind_pi (pos,v,ee) j in
-      if debug then printf " t = bind_pi (pos,v,ee) j = %a\n%!" _t t;
-      t
+      if pi1_debug then printf " j = bind_pi_list_rev q (bind_some_sigma f k) = %a\n%!" _t j;
+      let r = bind_pi (pos,v,ee) j in
+      if pi1_debug then printf " r = bind_pi (pos,v,ee) j = %a\n%!" _t r;
+      r
   | None -> raise NotImplemented
 
 let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_type) (t2 : position -> var -> lf_type) (u : lf_type) =
@@ -165,9 +167,20 @@ let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_t
 
 let apply_judgment_binder pos (j:lf_type) (u:lf_type) =
   (* just like pi1_implication above, except t consists just of j, with no p or e *)
+  if pi1_debug then printf "\napply_judgment_binder:\n j = %a\n u = %a\n%!" _t j _t u;
   let (q,f,k) = unbind_relative u in
+  if pi1_debug then show_binders "q" q "f" f;
+  if pi1_debug then printf " k = %a\n%!" _t k;
+  let n = List.length q + match f with Some _ -> 1 | None -> 0 in
+  let j = Substitute.subst_type (var_to_lf_pos pos (VarRel n)) j in
+  if pi1_debug then printf " j = substituted = %a\n%!" _t j;
+  let k = rel_shift_type 1 k in
+  if pi1_debug then printf " k = rel_shift_type 1 k = %a\n%!" _t k;
   let k = arrow j k in
-  bind_pi_list_rev q (bind_some_sigma f k)
+  if pi1_debug then printf " k = arrow j k = %a\n%!" _t k;
+  let r = bind_pi_list_rev q (bind_some_sigma f k) in
+  if pi1_debug then printf " r = bind_pi_list_rev q (bind_some_sigma f k) = %a\n%!" _t r;
+  r
 
 (*
   Local Variables:
