@@ -692,14 +692,10 @@ let rec term_normalization (env:environment) (x:lf_expr) (t:lf_type) : lf_expr =
   let (pos,t0) = t in
   match t0 with
   | F_Pi(v,a,b) ->
-      let v' = bound_var_override x v in
-      let w = v' in			(*??*)
-      let w' = var_to_lf w in
-      let b = subst_type (v,w') b in
-      let env = lf_bind env w a in
-      let result = apply_args x (ARG(w',END)) in (* here w' is still a named variable, so it ends up undefined; should be a relative indexed variable *)
+      let env = lf_bind env v a in
+      let result = apply_args x (ARG(var_to_lf (VarRel 0),END)) in
       let body = term_normalization env result b in
-      pos, LAMBDA(w,body)
+      pos, LAMBDA(v,body)
   | F_Sigma(v,a,b) ->
       let pos = get_pos x in
       let p = x in
