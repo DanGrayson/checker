@@ -154,8 +154,12 @@ let checkLFtypeCommand env t =
     printf "           : %a [after tactics]\n%!" _t t';
   if try_normalization then (
     let t'' = Lfcheck.type_normalization env t' in
-    if not (Alpha.UEqual.type_equiv empty_uContext t' t'') then
-      printf "           : %a [after normalization]\n%!" _t t'')
+    if not (Alpha.UEqual.type_equiv empty_uContext t' t'') then (
+      printf "           : %a [after normalization] ... %!" _t t'';
+      ignore (Lfcheck.type_validity [] env t'');
+      printf "okay\n%!";
+      )
+   )
 
 let checkWitnessedJudgmentCommand env t =
   printf "Check      : %a\n%!" _t t;

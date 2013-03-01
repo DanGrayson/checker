@@ -137,41 +137,48 @@ let locate x l =
     | [] -> raise Not_found
     in repeat 0 l
 
-let rec rel_shift_expr shift e =
+let rec rel_shift_expr limit shift e =
   match unmark e with
   | APPLY(h,args) -> (
-      let args' = map_spine (rel_shift_expr shift) args in
+      let args' = map_spine (rel_shift_expr limit shift) args in
       match h with
-      | V (VarRel i) -> get_pos e, APPLY(V (VarRel (i + shift)),args')
+      | V (VarRel i) when i >= limit -> 
+	  let i = i + shift in
+	  if i < 0 then raise Internal;
+	  get_pos e, APPLY(V (VarRel i),args')
       | _ -> if args == args' then e else get_pos e, APPLY(h,args'))
   | CONS(x,y) ->
-      let x' = rel_shift_expr shift x in
-      let y' = rel_shift_expr shift y in
+      let x' = rel_shift_expr limit shift x in
+      let y' = rel_shift_expr limit shift y in
       if x' == x && y' == y then e else get_pos e, CONS(x',y')
   | LAMBDA(v, body) ->
-      let shift = shift + 1 in
-      let body' = rel_shift_expr shift body in
+      let limit = limit + 1 in
+      let body' = rel_shift_expr limit shift body in
       if body' == body then e else get_pos e, LAMBDA(v, body')
 
-and rel_shift_type shift t =
+and rel_shift_type limit shift t =
   match unmark t with
   | F_Pi(v,a,b) ->
-      let a' = rel_shift_type shift a in
-      let shift = shift + 1 in
-      let b' = rel_shift_type shift b in
+      let a' = rel_shift_type limit shift a in
+      let limit = limit + 1 in
+      let b' = rel_shift_type limit shift b in
       if a' == a && b' == b then t else get_pos t, F_Pi(v,a',b')
   | F_Sigma(v,a,b) ->
-      let a' = rel_shift_type shift a in
-      let shift = shift + 1 in
-      let b' = rel_shift_type shift b in
+      let a' = rel_shift_type limit shift a in
+      let limit = limit + 1 in
+      let b' = rel_shift_type limit shift b in
       if a' == a && b' == b then t else get_pos t, F_Sigma(v,a',b')
   | F_Apply(label,args) ->
-      let args' = List.map (rel_shift_expr shift) args in
+      let args' = List.map (rel_shift_expr limit shift) args in
       if args' == args then t else get_pos t, F_Apply(label, args')
   | F_Singleton(e,u) ->
-      let e' = rel_shift_expr shift e in
-      let u' = rel_shift_type shift u in
+      let e' = rel_shift_expr limit shift e in
+      let u' = rel_shift_type limit shift u in
       if e' == e && u' == u then t else get_pos t, F_Singleton(e',u')
+
+let rel_shift_expr shift e = rel_shift_expr 0 shift e
+
+let rel_shift_type shift e = rel_shift_type 0 shift e
 
 let head_to_type env pos = function
   | W h -> whead_to_lf_type h

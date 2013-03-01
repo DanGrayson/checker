@@ -51,7 +51,15 @@ let rec bind_pi_list_rev binders b =
   | binder :: binders -> bind_pi_list_rev binders (bind_pi binder b)
 
 let apply_vars f binders =
-  Substitute.apply_args f (List.fold_right (fun (pos,v,a) accu -> (ARG(var_to_lf_pos pos v,accu))) binders END)
+  let i = ref 0 in
+  APPLY(V f, 
+	List.fold_right 
+	  (fun (pos,v,a) args -> 
+	    let r = ARG(var_to_lf_pos pos (VarRel !i),args) in
+	    incr i;
+	    r) 
+	  binders
+	  END)
 
  (** for a type p of the form (e:E) ** J we return (e,E),J *)
 let unbind_pair p : binder option * lf_type =
@@ -65,13 +73,15 @@ let good_var_name p v =
   | None, b -> v
 
  (** for a type p of the form (p_1:P_1) -> ... -> (p_n:P_n) -> (e:E) ** J we
-     return [p_n,P_n;...;p_1,P_n],(e,E),J. *)
+     return [p_n,P_n;...;p_1,P_n],Some (e,E),J.  If there is no Sigma-type
+     inseid, then return [],None,p
+  *)
 let unbind_relative p : binder list * binder option * lf_type =
   let rec repeat binders p =
     match unmark p with
     | F_Pi(v,a,b) -> repeat ((get_pos p,v,a) :: binders) b
     | F_Sigma(v,a,b) -> binders, Some (get_pos p,v,a), b
-    | _ -> [], None, bind_pi_list_rev binders p
+    | _ -> [], None, bind_pi_list_rev binders p (* it would be better to raise an exception here, instead of reassembling p *)
   in
   repeat [] p
 
@@ -81,20 +91,36 @@ let unbind_relative p : binder list * binder option * lf_type =
      similarly for u.  We return a new type describing a parametrized
      expression of type (P->E)->(Q->F) together with a judgment about it, of
      type (P->J)->K.  The resulting type looks like (e:P -> E) -> Q -> (f:F) **
-     (P -> J) -> K.  All this goes through if t has the form P_1 -> ... -> P_n
+     (P -> J) -> K.  All this goes through if t has the form P_(n-1) -> ... -> P_0
      -> (e:E) ** J, and similarly for u, because we can rewrite t in terms of
      P = P_1 ** ... ** P_n. *)
 let pi1_implication ((vpos,v),t) u =
+  printf "pi1_implication:\n t = %a\n%!" _t t;
+  printf " u = %a\n%!" _t u;
   let (p,e,j) = unbind_relative t in
+  let m = List.length p in
+  printf " j = %a\n%!" _t j;
   let (q,f,k) = unbind_relative u in
+  let n = List.length q in
+  printf " k = %a\n%!" _t k;
   match e with
   | Some (pos,e,ee) ->
-      let j = Substitute.subst_type (e,apply_vars (var_to_lf_pos pos v) (List.rev p)) j in
+      let j = Substitute.subst_type (e, with_pos pos (apply_vars (VarRel (m+1+n)) (List.rev p))) j in
+      printf " j = %a\n%!" _t j;
       let ee = bind_pi_list_rev p ee in
+      printf " ee = %a\n%!" _t ee;
       let j = bind_pi_list_rev p j in
+      printf " j = %a\n%!" _t j;
+      let j = rel_shift_type (-1) j in
+      printf " j = %a\n%!" _t j;
+      let k = rel_shift_type 1 k in
+      printf " k = %a\n%!" _t k;
       let k = arrow j k in
+      printf " k = %a\n%!" _t k;
       let j = bind_pi_list_rev q (bind_some_sigma f k) in
+      printf " j = %a\n%!" _t j;
       let t = bind_pi (pos,v,ee) j in
+      printf " t = %a\n%!" _t t;
       t
   | None -> raise NotImplemented
 
