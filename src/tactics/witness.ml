@@ -28,7 +28,7 @@ let open_context t1 (env,o,t2) =
   let v = Var "x" in
   let v' = Var_wd "x" in
   let env = tts_bind env v' v t1 in
-  let e = var_to_lf v ** var_to_lf v' ** END in (*??*)
+  let e = var_to_lf (VarRel 1) ** var_to_lf (VarRel 0) ** END in
   let o = Substitute.apply_args o e in
   let t2 = Substitute.apply_args t2 e in
   (env,o,t2)
@@ -51,7 +51,7 @@ and find_w_hastype env o t : lf_expr = (
   match unmark o with
   | APPLY(V v, END) ->
       let (p,_) = tts_fetch env v in
-      var_to_lf_pos (get_pos o) p
+      var_to_lf_pos (get_pos o) p	(*not right*)
   | APPLY(O O_ev',args) ->
       let (f,o,t1,t2) = args4 args in
       let tf = nowhere 206 (make_T_Pi' t1 t2) in
@@ -72,7 +72,7 @@ and find_w_hastype env o t : lf_expr = (
  )
 
 let rec find_w_type_equality env t t' =
-  if equivalence t t' then (
+  if term_equiv t t' then (
     nowhere 206 make_W_Wrefl)
   else (
     match unmark t, unmark t' with
@@ -85,7 +85,7 @@ let rec find_w_type_equality env t t' =
     | _ -> raise WitnessNotFound)
 
 and find_w_object_equality env o o' t =
-  if equivalence o o' then (
+  if term_equiv o o' then (
     let p = find_w_hastype env o t in
     let p' = find_w_hastype env o' t in
     let w = make_W_wrefl p p' in
@@ -93,11 +93,11 @@ and find_w_object_equality env o o' t =
   else (
     try
       let (q,oo) = this_head_reduces env o in
-      if equivalence oo o' then q
+      if term_equiv oo o' then q
       else raise WitnessNotFound
     with Not_found -> (
       let (q,oo') = this_head_reduces env o' in
-      if equivalence o oo' then raise NotImplemented
+      if term_equiv o oo' then raise NotImplemented
       else raise WitnessNotFound
       )
    )

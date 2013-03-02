@@ -1,5 +1,4 @@
 open Typesystem
-open Lfcheck
 open Printer
 open Printf
 open Errorcheck
@@ -7,23 +6,18 @@ open Variables
 
 exception FoundOne of var
 
+let type_equiv = Alpha.UEquivA.type_equiv empty_uContext
+
 (** find the first variable in the context of the right type and return it *)
 let assumption surr env pos t args =
-  if tactic_tracing then printf "assumption: t = %a\n%!" _t t;
-  let rec repeat = function
+  if Lfcheck.tactic_tracing then printf "assumption: t = %a\n%!" _t t;
+  let rec repeat i = function
     | (v,u) :: envp -> (
-	if is_subtype env u t
-	then TacticSuccess(var_to_lf v)
-	else repeat envp)
-    | [] -> (
-	try
-	  MapString.iter
-	    (fun name u -> if is_subtype env u t then raise (FoundOne (Var name)))
-	    env.global_lf_context;
-	  TacticFailure
-	with FoundOne v -> TacticSuccess(var_to_lf v)
-	)
-  in repeat env.lf_context
+	if type_equiv (i+1) u t
+	then TacticSuccess(var_to_lf (VarRel i))
+	else repeat (i+1) envp)
+    | [] -> TacticFailure
+  in repeat 0 env.lf_context
 
 (*
   Local Variables:

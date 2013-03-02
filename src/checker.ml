@@ -111,19 +111,19 @@ let defCommand env defs =
       if show_definitions then printf "Define %a = %a\n%!" _v v  _e tm (* else printf "Define %a\n%!" _v v *);
       if show_definitions then printf "       %a : %a\n%!" _v v  _t tp;
       let tp' = type_validity [] env tp in
-      if not (Alpha.UEqual.type_equiv empty_uContext tp tp') then
+      if not (type_equiv tp tp') then
       if show_definitions then printf "       %a : %a [after tactics]\n%!" _v v  _t tp';
       let tm' = type_check [] env tm tp' in
-      if not (Alpha.UEqual.term_equiv empty_uContext tm tm') then (
+      if not (term_equiv tm tm') then (
 	if show_definitions then printf "       %a = %a [after tactics]\n%!" _v v  _e tm');
       let tm'' = term_normalization env tm' tp' in
-      if not (Alpha.UEqual.term_equiv empty_uContext tm' tm'') then (
+      if not (term_equiv tm' tm'') then (
 	if show_definitions then printf "       %a = %a [normalized]\n%!" _v v  _e tm'';
 	(* if show_definitions then printf "       %a = %a [normalized, TS format]\n%!" _v v  _ts tm''; *)
 	let _ = type_check [] env tm'' tp' in ();
        );
       let tp'' = type_normalization env tp' in
-      if not (Alpha.UEqual.type_equiv empty_uContext tp' tp'') then (
+      if not (type_equiv tp' tp'') then (
 	if show_definitions then printf "       %a : %a [normalized]\n%!" _v v  _t tp'';
 	let _ = type_validity [] env tp'' in ();
        );
@@ -150,11 +150,11 @@ let checkLFCommand env pos x =
 let checkLFtypeCommand env t =
   printf "Check      : %a\n%!" _t t;
   let t' = Lfcheck.type_validity [] env t in
-  if not (Alpha.UEqual.type_equiv empty_uContext t t') then
+  if not (type_equiv t t') then
     printf "           : %a [after tactics]\n%!" _t t';
   if try_normalization then (
     let t'' = Lfcheck.type_normalization env t' in
-    if not (Alpha.UEqual.type_equiv empty_uContext t' t'') then (
+    if not (type_equiv t' t'') then (
       printf "           : %a [after normalization] ... %!" _t t'';
       ignore (Lfcheck.type_validity [] env t'');
       printf "okay\n%!";
@@ -164,7 +164,7 @@ let checkLFtypeCommand env t =
 let checkWitnessedJudgmentCommand env t =
   printf "Check      : %a\n%!" _t t;
   let t' = Lfcheck.type_validity [] env t in
-  if not (Alpha.UEqual.type_equiv empty_uContext t t') then
+  if not (type_equiv t t') then
     printf "           : %a [after tactics]\n%!" _t t';
   Lfcheck.check env t';
   printf "           : okay\n%!"
@@ -185,7 +185,7 @@ let checkTSCommand env x =
     printf "           = %a [normalized]\n%!" _e x'
 
 let alphaCommand env (x,y) =
-  printf "Alpha      : %s\n" (if (Alpha.UEqual.term_equiv (UContext ([],[])) x y) then "true" else "false");
+  printf "Alpha      : %s\n" (if (term_equiv x y) then "true" else "false");
   printf "           : %a\n" _ts x;
   printf "           : %a\n%!" _ts y
 

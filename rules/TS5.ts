@@ -8,9 +8,9 @@ Axiom 15.5.1 nat_hastype [ nat : UU[uu0] ].
 
 Definition LF Nat : texp := (El nat).
 
-Lemma Nat_istype [ Nat Type ] := El_istype[uu0,nat,CDR,_].
+Lemma Nat_istype [ Nat Type ] := El_istype[uu0,nat,CDR,nat_hastype].
 
-Definition Nat' Type := (*nat, El_istype[uu0,nat,CDR,_]).
+Definition Nat' Type := (*nat, El_istype[uu0,nat,CDR,nat_hastype]).
 
 Axiom 15.5.2 O_hastype [ O : Nat ].
 
@@ -33,7 +33,7 @@ Lemma nat_S_reduction_sanity1 { x : Nat ⊢ T Type } { ⊢ o1 : T[O] } { ⊢ o2 
       T ⟾ T' ⟾ o1 ⟾ o1' ⟾ o2 ⟾ o2' ⟾ n ⟾ n' ⟾
       nat_r_hastype[
       	T, o1, o2, @[ev;_][S,n,Nat,Nat], CDR,
-	T',_, _, ev_hastype[Nat,_⟾Nat,S,n,CDR,_,_,_,_]
+	T',_, _, ev_hastype[Nat,_⟾Nat,S,n,CDR,Nat_istype,_ ⟾ _ ⟾Nat_istype,S_hastype,_]
 	].
 
 Lemma nat_S_reduction_sanity2 { x : Nat ⊢ T Type } { ⊢ o1 : T[O] } { ⊢ o2 : ∏ x:Nat, T[x] -> T[ @[ev;_][S,x,Nat,Nat] ] }

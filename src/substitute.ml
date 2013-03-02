@@ -8,11 +8,16 @@ open Names
 open Printer
 open Printf
 
-(** Routines for replacing relative variables (deBruijn index variables) by expressions.
+(** Routines for replacing relative variables (deBruijn index variables) by
+    expressions.
 
     In these routines, [subs] is an array of expressions, whose i-th element is
-    to replace (VarRel i), if i is small enough, otherwise i is decreased by the
-    length of [subs].
+    to replace [VarRel (i + shift)] in [e], with its variables' relative
+    indices increased by [shift].  Variables with relative indices too large to
+    be covered have their indices decreased by the length of [subs].
+
+    Descending into an expression with a bound variable increases [shift] by 1.
+
  *)
 let rec subst_expr shift subs e =
   let pos = get_pos e in
@@ -20,11 +25,13 @@ let rec subst_expr shift subs e =
   | APPLY(h,args) -> (
       let args' = map_spine (subst_expr shift subs) args in
       match h with
-      | V (VarRel i) ->
-	  if i < shift then e else
-	  if i-shift < Array.length subs 
-	  then apply_args (rel_shift_expr shift subs.(i-shift)) args'
-	  else pos, APPLY(V (VarRel (i - Array.length subs)),args')
+      | V (VarRel j) ->
+	  if j < shift then e 
+	  else
+	    let i = j-shift in
+	    if i < Array.length subs 
+	    then apply_args (rel_shift_expr shift subs.(i)) args'
+	    else pos, APPLY(V (VarRel (j - Array.length subs)),args')
       | _ -> 
 	  if args' == args then e else pos, APPLY(h,args'))
   | CONS(x,y) -> 
@@ -36,24 +43,24 @@ let rec subst_expr shift subs e =
       let body' = subst_expr shift subs body in
       if body' == body then e else pos, LAMBDA(v, body')
 
-and apply_args e args =
-  let rec repeat e args =
+and apply_args shift e args =
+  let rec repeat shift e args =
     let pos = get_pos e in
     match unmark e with
     | APPLY(h,brgs) -> (pos, APPLY(h, join_args brgs args))
     | CONS(x,y) -> (
         match args with
         | ARG _ -> raise (GeneralError "too many arguments")
-        | CAR args -> repeat x args
-	| CDR args -> repeat y args
+        | CAR args -> repeat shift x args
+	| CDR args -> repeat shift y args
         | END -> e)
     | LAMBDA(v,body) -> (
         match args with
-        | ARG(x,args) -> repeat (subst_expr 0 [|x|] body) args
-        | CAR args -> raise (GeneralError "pi1 expected a pair (1)")
-	| CDR args -> raise (GeneralError "pi2 expected a pair (1)")
+        | ARG(x,args) -> repeat shift (subst_expr 0 [|x|] body) args
+        | CAR args -> raise (GeneralError "pi1 expected a pair")
+	| CDR args -> raise (GeneralError "pi2 expected a pair")
         | END -> e)
-  in repeat e args
+  in repeat shift e args
 
 and subst_type shift subs t =
   match unmark t with

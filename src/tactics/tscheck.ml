@@ -50,7 +50,7 @@ let rec type_check (env:environment) (e:lf_expr) (t:lf_expr) (dt:lf_expr) : lf_e
   (* dt : istype t *)
   (* see figure 13, page 716 [EEST] *)
   let (s,ds,h) = type_synthesis env e in	(* ds : istype x ; h : hastype e s *)
-  if Alpha.UEqual.term_equiv empty_uContext s t then h
+  if Alpha.UEqual.term_equiv empty_uContext 0 s t then h
   else
   let e = type_equivalence env s ds t dt in	(* e : tequal s t *)
   ignore e;
