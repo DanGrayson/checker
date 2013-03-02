@@ -301,8 +301,8 @@ let rec lf_kind_to_string_with_subs subs = function
 let spine_to_string args = paren_left bottom_prec (
   args_fold
     (fun accu arg -> spine_prec, paren_left spine_prec accu ^ ";" ^ paren_right spine_prec (lf_expr_to_string_with_subs [] arg))
-    (fun accu -> spine_prec, paren_left spine_prec accu ^ ";π₁")
-    (fun accu -> spine_prec, paren_left spine_prec accu ^ ";π₂")
+    (fun accu -> spine_prec, paren_left spine_prec accu ^ ";CAR")
+    (fun accu -> spine_prec, paren_left spine_prec accu ^ ";CDR")
     (top_prec,"") args)
 
 let lf_expr_to_string e = paren_right bottom_prec (lf_expr_to_string_with_subs [] e)

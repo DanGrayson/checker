@@ -67,10 +67,10 @@ and subst_type shift subs t =
       let shift = shift + 1 in
       let b' = subst_type shift subs b in
       if a' == a && b' == b then t else get_pos t, F_Sigma(v,a',b')
-  | F_Singleton(e,t) ->
+  | F_Singleton(e,u) ->
       let e' = subst_expr shift subs e in
-      let t' = subst_type shift subs t in
-      if e' == e && t' == t then t else get_pos t, F_Singleton(e',t')
+      let u' = subst_type shift subs u in
+      if e' == e && u' == u then t else get_pos t, F_Singleton(e',u')
   | F_Apply(label,args) -> 
       let args' = map_list (subst_expr shift subs) args in
       if args' == args then t else get_pos t, F_Apply(label, args')

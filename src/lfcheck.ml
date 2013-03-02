@@ -503,6 +503,123 @@ let rec is_product_type env t =
   | F_Singleton(_,t) -> is_product_type env t
   | F_Sigma _ | F_Apply _ -> false
 
+(** Normalization routines. *)
+
+(* We may wish to put the normalization routines in another file. *)
+
+let rec num_args t = match unmark t with
+  | F_Pi(_,_,b) -> 1 + num_args b
+  | _ -> 0
+
+let rec term_normalization (env:environment) (x:lf_expr) (t:lf_type) : lf_expr =
+  (* see figure 9 page 696 [EEST] *)
+  let (pos,t0) = t in
+  match t0 with
+  | F_Pi(v,a,b) ->
+      let env = lf_bind env v a in
+      let result = apply_args x (ARG(var_to_lf (VarRel 0),END)) in
+      let body = term_normalization env result b in
+      pos, LAMBDA(v,body)
+  | F_Sigma(v,a,b) ->
+      let pos = get_pos x in
+      let p = x in
+      let x = pi1 p in
+      let y = pi2 p in
+      let x = term_normalization env x a in
+      let b = subst_type x b in
+      let y = term_normalization env y b in
+      pos, CONS(x,y)
+  | F_Apply _ ->
+      let x = head_normalization env x in
+      let (x,t) = path_normalization env x in
+      x
+  | F_Singleton(x',t) -> term_normalization env x t
+
+and path_normalization (env:environment) (x:lf_expr) : lf_expr * lf_type =
+  (* returns the normalized term x and the inferred type of x *)
+  (* see figure 9 page 696 [EEST] *)
+  (* assume x is head normalized *)
+  if !debug_mode then printf " path_normalization entering with x=%a\n%!" _e x;
+  let pos = get_pos x in
+  match unmark x with
+  | LAMBDA _ -> err env pos "path_normalization encountered a function"
+  | CONS _ -> err env pos "path_normalization encountered a pair"
+  | APPLY(head,args) -> (
+      if !debug_mode then printf "\thead=%a args=%a\n%!" _h head _s args;
+      let t0 = head_to_type env pos head in
+      let (t,args) =
+        let args_passed = END in          (* we store the arguments we've passed in reverse order *)
+        let rec repeat t args_passed args : lf_type * spine = (
+	  if !debug_mode then printf " path_normalization repeat\n\tt=%a\n\targs_passed=%a\n\targs=%a\n%!" _e x _s args_passed _s args;
+          match unmark t with
+          | F_Pi(v,a,b) -> (
+              match args with
+              | END -> raise (TypeCheckingFailure (env, [], [
+                                                    pos , "expected "^string_of_int (num_args t)^" more arguments";
+                                                    (get_pos t0), (" using:\n\t"^lf_head_to_string head^" : "^lf_type_to_string t0)]))
+              | CAR args -> err env pos "pi1 expected a pair (4)"
+              | CDR args -> err env pos "pi2 expected a pair (4)"
+              | ARG(x, args) ->
+                  let b = subst_type x b in
+                  let x = term_normalization env x a in
+                  let (c,args) = repeat b (ARG(x,args_passed)) args in
+                  (c, ARG(x,args)))
+          | F_Singleton _ ->
+	      if !debug_mode then printf "\tbad type t = %a\n%!" _t t;
+	      print_context (Some 5) stdout env;
+	      (trap(); raise Internal) (* x was head normalized, so any definition of head should have been unfolded *)
+          | F_Sigma(v,a,b) -> (
+              match args with
+              | END -> (t,END)
+              | CAR args ->
+                  let (c,args) = repeat a (CAR args_passed) args in
+                  (c, CAR args)
+              | CDR args ->
+                  let b = subst_car_passed_term pos head args_passed b in
+                  let (c,args) = repeat b (CDR args_passed) args in
+                  (c, CDR args)
+              | ARG(x,_) -> err env (get_pos x) "unexpected argument")
+          | F_Apply _ -> (
+              match args with
+              | END -> (t,END)
+              | CAR args -> err env pos "pi1 expected a pair (5)"
+              | CDR args -> err env pos "pi2 expected a pair (5)"
+              | ARG(x,args) -> err env (get_pos x) "unexpected argument")
+	 ) in
+	repeat t0 args_passed args in
+      ((pos,APPLY(head,args)), t))
+
+let rec type_normalization (env:environment) (t:lf_type) : lf_type =
+  (* see figure 9 page 696 [EEST] *)
+  let (pos,t0) = t in
+  let t = match t0 with
+  | F_Pi(v,a,b) ->
+      let a' = type_normalization env a in
+      let b' = type_normalization (lf_bind env v a) b in
+      F_Pi(v,a',b')
+  | F_Sigma(v,a,b) ->
+      let a' = type_normalization env a in
+      let b' = type_normalization (lf_bind env v a) b in
+      F_Sigma(v,a',b')
+  | F_Apply(head,args) ->
+      let kind = tfhead_to_kind head in
+      let args =
+        let rec repeat env kind (args:lf_expr list) =
+          match kind, args with
+          | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), [] -> []
+          | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), x :: args -> err env pos "too many arguments"
+          | K_Pi(v,a,kind'), x :: args ->
+              term_normalization env x a ::
+              repeat (lf_bind env v a) kind' args
+          | K_Pi(_,a,_), [] -> errmissingarg env pos a
+        in repeat env kind args
+      in F_Apply(head,args)
+  | F_Singleton(x,t) ->
+      F_Singleton( term_normalization env x t, type_normalization env t )
+  in (pos,t)
+
+(** Type checking routines *)
+
 let rec type_check (surr:surrounding) (env:environment) (e0:lf_expr) (t:lf_type) : lf_expr =
   (* assume t has been verified to be a type *)
   (* see figure 13, page 716 [EEST] *)
@@ -554,7 +671,14 @@ let rec type_check (surr:surrounding) (env:environment) (e0:lf_expr) (t:lf_type)
       try
         subtype env s t;
         e
-      with SubtypeFailure -> mismatch_term_type_type env e0 (un_singleton s) t
+      with SubtypeFailure -> 
+	printf " s = %a\n%!" _t s;
+	printf " t = %a\n%!" _t t;
+	let s' = type_normalization env s in
+	let t' = type_normalization env t in
+	printf " s' = %a\n%!" _t s';
+	printf " t' = %a\n%!" _t t';
+	mismatch_term_type_type env e0 (un_singleton s) t
 
 and type_synthesis (surr:surrounding) (env:environment) (m:lf_expr) : lf_expr * lf_type =
   (* assume nothing *)
@@ -671,126 +795,6 @@ let type_validity (surr:surrounding) (env:environment) (t:lf_type) : lf_type =
   type_validity surr env t
 
 let type_synthesis = type_synthesis []
-
-(** Normalization routines. *)
-
-(* We may wish to put the normalization routines in another file. *)
-
-let rec num_args t = match unmark t with
-  | F_Pi(_,_,b) -> 1 + num_args b
-  | _ -> 0
-
-let bound_var_override f w =		(* just to get a good variable name *)
-  match unmark f with
-  | LAMBDA(v,_) -> if isunused v then if isunused w then Var "m" else w else v
-  | _ -> if isunused w then Var "n" else w
-
-let rec term_normalization (env:environment) (x:lf_expr) (t:lf_type) : lf_expr =
-  (* see figure 9 page 696 [EEST] *)
-  let (pos,t0) = t in
-  match t0 with
-  | F_Pi(v,a,b) ->
-      let env = lf_bind env v a in
-      let result = apply_args x (ARG(var_to_lf (VarRel 0),END)) in
-      let body = term_normalization env result b in
-      pos, LAMBDA(v,body)
-  | F_Sigma(v,a,b) ->
-      let pos = get_pos x in
-      let p = x in
-      let x = pi1 p in
-      let y = pi2 p in
-      let x = term_normalization env x a in
-      let b = subst_type x b in
-      let y = term_normalization env y b in
-      pos, CONS(x,y)
-  | F_Apply _ ->
-      let x = head_normalization env x in
-      let (x,t) = path_normalization env x in
-      x
-  | F_Singleton(x',t) -> term_normalization env x t
-
-and path_normalization (env:environment) (x:lf_expr) : lf_expr * lf_type =
-  (* returns the normalized term x and the inferred type of x *)
-  (* see figure 9 page 696 [EEST] *)
-  (* assume x is head normalized *)
-  if !debug_mode then printf " path_normalization entering with x=%a\n%!" _e x;
-  let pos = get_pos x in
-  match unmark x with
-  | LAMBDA _ -> err env pos "path_normalization encountered a function"
-  | CONS _ -> err env pos "path_normalization encountered a pair"
-  | APPLY(head,args) -> (
-      if !debug_mode then printf "\thead=%a args=%a\n%!" _h head _s args;
-      let t0 = head_to_type env pos head in
-      let (t,args) =
-        let args_passed = END in          (* we store the arguments we've passed in reverse order *)
-        let rec repeat t args_passed args : lf_type * spine = (
-	  if !debug_mode then printf " path_normalization repeat\n\tt=%a\n\targs_passed=%a\n\targs=%a\n%!" _e x _s args_passed _s args;
-          match unmark t with
-          | F_Pi(v,a,b) -> (
-              match args with
-              | END -> raise (TypeCheckingFailure (env, [], [
-                                                    pos , "expected "^string_of_int (num_args t)^" more arguments";
-                                                    (get_pos t0), (" using:\n\t"^lf_head_to_string head^" : "^lf_type_to_string t0)]))
-              | CAR args -> err env pos "pi1 expected a pair (4)"
-              | CDR args -> err env pos "pi2 expected a pair (4)"
-              | ARG(x, args) ->
-                  let b = subst_type x b in
-                  let x = term_normalization env x a in
-                  let (c,args) = repeat b (ARG(x,args_passed)) args in
-                  (c, ARG(x,args)))
-          | F_Singleton _ ->
-	      if !debug_mode then printf "\tbad type t = %a\n%!" _t t;
-	      print_context (Some 5) stdout env;
-	      (trap(); raise Internal) (* x was head normalized, so any definition of head should have been unfolded *)
-          | F_Sigma(v,a,b) -> (
-              match args with
-              | END -> (t,END)
-              | CAR args ->
-                  let (c,args) = repeat a (CAR args_passed) args in
-                  (c, CAR args)
-              | CDR args ->
-                  let b = subst_car_passed_term pos head args_passed b in
-                  let (c,args) = repeat b (CDR args_passed) args in
-                  (c, CDR args)
-              | ARG(x,_) -> err env (get_pos x) "unexpected argument")
-          | F_Apply _ -> (
-              match args with
-              | END -> (t,END)
-              | CAR args -> err env pos "pi1 expected a pair (5)"
-              | CDR args -> err env pos "pi2 expected a pair (5)"
-              | ARG(x,args) -> err env (get_pos x) "unexpected argument")
-	 ) in
-	repeat t0 args_passed args in
-      ((pos,APPLY(head,args)), t))
-
-let rec type_normalization (env:environment) (t:lf_type) : lf_type =
-  (* see figure 9 page 696 [EEST] *)
-  let (pos,t0) = t in
-  let t = match t0 with
-  | F_Pi(v,a,b) ->
-      let a' = type_normalization env a in
-      let b' = type_normalization (lf_bind env v a) b in
-      F_Pi(v,a',b')
-  | F_Sigma(v,a,b) ->
-      let a' = type_normalization env a in
-      let b' = type_normalization (lf_bind env v a) b in
-      F_Sigma(v,a',b')
-  | F_Apply(head,args) ->
-      let kind = tfhead_to_kind head in
-      let args =
-        let rec repeat env kind (args:lf_expr list) =
-          match kind, args with
-          | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), [] -> []
-          | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), x :: args -> err env pos "too many arguments"
-          | K_Pi(v,a,kind'), x :: args ->
-              term_normalization env x a ::
-              repeat (lf_bind env v a) kind' args
-          | K_Pi(_,a,_), [] -> errmissingarg env pos a
-        in repeat env kind args
-      in F_Apply(head,args)
-  | F_Singleton(x,t) ->
-      F_Singleton( term_normalization env x t, type_normalization env t )
-  in (pos,t)
 
 (*
   Local Variables:

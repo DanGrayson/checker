@@ -123,7 +123,7 @@ let unbind_relative p : binder list * binder option * lf_type =
      K gets rewritten by incrementing the relative indices of its exposed variables.
   *)
 
-let pi1_debug = true
+let pi1_debug = false
 
 let pi1_implication ((vpos,v),t) u =
   if pi1_debug then printf "\npi1_implication:\n t = %a\n%!" _t t;
