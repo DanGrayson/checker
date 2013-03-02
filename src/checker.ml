@@ -8,7 +8,7 @@ let show_definitions = true
 
 let try_normalization = true
 
-let env_limit = Some 9
+let env_limit = Some 20
 
 open Error
 open Variables

@@ -86,10 +86,9 @@ let apply_tactic surr env pos t args = function
         with Not_found -> err env pos ("unknown tactic: " ^ name) in
       tactic surr env pos t args
   | Tactic_index n ->
-      let (v,u) =
-        try List.nth env.lf_context n
-        with Failure nth -> err env pos ("index out of range: "^string_of_int n) in
-      TacticSuccess (var_to_lf_pos pos v)
+      if n < List.length env.lf_context
+      then TacticSuccess (var_to_lf_pos pos (VarRel n))
+      else err env pos ("index out of range: "^string_of_int n)
 
 let show_tactic_result k =
   if tactic_tracing then
@@ -175,8 +174,8 @@ let compare_var_to_expr v e =
 let open_context t1 (env,p,o,t2) =
   let v = Var "x" in
   let v' = Var_wd "x" in
-  let env = tts_bind env v' v t1 in
-  let e = var_to_lf v ** var_to_lf v' ** END in (*??*)
+  let env = tts_bind env v v' t1 in
+  let e = var_to_lf (VarRel 1) ** var_to_lf (VarRel 0) ** END in
   let p = Substitute.apply_args p e in
   let o = Substitute.apply_args o e in
   let t2 = Substitute.apply_args t2 e in
@@ -216,9 +215,9 @@ let rec check_istype env t =
 	    let o = Var "o" in
 	    let p = Var_wd "o" in
 	    let env = tts_bind env p o t1 in
-	    let p = var_to_lf p in
-	    let o = var_to_lf o in
-	    let t2 = Substitute.apply_args t2 (o ** p ** END) in
+	    let o = var_to_lf (VarRel 1) in
+	    let p = var_to_lf (VarRel 0) in
+	    let t2 = Substitute.apply_args t2 (p ** o ** END) in
 	    check_istype env t2
 	| T_U' -> ()
 	| T_El' ->
@@ -367,12 +366,10 @@ let rec term_equivalence (env:environment) (x:lf_expr) (y:lf_expr) (t:lf_type) :
       term_equivalence env (pi1 x) (pi1 y) a;
       term_equivalence env (pi2 x) (pi2 y) (subst_type (pi1 x) b)
   | F_Pi (v,a,b) ->
-      let w = Var "e" in
-      let w' = var_to_lf w in
-      let b = subst_type w' b in
-      let env = lf_bind env w a in
-      let xres = apply_args x (ARG(w',END)) in
-      let yres = apply_args y (ARG(w',END)) in
+      let env = lf_bind env v a in
+      let v = var_to_lf (VarRel 0) in
+      let xres = apply_args x (ARG(v,END)) in
+      let yres = apply_args y (ARG(v,END)) in
       term_equivalence env xres yres b
   | F_Apply(j,args) ->
       if j == F_uexp then (
@@ -440,10 +437,7 @@ and type_equivalence (env:environment) (t:lf_type) (u:lf_type) : unit =
     | F_Sigma(v,a,b), F_Sigma(w,c,d)
     | F_Pi(v,a,b), F_Pi(w,c,d) ->
         type_equivalence env a c;
-        let x = v in			(*??*)
-        let b = subst_type (var_to_lf x) b in
-        let d = subst_type (var_to_lf x) d in
-        let env = lf_bind env x a in
+        let env = lf_bind env v a in
         type_equivalence env b d
     | F_Apply(h,args), F_Apply(h',args') ->
         (* Here we augment the algorithm in the paper to handle the type families of LF. *)
@@ -480,12 +474,10 @@ and subtype (env:environment) (t:lf_type) (u:lf_type) : unit =
         subtype env t u
     | F_Pi(x,a,b) , F_Pi(y,c,d) ->
         subtype env c a;                        (* contravariant *)
-        let w = Var "w" in
-        subtype (lf_bind env w c) (subst_type (var_to_lf w) b) (subst_type (var_to_lf w) d)
+        subtype (lf_bind env x c) b d
     | F_Sigma(x,a,b) , F_Sigma(y,c,d) ->
         subtype env a c;                        (* covariant *)
-        let w = Var "w" in
-        subtype (lf_bind env w a) (subst_type (var_to_lf w) b) (subst_type (var_to_lf w) d)
+        subtype (lf_bind env x a) b d
     | F_Apply(F_istype_witness,_), F_Apply(F_wexp,[])
     | F_Apply(F_hastype_witness,_), F_Apply(F_wexp,[])
     | F_Apply(F_type_equality_witness,_), F_Apply(F_wexp,[])
@@ -639,9 +631,7 @@ let rec type_check (surr:surrounding) (env:environment) (e0:lf_expr) (t:lf_type)
                                    our lambda doesn't contain type information for the variable,
                                    and theirs does *)
       let surr = (S_body,Some e0,Some t) :: surr in
-      let body =
-	let (b,env) = subst_type (var_to_lf v) b, lf_bind env v a in
-	type_check surr env body b in
+      let body = type_check surr (lf_bind env v a) body b in
       pos, LAMBDA(v,body)
   | LAMBDA _, F_Sigma _ ->
       raise (TypeCheckingFailure (env, surr, [

@@ -199,7 +199,7 @@ let head_to_type env pos = function
   | V (Var name) -> (
       try MapString.find name env.global_lf_context
       with Not_found ->
-	trap();
+	trap(); raise Internal;
 	raise (TypeCheckingFailure (env, [], [pos, "unbound variable: " ^ name])))
   | V _ -> raise Internal
   | TAC _ -> raise Internal

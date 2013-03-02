@@ -10,7 +10,7 @@ type var =
 let vartostring = function
   | Var x -> x
   | Var_wd x -> x ^ "$"
-  | VarRel i -> string_of_int i ^ "^"
+  | VarRel i -> string_of_int i (* ^ "^" *)
 
 let base_var = function
   | Var_wd x -> Var x
