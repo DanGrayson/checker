@@ -141,7 +141,7 @@ let rec head_reduction (env:environment) (x:lf_expr) : lf_expr =
 	  let args_passed = END in
 	  let rec repeat t args_passed args =
 	    match unmark t, args with
-	    | F_Singleton s, args -> let (x,t) = strip_singleton s in apply_args x args (* here we unfold a definition *)
+	    | F_Singleton s, args -> let (x,t) = strip_singleton s in apply_args 0 x args (* here we unfold a definition *)
 	    | F_Pi(v,a,b), ARG(x,args) -> repeat (subst_type x b) (ARG(x,args_passed)) args
 	    | F_Sigma(v,a,b), CAR args -> repeat a (CAR args_passed) args
 	    | F_Sigma(v,a,b), CDR args -> repeat (subst_car_passed_term pos head args_passed b) (CDR args_passed) args
@@ -174,9 +174,9 @@ let open_context t1 (env,p,o,t2) =
   let v' = Var_wd "x" in
   let env = tts_bind env v v' t1 in
   let e = var_to_lf (VarRel 1) ** var_to_lf (VarRel 0) ** END in
-  let p = Substitute.apply_args p e in
-  let o = Substitute.apply_args o e in
-  let t2 = Substitute.apply_args t2 e in
+  let p = Substitute.apply_args 0 p e in
+  let o = Substitute.apply_args 0 o e in
+  let t2 = Substitute.apply_args 0 t2 e in
   (env,p,o,t2)
 
 let unpack_El' t =
@@ -199,7 +199,7 @@ let unpack_lambda' o =
   | APPLY(O O_lambda',args) -> args2 args
   | _ -> raise FalseWitness
 
-let apply_2 f x y = Substitute.apply_args f (x ** y ** END)
+let apply_2 f x y = Substitute.apply_args 0 f (x ** y ** END)
 
 let rec check_istype env t =
   (* if not (List.exists (fun (p,o,u) -> term_equivalence t u) env.tts_context) *)
@@ -215,7 +215,7 @@ let rec check_istype env t =
 	    let env = tts_bind env p o t1 in
 	    let o = var_to_lf (VarRel 1) in
 	    let p = var_to_lf (VarRel 0) in
-	    let t2 = Substitute.apply_args t2 (p ** o ** END) in
+	    let t2 = Substitute.apply_args 0 t2 (p ** o ** END) in
 	    check_istype env t2
 	| T_U' -> ()
 	| T_El' ->
@@ -244,7 +244,7 @@ and check_hastype env p o t =
           check_hastype env po o t1;
           let u = nowhere 123 (APPLY(T T_Pi', t1 ** t2 ** END)) in
           check_hastype env pf f u;
-          let t2' = Substitute.apply_args t2 (po ** o ** END) in
+          let t2' = Substitute.apply_args 0 t2 (po ** o ** END) in
           if not (term_equiv t2' t) then mismatch_term_tstype_tstype env o t t2'
       | W_wlam ->
 	  let p = args1 pargs in
@@ -366,8 +366,8 @@ let rec term_equivalence (env:environment) (x:lf_expr) (y:lf_expr) (t:lf_type) :
   | F_Pi (v,a,b) ->
       let env = lf_bind env v a in
       let v = var_to_lf (VarRel 0) in
-      let xres = apply_args x (ARG(v,END)) in
-      let yres = apply_args y (ARG(v,END)) in
+      let xres = apply_args 0 x (ARG(v,END)) in
+      let yres = apply_args 0 y (ARG(v,END)) in
       term_equivalence env xres yres b
   | F_Apply(j,args) ->
       if j == F_uexp then (
@@ -581,7 +581,9 @@ and type_synthesis (surr:surrounding) (env:environment) (m:lf_expr) : lf_expr * 
             let (args',t) = repeat (i+1) env b' (CDR args_passed) args in
             (CDR args', t)
         | t, END -> END, (pos,t)
-        | _, ARG(arg,_) -> err env (get_pos arg) "extra argument"
+        | _, ARG(arg,_) ->
+	    printf "%a: head= %a, args_passed= %a, args= %a\n%!" _pos pos _h head _s args_passed _s args;
+	    err env (get_pos arg) "extra argument"
         | _, CAR _ -> err env pos ("pi1 expected a pair (3) but got " ^ lf_expr_to_string (with_pos pos (APPLY(head,reverse_spine args_passed))))
         | _, CDR _ -> err env pos "pi2 expected a pair (3)"
        )
@@ -677,7 +679,7 @@ let rec term_normalization (env:environment) (x:lf_expr) (t:lf_type) : lf_expr =
   match t0 with
   | F_Pi(v,a,b) ->
       let env = lf_bind env v a in
-      let result = apply_args x (ARG(var_to_lf (VarRel 0),END)) in
+      let result = apply_args 0 x (ARG(var_to_lf (VarRel 0),END)) in
       let body = term_normalization env result b in
       pos, LAMBDA(v,body)
   | F_Sigma(v,a,b) ->

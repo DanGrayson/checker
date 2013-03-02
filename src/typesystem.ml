@@ -457,7 +457,7 @@ let ts_bind env v t =
 
 let tts_fetch env v =
   let rec repeat = function
-      [] -> raise Not_found
+    | [] -> raise Not_found
     | (p,o,t)::l ->
         if compare o v = 0 then (p,t) else
         if compare p v = 0 then raise Internal else (*debugging only*)

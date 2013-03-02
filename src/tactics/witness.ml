@@ -29,8 +29,8 @@ let open_context t1 (env,o,t2) =
   let v' = Var_wd "x" in
   let env = tts_bind env v' v t1 in
   let e = var_to_lf (VarRel 1) ** var_to_lf (VarRel 0) ** END in
-  let o = Substitute.apply_args o e in
-  let t2 = Substitute.apply_args t2 e in
+  let o = Substitute.apply_args 0 o e in
+  let t2 = Substitute.apply_args 0 t2 e in
   (env,o,t2)
 
 let rec this_head_reduces env o =   (* returns (p,o'), where p : o == o' : _ *)

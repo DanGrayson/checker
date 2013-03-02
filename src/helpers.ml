@@ -52,13 +52,11 @@ let rec join_args a b =
   | END -> b
 
 let join_args_rev a b =
-  let rec repeat a b =
-    match a with
-    | ARG(x,a) -> repeat a (ARG(x,b))
-    | CAR a -> repeat a (CAR b)
-    | CDR a -> repeat a (CDR b)
-    | END -> b
-in repeat a b
+  match a with
+  | ARG(x,a) -> join_args a (ARG(x,b))
+  | CAR a -> join_args a (CAR b)
+  | CDR a -> join_args a (CDR b)
+  | END -> b
 
 let reverse_spine a = join_args_rev a END
 
@@ -70,19 +68,15 @@ let rec args_compare expr_compare a b =
   | END, END -> true
   | _ -> false
 
-let map_list f args =
-  let rec repeat s = match s with
-  | x :: a -> let x' = f x in let a' = repeat a in if x' == x && a' == a then s else x' :: a'
-  | [] -> s
-  in repeat args
+let rec map_list f = function
+  | x :: a as s -> let x' = f x in let a' = map_list f a in if x' == x && a' == a then s else x' :: a'
+  | [] as s -> s
 
-let map_spine f args =
-  let rec repeat s = match s with
-  | ARG(x,a) -> let x' = f x in let a' = repeat a in if x' == x && a' == a then s else ARG(x',a')
-  | CAR a -> let a' = repeat a in if a' == a then s else CAR(a')
-  | CDR a -> let a' = repeat a in if a' == a then s else CDR(a')
+let rec map_spine f s = match s with
+  | ARG(x,a) -> let x' = f x in let a' = map_spine f a in if x' == x && a' == a then s else ARG(x',a')
+  | CAR a -> let a' = map_spine f a in if a' == a then s else CAR(a')
+  | CDR a -> let a' = map_spine f a in if a' == a then s else CDR(a')
   | END -> s
-  in repeat args
 
 let rec list_to_spine = function
   | x :: a -> x ** list_to_spine a
@@ -109,23 +103,19 @@ let rec args_length = function
   | CAR a | CDR a | ARG(_,a) -> 1 + args_length a
   | END -> 0
 
-let args_fold f pi1 pi2 accu args = (* it's fold_left, which is the only direction that makes sense *)
-  let rec repeat accu args =
-    match args with
-    | ARG(a,args) -> repeat (f accu a) args
-    | CAR args -> repeat (pi1 accu) args
-    | CDR args -> repeat (pi2 accu) args
-    | END -> accu
-  in repeat accu args
+let rec args_fold f pi1 pi2 accu args = (* it's fold_left, which is the only direction that makes sense *)
+  match args with
+  | ARG(a,args) -> args_fold f pi1 pi2 (f accu a) args
+  | CAR args -> args_fold f pi1 pi2 (pi1 accu) args
+  | CDR args -> args_fold f pi1 pi2 (pi2 accu) args
+  | END -> accu
 
-let args_iter f pi1 pi2 args =
-  let rec repeat args =
-    match args with
-    | ARG(a,args) -> f a; repeat args
-    | CAR args -> pi1 (); repeat args
-    | CDR args -> pi2 (); repeat args
-    | END -> ()
-  in repeat args
+let rec args_iter f pi1 pi2 args =
+  match args with
+  | ARG(a,args) -> f a; args_iter f pi1 pi2 args
+  | CAR args -> pi1 (); args_iter f pi1 pi2 args
+  | CDR args -> pi2 (); args_iter f pi1 pi2 args
+  | END -> ()
 
 let pi1 = function
   | pos, APPLY(h,args) -> (pos,APPLY(h,join_args args (CAR END)))
@@ -145,14 +135,10 @@ let locate x l =
 
 let rec rel_shift_expr limit shift e =
   match unmark e with
-  | APPLY(h,args) -> (
+  | APPLY(h,args) ->
       let args' = map_spine (rel_shift_expr limit shift) args in
-      match h with
-      | V (VarRel i) when i >= limit -> 
-	  let i = i + shift in
-	  if i < 0 then raise Internal;
-	  get_pos e, APPLY(V (VarRel i),args')
-      | _ -> if args == args' then e else get_pos e, APPLY(h,args'))
+      let h' = rel_shift_head limit shift h in
+      if h' == h && args' == args then e else get_pos e, APPLY(h',args')
   | CONS(x,y) ->
       let x' = rel_shift_expr limit shift x in
       let y' = rel_shift_expr limit shift y in
@@ -161,6 +147,11 @@ let rec rel_shift_expr limit shift e =
       let limit = limit + 1 in
       let body' = rel_shift_expr limit shift body in
       if body' == body then e else get_pos e, LAMBDA(v, body')
+
+and rel_shift_head limit shift h = 
+  match h with
+  | V (VarRel i) when i >= limit -> V (VarRel (shift+i))
+  | _ -> h
 
 and rel_shift_type limit shift t =
   match unmark t with
@@ -184,6 +175,8 @@ and rel_shift_type limit shift t =
 
 let rel_shift_expr shift e = if shift = 0 then e else rel_shift_expr 0 shift e
 
+let rel_shift_head shift h = rel_shift_head 0 shift h
+
 let rel_shift_type shift t = if shift = 0 then t else rel_shift_type 0 shift t
 
 let head_to_type env pos = function
@@ -199,7 +192,6 @@ let head_to_type env pos = function
   | V (Var name) -> (
       try MapString.find name env.global_lf_context
       with Not_found ->
-	trap(); raise Internal;
 	raise (TypeCheckingFailure (env, [], [pos, "unbound variable: " ^ name])))
   | V _ -> raise Internal
   | TAC _ -> raise Internal
