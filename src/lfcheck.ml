@@ -122,7 +122,11 @@ let rec natural_type (env:environment) (x:lf_expr) : lf_type =
 
 let car_passed_term pos head args_passed = with_pos pos (APPLY(head,reverse_spine (CAR args_passed)))
 
-let subst_car_passed_term pos head args_passed b = subst_type (car_passed_term pos head args_passed) b
+let subst_car_passed_term pos head args_passed b = 
+  if !debug_mode then printf "subst_car_passed_term head %a args_passed %a b %a\n%!" _h head _s args_passed _t b;
+  let r = subst_type (car_passed_term pos head args_passed) b in
+  if !debug_mode then printf "subst_car_passed_term returns %a\n%!" _t r;
+  r
 
 let rec head_reduction (env:environment) (x:lf_expr) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
@@ -137,7 +141,14 @@ let rec head_reduction (env:environment) (x:lf_expr) : lf_expr =
       | TAC _ -> raise Internal	(* all tactics should have been handled during type checking *)
       | (U _|O _|T _) -> raise Not_found (* we know the constants in our signature don't involve singleton types *)
       | head ->
-	  let t = head_to_type env pos head in
+	  let t = 
+	    try
+	      head_to_type env pos head 
+	    with Failure "nth" ->
+	      printf "%a: head = %a\n%!" _pos pos _h head;
+	      print_context None stdout env;
+	      raise Internal
+	  in
 	  let args_passed = END in
 	  let rec repeat t args_passed args =
 	    match unmark t, args with
@@ -156,8 +167,14 @@ let rec head_reduction (env:environment) (x:lf_expr) : lf_expr =
 
 let rec head_normalization (env:environment) (x:lf_expr) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
-  try head_normalization env (head_reduction env x)
-  with Not_found -> x
+  if !debug_mode then printf "entering head_normalization: x = %a\n%!" _e x;
+  try 
+    let r = head_normalization env (head_reduction env x) in
+    if !debug_mode then printf "leaving head_normalization: r = %a\n%!" _e r;
+    r    
+  with Not_found -> 
+    if !debug_mode then printf "leaving head_normalization, no change\n%!";
+    x
 
 let term_equiv = Alpha.UEqual.term_equiv empty_uContext 0 (* or should it be UEquivA ? *)
 let type_equiv = Alpha.UEqual.type_equiv empty_uContext 0
@@ -174,9 +191,9 @@ let open_context t1 (env,p,o,t2) =
   let v' = Var_wd "x" in
   let env = tts_bind env v v' t1 in
   let e = var_to_lf (VarRel 1) ** var_to_lf (VarRel 0) ** END in
-  let p = Substitute.apply_args 0 p e in
-  let o = Substitute.apply_args 0 o e in
-  let t2 = Substitute.apply_args 0 t2 e in
+  let p = Substitute.apply_args 1 p e in
+  let o = Substitute.apply_args 1 o e in
+  let t2 = Substitute.apply_args 1 t2 e in
   (env,p,o,t2)
 
 let unpack_El' t =
@@ -199,7 +216,7 @@ let unpack_lambda' o =
   | APPLY(O O_lambda',args) -> args2 args
   | _ -> raise FalseWitness
 
-let apply_2 f x y = Substitute.apply_args 0 f (x ** y ** END)
+let apply_2 shift f x y = Substitute.apply_args shift f (x ** y ** END)
 
 let rec check_istype env t =
   (* if not (List.exists (fun (p,o,u) -> term_equivalence t u) env.tts_context) *)
@@ -215,7 +232,7 @@ let rec check_istype env t =
 	    let env = tts_bind env p o t1 in
 	    let o = var_to_lf (VarRel 1) in
 	    let p = var_to_lf (VarRel 0) in
-	    let t2 = Substitute.apply_args 0 t2 (p ** o ** END) in
+	    let t2 = Substitute.apply_args 1 t2 (p ** o ** END) in
 	    check_istype env t2
 	| T_U' -> ()
 	| T_El' ->
@@ -295,9 +312,9 @@ and check_object_equality env p o o' t =
 	  check_hastype env p1 o1 t1;
 	  let env,p2',o2',t2' = open_context t1 (env,p2,o2,t2) in
 	  check_hastype env p2' o2' t2';
-	  let t2'' = apply_2 t2 o1 p1 in
+	  let t2'' = apply_2 1 t2 o1 p1 in
 	  if not (term_equiv t2'' t) then mismatch_term env (get_pos t2'') t2'' (get_pos t) t;
-	  let o2' = apply_2 o2 o1 p1 in
+	  let o2' = apply_2 1 o2 o1 p1 in
 	  if not (term_equiv o2' o') then mismatch_term env (get_pos o2') o2' (get_pos o') o'
       | W_wrefl -> (
 	  let p,p' = args2 pargs in
@@ -366,8 +383,8 @@ let rec term_equivalence (env:environment) (x:lf_expr) (y:lf_expr) (t:lf_type) :
   | F_Pi (v,a,b) ->
       let env = lf_bind env v a in
       let v = var_to_lf (VarRel 0) in
-      let xres = apply_args 0 x (ARG(v,END)) in
-      let yres = apply_args 0 y (ARG(v,END)) in
+      let xres = apply_args 1 x (ARG(v,END)) in
+      let yres = apply_args 1 y (ARG(v,END)) in
       term_equivalence env xres yres b
   | F_Apply(j,args) ->
       if j == F_uexp then (
@@ -562,9 +579,17 @@ and type_synthesis (surr:surrounding) (env:environment) (m:lf_expr) : lf_expr * 
       match head with
       | TAC _ -> err env pos "tactic found in context where no type advice is available"
       | _ -> ();
-      let head_type = head_to_type env pos head in
+      let head_type =
+	try
+	  head_to_type env pos head 
+	with Failure "nth" ->
+	  printf "%a: head = %a, args = %a\n%!" _pos pos _h head _s args;
+	  print_context None stdout env;
+	  raise Internal
+      in
       let args_passed = END in            (* we retain the arguments we've passed as a spine in reverse order *)
       let rec repeat i env head_type args_passed args = (
+	if !debug_mode then printf " type_synthesis repeat\n head= %a, i=%d, head_type=%a, args_passed=%a, args=%a\n%!" _h head i _t head_type _s args_passed _s args;
         match unmark head_type, args with
         | F_Pi(v,a',a''), ARG(m',args') ->
             let surr = (S_argument i,Some m,None) :: surr in
@@ -678,10 +703,14 @@ let rec term_normalization (env:environment) (x:lf_expr) (t:lf_type) : lf_expr =
   let (pos,t0) = t in
   match t0 with
   | F_Pi(v,a,b) ->
+      let c = next_genctr() in
       let env = lf_bind env v a in
-      let result = apply_args 0 x (ARG(var_to_lf (VarRel 0),END)) in
+      if true || !debug_mode then printf "term_normalization(%d) x = %a\n%!" c _e x;
+      let result = apply_args 1 x (ARG(var_to_lf (VarRel 0),END)) in (* optimization: if x is a LAMBDA, then get the body out *)
       let body = term_normalization env result b in
-      pos, LAMBDA(v,body)
+      let r = pos, LAMBDA(v,body) in
+      if true || !debug_mode then printf "term_normalization(%d) r = %a\n%!" c _e result;
+      r
   | F_Sigma(v,a,b) ->
       let pos = get_pos x in
       let p = x in
@@ -717,7 +746,7 @@ and path_normalization (env:environment) (x:lf_expr) : lf_expr * lf_type =
           | F_Pi(v,a,b) -> (
               match args with
               | END -> raise (TypeCheckingFailure (env, [], [
-                                                    pos , "expected "^string_of_int (num_args t)^" more arguments";
+                                                    pos , "expected "^string_of_int (num_args t)^" more argument"^if num_args t > 1 then "s" else "";
                                                     (get_pos t0), (" using:\n\t"^lf_head_to_string head^" : "^lf_type_to_string t0)]))
               | CAR args -> err env pos "pi1 expected a pair (4)"
               | CDR args -> err env pos "pi2 expected a pair (4)"
@@ -772,7 +801,7 @@ let rec type_normalization (env:environment) (t:lf_type) : lf_type =
           | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), x :: args -> err env pos "too many arguments"
           | K_Pi(v,a,kind'), x :: args ->
               term_normalization env x a ::
-              repeat (lf_bind env v a) kind' args
+              repeat (lf_bind env v a) kind' (List.map (rel_shift_expr 1) args)
           | K_Pi(_,a,_), [] -> errmissingarg env pos a
         in repeat env kind args
       in F_Apply(head,args)

@@ -53,9 +53,9 @@ let protect f posfun =
   | Eof ->
       error_summary (posfun ());
       raise StopParsingFile
-  | Failure s ->
-      fprintf stderr "%s: %s \n%!" (spos ()) s;
-      raise (Failure "exiting")
+  (* | Failure s -> *)
+  (*     fprintf stderr "%s: %s \n%!" (spos ()) s; *)
+  (*     raise (Failure "exiting") *)
   | GeneralError s as ex ->
       fprintf stderr "%s: %s\n%!" (spos ()) s;
       bump_error_count (posfun ());
@@ -302,7 +302,7 @@ let toplevel() =
       (fun filename ->
 	try
 	  env := parse_file !env filename
-	with Failure _ -> exit 1	(* after too many errors in a file, we don't parse the other files *)
+	with Failure "exiting" -> exit 1	(* after too many errors in a file, we don't parse the other files *)
       )
       ("usage: " ^ (Filename.basename Sys.argv.(0)) ^ " [option|filename] ...");
   with FileFinished -> ());
@@ -311,7 +311,7 @@ let toplevel() =
     interactive := true;
     try
       env := parse_file !env "-"
-    with Failure _ -> exit 1	(* after too many errors in a file, we don't parse the other files *)
+    with Failure "exiting" -> exit 1	(* after too many errors in a file, we don't parse the other files *)
    )
 
 let unused env =

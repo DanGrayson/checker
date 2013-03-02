@@ -51,11 +51,11 @@ let rec join_args a b =
   | CDR a -> CDR(join_args a b)
   | END -> b
 
-let join_args_rev a b =
+let rec join_args_rev a b =
   match a with
-  | ARG(x,a) -> join_args a (ARG(x,b))
-  | CAR a -> join_args a (CAR b)
-  | CDR a -> join_args a (CDR b)
+  | ARG(x,a) -> join_args_rev a (ARG(x,b))
+  | CAR a -> join_args_rev a (CAR b)
+  | CDR a -> join_args_rev a (CDR b)
   | END -> b
 
 let reverse_spine a = join_args_rev a END
@@ -184,11 +184,7 @@ let head_to_type env pos = function
   | U h -> uhead_to_lf_type h
   | T h -> thead_to_lf_type h
   | O h -> ohead_to_lf_type h
-  | V (VarRel i) -> 
-      rel_shift_type (i+1)
-	(snd (
-	 try List.nth env.lf_context i
-	 with Failure _ -> raise Internal))
+  | V (VarRel i) -> rel_shift_type (i+1) (snd (List.nth env.lf_context i))
   | V (Var name) -> (
       try MapString.find name env.global_lf_context
       with Not_found ->

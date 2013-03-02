@@ -19,7 +19,9 @@ open Printf
     Descending into an expression with a bound variable increases [shift] by 1.
 
  *)
+
 let rec subst_expr shift subs e =
+  if debug_subst then printf "subst_expr shift=%d subs=%a e=%a\n%!" shift _a subs _e e;
   let pos = get_pos e in
   match unmark e with
   | APPLY(h,args) -> (
@@ -44,7 +46,9 @@ let rec subst_expr shift subs e =
       if body' == body then e else pos, LAMBDA(v, body')
 
 and apply_args shift e args =		(* e is to be shifted by [shift] *)
-  printf "entering apply_args: shift = %d, e = %a, args = %a\n%!" shift _e e _s args;
+  if debug_subst then printf "entering apply_args: shift = %d, e = %a, args = %a\n%!" shift _e e _s args;
+  let e = rel_shift_expr shift e in
+  let shift = 0 in
   let r =
   let pos = get_pos e in
   match unmark e with
@@ -58,16 +62,16 @@ and apply_args shift e args =		(* e is to be shifted by [shift] *)
   | LAMBDA(_,body) -> (
       match args with
       | ARG(x,args) -> 
-	  let shift = shift + 1 in
-	  apply_args shift (subst_expr 0 [|rel_shift_expr shift x|] body) args
+	  apply_args shift (subst_expr 0 [|x|] body) args
       | CAR args -> raise (GeneralError "pi1 expected a pair but got a function")
       | CDR args -> raise (GeneralError "pi2 expected a pair but got a function")
       | END -> rel_shift_expr shift e)
   in
-  printf "leaving apply_args: r = %a\n%!" _e r;
+  if debug_subst then printf "leaving apply_args: r = %a\n%!" _e r;
   r
 
 and subst_type shift subs t =
+  if debug_subst then printf "subst_type shift=%d subs=%a t=%a\n%!" shift _a subs _t t;
   match unmark t with
   | F_Pi(v,a,b) ->
       let a' = subst_type shift subs a in

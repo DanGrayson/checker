@@ -2,7 +2,9 @@
 
 let lesser_debug_mode = true
 
-let debug_mode = ref false
+let debug_mode = ref true
+
+let debug_subst = true
 
 let internal_location_trap = 0
 

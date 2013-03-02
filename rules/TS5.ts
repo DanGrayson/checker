@@ -8,6 +8,8 @@ Axiom 15.5.1 nat_hastype [ nat : UU[uu0] ].
 
 Definition LF Nat : texp := (El nat).
 
+Check LF Nat.
+
 Lemma Nat_istype [ Nat Type ] := El_istype[uu0,nat,CDR,nat_hastype].
 
 Definition Nat' Type := (*nat, El_istype[uu0,nat,CDR,nat_hastype]).

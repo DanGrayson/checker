@@ -29,8 +29,8 @@ let open_context t1 (env,o,t2) =
   let v' = Var_wd "x" in
   let env = tts_bind env v' v t1 in
   let e = var_to_lf (VarRel 1) ** var_to_lf (VarRel 0) ** END in
-  let o = Substitute.apply_args 0 o e in
-  let t2 = Substitute.apply_args 0 t2 e in
+  let o = Substitute.apply_args 1 o e in
+  let t2 = Substitute.apply_args 1 t2 e in
   (env,o,t2)
 
 let rec this_head_reduces env o =   (* returns (p,o'), where p : o == o' : _ *)
@@ -41,7 +41,7 @@ let rec this_head_reduces env o =   (* returns (p,o'), where p : o == o' : _ *)
     let p1 = find_w_hastype env o1 t1 in
     let env,o2',t2' = open_context t1 (env,o2,t2) in
     let p2 = find_w_hastype env o2' t2' in
-    let o' = apply_2 o2 o1 p1 in
+    let o' = apply_2 1 o2 o1 p1 in
     let p = make_W_wbeta p1 (abstract env p2) in
     nowhere 207 p, o'
   with

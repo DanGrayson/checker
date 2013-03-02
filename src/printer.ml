@@ -481,6 +481,8 @@ let _e file x = output_string file (lf_expr_to_string x)
 
 let _l file x = List.iter (fun x -> printf " "; _e file x) x
 
+let _a file x = Array.iter (fun x -> printf " "; _e file x) x
+
 let _h file x = output_string file (lf_head_to_string x)
 
 let _t file x = output_string file (lf_type_to_string x)
@@ -533,10 +535,10 @@ let print_context n file (c:environment) =
         if i = n then raise Limit;
         match unmark t with
         | F_Singleton(e,t) ->
-            fprintf file "   %a := %a\n"   _v v          _e e;
-            fprintf file "   %a  : %a\n%!" _v_phantom v  _t t
+            fprintf file " %d %a := %a\n"   i _v v          _e e;
+            fprintf file " %d %a  : %a\n%!" i _v_phantom v  _t t
         | _ ->
-            fprintf file "   %a : %a\n%!" _v v  _t t
+            fprintf file " %d %a : %a\n%!" i _v v  _t t
       )
       env
   with Limit -> fprintf file "   ...\n");
