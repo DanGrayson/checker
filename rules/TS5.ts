@@ -52,10 +52,10 @@ Lemma nat_S_reduction_sanity2 { x : Nat ⊢ T Type } { ⊢ o1 : T[O] } { ⊢ o2 
 	  @[nat_r][o1,o2,n,T],
 	  CDR,
           T'[n,_],
-	  _⟾_⟾T'[@[ev;_][S,n,Nat,Nat],ev_hastype[Nat,_⟾Nat,S,n,CDR,Nat_istype,_ ⟾ _ ⟾Nat_istype,S_hastype,_]],
+	  _⟾_⟾T'[@[ev;_][S,n,Nat,Nat],ev_hastype[Nat,_⟾Nat,S,n,CDR,_,_,_,_]],
 	  ev_hastype[
 	  	Nat, x ⟾ T[x]->T[@[ev;_][S,x,Nat,Nat]], o2, n, CDR,
-		Nat_istype, x⟾x'⟾∏_istype[T[x],_⟾T[@[ev;_][S,x,Nat,Nat]],CDR,T'[x,_],_⟾_⟾T'[@[ev;_][S,x,Nat,Nat],ev_hastype[Nat,_⟾Nat,S,x,CDR,Nat_istype,_ ⟾ _ ⟾Nat_istype,S_hastype,_]]],
+		_, x⟾x'⟾∏_istype[T[x],_⟾T[@[ev;_][S,x,Nat,Nat]],CDR,T'[x,_],_⟾_⟾T'[@[ev;_][S,x,Nat,Nat],ev_hastype[Nat,_⟾Nat,S,x,CDR,_,_,_,_]]],
 		_, _],
 	  nat_r_hastype[T,o1,o2,n,CDR,T',_,_,_]].
 
@@ -81,10 +81,10 @@ Lemma nat_equality_sanity { x : Nat ⊢ T Type }
    ev_hastype[
       T[n], _ ⟾ T[@[ev;_][S,n,Nat,Nat]], @[ev][o2,n,Nat,x ⟾ T[x] -> T[@[ev;_][S,x,Nat,Nat]]], t, CDR,
       T'[n,n'],
-      _ ⟾ _ ⟾ T'[@[ev;_][S,n,Nat,Nat],ev_hastype[Nat,_⟾Nat,S,n,CDR,Nat_istype,_ ⟾ _ ⟾Nat_istype,S_hastype,_]],
+      _ ⟾ _ ⟾ T'[@[ev;_][S,n,Nat,Nat],ev_hastype[Nat,_⟾Nat,S,n,CDR,_,_,_,_]],
       ev_hastype[
       	  Nat, x ⟾ T[x] -> T[@[ev;_][S,x,Nat,Nat]], o2, n, CDR,
-	  Nat_istype, x⟾x'⟾∏_istype[T[x],_⟾T[@[ev;_][S,x,Nat,Nat]],CDR,T'[x,_],_⟾_⟾T'[@[ev;_][S,x,Nat,Nat],ev_hastype[Nat,_⟾Nat,S,x,CDR,Nat_istype,_ ⟾ _ ⟾Nat_istype,S_hastype,_]]], _, _],
+	  _, x⟾x'⟾∏_istype[T[x],_⟾T[@[ev;_][S,x,Nat,Nat]],CDR,T'[x,_],_⟾_⟾T'[@[ev;_][S,x,Nat,Nat],ev_hastype[Nat,_⟾Nat,S,x,CDR,_,_,_,_]]], _, _],
       _].
 
 Axiom nat_equality
