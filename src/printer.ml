@@ -467,6 +467,8 @@ let _pos file x = output_string file (errfmt x)
 
 let _v file x = output_string file (vartostring x)
 
+let _vl file x = List.iter (fun x -> printf " "; _v file x) x
+
 let _phantom file x = output_string file (phantom x)
 
 let _v_phantom file x = output_string file (phantom (vartostring x))

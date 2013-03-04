@@ -14,6 +14,7 @@ Check TS : [ p : o ≡ o' : T ].
 Variable W Type.
 Check TTS : [ @[U'] Type ].
 Variable xo : T.				      # Eventually we'll be checking that the type
+End. # fix later
 Check TTS : [ @[Pi';_][T,@[U']] Type ].
 Variable xf : @[Pi';_][T,@[U']].			      # to the right of the colon is valid here.
 Axiom LF xf$ : wexp.

@@ -3,6 +3,7 @@ open Printer
 open Printf
 open Errorcheck
 open Variables
+open Helpers
 
 exception FoundOne of var
 
@@ -13,10 +14,17 @@ let assumption surr env pos t args =
   if Lfcheck.tactic_tracing then printf "assumption: t = %a\n%!" _t t;
   let rec repeat i = function
     | (v,u) :: envp -> (
-	if type_equiv (i+1) u t
+	if Lfcheck.is_subtype env (rel_shift_type (i+1) u) t
 	then TacticSuccess(var_to_lf (VarRel i))
 	else repeat (i+1) envp)
-    | [] -> TacticFailure
+    | [] -> (
+	try
+	  MapString.iter
+	    (fun v u -> if Lfcheck.is_subtype env u t then raise (FoundOne (Var v)))
+	    env.global_lf_context;
+	  TacticFailure
+	with FoundOne v -> TacticSuccess(var_to_lf v)
+	)
   in repeat 0 env.lf_context
 
 (*
