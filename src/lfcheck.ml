@@ -55,7 +55,10 @@ let ts_binders = [
   ((O O_ev, 2), abstraction3)
 ]
 
+let enable_ts_binders = false
+
 let apply_ts_binder env i e =
+  if not enable_ts_binders then env else
   let pos = get_pos e in
   match unmark e with
   | APPLY(h,args) -> (
@@ -589,12 +592,15 @@ and type_synthesis (surr:surrounding) (env:environment) (m:lf_expr) : lf_expr * 
       in
       let args_passed = END in            (* we retain the arguments we've passed as a spine in reverse order *)
       let rec repeat i env head_type args_passed args = (
-	if !debug_mode then printf " type_synthesis repeat\n head= %a, i=%d, head_type=%a, args_passed=%a, args=%a\n%!" _h head i _t head_type _s args_passed _s args;
         match unmark head_type, args with
         | F_Pi(v,a',a''), ARG(m',args') ->
             let surr = (S_argument i,Some m,None) :: surr in
             let env = apply_ts_binder env i m in
             let m' = type_check surr env m' a' in
+	    if !debug_mode then (
+	      printf " type_synthesis repeat\n head= %a, i=%d, head_type=%a, args_passed=%a, args=%a\n%!" _h head i _t head_type _s args_passed _s args;
+	      printf "      a'=%a a''=%a m'=%a\n%!" _t a' _t a'' _e m';
+	     );
             let (args'',u) = repeat (i+1) env (subst_type m' a'') (ARG(m',args_passed)) args' in
             ARG(m',args''), u
         | F_Singleton(e,t), args -> repeat i env t args_passed args

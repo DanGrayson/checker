@@ -23,7 +23,8 @@ let rec tau (env:environment) e : lf_expr =
       | V v ->
 	  let t =
 	    try ts_fetch env v
-	    with Not_found -> raise (TypeCheckingFailure(env, [], [pos, "variable not in TS context: " ^ vartostring v])) in
+	    with Not_found -> raise (TypeCheckingFailure(env, [], [pos, "variable not in TS context: " ^ vartostring v]))
+	  in
 	  (
 	   match args with
 	   | END -> t
