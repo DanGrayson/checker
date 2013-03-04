@@ -175,7 +175,7 @@ and rel_shift_type limit shift t =
 
 let rel_shift_expr shift e = if shift = 0 then e else rel_shift_expr 0 shift e
 
-let rel_shift_head shift h = rel_shift_head 0 shift h
+let rel_shift_head shift h = if shift = 0 then h else rel_shift_head 0 shift h
 
 let rel_shift_type shift t = if shift = 0 then t else rel_shift_type 0 shift t
 

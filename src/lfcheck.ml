@@ -705,11 +705,11 @@ let rec term_normalization (env:environment) (x:lf_expr) (t:lf_type) : lf_expr =
   | F_Pi(v,a,b) ->
       let c = next_genctr() in
       let env = lf_bind env v a in
-      if true || !debug_mode then printf "term_normalization(%d) x = %a\n%!" c _e x;
+      if !debug_mode then printf "term_normalization(%d) x = %a\n%!" c _e x;
       let result = apply_args 1 x (ARG(var_to_lf (VarRel 0),END)) in (* optimization: if x is a LAMBDA, then get the body out *)
       let body = term_normalization env result b in
       let r = pos, LAMBDA(v,body) in
-      if true || !debug_mode then printf "term_normalization(%d) r = %a\n%!" c _e result;
+      if !debug_mode then printf "term_normalization(%d) r = %a\n%!" c _e result;
       r
   | F_Sigma(v,a,b) ->
       let pos = get_pos x in
@@ -801,7 +801,7 @@ let rec type_normalization (env:environment) (t:lf_type) : lf_type =
           | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), x :: args -> err env pos "too many arguments"
           | K_Pi(v,a,kind'), x :: args ->
               term_normalization env x a ::
-              repeat (lf_bind env v a) kind' (List.map (rel_shift_expr 1) args)
+              repeat env (subst_kind x kind') args
           | K_Pi(_,a,_), [] -> errmissingarg env pos a
         in repeat env kind args
       in F_Apply(head,args)
