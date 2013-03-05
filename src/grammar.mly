@@ -571,16 +571,16 @@ unmarked_ts_expr:
 	{ unmark (lambda1 (unmark v) body) }
 
     | e= ts_expr K_1
-    	{ unmark ( Substitute.apply_args 0 e (CAR END) ) }
+    	{ unmark ( Substitute.apply_args e (CAR END) ) }
 
     | e= ts_expr K_2
-    	{ unmark ( Substitute.apply_args 0 e (CDR END) ) }
+    	{ unmark ( Substitute.apply_args e (CDR END) ) }
 
     | tac= closed_tactic_expr
 	{ cite_tactic tac END }
 
     | f= ts_expr LeftBracket o= separated_list(Comma,ts_spine_member) RightBracket
-	{ unmark (Substitute.apply_args 0 f (spine_member_list_to_spine o)) }
+	{ unmark (Substitute.apply_args f (spine_member_list_to_spine o)) }
 
     | variable
 	{ APPLY(V $1,END) }

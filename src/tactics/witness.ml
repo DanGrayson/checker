@@ -17,8 +17,8 @@ let abstract env x =
 let open_context t1 (env,o,t2) =
   let env = local_tts_bind env "x" t1 in
   let e = var_to_lf (VarRel 1) ** var_to_lf (VarRel 0) ** END in
-  let o = Substitute.apply_args 1 o e in
-  let t2 = Substitute.apply_args 1 t2 e in
+  let o = Substitute.apply_args (rel_shift_expr 1 o) e in
+  let t2 = Substitute.apply_args (rel_shift_expr 1 t2) e in
   (env,o,t2)
 
 let rec this_head_reduces env o =   (* returns (p,o'), where p : o == o' : _ *)

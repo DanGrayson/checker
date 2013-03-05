@@ -32,42 +32,41 @@ let rec subst_expr shift subs e =
 	  else
 	    let i = j-shift in
 	    if i < Array.length subs 
-	    then apply_args shift subs.(i) args'
+	    then apply_args (rel_shift_expr shift subs.(i)) args'
 	    else pos, APPLY(V (VarRel (j - Array.length subs)),args')
       | _ -> 
 	  if args' == args then e else pos, APPLY(h,args'))
   | CONS(x,y) -> 
-      let x' = subst_expr shift subs x in
-      let y' = subst_expr shift subs y in
+      let x' = subst_expr shift subs x
+      and y' = subst_expr shift subs y in
       if x' == x && y' == y then e else pos, CONS(x',y')
   | LAMBDA(v, body) ->
       let shift = shift + 1 in
       let body' = subst_expr shift subs body in
       if body' == body then e else pos, LAMBDA(v, body')
 
-and apply_args shift e args =		(* e is to be shifted by [shift] *)
-  if debug_subst then printf "entering apply_args: shift = %d, e = %a, args = %a\n%!" shift _e e _s args;
-  let e = rel_shift_expr shift e in
-  let shift = 0 in
+and apply_args e args =
+  let c = next_genctr() in
+  if debug_subst then printf "entering apply_args(%d): e = %a, args = %a\n%!" c _e e _s args;
   let r =
   let pos = get_pos e in
   match unmark e with
-  | APPLY(h,brgs) -> (pos, APPLY(rel_shift_head shift h, join_args (map_spine (rel_shift_expr shift) brgs) args))
+  | APPLY(h,brgs) -> (pos, APPLY(h, join_args brgs args))
   | CONS(x,y) -> (
       match args with
       | ARG _ -> raise (GeneralError "application of an argument to a pair")
-      | CAR args -> apply_args shift x args
-      | CDR args -> apply_args shift y args
-      | END -> rel_shift_expr shift e)
+      | CAR args -> apply_args x args
+      | CDR args -> apply_args y args
+      | END -> e)
   | LAMBDA(_,body) -> (
       match args with
       | ARG(x,args) -> 
-	  apply_args shift (subst_expr 0 [|x|] body) args
+	  apply_args (subst_expr 0 [|x|] body) args
       | CAR args -> raise (GeneralError "pi1 expected a pair but got a function")
       | CDR args -> raise (GeneralError "pi2 expected a pair but got a function")
-      | END -> rel_shift_expr shift e)
+      | END -> e)
   in
-  if debug_subst then printf "leaving apply_args: r = %a\n%!" _e r;
+  if debug_subst then printf "leaving apply_args(%d): r = %a\n%!" c _e r;
   r
 
 and subst_type shift subs t =

@@ -531,16 +531,16 @@ let print_context n file (c:environment) =
   let n = match n with None -> -1 | Some n -> n in
   fprintf file "LF Context:\n";
   let env = c.local_lf_context in
-  let env = if n < 0 then List.rev env else env in (
+  let cl = List.length env in (
   try iteri
       (fun i (v,t) ->
         if i = n then raise Limit;
         match unmark t with
         | F_Singleton(e,t) ->
-            fprintf file " %d %a := %a\n"   i _v v          _e e;
-            fprintf file " %d %a  : %a\n%!" i _v_phantom v  _t t
+            fprintf file " %d %a := %a\n"   (cl-i-1) _v v          _e e;
+            fprintf file " %d %a  : %a\n%!" (cl-i-1) _v_phantom v  _t t
         | _ ->
-            fprintf file " %d %a : %a\n%!" i _v v  _t t
+            fprintf file " %d %a : %a\n%!" (cl-i-1) _v v  _t t
       )
       env
   with Limit -> fprintf file "   ...\n");

@@ -155,7 +155,7 @@ let rec head_reduction (env:environment) (x:lf_expr) : lf_expr =
 	  let args_passed = END in
 	  let rec repeat t args_passed args =
 	    match unmark t, args with
-	    | F_Singleton s, args -> let (x,t) = strip_singleton s in apply_args 0 x args (* here we unfold a definition *)
+	    | F_Singleton s, args -> let (x,t) = strip_singleton s in apply_args x args (* here we unfold a definition *)
 	    | F_Pi(v,a,b), ARG(x,args) -> repeat (subst_type x b) (ARG(x,args_passed)) args
 	    | F_Sigma(v,a,b), CAR args -> repeat a (CAR args_passed) args
 	    | F_Sigma(v,a,b), CDR args -> repeat (subst_car_passed_term pos head args_passed b) (CDR args_passed) args
@@ -194,9 +194,9 @@ let open_context t1 (env,p,o,t2) =
   let v = VarRel 1 in
   let v' = VarRel 0 in
   let e = var_to_lf v ** var_to_lf v' ** END in
-  let p = Substitute.apply_args 1 p e in
-  let o = Substitute.apply_args 1 o e in
-  let t2 = Substitute.apply_args 1 t2 e in
+  let p = Substitute.apply_args (rel_shift_expr 1 p) e in
+  let o = Substitute.apply_args (rel_shift_expr 1 o) e in
+  let t2 = Substitute.apply_args (rel_shift_expr 1 t2) e in
   (env,p,o,t2)
 
 let unpack_El' t =
@@ -219,7 +219,7 @@ let unpack_lambda' o =
   | APPLY(O O_lambda',args) -> args2 args
   | _ -> raise FalseWitness
 
-let apply_2 shift f x y = Substitute.apply_args shift f (x ** y ** END)
+let apply_2 shift f x y = Substitute.apply_args (rel_shift_expr shift f) (x ** y ** END)
 
 let rec check_istype env t =
   match unmark t with
@@ -232,7 +232,7 @@ let rec check_istype env t =
 	  let env = local_tts_bind env "o" t1 in
 	  let o = var_to_lf (VarRel 1) in
 	  let p = var_to_lf (VarRel 0) in
-	  let t2 = Substitute.apply_args 1 t2 (o ** p ** END) in
+	  let t2 = Substitute.apply_args (rel_shift_expr 1 t2) (o ** p ** END) in
 	  check_istype env t2
       | T_U' -> ()
       | T_El' ->
@@ -262,7 +262,7 @@ and check_hastype env p o t =
           check_hastype env po o t1;
           let u = nowhere 123 (APPLY(T T_Pi', t1 ** t2 ** END)) in
           check_hastype env pf f u;
-          let t2' = Substitute.apply_args 0 t2 (po ** o ** END) in
+          let t2' = Substitute.apply_args t2 (po ** o ** END) in
           if not (term_equiv t2' t) then mismatch_term_tstype_tstype env o t t2'
       | W_wlam ->
 	  let p = args1 pargs in
@@ -384,8 +384,8 @@ let rec term_equivalence (env:environment) (x:lf_expr) (y:lf_expr) (t:lf_type) :
   | F_Pi (v,a,b) ->
       let env = local_lf_bind env v a in
       let v = var_to_lf (VarRel 0) in
-      let xres = apply_args 1 x (ARG(v,END)) in
-      let yres = apply_args 1 y (ARG(v,END)) in
+      let xres = apply_args (rel_shift_expr 1 x) (ARG(v,END)) in
+      let yres = apply_args (rel_shift_expr 1 y) (ARG(v,END)) in
       term_equivalence env xres yres b
   | F_Apply(j,args) ->
       if j == F_uexp then (
@@ -710,7 +710,7 @@ let rec term_normalization (env:environment) (x:lf_expr) (t:lf_type) : lf_expr =
       let c = next_genctr() in
       let env = local_lf_bind env v a in
       if !debug_mode then printf "term_normalization(%d) x = %a\n%!" c _e x;
-      let result = apply_args 1 x (ARG(var_to_lf (VarRel 0),END)) in (* optimization: if x is a LAMBDA, then get the body out *)
+      let result = apply_args (rel_shift_expr 1 x) (ARG(var_to_lf (VarRel 0),END)) in (* optimization: if x is a LAMBDA, then get the body out *)
       let body = term_normalization env result b in
       let r = pos, LAMBDA(v,body) in
       if !debug_mode then printf "term_normalization(%d) r = %a\n%!" c _e result;

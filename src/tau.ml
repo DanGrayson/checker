@@ -58,7 +58,7 @@ let rec tau (env:environment) e : lf_expr =
               | ARG(t,ARG(o,END)) ->
 		  let x = Var "x" in
 		  let x' = var_to_lf x in
-                  Helpers.make_T_Pi t (x, tau (ts_bind env x t) (Substitute.apply_args 0 o (ARG(x',END))))
+                  Helpers.make_T_Pi t (x, tau (ts_bind env x t) (Substitute.apply_args o (ARG(x',END))))
               | _ -> raise Internal)
           | O_forall -> (
               match args with
