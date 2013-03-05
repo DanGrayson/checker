@@ -254,13 +254,13 @@ command:
 
 unmarked_command:
 
-    | Variable vars= IDENTIFIER+ Colon t= ts_expr Period
+    | Variable vars= marked_identifier+ Colon t= ts_expr Period
 	{ Toplevel.OVariable (vars,t) }
 
-    | Variable vars= IDENTIFIER+ Type Period
+    | Variable vars= marked_identifier+ Type Period
 	{ Toplevel.TVariable vars }
 
-    | Variable vars= IDENTIFIER+ Ulevel eqns= preceded(Semicolon,uEquation)* Period
+    | Variable vars= marked_identifier+ Ulevel eqns= preceded(Semicolon,uEquation)* Period
 	{ Toplevel.UVariable (vars,eqns) }
 
     | Axiom num= dotted_number? name= variable t= ts_judgment Period
@@ -317,6 +317,11 @@ marked_variable:
 
     | IDENTIFIER
 	{ Position($startpos, $endpos), Var $1 }
+
+marked_identifier:
+
+    | IDENTIFIER
+	{ Position($startpos, $endpos), $1 }
 
 uEquation:
 

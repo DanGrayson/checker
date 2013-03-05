@@ -72,12 +72,6 @@ let rec map_list f = function
   | x :: a as s -> let x' = f x in let a' = map_list f a in if x' == x && a' == a then s else x' :: a'
   | [] as s -> s
 
-let rec map_spine f s = match s with
-  | ARG(x,a) -> let x' = f x in let a' = map_spine f a in if x' == x && a' == a then s else ARG(x',a')
-  | CAR a -> let a' = map_spine f a in if a' == a then s else CAR(a')
-  | CDR a -> let a' = map_spine f a in if a' == a then s else CDR(a')
-  | END -> s
-
 let rec list_to_spine = function
   | x :: a -> x ** list_to_spine a
   | [] -> END
@@ -133,60 +127,14 @@ let locate x l =
     | [] -> raise Not_found
     in repeat 0 l
 
-let rec rel_shift_expr limit shift e =
-  match unmark e with
-  | APPLY(h,args) ->
-      let args' = map_spine (rel_shift_expr limit shift) args in
-      let h' = rel_shift_head limit shift h in
-      if h' == h && args' == args then e else get_pos e, APPLY(h',args')
-  | CONS(x,y) ->
-      let x' = rel_shift_expr limit shift x in
-      let y' = rel_shift_expr limit shift y in
-      if x' == x && y' == y then e else get_pos e, CONS(x',y')
-  | LAMBDA(v, body) ->
-      let limit = limit + 1 in
-      let body' = rel_shift_expr limit shift body in
-      if body' == body then e else get_pos e, LAMBDA(v, body')
-
-and rel_shift_head limit shift h = 
-  match h with
-  | V (VarRel i) when i >= limit -> V (VarRel (shift+i))
-  | _ -> h
-
-and rel_shift_type limit shift t =
-  match unmark t with
-  | F_Pi(v,a,b) ->
-      let a' = rel_shift_type limit shift a in
-      let limit = limit + 1 in
-      let b' = rel_shift_type limit shift b in
-      if a' == a && b' == b then t else get_pos t, F_Pi(v,a',b')
-  | F_Sigma(v,a,b) ->
-      let a' = rel_shift_type limit shift a in
-      let limit = limit + 1 in
-      let b' = rel_shift_type limit shift b in
-      if a' == a && b' == b then t else get_pos t, F_Sigma(v,a',b')
-  | F_Apply(label,args) ->
-      let args' = List.map (rel_shift_expr limit shift) args in
-      if args' == args then t else get_pos t, F_Apply(label, args')
-  | F_Singleton(e,u) ->
-      let e' = rel_shift_expr limit shift e in
-      let u' = rel_shift_type limit shift u in
-      if e' == e && u' == u then t else get_pos t, F_Singleton(e',u')
-
-let rel_shift_expr shift e = if shift = 0 then e else rel_shift_expr 0 shift e
-
-let rel_shift_head shift h = if shift = 0 then h else rel_shift_head 0 shift h
-
-let rel_shift_type shift t = if shift = 0 then t else rel_shift_type 0 shift t
-
 let head_to_type env pos = function
   | W h -> whead_to_lf_type h
   | U h -> uhead_to_lf_type h
   | T h -> thead_to_lf_type h
   | O h -> ohead_to_lf_type h
-  | V (VarRel i) -> rel_shift_type (i+1) (snd (List.nth env.lf_context i))
+  | V (VarRel name) -> local_lf_fetch env name
   | V (Var name) -> (
-      try MapString.find name env.global_lf_context
+      try global_lf_fetch env name
       with Not_found ->
 	raise (TypeCheckingFailure (env, [], [pos, "unbound variable: " ^ name])))
   | V _ -> raise Internal

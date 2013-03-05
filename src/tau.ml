@@ -12,7 +12,7 @@ let rec tau (env:environment) e : lf_expr =
       if !debug_mode then printf " v = %a\n%!" _v v;
       if !debug_mode then print_context (Some 4) stderr env;
       let t =
-	try List.assoc v env.lf_context
+	try List.assoc v env.local_lf_context
 	with Not_found -> raise (TypeCheckingFailure(env, [], [pos, "variable not in LF context: " ^ vartostring v])) in
       match unmark t with
       | F_Sigma(_,_,(_,F_Apply(F_hastype,[(_,APPLY(V v',END)); t]))) -> t
@@ -21,15 +21,15 @@ let rec tau (env:environment) e : lf_expr =
       match h with
       | TAC _ -> raise NotImplemented
       | V v ->
-	  let t =
-	    try ts_fetch env v
-	    with Not_found -> raise (TypeCheckingFailure(env, [], [pos, "variable not in TS context: " ^ vartostring v]))
-	  in
-	  (
-	   match args with
-	   | END -> t
-	   | _ -> raise NotImplemented
-	  )
+          let t =
+            try ts_fetch env v
+            with Not_found -> raise (TypeCheckingFailure(env, [], [pos, "variable not in TS context: " ^ vartostring v]))
+          in
+          (
+           match args with
+           | END -> t
+           | _ -> raise NotImplemented
+          )
       | W wh -> raise (TypeCheckingFailure(env, [],[pos, "a w-expression doesn't have a type"]))
       | U uh -> raise (TypeCheckingFailure(env, [],[pos, "a u-expression doesn't have a type"]))
       | T th -> raise (TypeCheckingFailure(env, [], [pos, "a t-expression doesn't have a type"]))

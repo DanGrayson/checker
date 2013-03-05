@@ -416,24 +416,82 @@ let rec compare_kinds k l =
     -> K_greater
   | _ -> K_incomparable
 
+(** spines *)
+
+let rec map_spine f s = match s with
+  | ARG(x,a) -> let x' = f x in let a' = map_spine f a in if x' == x && a' == a then s else ARG(x',a')
+  | CAR a -> let a' = map_spine f a in if a' == a then s else CAR(a')
+  | CDR a -> let a' = map_spine f a in if a' == a then s else CDR(a')
+  | END -> s
+
+(** relative indices *)
+
+let rec rel_shift_expr limit shift e =
+  match unmark e with
+  | APPLY(h,args) ->
+      let args' = map_spine (rel_shift_expr limit shift) args in
+      let h' = rel_shift_head limit shift h in
+      if h' == h && args' == args then e else get_pos e, APPLY(h',args')
+  | CONS(x,y) ->
+      let x' = rel_shift_expr limit shift x in
+      let y' = rel_shift_expr limit shift y in
+      if x' == x && y' == y then e else get_pos e, CONS(x',y')
+  | LAMBDA(v, body) ->
+      let limit = limit + 1 in
+      let body' = rel_shift_expr limit shift body in
+      if body' == body then e else get_pos e, LAMBDA(v, body')
+
+and rel_shift_head limit shift h = 
+  match h with
+  | V (VarRel i) when i >= limit -> V (VarRel (shift+i))
+  | _ -> h
+
+and rel_shift_type limit shift t =
+  match unmark t with
+  | F_Pi(v,a,b) ->
+      let a' = rel_shift_type limit shift a in
+      let limit = limit + 1 in
+      let b' = rel_shift_type limit shift b in
+      if a' == a && b' == b then t else get_pos t, F_Pi(v,a',b')
+  | F_Sigma(v,a,b) ->
+      let a' = rel_shift_type limit shift a in
+      let limit = limit + 1 in
+      let b' = rel_shift_type limit shift b in
+      if a' == a && b' == b then t else get_pos t, F_Sigma(v,a',b')
+  | F_Apply(label,args) ->
+      let args' = List.map (rel_shift_expr limit shift) args in
+      if args' == args then t else get_pos t, F_Apply(label, args')
+  | F_Singleton(e,u) ->
+      let e' = rel_shift_expr limit shift e in
+      let u' = rel_shift_type limit shift u in
+      if e' == e && u' == u then t else get_pos t, F_Singleton(e',u')
+
+let rel_shift_expr shift e = if shift = 0 then e else rel_shift_expr 0 shift e
+
+let rel_shift_head shift h = if shift = 0 then h else rel_shift_head 0 shift h
+
+let rel_shift_type shift t = if shift = 0 then t else rel_shift_type 0 shift t
+
 (** Contexts. *)
 
 module MapString = Map.Make(String)
 
 type environment = {
     state : int;
-    tts_context : (var * var * lf_expr) list; (* access by relative index *)
-    global_tts_context : lf_type MapString.t;
-    lf_context : (var * lf_type) list;
+    local_tts_context : (string * lf_expr) list;
+    global_tts_context : lf_expr MapString.t;
+    local_lf_context : (var * lf_type) list;
     global_lf_context : lf_type MapString.t;
+    type_variables : string list;
   }
 
 let empty_context = {
   state = 0;
-  tts_context = [];
+  local_tts_context = [];
   global_tts_context = MapString.empty;
-  lf_context = [];
-  global_lf_context = MapString.empty
+  local_lf_context = [];
+  global_lf_context = MapString.empty;
+  type_variables = [];
 }
 
 let interactive = ref false
@@ -443,41 +501,53 @@ let incr_state env =
   then { env with state = env.state + 1 }
   else env
 
-let lf_bind env v t = { env with lf_context = (v,t) :: env.lf_context }
+let local_lf_bind env v t = { env with local_lf_context = (v,t) :: env.local_lf_context }
 
-let global_lf_bind env v t = { env with global_lf_context = MapString.add (vartostring v) t env.global_lf_context }
+let local_lf_fetch env i = 			(* (VarRel i) *)
+  try rel_shift_type (i+1) (snd (List.nth env.local_lf_context i))
+  with Failure "nth" -> raise Not_found
 
-let tts_bind env p v t = { env with tts_context = (p,v,t) :: env.tts_context }
+let global_lf_bind env pos name t = 
+  if MapString.mem name env.global_lf_context then raise (MarkedError (pos, "variable already defined: " ^ name));
+  { env with global_lf_context = MapString.add name t env.global_lf_context }
 
-let global_tts_bind env v t = { env with global_tts_context = MapString.add (vartostring v) t env.global_tts_context }
+let global_lf_fetch env name = MapString.find name env.global_lf_context
 
-let ts_bind env v t =
-  let v' = witness_var v in
-  { env with tts_context = (v',v,t) :: env.tts_context }
+let lf_fetch env = function
+  | Var name -> global_lf_fetch env name
+  | VarRel i -> local_lf_fetch env i
+  | _ -> raise Not_found
 
-let tts_fetch env v =
-  let rec repeat = function
-    | [] -> raise Not_found
-    | (p,o,t)::l ->
-        if compare o v = 0 then (p,t) else
-        if compare p v = 0 then raise Internal else (*debugging only*)
-        repeat l
-  in
-  repeat env.tts_context
+let local_tts_bind env name t = { env with local_tts_context = (name,t) :: env.local_tts_context }
 
-let ts_fetch env v =
-  let (p,t) = tts_fetch env v in
-  t
+let global_tts_bind env pos name t = 
+  if MapString.mem name env.global_tts_context then raise (MarkedError (pos, "variable already defined: " ^ name));
+  { env with global_tts_context = MapString.add name t env.global_tts_context }
 
-let tts_fetch_w env w =
-  let rec repeat = function
-      [] -> raise Not_found
-    | (p,o,t)::l ->
-        if compare p w = 0 then (o,t) else
-        if compare o w = 0 then raise Internal else (*debugging only*)
-        repeat l
-  in
-  repeat env.tts_context
+let ts_bind env v t = local_tts_bind env (vartostring v) t (* ?? *)
+
+let local_tts_fetch env i =			(* (VarRel i) *)
+  try rel_shift_expr ((i+1)/2*2) (snd (List.nth env.local_tts_context (i/2)))
+  with Failure "nth" -> raise Not_found
+
+let global_tts_fetch env name = MapString.find name env.global_tts_context
+
+let tts_fetch env = function
+  | Var name -> global_tts_fetch env name
+  | VarRel i -> local_tts_fetch env i
+  | _ -> raise Not_found
+
+let ts_fetch env v = tts_fetch env v
+
+let first_var env =
+  match env.local_tts_context with
+  | (name,_) :: _ -> Var name
+  | _ -> raise Internal
+
+let first_w_var env =
+  match env.local_tts_context with
+  | (name,_) :: _ -> Var_wd name
+  | _ -> raise Internal
 
 type uContext = UContext of var marked list * (lf_expr * lf_expr) marked list
 

@@ -11,23 +11,11 @@ open Error
 
 exception WitnessNotFound
 
-let first_var env =
-  match env.tts_context with
-  | (p,v,_) :: _ -> v
-  | _ -> raise Internal
-
-let first_w_var env =
-  match env.tts_context with
-  | (p,v,_) :: _ -> p
-  | _ -> raise Internal
-
 let abstract env x =
   nowhere 202 (LAMBDA(first_var env, nowhere 203 (LAMBDA(first_w_var env, x))))
 
 let open_context t1 (env,o,t2) =
-  let v = Var "x" in
-  let v' = Var_wd "x" in
-  let env = tts_bind env v' v t1 in
+  let env = local_tts_bind env "x" t1 in
   let e = var_to_lf (VarRel 1) ** var_to_lf (VarRel 0) ** END in
   let o = Substitute.apply_args 1 o e in
   let t2 = Substitute.apply_args 1 t2 e in
@@ -49,9 +37,9 @@ let rec this_head_reduces env o =   (* returns (p,o'), where p : o == o' : _ *)
 
 and find_w_hastype env o t : lf_expr = (
   match unmark o with
-  | APPLY(V v, END) ->
-      let (p,_) = tts_fetch env v in
-      var_to_lf_pos (get_pos o) p	(*not right*)
+  | APPLY(V (VarRel i), END) ->
+      assert (i mod 2 = 0);
+      var_to_lf_pos (get_pos o) (VarRel (i+1))	(*??*)
   | APPLY(O O_ev',args) ->
       let (f,o,t1,t2) = args4 args in
       let tf = nowhere 206 (make_T_Pi' t1 t2) in

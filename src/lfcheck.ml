@@ -89,7 +89,7 @@ let apply_tactic surr env pos t args = function
         with Not_found -> err env pos ("unknown tactic: " ^ name) in
       tactic surr env pos t args
   | Tactic_index n ->
-      if n < List.length env.lf_context
+      if n < List.length env.local_lf_context
       then TacticSuccess (var_to_lf_pos pos (VarRel n))
       else err env pos ("index out of range: "^string_of_int n)
 
@@ -147,7 +147,7 @@ let rec head_reduction (env:environment) (x:lf_expr) : lf_expr =
 	  let t = 
 	    try
 	      head_to_type env pos head 
-	    with Failure "nth" ->
+	    with Not_found ->
 	      printf "%a: head = %a\n%!" _pos pos _h head;
 	      print_context None stdout env;
 	      raise Internal
@@ -190,10 +190,10 @@ let compare_var_to_expr v e =
   | _ -> false
 
 let open_context t1 (env,p,o,t2) =
-  let v = Var "x" in
-  let v' = Var_wd "x" in
-  let env = tts_bind env v v' t1 in
-  let e = var_to_lf (VarRel 1) ** var_to_lf (VarRel 0) ** END in
+  let env = local_tts_bind env "x" t1 in
+  let v = VarRel 1 in
+  let v' = VarRel 0 in
+  let e = var_to_lf v ** var_to_lf v' ** END in
   let p = Substitute.apply_args 1 p e in
   let o = Substitute.apply_args 1 o e in
   let t2 = Substitute.apply_args 1 t2 e in
@@ -222,37 +222,35 @@ let unpack_lambda' o =
 let apply_2 shift f x y = Substitute.apply_args shift f (x ** y ** END)
 
 let rec check_istype env t =
-  (* if not (List.exists (fun (p,o,u) -> term_equivalence t u) env.tts_context) *)
-  (* then *)
-    match unmark t with
-    | APPLY(T th, args) -> (
-	match th with
-	| T_Pi' ->
-	    let t1,t2 = args2 args in
-	    check_istype env t1;
-	    let o = Var "o" in
-	    let p = Var_wd "o" in
-	    let env = tts_bind env p o t1 in
-	    let o = var_to_lf (VarRel 1) in
-	    let p = var_to_lf (VarRel 0) in
-	    let t2 = Substitute.apply_args 1 t2 (p ** o ** END) in
-	    check_istype env t2
-	| T_U' -> ()
-	| T_El' ->
-	    let o,p = args2 args in
-	    check_hastype env p o uuu
-	| T_Proof ->
-	    let p,o,t = args3 args in
-	    check_hastype env p o t
-	| _ -> err env (get_pos t) "invalid type, or not implemented yet.")
-    | _ -> err env (get_pos t) ("invalid type, or not implemented yet: " ^ ts_expr_to_string t)
+  match unmark t with
+  | APPLY(V (Var name), END) -> if not (List.mem name env.type_variables) then err env (get_pos t) "variable not declared as a type"
+  | APPLY(T th, args) -> (
+      match th with
+      | T_Pi' ->
+	  let t1,t2 = args2 args in
+	  check_istype env t1;
+	  let env = local_tts_bind env "o" t1 in
+	  let o = var_to_lf (VarRel 1) in
+	  let p = var_to_lf (VarRel 0) in
+	  let t2 = Substitute.apply_args 1 t2 (p ** o ** END) in
+	  check_istype env t2
+      | T_U' -> ()
+      | T_El' ->
+	  let o,p = args2 args in
+	  check_hastype env p o uuu
+      | T_Proof ->
+	  let p,o,t = args3 args in
+	  check_hastype env p o t
+      | _ -> err env (get_pos t) "invalid type, or not implemented yet.")
+  | _ -> err env (get_pos t) ("invalid type, or not implemented yet: " ^ ts_expr_to_string t)
 
 and check_hastype env p o t =
   if false then printf "check_hastype\n p = %a\n o = %a\n t = %a\n%!" _e p _e o _e t;
   match unmark p with
-  | APPLY(V (Var_wd _ as w), END) -> (
-      let o',t' =
-	try tts_fetch_w env w
+  | APPLY(V (VarRel i as p'), END) -> (
+      let o' = base_var p' in
+      let t' =
+	try local_tts_fetch env i
 	with Not_found -> err env (get_pos p) "variable not in context" in
       if not (compare_var_to_expr o' o) then err env (get_pos o) ("expected variable " ^ vartostring o');
       if not (term_equiv t t') then mismatch_term_tstype_tstype env o t' t)
@@ -384,7 +382,7 @@ let rec term_equivalence (env:environment) (x:lf_expr) (y:lf_expr) (t:lf_type) :
       term_equivalence env (pi1 x) (pi1 y) a;
       term_equivalence env (pi2 x) (pi2 y) (subst_type (pi1 x) b)
   | F_Pi (v,a,b) ->
-      let env = lf_bind env v a in
+      let env = local_lf_bind env v a in
       let v = var_to_lf (VarRel 0) in
       let xres = apply_args 1 x (ARG(v,END)) in
       let yres = apply_args 1 y (ARG(v,END)) in
@@ -455,7 +453,7 @@ and type_equivalence (env:environment) (t:lf_type) (u:lf_type) : unit =
     | F_Sigma(v,a,b), F_Sigma(w,c,d)
     | F_Pi(v,a,b), F_Pi(w,c,d) ->
         type_equivalence env a c;
-        let env = lf_bind env v a in
+        let env = local_lf_bind env v a in
         type_equivalence env b d
     | F_Apply(h,args), F_Apply(h',args') ->
         (* Here we augment the algorithm in the paper to handle the type families of LF. *)
@@ -492,10 +490,10 @@ and subtype (env:environment) (t:lf_type) (u:lf_type) : unit =
         subtype env t u
     | F_Pi(x,a,b) , F_Pi(y,c,d) ->
         subtype env c a;                        (* contravariant *)
-        subtype (lf_bind env x c) b d
+        subtype (local_lf_bind env x c) b d
     | F_Sigma(x,a,b) , F_Sigma(y,c,d) ->
         subtype env a c;                        (* covariant *)
-        subtype (lf_bind env x a) b d
+        subtype (local_lf_bind env x a) b d
     | F_Apply(F_istype_witness,_), F_Apply(F_wexp,[])
     | F_Apply(F_hastype_witness,_), F_Apply(F_wexp,[])
     | F_Apply(F_type_equality_witness,_), F_Apply(F_wexp,[])
@@ -534,7 +532,7 @@ let rec type_check (surr:surrounding) (env:environment) (e0:lf_expr) (t:lf_type)
                                    our lambda doesn't contain type information for the variable,
                                    and theirs does *)
       let surr = (S_body,Some e0,Some t) :: surr in
-      let body = type_check surr (lf_bind env v a) body b in
+      let body = type_check surr (local_lf_bind env v a) body b in
       pos, LAMBDA(v,body)
   | LAMBDA _, F_Sigma _ ->
       raise (TypeCheckingFailure (env, surr, [
@@ -657,7 +655,7 @@ let type_validity (surr:surrounding) (env:environment) (t:lf_type) : lf_type =
       match t with
       | F_Pi(v,t,u) ->
           let t = type_validity ((S_argument 1,None,Some t0) :: surr) env t in
-          let u = type_validity ((S_argument 2,None,Some t0) :: surr) (lf_bind env v t) u in (
+          let u = type_validity ((S_argument 2,None,Some t0) :: surr) (local_lf_bind env v t) u in (
 	  try
 	    check_less_equal t u
 	  with
@@ -669,7 +667,7 @@ let type_validity (surr:surrounding) (env:environment) (t:lf_type) : lf_type =
           F_Pi(v,t,u)
       | F_Sigma(v,t,u) ->
           let t = type_validity ((S_argument 1,None,Some t0) :: surr) env t in
-          let u = type_validity ((S_argument 2,None,Some t0) :: surr) (lf_bind env v t) u in
+          let u = type_validity ((S_argument 2,None,Some t0) :: surr) (local_lf_bind env v t) u in
           F_Sigma(v,t,u)
       | F_Apply(head,args) ->
           let kind =
@@ -710,7 +708,7 @@ let rec term_normalization (env:environment) (x:lf_expr) (t:lf_type) : lf_expr =
   match t0 with
   | F_Pi(v,a,b) ->
       let c = next_genctr() in
-      let env = lf_bind env v a in
+      let env = local_lf_bind env v a in
       if !debug_mode then printf "term_normalization(%d) x = %a\n%!" c _e x;
       let result = apply_args 1 x (ARG(var_to_lf (VarRel 0),END)) in (* optimization: if x is a LAMBDA, then get the body out *)
       let body = term_normalization env result b in
@@ -792,11 +790,11 @@ let rec type_normalization (env:environment) (t:lf_type) : lf_type =
   let t = match t0 with
   | F_Pi(v,a,b) ->
       let a' = type_normalization env a in
-      let b' = type_normalization (lf_bind env v a) b in
+      let b' = type_normalization (local_lf_bind env v a) b in
       F_Pi(v,a',b')
   | F_Sigma(v,a,b) ->
       let a' = type_normalization env a in
-      let b' = type_normalization (lf_bind env v a) b in
+      let b' = type_normalization (local_lf_bind env v a) b in
       F_Sigma(v,a',b')
   | F_Apply(head,args) ->
       let kind = tfhead_to_kind head in

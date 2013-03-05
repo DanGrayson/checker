@@ -20,12 +20,12 @@ let assumption surr env pos t args =
     | [] -> (
 	try
 	  MapString.iter
-	    (fun v u -> if Lfcheck.is_subtype env u t then raise (FoundOne (Var v)))
+	    (fun v u -> if Lfcheck.is_subtype env u t then raise (FoundOne (Var v))) (* this is probably too expensive to keep doing *)
 	    env.global_lf_context;
 	  TacticFailure
 	with FoundOne v -> TacticSuccess(var_to_lf v)
 	)
-  in repeat 0 env.lf_context
+  in repeat 0 env.local_lf_context
 
 (*
   Local Variables:

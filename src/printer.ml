@@ -530,7 +530,7 @@ let print_global_lf_context file env =
 let print_context n file (c:environment) =
   let n = match n with None -> -1 | Some n -> n in
   fprintf file "LF Context:\n";
-  let env = c.lf_context in
+  let env = c.local_lf_context in
   let env = if n < 0 then List.rev env else env in (
   try iteri
       (fun i (v,t) ->
@@ -545,12 +545,12 @@ let print_context n file (c:environment) =
       env
   with Limit -> fprintf file "   ...\n");
   fprintf file "TTS Context:\n";
-  let env = c.tts_context in
+  let env = c.local_tts_context in
   let env = if n < 0 then List.rev env else env in (
   try iteri
-      (fun i (p,o,t) ->
+      (fun i (name,t) ->
         if i = n then raise Limit;
-	fprintf file "   %a : %a : %a\n%!" _v p _v o _e t
+	fprintf file "   %s : %a\n%!" name _e t
       )
       env
   with Limit -> fprintf file "     ...\n");

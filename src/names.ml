@@ -101,8 +101,7 @@ let ensure_new_name env pos name =
 
 let axiom_bind v (pos:position) t (env:environment) =
   let name = vartostring v in
-  ensure_new_name env pos name;
-  global_lf_bind env v t
+  global_lf_bind env pos name t
 
 let def_bind v (pos:position) o t (env:environment) =
   axiom_bind v pos (with_pos pos (F_Singleton(o,t))) env

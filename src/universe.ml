@@ -50,14 +50,14 @@ let get_uvars env =
   let rec get_uvars accu = function
   | [] -> List.rev accu
   | (u,t) :: rest -> if t = uexp then get_uvars (u :: accu) rest else get_uvars accu rest
-  in get_uvars [] env.lf_context
+  in get_uvars [] env.local_lf_context
 
 let get_ueqns env =
   let rec get_ueqns accu = function
   | (_, (pos,F_Apply(F_ulevel_equality,[u; u']))) :: rest -> get_ueqns ((u,u') :: accu) rest
   | _ :: rest -> get_ueqns accu rest
   | [] -> List.rev accu
-  in get_ueqns [] env.lf_context
+  in get_ueqns [] env.local_lf_context
 
 let chk_var_ueqns uv eqns = List.iter (chk uv) eqns
 

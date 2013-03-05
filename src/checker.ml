@@ -83,20 +83,22 @@ let protect f posfun =
       raise_switch ex Error_Handled
 
 let add_tVars env tvars =
-  { env with
-    tts_context = List.rev_append (List.map (fun t ->Var_wd "_", Var "_", var_to_lf (Var t)) tvars) env.tts_context; (* ??? *)
-    lf_context = List.rev_append
-      (List.flatten (List.map (fun t -> [ (Var t, texp); (Var "ist", istype (var_to_lf (Var t))); ] ) tvars))
-      env.lf_context
-  }
+  List.fold_left
+    (fun env (pos,t) ->
+      let env = { env with type_variables = t :: env.type_variables } in
+      let env = global_lf_bind env pos t texp in
+      let env = global_lf_bind env pos (t ^ "$istype") (istype (var_to_lf (Var t))) in
+      env 
+    ) env tvars
 
 let add_oVars env ovars t =
-  { env with
-    tts_context = List.rev_append (List.map (fun o -> Var_wd o, Var o, t) ovars) env.tts_context;
-    lf_context = List.rev_append
-      (List.flatten (List.map (fun o -> [ (Var o, oexp); (Var "hast", hastype (var_to_lf (Var o)) t); ] ) ovars))
-      env.lf_context
-  }
+  List.fold_left
+    (fun env (pos,o) -> 
+      let env = global_tts_bind env pos o t in
+      let env = global_lf_bind env pos o oexp in
+      let env = global_lf_bind env pos (o ^ "$hastype") (hastype (var_to_lf (Var o)) t) in
+      env 
+    ) env ovars
 
 let lf_axiomCommand env pos name t =
   if show_rules then printf "Axiom LF %a: %a\n%!" _v name _t t;
@@ -204,11 +206,11 @@ let chk_u env u =
   Lfcheck.term_normalization env u uexp
 
 let ubind env uvars ueqns =
-  let uvars = List.map (fun u -> Var u) uvars in
-  let env = List.fold_left (fun env u -> global_lf_bind env u uexp) env uvars in
-  let ueqns = List.map (fun (u,v) -> (chk_u env u, chk_u env v)) ueqns in
-  let env = List.fold_left (fun env (u,v) -> global_lf_bind env (Var "ueq") (ulevel_equality u v)) env ueqns in
-  chk_ueqns env ueqns;
+  let env = List.fold_left (fun env (pos,u) -> global_lf_bind env pos u uexp) env uvars in
+  (* let uvars = List.map (fun u -> Var u) uvars in *)
+  let ueqns = List.map (fun (u,v) -> ("ueq" ^ (string_of_int (next_genctr()))), chk_u env u, chk_u env v) ueqns in
+  let env = List.fold_left (fun env (name,u,v) -> global_lf_bind env (no_pos 123) name (ulevel_equality u v)) env ueqns in
+  (* chk_ueqns env ueqns; *)
   env
 
 let rec process_command env lexbuf =

@@ -3,7 +3,8 @@ Check LF : (p:wexp) -> (t:texp) -> (t':texp) -> witnessed_type_equality p t t'.
 Check LF : (p:wexp) -> (t:texp) -> (o:oexp) -> (o':oexp) -> witnessed_object_equality p o o' t.
 
 Axiom LF p : wexp.
-Axiom LF T : texp.
+Variable T Type.
+# Axiom LF T : texp.
 Axiom LF T' : texp.
 Axiom LF o : oexp.
 Axiom LF o' : oexp.
@@ -13,10 +14,10 @@ Check TS : [ p : o ≡ o' : T ].
 
 Variable W Type.
 Check TTS : [ @[U'] Type ].
-Variable xo : T.				      # Eventually we'll be checking that the type
-End. # fix later
+Variable xo : T. 
+
 Check TTS : [ @[Pi';_][T,@[U']] Type ].
-Variable xf : @[Pi';_][T,@[U']].			      # to the right of the colon is valid here.
+Variable xf : @[Pi';_][T,@[U']].
 Axiom LF xf$ : wexp.
 Axiom LF xo$ : wexp.
 

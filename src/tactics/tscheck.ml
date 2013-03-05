@@ -108,7 +108,7 @@ let rec tscheck surr env pos tp args =
 	NotImplemented|Args_match_failure -> TacticFailure
      )
   | F_Pi(v,a,b) -> (
-      match tscheck surr (lf_bind env v a) (get_pos tp) b args with
+      match tscheck surr (local_lf_bind env v a) (get_pos tp) b args with
       | TacticSuccess e -> TacticSuccess (with_pos pos (LAMBDA(v,e)))
       | TacticFailure as r -> r)
   | _ -> Default.default surr env pos tp args
