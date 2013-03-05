@@ -36,10 +36,13 @@ let rec this_head_reduces env o =   (* returns (p,o'), where p : o == o' : _ *)
     FalseWitness -> raise Not_found
 
 and find_w_hastype env o t : lf_expr = (
+  printf "find_w_hastype  o=%a  t=%a\n%!" _e o _e t;
   match unmark o with
-  | APPLY(V (VarRel i), END) ->
-      assert (i mod 2 = 0);
-      var_to_lf_pos (get_pos o) (VarRel (i+1))	(*??*)
+  | APPLY(V v, END) ->
+      let t' = tts_fetch env v in
+      if term_equiv t t'
+      then var_to_lf_pos (get_pos o) (witness_var v)
+      else raise WitnessNotFound
   | APPLY(O O_ev',args) ->
       let (f,o,t1,t2) = args4 args in
       let tf = nowhere 206 (make_T_Pi' t1 t2) in

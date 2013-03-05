@@ -533,9 +533,8 @@ let local_tts_fetch env i =			(* (VarRel i) *)
 let global_tts_fetch env name = MapString.find name env.global_tts_context
 
 let tts_fetch env = function
-  | Var name -> global_tts_fetch env name
+  | Var name | Var_wd name -> global_tts_fetch env name
   | VarRel i -> local_tts_fetch env i
-  | _ -> raise Not_found
 
 let ts_fetch env v = tts_fetch env v
 

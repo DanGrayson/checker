@@ -86,7 +86,6 @@ Check LF a3.
 Lemma a2a [ : xf : @[Pi';_][T,@[U']] ] := a2 .
 
 # Check TTS : [ @[El'][A,A$] Type ].
-End. # working on definitions
 
 #   Local Variables:
 #   compile-command: "make -C .. witnessed-judgments "

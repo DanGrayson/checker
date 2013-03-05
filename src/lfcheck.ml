@@ -232,7 +232,7 @@ let rec check_istype env t =
 	  let env = local_tts_bind env "o" t1 in
 	  let o = var_to_lf (VarRel 1) in
 	  let p = var_to_lf (VarRel 0) in
-	  let t2 = Substitute.apply_args 1 t2 (p ** o ** END) in
+	  let t2 = Substitute.apply_args 1 t2 (o ** p ** END) in
 	  check_istype env t2
       | T_U' -> ()
       | T_El' ->
@@ -245,12 +245,12 @@ let rec check_istype env t =
   | _ -> err env (get_pos t) ("invalid type, or not implemented yet: " ^ ts_expr_to_string t)
 
 and check_hastype env p o t =
-  if false then printf "check_hastype\n p = %a\n o = %a\n t = %a\n%!" _e p _e o _e t;
+  if true then printf "check_hastype\n p = %a\n o = %a\n t = %a\n%!" _e p _e o _e t;
   match unmark p with
-  | APPLY(V (VarRel i as p'), END) -> (
+  | APPLY(V (VarRel _ | Var_wd _ as p'), END) -> (
       let o' = base_var p' in
       let t' =
-	try local_tts_fetch env i
+	try tts_fetch env p'
 	with Not_found -> err env (get_pos p) "variable not in context" in
       if not (compare_var_to_expr o' o) then err env (get_pos o) ("expected variable " ^ vartostring o');
       if not (term_equiv t t') then mismatch_term_tstype_tstype env o t' t)
@@ -298,7 +298,7 @@ and check_type_equality env p t t' =
       | W_wevt1 | W_wevt2 | W_wevf | W_wevo | W_wbeta | W_weta
 	-> raise FalseWitness
      )
-  | _ -> err env (get_pos p) ("expected a witness expression : " ^ lf_expr_to_string p)
+  | _ -> err env (get_pos p) ("expected a witness expression :  " ^ lf_expr_to_string p)
 
 
 and check_object_equality env p o o' t =

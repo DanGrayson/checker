@@ -137,10 +137,16 @@ let head_to_type env pos = function
       try global_lf_fetch env name
       with Not_found ->
 	raise (TypeCheckingFailure (env, [], [pos, "unbound variable: " ^ name])))
-  | V _ -> raise Internal
+  | V (Var_wd name) -> (
+      try ignore (global_lf_fetch env name); wexp (* is this a good way to do it ? *)
+      with Not_found ->
+	raise (TypeCheckingFailure (env, [], [pos, "unbound variable: " ^ name])))
   | TAC _ -> raise Internal
 
-(** Routines for replacing named variables by relative index variables in expressions. *)
+(** Routines for replacing named variables by relative index variables in expressions. 
+
+    Warning: the first variable of subl is the *innermost* variable.
+ *)
 let rec var_subst_expr shift subl e =
   match unmark e with
   | APPLY(h,args) -> (
@@ -201,15 +207,15 @@ let var_subst_kind subl t = var_subst_kind 0 subl t
 
 let rel1_expr v0 x = var_subst_expr [v0] x
 
-let rel2_expr v0 v1 x = var_subst_expr [v0;v1] x
+let rel2_expr v0 v1 x = var_subst_expr [v1;v0] x
 
-let rel3_expr v0 v1 v2 x = var_subst_expr [v0;v1;v2] x
+let rel3_expr v0 v1 v2 x = var_subst_expr [v2;v1;v0] x
 
 let rel1_type v0 t = var_subst_type [v0] t
 
-let rel2_type v0 v1 t = var_subst_type [v0;v1] t
+let rel2_type v0 v1 t = var_subst_type [v1;v0] t
 
-let rel3_type v0 v1 v2 t = var_subst_type [v0;v1;v2] t
+let rel3_type v0 v1 v2 t = var_subst_type [v2;v1;v0] t
 
 let abstract_expr v x = v, rel1_expr v x
 

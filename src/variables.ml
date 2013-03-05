@@ -14,12 +14,12 @@ let vartostring = function
 
 let base_var = function
   | Var_wd x -> Var x
-  | VarRel i -> if i mod 2 = 1 then VarRel (i-1) else raise Internal
+  | VarRel i -> if i mod 2 = 0 then VarRel (i+1) else raise Internal
   | Var _ -> raise Internal
 
 let witness_var = function
   | Var x -> Var_wd x
-  | VarRel i -> if i mod 2 = 0 then VarRel (i+1) else raise Internal
+  | VarRel i -> if i mod 2 = 1 then VarRel (i-1) else raise Internal
   | Var_wd _ -> raise Internal
 
 exception GensymCounterOverflow
