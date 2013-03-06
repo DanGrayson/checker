@@ -798,7 +798,7 @@ let rec type_normalization (env:environment) (t:lf_type) : lf_type =
           | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), x :: args -> err env pos "too many arguments"
           | K_Pi(v,a,kind'), x :: args ->
               term_normalization env x a ::
-              repeat (lf_bind env v a) kind' args
+              repeat env (subst_kind (v,x) kind') args
           | K_Pi(_,a,_), [] -> errmissingarg env pos a
         in repeat env kind args
       in F_Apply(head,args)
