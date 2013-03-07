@@ -95,7 +95,7 @@ let rec tscheck surr env pos tp args =
       | APPLY(T T_Pi,args) -> (
           let (a,b) = args2 args in
           if tactic_tracing then (see "a" a; see "b" b);
-          TacticSuccess ( with_pos_of t (APPLY(V (Var (Id "∏_istype")), a ** b ** CDR(self ** self ** END))) )
+          TacticSuccess ( with_pos_of t (APPLY(V (Var (id "∏_istype")), a ** b ** CDR(self ** self ** END))) )
          )
       | _ -> Default.default surr env pos tp args
       )

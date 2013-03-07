@@ -239,9 +239,9 @@ let lambda3 v0 v1 v2 x =
 let make_Var c = Var c
 
 let make_F_Pi t (v,u) = F_Pi(v, t, rel1_type v u)
-let make_F_Pi_simple t u = F_Pi(Id "_", t, u)
+let make_F_Pi_simple t u = F_Pi(id "_", t, u)
 let make_F_Sigma t (v,u) = F_Sigma(v, t, rel1_type v u)
-let make_F_Sigma_simple t u = F_Sigma(Id "_", t, u)
+let make_F_Sigma_simple t u = F_Sigma(id "_", t, u)
 
 let make_U h a = APPLY(U h, a)
 let make_T h a = APPLY(T h, a)
@@ -302,7 +302,7 @@ let make_W_Wrefl = make_W W_wrefl END
 let make_T_Pi' t1 t2 = make_T T_Pi' (t1 ** t2 ** END)
 
 let this_object_of_type pos o t =
-  let id = Id "x" in
+  let id = id "x" in
   let v = Var id in
   let a = with_pos pos (F_Singleton(o,oexp)) in
   let b = hastype (nowhere 126 (APPLY(V v,END))) t in

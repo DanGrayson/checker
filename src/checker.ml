@@ -86,8 +86,8 @@ let add_tVars env tvars =
   List.fold_left
     (fun env (pos,t) ->
       let env = { env with type_variables = t :: env.type_variables } in
-      let env = global_lf_bind env pos (Id t) texp in
-      let env = global_lf_bind env pos (Id (t ^ "$istype")) (istype (var_to_lf (Var (Id t)))) in
+      let env = global_lf_bind env pos (id t) texp in
+      let env = global_lf_bind env pos (id (t ^ "$istype")) (istype (var_to_lf (Var (id t)))) in
       env 
     ) env tvars
 
@@ -95,8 +95,8 @@ let add_oVars env ovars t =
   List.fold_left
     (fun env (pos,o) -> 
       let env = global_tts_bind env pos o t in
-      let env = global_lf_bind env pos (Id o) oexp in
-      let env = global_lf_bind env pos (Id (o ^ "$hastype")) (hastype (var_to_lf (Var (Id o))) t) in
+      let env = global_lf_bind env pos (id o) oexp in
+      let env = global_lf_bind env pos (id (o ^ "$hastype")) (hastype (var_to_lf (Var (id o))) t) in
       env 
     ) env ovars
 
@@ -129,7 +129,7 @@ let defCommand env defs =
 	if show_definitions then printf "       %s : %a [normalized]\n%!" name  _t tp'';
 	let _ = type_validity [] env tp'' in ();
        );
-      let env = def_bind (Id name) pos tm' tp' env in
+      let env = def_bind (id name) pos tm' tp' env in
       if !proof_general_mode then printf "%s is defined\n%!" name;
       env
     )
@@ -208,10 +208,10 @@ let chk_u env u =
 let ueqn_counter = new_counter()
 
 let ubind env uvars ueqns =
-  let env = List.fold_left (fun env (pos,u) -> global_lf_bind env pos (Id u) uexp) env uvars in
+  let env = List.fold_left (fun env (pos,u) -> global_lf_bind env pos (id u) uexp) env uvars in
   (* let uvars = List.map (fun u -> Var u) uvars in *)
   let ueqns = List.map (fun (u,v) -> ("ueq" ^ (string_of_int (ueqn_counter()))), chk_u env u, chk_u env v) ueqns in
-  let env = List.fold_left (fun env (name,u,v) -> global_lf_bind env (no_pos 123) (Id name) (ulevel_equality u v)) env ueqns in
+  let env = List.fold_left (fun env (name,u,v) -> global_lf_bind env (no_pos 123) (id name) (ulevel_equality u v)) env ueqns in
   (* chk_ueqns env ueqns; *)
   env
 

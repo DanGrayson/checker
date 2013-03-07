@@ -134,7 +134,7 @@ unmarked_lf_type:
 	{ unmark (object_uequality a b t) }
 
     | a= lf_type Turnstile b= lf_type
-    	{ let v = good_var_name a (Id "foo") in (* the "|-" operator is not fully implemented yet *)
+    	{ let v = good_var_name a (id "foo") in (* the "|-" operator is not fully implemented yet *)
 	  let v = get_pos a, v in
 	  unmark (pi1_implication (v,a) b) }
 
@@ -262,7 +262,7 @@ unmarked_command:
 	{ Toplevel.UVariable (vars,eqns) }
 
     | Axiom num= dotted_number? name= NAME t= ts_judgment Period
-	{ Toplevel.Axiom (num,Id name,t) }
+	{ Toplevel.Axiom (num,id name,t) }
 
     | Axiom LF num= dotted_number? name= identifier Colon t= lf_type Period
 	{ Toplevel.Axiom (num,name,t) }
@@ -364,7 +364,7 @@ unmarked_ts_judgment:
 	{ make_F_Sigma_simple a b }
 
     | a= ts_judgment TurnstileDouble b= ts_judgment
-    	{ let v = good_var_name a (Id "foo") in (* the "|-" operator is not fully implemented yet *)
+    	{ let v = good_var_name a (id "foo") in (* the "|-" operator is not fully implemented yet *)
 	  let v = get_pos a, v in
 	  unmark (pi1_implication (v,a) b) }
 
@@ -372,11 +372,11 @@ unmarked_ts_judgment:
 
     | Type
 	{ let pos = Position($startpos, $endpos) in
-	  let v = Id "T" in
+	  let v = id "T" in
 	  make_F_Sigma texp (v,with_pos pos (F_Apply(F_istype, [var_to_lf_pos pos (Var v)]))) }
 
     | Colon t= ts_expr
-	{ let v = Id "o" in
+	{ let v = id "o" in
 	  let pos = get_pos t in
 	  make_F_Sigma oexp (v,with_pos pos (F_Apply(F_hastype, [var_to_lf_pos pos (Var v); t]))) }
 
@@ -384,7 +384,7 @@ unmarked_ts_judgment:
 	{ unmark (this_object_of_type (get_pos x) x t) }
 
     | Turnstile a= ts_expr Type
-	{ let v = Id "t" in
+	{ let v = id "t" in
 	  let pos = get_pos a in
 	  let a = with_pos pos (F_Singleton(a,texp)) in
 	  let b = with_pos pos (F_Apply(F_istype, [var_to_lf_pos pos (Var v)])) in
@@ -531,12 +531,12 @@ arglist:
 
 empty_hole: Underscore { cite_tactic (Tactic_name "default") END }
 
-unused_identifier: Underscore { Id "_" }
+unused_identifier: Underscore { id "_" }
 
 identifier:
 
-    | NAME { Id $1 }
-    | NAME_W { Idw $1 }
+    | NAME { id $1 }
+    | NAME_W { idw $1 }
 
 identifier_or_unused: identifier {$1} | unused_identifier {$1}
 
@@ -606,7 +606,7 @@ unmarked_ts_expr:
 	{ make_T_Id (with_pos_of x (cite_tactic (Tactic_name "tn12") END)) x y }
 
     | t= ts_expr Arrow u= ts_expr
-	{ make_T_Pi t (Id "_",u) }
+	{ make_T_Pi t (id "_",u) }
 
     | Sigma x= identifier Colon t1= ts_expr Comma t2= ts_expr
 	%prec Reduce_binder

@@ -36,7 +36,7 @@ let rec this_head_reduces env o =   (* returns (p,o'), where p : o == o' : _ *)
     FalseWitness -> raise Not_found
 
 and find_w_hastype env o t : lf_expr = (
-  printf "find_w_hastype  o=%a  t=%a\n%!" _e o _e t;
+  if false then printf "find_w_hastype  o=%a  t=%a\n%!" _e o _e t;
   match unmark o with
   | APPLY(V v, END) ->
       let t' = tts_fetch env v in

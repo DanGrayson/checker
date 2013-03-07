@@ -158,7 +158,7 @@ let wexp = F_wexp @@ []
 let texp = F_texp @@ []
 let oexp = F_oexp @@ []
 
-let arrow a b = nowhere 4 (F_Pi(Id "_", a, b))
+let arrow a b = nowhere 4 (F_Pi(id "_", a, b))
 let ( @-> ) = arrow
 
 let istype t = F_istype @@ [t]				       (* t Type *)
@@ -314,7 +314,7 @@ type lf_kind =
   | K_witnessed_judgment
   | K_Pi of identifier * lf_type * lf_kind
 
-let ( @@-> ) a b = K_Pi(Id "_", a, b)
+let ( @@-> ) a b = K_Pi(id "_", a, b)
 
 let istype_kind = texp @@-> K_primitive_judgment
 
@@ -350,7 +350,7 @@ let var_to_lf v = nowhere 1 (APPLY(V v,END))
 let  id_to_lf v = var_to_lf (Var v)
 
 let judged_obj_equal_kind =
-  K_Pi(Id "T",
+  K_Pi(id "T",
        a_type,
        obj_of_type (var_to_lf (VarRel 0))
        @@-> obj_of_type (var_to_lf (VarRel 1))
@@ -526,9 +526,7 @@ let global_tts_bind env pos name t =
   { env with global_tts_context = MapString.add name t env.global_tts_context }
 
 let ts_bind env v t = 
-  match v with
-  | Id name -> local_tts_bind env name t (* ?? *)
-  | Idw _ -> raise Internal
+  if isid v then local_tts_bind env (id_to_name v) t else raise Internal
 
 let local_tts_fetch env i =			(* (VarRel i) *)
   try rel_shift_expr ((i+1)/2*2) (snd (List.nth env.local_tts_context (i/2)))
@@ -537,19 +535,19 @@ let local_tts_fetch env i =			(* (VarRel i) *)
 let global_tts_fetch env name = MapString.find name env.global_tts_context
 
 let tts_fetch env = function
-  | Var (Id name | Idw name) -> global_tts_fetch env name
+  | Var v -> global_tts_fetch env (id_to_name v)
   | VarRel i -> local_tts_fetch env i
 
 let ts_fetch env v = tts_fetch env v
 
 let first_var env =
   match env.local_tts_context with
-  | (name,_) :: _ -> Id name
+  | (name,_) :: _ -> id name
   | _ -> raise Internal
 
 let first_w_var env =
   match env.local_tts_context with
-  | (name,_) :: _ -> Idw name
+  | (name,_) :: _ -> idw name
   | _ -> raise Internal
 
 type uContext = UContext of var marked list * (lf_expr * lf_expr) marked list

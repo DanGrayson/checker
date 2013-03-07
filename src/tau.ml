@@ -44,7 +44,7 @@ let rec tau (env:environment) e : lf_expr =
               | ARG(m1,ARG(m2,END)) ->
                   Helpers.make_T_Pi
                     (with_pos_of m1 (Helpers.make_T_U m1))
-                    (Id "_", (with_pos_of m2 (Helpers.make_T_U m2)))
+                    (id "_", (with_pos_of m2 (Helpers.make_T_U m2)))
               | _ -> raise (TypeCheckingFailure(env, [], [pos, "expected [j] to have two branches"])))
           | O_ev' -> raise NotImplemented
           | O_ev -> (
@@ -56,7 +56,7 @@ let rec tau (env:environment) e : lf_expr =
           | O_lambda -> (
               match args with
               | ARG(t,ARG(o,END)) ->
-		  let x = Id "x" in
+		  let x = id "x" in
 		  let x' = id_to_lf x in
                   Helpers.make_T_Pi t (x, tau (ts_bind env x t) (Substitute.apply_args o (ARG(x',END))))
               | _ -> raise Internal)
