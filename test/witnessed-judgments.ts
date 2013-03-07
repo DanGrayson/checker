@@ -20,7 +20,7 @@ Check TTS : [ @[Pi';_][T,@[U']] Type ].
 Variable xf : @[Pi';_][T,@[U']].
 Axiom LF xf$ : wexp.
 Axiom LF xo$ : wexp.
-
+Show.
 Check TTS : [ _ : xf : @[Pi';_][T,@[U']] ].
 Check TTS : [ _ : xo : T ].
 Check TTS : [ _ : @[ev';_][xf,xo,T,@[U']] : @[U'] ].

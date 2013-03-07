@@ -11,8 +11,8 @@ module Identifier = struct
   let compare v w = match v,w with
   | Id a, Id b -> compare a b
   | Idw a, Idw b -> compare a b
-  | Id a, Idw b -> let r = compare a b in if r = 0 then  1 else r
-  | Idw a, Id b -> let r = compare a b in if r = 0 then -1 else r
+  | Id a, Idw b -> let r = compare a b in if r = 0 then -1 else r
+  | Idw a, Id b -> let r = compare a b in if r = 0 then  1 else r
 end
 
 let idtostring = function
