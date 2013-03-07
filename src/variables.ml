@@ -20,7 +20,7 @@ module Identifier :
     type flavor = Object | Witness
     type identifier = string * flavor
     type t = identifier
-    let compare = Pervasives.compare
+    let compare : t -> t -> int = Pervasives.compare
     let idtostring = function
       | name, Object -> name
       | name, Witness -> name ^ "$"

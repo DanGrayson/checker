@@ -56,7 +56,7 @@ and apply_args e args =
   | APPLY(h,brgs) -> (pos, APPLY(h, join_args brgs args))
   | CONS(x,y) -> (
       match args with
-      | ARG _ -> raise (GeneralError "application of an argument to a pair")
+      | ARG _ -> raise (GeneralError "application of a pair to an argument")
       | CAR args -> apply_args x args
       | CDR args -> apply_args y args
       | END -> e)
