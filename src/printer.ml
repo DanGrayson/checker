@@ -553,9 +553,11 @@ let print_context n file (c:environment) =
   let env = c.local_tts_context in
   let env = if n < 0 then List.rev env else env in (
   try iteri
-      (fun i (name,t) ->
+      (fun i (name,j) ->
         if i = n then raise Limit;
-	fprintf file "   %s : %a\n%!" name _e t
+	match j with
+	| TTS_istype -> fprintf file "   %s Type\n%!" name
+	| TTS_hastype t -> fprintf file "   %s : %a\n%!" name _e t
       )
       env
   with Limit -> fprintf file "     ...\n");

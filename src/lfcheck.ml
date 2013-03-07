@@ -190,7 +190,7 @@ let compare_var_to_expr v e =
   | _ -> false
 
 let open_context t1 (env,p,o,t2) =
-  let env = local_tts_bind env "x" t1 in
+  let env = local_tts_declare_object env "x" t1 in
   let v = VarRel 1 in
   let v' = VarRel 0 in
   let e = var_to_lf v ** var_to_lf v' ** END in
@@ -223,13 +223,13 @@ let apply_2 shift f x y = Substitute.apply_args (rel_shift_expr shift f) (x ** y
 
 let rec check_istype env t =
   match unmark t with
-  | APPLY(V (Var i), END) -> if not (isid i && List.mem (id_to_name i) env.type_variables) then err env (get_pos t) "variable not declared as a type"
+  | APPLY(V (Var i), END) -> if not (isid i && is_tts_type_variable env (id_to_name i)) then err env (get_pos t) "variable not declared as a type"
   | APPLY(T th, args) -> (
       match th with
       | T_Pi' ->
 	  let t1,t2 = args2 args in
 	  check_istype env t1;
-	  let env = local_tts_bind env "o" t1 in
+	  let env = local_tts_declare_object env "o" t1 in
 	  let o = var_to_lf (VarRel 1) in
 	  let p = var_to_lf (VarRel 0) in
 	  let t2 = Substitute.apply_args (rel_shift_expr 1 t2) (o ** p ** END) in
@@ -250,7 +250,7 @@ and check_hastype env p o t =
   | APPLY(V p', END) when is_witness_var p' -> (
       let o' = base_var p' in
       let t' =
-	try tts_fetch env p'
+	try tts_fetch_type env p'
 	with Not_found -> err env (get_pos p) "variable not in context" in
       if not (compare_var_to_expr o' o) then err env (get_pos o) ("expected variable " ^ vartostring o');
       if not (term_equiv t t') then mismatch_term_tstype_tstype env o t' t)

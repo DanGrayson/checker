@@ -15,7 +15,7 @@ let abstract env x =
   nowhere 202 (LAMBDA(first_var env, nowhere 203 (LAMBDA(first_w_var env, x))))
 
 let open_context t1 (env,o,t2) =
-  let env = local_tts_bind env "x" t1 in
+  let env = local_tts_declare_object env "x" t1 in
   let e = var_to_lf (VarRel 1) ** var_to_lf (VarRel 0) ** END in
   let o = Substitute.apply_args (rel_shift_expr 1 o) e in
   let t2 = Substitute.apply_args (rel_shift_expr 1 t2) e in
@@ -39,7 +39,7 @@ and find_w_hastype env o t : lf_expr = (
   if false then printf "find_w_hastype  o=%a  t=%a\n%!" _e o _e t;
   match unmark o with
   | APPLY(V v, END) ->
-      let t' = tts_fetch env v in
+      let t' = tts_fetch_type env v in
       if term_equiv t t'
       then var_to_lf_pos (get_pos o) (witness_var v)
       else raise WitnessNotFound

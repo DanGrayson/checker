@@ -41,6 +41,10 @@ type var =
   | Var of identifier
   | VarRel of int			(* deBruijn index, starting with 0 *)
 
+let var_to_name = function
+  | Var i -> id_to_name i
+  | VarRel _ -> raise Internal
+
 let vartostring = function
   | Var x -> idtostring x
   | VarRel i -> string_of_int i ^ "^"	(* raw form *)

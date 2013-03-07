@@ -85,7 +85,7 @@ let protect f posfun =
 let add_tVars env tvars =
   List.fold_left
     (fun env (pos,t) ->
-      let env = { env with type_variables = t :: env.type_variables } in
+      let env = global_tts_declare_type env pos t in
       let env = global_lf_bind env pos (id t) texp in
       let env = global_lf_bind env pos (id (t ^ "$istype")) (istype (var_to_lf (Var (id t)))) in
       env 
@@ -94,7 +94,7 @@ let add_tVars env tvars =
 let add_oVars env ovars t =
   List.fold_left
     (fun env (pos,o) -> 
-      let env = global_tts_bind env pos o t in
+      let env = global_tts_declare_object env pos o t in
       let env = global_lf_bind env pos (id o) oexp in
       let env = global_lf_bind env pos (id (o ^ "$hastype")) (hastype (var_to_lf (Var (id o))) t) in
       env 

@@ -78,6 +78,8 @@ type lf_type_head =
   | F_witnessed_hastype			(* i.e., p:o:T is a judgment, which must be derived *)
   | F_witnessed_type_equality
   | F_witnessed_object_equality
+      (* the next one is a type parametrized by a t-expression T whose objects are pairs (p,o) with p:o:T  *)
+  | F_obj_of_type_with_witness
       (* the next one is needed just to accommodate undefined type constants encountered by the parser *)
   | F_undeclared_type_constant of position * string
 
@@ -169,6 +171,13 @@ let type_equality t t' = F_type_equality @@ [t;t']	       (* t = t' *)
 let object_uequality o o' t = F_object_uequality @@ [o;o';t]   (* o ~ o' : t *)
 let object_equality o o' t = F_object_equality @@ [o;o';t]     (* o = o' : t *)
 
+let a_type = F_a_type @@ []				       (* |- T Type *)
+let obj_of_type t = F_obj_of_type @@ [t]		       (* |- x : T *)
+let judged_type_equal t u = F_judged_type_equal @@ [t;u]       (* |- T = U *)
+let judged_obj_equal t x y = F_judged_obj_equal @@ [t;x;y]     (* |- x = y : T *)
+
+let obj_of_type_witness t = F_obj_of_type_with_witness @@ [t]  (* |- p : o : T *)
+
 let istype_witness t = F_istype_witness @@ [t]		       (* t Type *)
 let hastype_witness o t = F_hastype_witness @@ [o;t]	       (* o : t *)
 let type_equality_witness t t' = F_type_equality_witness @@ [t;t'] (* t = t' *)
@@ -178,11 +187,6 @@ let witnessed_istype p t = F_witnessed_istype @@ [p;t]	       (* p : t Type *)
 let witnessed_hastype p o t = F_witnessed_hastype @@ [p;o;t]   (* p : o : t *)
 let witnessed_type_equality p t t' = F_witnessed_type_equality @@ [p;t;t'] (* p : t = t' *)
 let witnessed_object_equality p o o' t = F_witnessed_object_equality @@ [ p;o;o';t] (* p : o = o' : t *)
-
-let a_type = F_a_type @@ []				       (* |- T Type *)
-let obj_of_type t = F_obj_of_type @@ [t]		       (* |- x : T *)
-let judged_type_equal t u = F_judged_type_equal @@ [t;u]       (* |- T = U *)
-let judged_obj_equal t x y = F_judged_obj_equal @@ [t;x;y]     (* |- x = y : T *)
 
 let texp1 = oexp @-> texp
 let texp2 = oexp @-> oexp @-> texp
@@ -336,6 +340,8 @@ let obj_of_type_kind = a_type @@-> K_judged_expression
 
 let judged_kind_equal_kind = a_type @@-> a_type @@-> K_judged_expression
 
+let obj_of_type_with_witness_kind = texp @@-> K_witnessed_judgment
+
 let istype_witness_kind = texp @@-> K_witnessed_judgment (* unused by VV *)
 let hastype_witness_kind = oexp @@-> texp @@-> K_witnessed_judgment
 let type_equality_witness_kind = texp @@-> texp @@-> K_witnessed_judgment
@@ -380,6 +386,8 @@ let tfhead_to_kind = function
   | F_witnessed_hastype -> witnessed_hastype_kind
   | F_witnessed_type_equality -> witnessed_type_equality_kind
   | F_witnessed_object_equality -> witnessed_object_equality_kind
+
+  | F_obj_of_type_with_witness -> obj_of_type_with_witness_kind
 
   | F_undeclared_type_constant(pos,name) -> raise (UndeclaredTypeConstant(pos,name))
 
@@ -478,13 +486,14 @@ let rel_shift_type shift t = if shift = 0 then t else rel_shift_type 0 shift t
 module MapString = Map.Make(String)
 module MapIdentifier = Map.Make(Identifier)
 
+type tts_judgment = TTS_istype | TTS_hastype of lf_expr
+
 type environment = {
     state : int;
-    local_tts_context : (string * lf_expr) list;
-    global_tts_context : lf_expr MapString.t;
+    local_tts_context : (string * tts_judgment) list;
+    global_tts_context : tts_judgment MapString.t;
     local_lf_context : (identifier * lf_type) list;
     global_lf_context : lf_type MapIdentifier.t;
-    type_variables : string list;
   }
 
 let empty_context = {
@@ -493,7 +502,6 @@ let empty_context = {
   global_tts_context = MapString.empty;
   local_lf_context = [];
   global_lf_context = MapIdentifier.empty;
-  type_variables = [];
 }
 
 let interactive = ref false
@@ -519,26 +527,62 @@ let lf_fetch env = function
   | Var name -> global_lf_fetch env name
   | VarRel i -> local_lf_fetch env i
 
-let local_tts_bind env name t = { env with local_tts_context = (name,t) :: env.local_tts_context }
+let local_tts_declare_type   env name   = { env with local_tts_context = (name,TTS_istype   ) :: env.local_tts_context }
 
-let global_tts_bind env pos name t = 
+let local_tts_declare_object env name t = { env with local_tts_context = (name,TTS_hastype t) :: env.local_tts_context }
+
+let global_tts_declare_type env pos name = 
   if MapString.mem name env.global_tts_context then raise (MarkedError (pos, "variable already defined: " ^ name));
-  { env with global_tts_context = MapString.add name t env.global_tts_context }
+  { env with global_tts_context = MapString.add name TTS_istype env.global_tts_context }
+
+let global_tts_declare_object env pos name t = 
+  if MapString.mem name env.global_tts_context then raise (MarkedError (pos, "variable already defined: " ^ name));
+  { env with global_tts_context = MapString.add name (TTS_hastype t) env.global_tts_context }
 
 let ts_bind env v t = 
-  if isid v then local_tts_bind env (id_to_name v) t else raise Internal
+  if isid v then local_tts_declare_object env (id_to_name v) t else raise Internal
 
 let local_tts_fetch env i =			(* (VarRel i) *)
-  try rel_shift_expr ((i+1)/2*2) (snd (List.nth env.local_tts_context (i/2)))
-  with Failure "nth" -> raise Not_found
+  (* note: each TTS_hastype consumes two relative indices, whereas each TTS_istype consumes only one; that should change *)
+  let rec repeat shift i context =
+    match context with
+    | (_,TTS_istype) :: context -> if i = 0 then TTS_istype else repeat (shift+1) (i-1) context
+    | (_,TTS_hastype t) :: context -> if i = 0 || i = 1 then TTS_hastype (rel_shift_expr shift t) else repeat (shift+2) (i-2) context
+    | [] -> raise Not_found
+  in repeat 2 i env.local_tts_context
 
 let global_tts_fetch env name = MapString.find name env.global_tts_context
 
+let global_tts_fetch_type env name =
+  match
+    global_tts_fetch env name
+  with
+  | TTS_istype -> raise Not_found
+  | TTS_hastype t -> t
+
+let is_tts_type_variable env name =
+  try
+    match
+      global_tts_fetch env name
+    with
+    | TTS_istype -> true
+    | TTS_hastype _ -> false
+  with
+  | Not_found -> false
+
 let tts_fetch env = function
-  | Var v -> global_tts_fetch env (id_to_name v)
+  | Var id -> global_tts_fetch env (id_to_name id)
   | VarRel i -> local_tts_fetch env i
 
-let ts_fetch env v = tts_fetch env v
+let tts_fetch_type env name =
+  match tts_fetch env name with
+  | TTS_istype -> raise Not_found
+  | TTS_hastype t -> t
+
+let ts_fetch env v = 
+  match tts_fetch env v with
+  | TTS_hastype t -> t
+  | TTS_istype -> raise Internal
 
 let first_var env =
   match env.local_tts_context with

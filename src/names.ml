@@ -65,6 +65,8 @@ let lf_type_constant_table = [
   F_judged_obj_equal, "Oequal";
   F_wexp, "wexp";
 
+  F_obj_of_type_with_witness, "obj_of_type_with_witness";
+
   F_istype_witness, "istype_witness";
   F_hastype_witness, "hastype_witness";
   F_type_equality_witness, "type_equality_witness";
