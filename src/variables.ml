@@ -2,63 +2,76 @@
 
 open Error
 
-type var =
-  | Var of string
-  | VarGen of int * string
-  | Var_wd of string			(* variables come in pairs, with the *_wd version being the witness twin *)
-  | VarGen_wd of int * string
 
-module VarOrd = struct			(* for use with Map.Make *)
-  type t = var
-  let compare u v = match u,v with
-    | Var a, Var b -> String.compare a b
-    | Var_wd a, Var_wd b -> String.compare a b
-    | Var _, Var_wd _ -> -1
-    | Var_wd _, Var _ ->  1
-    | _ -> raise Internal
-end
+module Identifier : 
+    sig
+      type identifier
+      val id : string -> identifier
+      val idw : string -> identifier
+      val idtostring : identifier -> string
+      type t = identifier
+      val compare : t -> t -> int
+      val isid : t -> bool
+      val isidw : t -> bool
+      val id_to_name : t -> string
+    end 
+    =
+  struct
+    type flavor = Object | Witness
+    type identifier = string * flavor
+    type t = identifier
+    let compare : t -> t -> int = Pervasives.compare
+    let idtostring = function
+      | name, Object -> name
+      | name, Witness -> name ^ "$"
+    let id name = name, Object
+    let idw name = name, Witness
+    let isid = function _,Object -> true | _,Witness -> false
+    let isidw = function _,Object -> false | _,Witness -> true
+    let id_to_name = function name,_ -> name
+  end
+
+include Identifier
+
+let base_id v = id (id_to_name v)
+
+let witness_id v = idw (id_to_name v)
+
+type var =
+  | Var of identifier
+  | VarRel of int			(* deBruijn index, starting with 0 *)
+
+let var_to_name = function
+  | Var i -> id_to_name i
+  | VarRel _ -> raise Internal
 
 let vartostring = function
-  | Var x -> x
-  | VarGen(i,x) -> x ^ "$" ^ string_of_int i
-  | Var_wd x -> x ^ "$"
-  | VarGen_wd(i,x) -> x ^ "$$" ^ string_of_int i
+  | Var x -> idtostring x
+  | VarRel i -> string_of_int i ^ "^"	(* raw form *)
 
-let base_var = function
-  | Var_wd x -> Var x
-  | VarGen_wd _ | Var _ | VarGen _ -> raise Internal
+let is_base_var = function
+  | Var x -> isid x
+  | VarRel i -> i mod 2 = 1
 
-let witness_var = function
-  | Var x -> Var_wd x
-  | VarGen _ | Var_wd _ | VarGen_wd _ -> raise Internal
+let is_witness_var = function
+  | Var x -> isidw x
+  | VarRel i -> i mod 2 = 0
 
-exception GensymCounterOverflow
+let base_var = function			(* deprecated *)
+  | Var x -> Var (base_id x)
+  | VarRel i -> if i mod 2 = 0 then VarRel (i+1) else raise Internal
 
-let isunused v = 			(* anything using this is likely to be wrong in the presence of tactics *)
+let witness_var = function		(* deprecated *)
+  | Var x -> Var (witness_id x)
+  | VarRel i -> if i mod 2 = 1 then VarRel (i-1) else raise Internal
+
+let isunused v = 			(* deprecated *)
   match v with
-  | Var id | VarGen(_,id)
-  | Var_wd id | VarGen_wd(_,id) -> id = "_"
+  | Var x -> id_to_name x = "_"
+  | VarRel _ -> raise Internal
 
-let next_genctr = 
-  let genctr = ref 0 in
-  fun () -> incr genctr; 
-    if !genctr < 0 then raise GensymCounterOverflow;
-    if !genctr = genctr_trap then trap();
-    if !genctr = genctr_exception then (trap(); raise DebugMe); 
-    !genctr
-
-let newfresh = function
-  | Var x | VarGen(_,x) -> (
-      VarGen (next_genctr(), x))
-  | Var_wd x | VarGen_wd(_,x) -> (
-      VarGen_wd (next_genctr(), x))
-
-let newunused () = VarGen (next_genctr(), "_")
-
-let newunused_wd () = VarGen_wd (next_genctr(), "_")
-
-(* 
+(*
   Local Variables:
-  compile-command: "make -C .. src/error.cmo "
+  compile-command: "make -C .. src/variables.cmo "
   End:
  *)

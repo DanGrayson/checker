@@ -11,26 +11,14 @@ open Error
 
 exception WitnessNotFound
 
-let first_var env =
-  match env.tts_context with
-  | (p,v,_) :: _ -> v
-  | _ -> raise Internal
-
-let first_w_var env =
-  match env.tts_context with
-  | (p,v,_) :: _ -> p
-  | _ -> raise Internal
-
 let abstract env x =
-  nowhere 202 (LAMBDA(first_w_var env, nowhere 203 (LAMBDA(first_var env, x))))
+  nowhere 202 (LAMBDA(first_var env, nowhere 203 (LAMBDA(first_w_var env, x))))
 
 let open_context t1 (env,o,t2) =
-  let v = newfresh (Var "x") in
-  let v' = newfresh (Var_wd "x") in
-  let env = tts_bind env v' v t1 in
-  let e = var_to_lf v' ** var_to_lf v ** END in 
-  let o = Substitute.apply_args o e in
-  let t2 = Substitute.apply_args t2 e in
+  let env = local_tts_declare_object env "x" t1 in
+  let e = var_to_lf (VarRel 1) ** var_to_lf (VarRel 0) ** END in
+  let o = Substitute.apply_args (rel_shift_expr 1 o) e in
+  let t2 = Substitute.apply_args (rel_shift_expr 1 t2) e in
   (env,o,t2)
 
 let rec this_head_reduces env o =   (* returns (p,o'), where p : o == o' : _ *)
@@ -41,17 +29,20 @@ let rec this_head_reduces env o =   (* returns (p,o'), where p : o == o' : _ *)
     let p1 = find_w_hastype env o1 t1 in
     let env,o2',t2' = open_context t1 (env,o2,t2) in
     let p2 = find_w_hastype env o2' t2' in
-    let o' = apply_2 o2 p1 o1 in
+    let o' = apply_2 1 o2 o1 p1 in
     let p = make_W_wbeta p1 (abstract env p2) in
     nowhere 207 p, o'
   with
     FalseWitness -> raise Not_found
 
 and find_w_hastype env o t : lf_expr = (
+  if false then printf "find_w_hastype  o=%a  t=%a\n%!" _e o _e t;
   match unmark o with
   | APPLY(V v, END) ->
-      let (p,_) = tts_fetch v env in
-      var_to_lf_pos (get_pos o) p
+      let t' = tts_fetch_type env v in
+      if term_equiv t t'
+      then var_to_lf_pos (get_pos o) (witness_var v)
+      else raise WitnessNotFound
   | APPLY(O O_ev',args) ->
       let (f,o,t1,t2) = args4 args in
       let tf = nowhere 206 (make_T_Pi' t1 t2) in
@@ -66,13 +57,13 @@ and find_w_hastype env o t : lf_expr = (
       let p = find_w_hastype env o t2 in
       let w = make_W_wlam (abstract env p) in
       nowhere 204 w
-  | _ -> 
+  | _ ->
       printf "%a: $witness failure\n%!" _pos (get_pos o);
       raise WitnessNotFound
  )
 
 let rec find_w_type_equality env t t' =
-  if equivalence t t' then (
+  if term_equiv t t' then (
     nowhere 206 make_W_Wrefl)
   else (
     match unmark t, unmark t' with
@@ -85,7 +76,7 @@ let rec find_w_type_equality env t t' =
     | _ -> raise WitnessNotFound)
 
 and find_w_object_equality env o o' t =
-  if equivalence o o' then (
+  if term_equiv o o' then (
     let p = find_w_hastype env o t in
     let p' = find_w_hastype env o' t in
     let w = make_W_wrefl p p' in
@@ -93,31 +84,31 @@ and find_w_object_equality env o o' t =
   else (
     try
       let (q,oo) = this_head_reduces env o in
-      if equivalence oo o' then q
+      if term_equiv oo o' then q
       else raise WitnessNotFound
     with Not_found -> (
       let (q,oo') = this_head_reduces env o' in
-      if equivalence o oo' then raise NotImplemented
+      if term_equiv o oo' then raise NotImplemented
       else raise WitnessNotFound
       )
    )
 
-let witness (surr:surrounding) (env:environment) (pos:position) (t:lf_type) (args:spine) : tactic_return = 
-  try 
-    match surr with 
-    | (S_argument 1, None, Some (pos,F_Apply(F_witnessed_hastype,[_;o;t]))) :: _ -> 
+let witness (surr:surrounding) (env:environment) (pos:position) (t:lf_type) (args:spine) : tactic_return =
+  try
+    match surr with
+    | (S_argument 1, None, Some (pos,F_Apply(F_witnessed_hastype,[_;o;t]))) :: _ ->
 	TacticSuccess (find_w_hastype env o t)
-    | (S_argument 1, None, Some (pos,F_Apply(F_witnessed_object_equality,[_;o;o';t]))) :: _ -> 
+    | (S_argument 1, None, Some (pos,F_Apply(F_witnessed_object_equality,[_;o;o';t]))) :: _ ->
 	TacticSuccess (find_w_object_equality env o o' t)
-    | (S_argument 1, None, Some (pos,F_Apply(F_witnessed_type_equality,[_;t;t']))) :: _ -> 
+    | (S_argument 1, None, Some (pos,F_Apply(F_witnessed_type_equality,[_;t;t']))) :: _ ->
 	TacticSuccess (find_w_type_equality env t t')
-    | (S_argument 1, Some (pos,APPLY(T T_El', ARG(o, _))), None) :: _ -> 
+    | (S_argument 1, Some (pos,APPLY(T T_El', ARG(o, _))), None) :: _ ->
 	TacticSuccess (find_w_hastype env o uuu)
     | _ -> TacticFailure
   with
     WitnessNotFound -> TacticFailure
 
-(* 
+(*
   Local Variables:
   compile-command: "make -C ../.. src/tactics/witness.cmo "
   End:

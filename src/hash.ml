@@ -57,7 +57,6 @@ let rec hhash = function
   | T h -> thash h
   | O h -> ohash h
   | V h -> 2
-  | FUN(f,t) -> 36 * expr_hash f + type_hash t
 
 and expr_hash e = match Error.unmark e with
   | CONS(x,y) -> 611 * expr_hash x + 711 * expr_hash y

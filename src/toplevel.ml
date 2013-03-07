@@ -4,15 +4,15 @@ open Error
 open Variables
 open Typesystem
 
-type command' = 
-  | Axiom of (int list) option * var * lf_type
+type command' =
+  | Axiom of (int list) option * identifier * lf_type
   | CheckLF of lf_expr
   | CheckWitness of lf_type
   | CheckLFtype of lf_type
   | CheckTS of lf_expr
-  | UVariable of string list * (lf_expr * lf_expr) list
-  | TVariable of string list
-  | OVariable of string list * lf_expr
+  | UVariable of (string marked) list * (lf_expr * lf_expr) list
+  | TVariable of (string marked) list
+  | OVariable of (string marked) list * lf_expr
   | Alpha of lf_expr * lf_expr
   | Theorem of (position * string * lf_expr * lf_type)
   | CheckUniverses

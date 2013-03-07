@@ -13,7 +13,7 @@
 
  let commands = Hashtbl.create 20
  let _ = List.iter (fun (w,t) -> Hashtbl.add commands w t) [
-   "∏", Pi; "λ", Lambda; "Σ", Sigma; name_F_Pi, Pi; "lambda", Lambda; 
+   "∏", Pi; "λ", Lambda; "Σ", Sigma; name_F_Pi, Pi; "lambda", Lambda;
    "Ulevel", Ulevel; "Type", Type; "max", Kumax; "Singleton", Singleton; "Sigma", Sigma;
    "pair", Kpair; "CAR", K_CAR; "CDR", K_CDR; "Clear", Clear; "Universes", Universes;
    "LF", LF; "TS", TS; "TTS", TTS; "Check", Check; "Axiom", Axiom; "Alpha", Alpha;
@@ -60,12 +60,12 @@ let utf8_first_of_3 = [ '\224' - '\225' '\227' - '\239' ] (* just guessing that 
 
 (* Characters starting with \226 \159 seem to be symbols,
    and those starting with \226 \130 include SUBSCRIPT ONE and SUBSCRIPT TWO *)
-let utf8_first_2_of_3 = '\226' [ '\128' - '\129' '\131' - '\158' '\160' - '\191' ] 
+let utf8_first_2_of_3 = '\226' [ '\128' - '\129' '\131' - '\158' '\160' - '\191' ]
 
 let utf8_first_of_4 = [ '\240' - '\255' ]
 let utf8_1 = utf8_first_of_1
 let utf8_2 = utf8_first_of_2 utf8_next
-let utf8_3 = utf8_first_of_3 utf8_next utf8_next | utf8_first_2_of_3 utf8_next 
+let utf8_3 = utf8_first_of_3 utf8_next utf8_next | utf8_first_2_of_3 utf8_next
 let utf8_4 = utf8_first_of_4 utf8_next utf8_next utf8_next
 let utf8_char_nonascii = utf8_2 | utf8_3 | utf8_4
 let utf8_char = utf8_1 | utf8_2 | utf8_3 | utf8_4
@@ -106,7 +106,7 @@ rule expr_tokens = parse
   | '{'  { LeftBrace }
   | '*'  { Star }
   | '$'  { Dollar }
-  | ':'  { Colon } 
+  | ':'  { Colon }
   | "::" { ColonColon }
   | "**" { Times }
 
@@ -127,10 +127,8 @@ rule expr_tokens = parse
 
   | "@[" (ident as id) "]" { utf8_fix lexbuf id; CONSTANT id }
   | "@[" (ident as id) ";" { utf8_fix lexbuf id; CONSTANT_SEMI id }
-  | ident as id { utf8_fix lexbuf id; try Hashtbl.find commands id with Not_found -> IDENTIFIER id }
-  | (ident as id) '$' (digit+ as gen) { utf8_fix lexbuf id; VARIABLE (VarGen(int_of_string gen,id)) }
-  | (ident as id) '$' { utf8_fix lexbuf id; VARIABLE (Var_wd id) }
-  | (ident as id) '$' '$' (digit+ as gen) { utf8_fix lexbuf id; VARIABLE (VarGen_wd(int_of_string gen,id)) }
+  | ident as id { utf8_fix lexbuf id; try Hashtbl.find commands id with Not_found -> NAME id }
+  | (ident as id) '$' { utf8_fix lexbuf id; NAME_W id }
 
 (* constants *)
 
@@ -140,11 +138,11 @@ rule expr_tokens = parse
 (* invalid characters *)
 
   | _ as c { let pos = lexbuf_position lexbuf in
-	     fprintf stderr "%a: invalid character: '%c'\n%!" _pos pos c; 
+	     fprintf stderr "%a: invalid character: '%c'\n%!" _pos pos c;
 	     bump_error_count pos;
 	     expr_tokens lexbuf }
- 
-(* 
+
+(*
   Local Variables:
   compile-command: "make -C .. src/tokens.cmo "
   End:

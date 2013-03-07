@@ -8,41 +8,43 @@ Axiom 15.5.1 nat_hastype [ nat : UU[uu0] ].
 
 Definition LF Nat : texp := (El nat).
 
-Lemma Nat_istype [ Nat Type ] := El_istype[uu0,nat,CDR,_].
+Check LF Nat.
 
-Definition Nat' Type := (*nat, El_istype[uu0,nat,CDR,_]).
+Lemma Nat_istype [ Nat Type ] := El_istype[uu0,nat,CDR,nat_hastype].
+
+Definition Nat' Type := (*nat, El_istype[uu0,nat,CDR,nat_hastype]).
 
 Axiom 15.5.2 O_hastype [ O : Nat ].
 
 Axiom 15.5.3 S_hastype [ S : Nat -> Nat ].
 
-Axiom 15.5.4 nat_r_hastype { x : Nat ⊢ T Type } { ⊢ o1 : T[O] } { ⊢ o2 : ∏ x:Nat, T[x] -> T[ @[ev;_][S,x,Nat,Nat] ] } 
+Axiom 15.5.4 nat_r_hastype { x : Nat ⊢ T Type } { ⊢ o1 : T[O] } { ⊢ o2 : ∏ x:Nat, T[x] -> T[ @[ev;_][S,x,Nat,Nat] ] }
 
       { ⊢ n : Nat } ⊢ @[nat_r][o1,o2,n,T] : T[n].
 
-Axiom 15.3.1.2 nat_O_reduction { x : Nat ⊢ T Type } { ⊢ o1 : T[O] } { ⊢ o2 : ∏ x:Nat, T[x] -> T[ @[ev;_][S,x,Nat,Nat] ] } 
+Axiom 15.3.1.2 nat_O_reduction { x : Nat ⊢ T Type } { ⊢ o1 : T[O] } { ⊢ o2 : ∏ x:Nat, T[x] -> T[ @[ev;_][S,x,Nat,Nat] ] }
 
       [ @[nat_r][o1,o2,O,T] ≡ o1 : T[O] ].
 
-Lemma nat_S_reduction_sanity1 { x : Nat ⊢ T Type } { ⊢ o1 : T[O] } { ⊢ o2 : ∏ x:Nat, T[x] -> T[ @[ev;_][S,x,Nat,Nat] ] } 
-      { ⊢ n : Nat } 
-      [   @[nat_r][o1,o2,@[ev;_][S,n,Nat,Nat],T] 
+Lemma nat_S_reduction_sanity1 { x : Nat ⊢ T Type } { ⊢ o1 : T[O] } { ⊢ o2 : ∏ x:Nat, T[x] -> T[ @[ev;_][S,x,Nat,Nat] ] }
+      { ⊢ n : Nat }
+      [   @[nat_r][o1,o2,@[ev;_][S,n,Nat,Nat],T]
 	  :
-	  T[@[ev;_][S,n,Nat,Nat]] ] := 
+	  T[@[ev;_][S,n,Nat,Nat]] ] :=
 
-      T ⟾ T' ⟾ o1 ⟾ o1' ⟾ o2 ⟾ o2' ⟾ n ⟾ n' ⟾ 
+      T ⟾ T' ⟾ o1 ⟾ o1' ⟾ o2 ⟾ o2' ⟾ n ⟾ n' ⟾
       nat_r_hastype[
       	T, o1, o2, @[ev;_][S,n,Nat,Nat], CDR,
-	T',_, _, ev_hastype[Nat,_⟾Nat,S,n,CDR,_,_,_,_]
+	T',_, _, ev_hastype[Nat,_⟾Nat,S,n,CDR,Nat_istype,_ ⟾ _ ⟾Nat_istype,S_hastype,_]
 	].
 
-Lemma nat_S_reduction_sanity2 { x : Nat ⊢ T Type } { ⊢ o1 : T[O] } { ⊢ o2 : ∏ x:Nat, T[x] -> T[ @[ev;_][S,x,Nat,Nat] ] } 
-      { ⊢ n : Nat } 
+Lemma nat_S_reduction_sanity2 { x : Nat ⊢ T Type } { ⊢ o1 : T[O] } { ⊢ o2 : ∏ x:Nat, T[x] -> T[ @[ev;_][S,x,Nat,Nat] ] }
+      { ⊢ n : Nat }
       [   @[ev;_][@[ev;x][o2,n,Nat,T[x]->T[@[ev;_][S,x,Nat,Nat]]],@[nat_r][o1,o2,n,T],T[n],T[@[ev;_][S,n,Nat,Nat]]]
 	  :
 	  T[@[ev;_][S,n,Nat,Nat]] ] :=
 
-      T ⟾ T' ⟾ o1 ⟾ o1' ⟾ o2 ⟾ o2' ⟾ n ⟾ n' ⟾ 
+      T ⟾ T' ⟾ o1 ⟾ o1' ⟾ o2 ⟾ o2' ⟾ n ⟾ n' ⟾
       ev_hastype[
           T[n],
 	  _⟾T[@[ev;_][S,n,Nat,Nat]],
@@ -57,25 +59,25 @@ Lemma nat_S_reduction_sanity2 { x : Nat ⊢ T Type } { ⊢ o1 : T[O] } { ⊢ o2 
 		_, _],
 	  nat_r_hastype[T,o1,o2,n,CDR,T',_,_,_]].
 
-Axiom 15.3.1.3 nat_S_reduction { x : Nat ⊢ T Type } { ⊢ o1 : T[O] } { ⊢ o2 : ∏ x:Nat, T[x] -> T[ @[ev;_][S,x,Nat,Nat] ] } 
+Axiom 15.3.1.3 nat_S_reduction { x : Nat ⊢ T Type } { ⊢ o1 : T[O] } { ⊢ o2 : ∏ x:Nat, T[x] -> T[ @[ev;_][S,x,Nat,Nat] ] }
 
-      { ⊢ n : Nat } 
+      { ⊢ n : Nat }
 
-      [   @[nat_r][o1,o2,@[ev;_][S,n,Nat,Nat],T] 
-          ≡ 
+      [   @[nat_r][o1,o2,@[ev;_][S,n,Nat,Nat],T]
+          ≡
 	  @[ev;_][@[ev;x][o2,n,Nat,T[x]->T[@[ev;_][S,x,Nat,Nat]]],@[nat_r][o1,o2,n,T],T[n],T[@[ev;_][S,n,Nat,Nat]]]
 	  :
 	  T[@[ev;_][S,n,Nat,Nat]] ].
 
 Lemma nat_equality_sanity { x : Nat ⊢ T Type }
-      { ⊢ o1 : T[O] } 
+      { ⊢ o1 : T[O] }
       { ⊢ o2 : ∏ x:Nat, T[x] -> T[ @[ev;_][S,x,Nat,Nat] ] }
-      { ⊢ n : Nat } { ⊢ t : T[n] } [ 
+      { ⊢ n : Nat } { ⊢ t : T[n] } [
       		@[ev;_][@[ev;x][o2,n,Nat,T[x]->T[@[ev;_][S,x,Nat,Nat]]],t,T[n],T[@[ev;_][S,n,Nat,Nat]]]
-		: 
+		:
 		T[@[ev;_][S,n,Nat,Nat]]
 	   ] :=
-   T ⟾ T' ⟾ o1 ⟾ o1' ⟾ o2 ⟾ o2' ⟾ n ⟾ n' ⟾ t ⟾ t' ⟾ 
+   T ⟾ T' ⟾ o1 ⟾ o1' ⟾ o2 ⟾ o2' ⟾ n ⟾ n' ⟾ t ⟾ t' ⟾
    ev_hastype[
       T[n], _ ⟾ T[@[ev;_][S,n,Nat,Nat]], @[ev][o2,n,Nat,x ⟾ T[x] -> T[@[ev;_][S,x,Nat,Nat]]], t, CDR,
       T'[n,n'],
@@ -89,11 +91,11 @@ Axiom nat_equality
       { x : Nat ⊢ T Type }
       { ⊢ o1 o1' : T[O] } [ o1 ≡ o1' : T[O] ]
       { ⊢ o2 o2' : ∏ x:Nat, T[x] -> T[ @[ev;_][S,x,Nat,Nat] ] }
-      ({ ⊢ n : Nat } { ⊢ t : T[n] } [ 
+      ({ ⊢ n : Nat } { ⊢ t : T[n] } [
       		@[ev;_][@[ev;x][o2,n,Nat,T[x]->T[@[ev;_][S,x,Nat,Nat]]],t,T[n],T[@[ev;_][S,n,Nat,Nat]]]
 		≡
       		@[ev;_][@[ev;x][o2',n,Nat,T[x]->T[@[ev;_][S,x,Nat,Nat]]],t,T[n],T[@[ev;_][S,n,Nat,Nat]]]
-		: 
+		:
 		T[@[ev;_][S,n,Nat,Nat]] ]) ⇒
       { ⊢ n : Nat }
       [ @[nat_r][o1,o2,n,T] ≡ @[nat_r][o1',o2',n,T] : T[n] ].

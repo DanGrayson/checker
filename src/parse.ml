@@ -6,33 +6,23 @@ open Typesystem
 open Error
 open Variables
 open Names
-
-let error_count = ref 0
-
-let bump_error_count pos =
-  incr error_count;
-  if not !proof_general_mode && !error_count >= 5 then (
-    Printf.fprintf stderr "%a: too many errors, exiting.\n%!" _pos pos;
-    raise (Failure "exiting"));
-  flush stderr; flush stdout		(*just in case*)
+open Helpers
 
 let lookup_label pos name =
-  try List.assoc name Names.lf_expr_head_strings 
+  try List.assoc name Names.lf_expr_head_strings
   with Not_found as e -> fprintf stderr "%a: unknown expression label: @[%s]\n%!" _pos pos name; raise e
 
 let lookup_type_constant pos name =
   try List.assoc name Names.string_to_type_constant
   with Not_found -> F_undeclared_type_constant(pos,name)
 
-type binder_judgment = 
+type binder_judgment =
   | ULEV
   | IST
-  | HAST of lf_expr 
+  | HAST of lf_expr
   | W_HAST of lf_expr * lf_expr
   | W_TEQ of lf_expr * lf_expr
   | W_OEQ of lf_expr * lf_expr * lf_expr
-
-let add_single v t u = F_Pi(v, t, u)
 
 let app (hd,reversed_args) arg = (hd, ARG(arg,reversed_args))
 
@@ -40,19 +30,21 @@ let car (hd,reversed_args) = (hd, CAR reversed_args)
 
 let cdr (hd,reversed_args) = (hd, CDR reversed_args)
 
-type binder = position * var * lf_type
+type binder = position * identifier * lf_type
+
+let show_binders bname b ename e = 
+  iteri (fun i (pos,v,t) -> printf " %s.%d = %a:%a\n%!" bname i _i v _t t) b;
+  match e with 
+  | Some (pos,v,t) -> printf " %s = %a:%a\n%!" ename _i v _t t
+  | None -> ()
 
 let bind_sigma binder b =
   match binder with
-  | (pos,v,a) -> 
-      let (v,b) = Substitute.subst_type_fresh pos (v,b) in
-      with_pos pos (F_Sigma(v,a,b))
+  | (pos,v,a) -> pos, make_F_Sigma a (v,b)
 
 let bind_pi binder b =
-  match binder with 
-  | (pos,v,a) -> 
-      let (v,b) = Substitute.subst_type_fresh pos (v,b) in
-      with_pos pos (F_Pi(v,a,b))
+  match binder with
+  | (pos,v,a) -> pos, make_F_Pi a (v,b)
 
 let bind_some_sigma binder b =
   match binder with
@@ -65,7 +57,15 @@ let rec bind_pi_list_rev binders b =
   | binder :: binders -> bind_pi_list_rev binders (bind_pi binder b)
 
 let apply_vars f binders =
-  Substitute.apply_args f (List.fold_right (fun (pos,v,a) accu -> (ARG(var_to_lf_pos pos v,accu))) binders END)
+  let i = ref 0 in
+  APPLY(V f, 
+	List.fold_right 
+	  (fun (pos,v,a) args -> 
+	    let r = ARG(var_to_lf_pos pos (VarRel !i),args) in
+	    incr i;
+	    r) 
+	  binders
+	  END)
 
  (** for a type p of the form (e:E) ** J we return (e,E),J *)
 let unbind_pair p : binder option * lf_type =
@@ -79,56 +79,110 @@ let good_var_name p v =
   | None, b -> v
 
  (** for a type p of the form (p_1:P_1) -> ... -> (p_n:P_n) -> (e:E) ** J we
-     return [p_n,P_n;...;p_1,P_n],(e,E),J. *)
+     return [p_n,P_n;...;p_1,P_n],Some (e,E),J.  If there is no Sigma-type
+     inseid, then return [],None,p
+  *)
 let unbind_relative p : binder list * binder option * lf_type =
   let rec repeat binders p =
     match unmark p with
     | F_Pi(v,a,b) -> repeat ((get_pos p,v,a) :: binders) b
     | F_Sigma(v,a,b) -> binders, Some (get_pos p,v,a), b
-    | _ -> [], None, bind_pi_list_rev binders p
+    | _ -> [], None, bind_pi_list_rev binders p (* it would be better to raise an exception here, instead of reassembling p *)
   in
   repeat [] p
 
- (** Suppose t has the form P -> (e:E) ** J and u has the form Q -> (f:F) ** K.
+ (** Here "**" is our notation for Sigma type.
+     
+     Suppose 
+
+        t = P_(m-1) -> ... -> P_0 -> (e:E) ** J
+
+     and
+
+        u = Q_(n-1) -> ... Q_0 -> (f:F) ** K
+
      We think of an instance of t as providing a parametrized expression of
-     type P -> E together with a judgment of type J about the expression, and
-     similarly for u.  We return a new type describing a parametrized
-     expression of type (P->E)->(Q->F) together with a judgment about it, of
-     type (P->J)->K.  The resulting type looks like (e:P -> E) -> Q -> (f:F) **
-     (P -> J) -> K.  All this goes through if t has the form P_1 -> ... -> P_n
-     -> (e:E) ** J, and similarly for u, because we can rewrite t in terms of
-     P = P_1 ** ... ** P_n. *)
+     type P_(m-1) -> ... -> P_0 -> E together with a judgment of type J about
+     the expression, and similarly for u.  We return a new type describing a
+     parametrized expression of type 
+
+        (P_(m-1) -> ... -> P_0 -> E) -> Q_(n-1) -> ... Q_0 -> F
+
+     together with a judgment about it, of type 
+
+        (P_(m-1) -> ... -> P_0 -> J) -> K
+
+     The resulting type looks like 
+
+        (e':P_(m-1) -> ... -> P_0 -> E) -> Q_(n-1) -> ... Q_0 -> (f:F) ** (P_(m-1) -> ... -> P_0 -> J) -> K.
+
+     J gets rewritten by replacing each e (relative index 0) by 
+     (e' p_(m-1) ... p_0) and decrementing the relative indices of its other
+     exposed variables.
+
+     K gets rewritten by incrementing the relative indices of its exposed variables.
+  *)
+
+let pi1_debug = false
+
 let pi1_implication ((vpos,v),t) u =
+  if pi1_debug then printf "\npi1_implication:\n t = %a\n%!" _t t;
+  if pi1_debug then printf " u = %a\n%!" _t u;
   let (p,e,j) = unbind_relative t in
+  let m = List.length p in
+  if pi1_debug then show_binders "p" p "e" e;
+  if pi1_debug then printf " j = %a\n%!" _t j;
   let (q,f,k) = unbind_relative u in
+  let n = List.length q + match f with Some _ -> 1 | None -> 0 in
+  if pi1_debug then show_binders "q" q "f" f;
+  if pi1_debug then printf " k = %a\n%!" _t k;
   match e with
   | Some (pos,e,ee) ->
-      let j = Substitute.subst_type (e,apply_vars (var_to_lf_pos pos v) (List.rev p)) j in
+      let j = Substitute.subst_type (with_pos pos (apply_vars (VarRel (m+n)) (List.rev p))) j in
+      if pi1_debug then printf " j = substituted = %a\n%!" _t j;
       let ee = bind_pi_list_rev p ee in
+      if pi1_debug then printf " ee = bind_pi_list_rev p ee = %a\n%!" _t ee;
       let j = bind_pi_list_rev p j in
+      if pi1_debug then printf " j = bind_pi_list_rev p j = %a\n%!" _t j;
+      let k = rel_shift_type 1 k in
+      if pi1_debug then printf " k = rel_shift_type 1 k = %a\n%!" _t k;
       let k = arrow j k in
+      if pi1_debug then printf " k = arrow j k = %a\n%!" _t k;
       let j = bind_pi_list_rev q (bind_some_sigma f k) in
-      let t = bind_pi (pos,v,ee) j in
-      t
+      if pi1_debug then printf " j = bind_pi_list_rev q (bind_some_sigma f k) = %a\n%!" _t j;
+      let r = bind_pi (pos,v,ee) j in
+      if pi1_debug then printf " r = bind_pi (pos,v,ee) j = %a\n%!" _t r;
+      r
   | None -> raise NotImplemented
 
-let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_type) (t2 : position -> var -> lf_type) (u : lf_type) = 
+let apply_binder pos (c:(identifier marked * lf_expr) list) (v : identifier marked) (t1 : lf_type) (t2 : position -> identifier -> lf_type) (u : lf_type) =
   (* syntax is { v_1 : T_1 , ... , v_n : T_n |- v Type } u  or  { v_1 : T_1 , ... , v_n : T_n |- v:T } u *)
   (* t1 is texp or oexp; t2 is (fun t -> istype t) or (fun o -> hastype o t) *)
   let (vpos,v) = v in
-  let c = List.map (fun ((vpos,v),t) -> (vpos,v), (vpos, F_Sigma(v,oexp,hastype (var_to_lf_pos pos v) t))) c in
-  let t = pos, F_Sigma(v, t1, t2 pos v) in
+  let c = List.map (fun ((vpos,v),t) -> (vpos,v), (vpos, make_F_Sigma oexp (v,hastype (var_to_lf_pos pos (Var v)) t))) c in
+  let t = pos, make_F_Sigma t1 (v,t2 pos v) in
   let t = List.fold_right pi1_implication c t in
   let u = pi1_implication ((vpos,v),t) u in
   unmark u
 
 let apply_judgment_binder pos (j:lf_type) (u:lf_type) =
   (* just like pi1_implication above, except t consists just of j, with no p or e *)
+  if pi1_debug then printf "\napply_judgment_binder:\n j = %a\n u = %a\n%!" _t j _t u;
   let (q,f,k) = unbind_relative u in
+  if pi1_debug then show_binders "q" q "f" f;
+  if pi1_debug then printf " k = %a\n%!" _t k;
+  let n = List.length q + match f with Some _ -> 1 | None -> 0 in
+  let j = Substitute.subst_type (var_to_lf_pos pos (VarRel n)) j in
+  if pi1_debug then printf " j = substituted = %a\n%!" _t j;
+  let k = rel_shift_type 1 k in
+  if pi1_debug then printf " k = rel_shift_type 1 k = %a\n%!" _t k;
   let k = arrow j k in
-  bind_pi_list_rev q (bind_some_sigma f k)
- 
-(* 
+  if pi1_debug then printf " k = arrow j k = %a\n%!" _t k;
+  let r = bind_pi_list_rev q (bind_some_sigma f k) in
+  if pi1_debug then printf " r = bind_pi_list_rev q (bind_some_sigma f k) = %a\n%!" _t r;
+  r
+
+(*
   Local Variables:
   compile-command: "make -C .. src/parse.cmo "
   End:

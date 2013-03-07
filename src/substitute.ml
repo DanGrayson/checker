@@ -1,4 +1,4 @@
-(** Substitution. *) 
+(** Substitution. *)
 
 open Error
 open Variables
@@ -8,102 +8,104 @@ open Names
 open Printer
 open Printf
 
-let fresh pos v subl =
-  let v' = newfresh v in
-  v', (v,var_to_lf_pos pos v') :: subl
+(** Routines for replacing relative variables (deBruijn index variables) by
+    expressions.
 
-let show_subs (subl : (var * lf_expr) list) =
-  printf " subs =\n";
-  List.iter (fun (v,e) -> printf "   %a => %a\n" _v v _e e) subl
+    In these routines, [subs] is an array of expressions, whose i-th element is
+    to replace [VarRel (i + shift)] in [e], with its variables' relative
+    indices increased by [shift].  Variables with relative indices too large to
+    be covered have their indices decreased by the length of [subs].
 
-let rec subst_list (subl : (var * lf_expr) list) es = List.map (subst_expr subl) es
+    Descending into an expression with a bound variable increases [shift] by 1.
 
-and subst_spine subl = function
-  | ARG(x,a) -> ARG(subst_expr subl x, subst_spine subl a)
-  | CAR a -> CAR(subst_spine subl a)
-  | CDR a -> CDR(subst_spine subl a)
-  | END -> END
+ *)
 
-and subst_expr subl e = 
+let apply_args_counter = new_counter()
+
+let rec subst_expr shift subs e =
+  if debug_subst then printf "subst_expr shift=%d subs=%a e=%a\n%!" shift _a subs _e e;
   let pos = get_pos e in
-  match unmark e with 
+  match unmark e with
   | APPLY(h,args) -> (
-      let args = subst_spine subl args in 
-      match h with 
-      | V v -> (
-	  try apply_args (new_pos pos (List.assoc v subl)) args
-	  with Not_found -> pos, APPLY(h,args))
-      | FUN(f,t) -> raise NotImplemented
-      | W _ | U _ | T _ | O _ | TAC _ -> pos, APPLY(h,args))
-  | CONS(x,y) -> pos, CONS(subst_expr subl x,subst_expr subl y)
-  | LAMBDA(v, body) -> 
-      let (v,body) = subst_fresh pos subl (v,body) in
-      pos, LAMBDA(v, body)
-
-and subst_fresh pos subl (v,e) =
-  let (v',subl) = fresh pos v subl in
-  let e' = subst_expr subl e in
-  v', e'
+      let args' = map_spine (subst_expr shift subs) args in
+      match h with
+      | V (VarRel j) ->
+	  if j < shift then e 
+	  else
+	    let i = j-shift in
+	    if i < Array.length subs 
+	    then apply_args (rel_shift_expr shift subs.(i)) args'
+	    else pos, APPLY(V (VarRel (j - Array.length subs)),args')
+      | _ -> 
+	  if args' == args then e else pos, APPLY(h,args'))
+  | CONS(x,y) -> 
+      let x' = subst_expr shift subs x
+      and y' = subst_expr shift subs y in
+      if x' == x && y' == y then e else pos, CONS(x',y')
+  | LAMBDA(v, body) ->
+      let shift = shift + 1 in
+      let body' = subst_expr shift subs body in
+      if body' == body then e else pos, LAMBDA(v, body')
 
 and apply_args e args =
-  let rec repeat e args = 
-    let pos = get_pos e in
-    match unmark e with
-    | APPLY(h,brgs) -> (pos, APPLY(h, join_args brgs args))
-    | CONS(x,y) -> (
-        match args with
-        | ARG _ -> raise (GeneralError "too many arguments")
-        | CAR args -> repeat x args
-	| CDR args -> repeat y args
-        | END -> e)
-    | LAMBDA(v,body) -> (
-        match args with
-        | ARG(x,args) -> repeat (subst_expr [(v,x)] body) args
-        | CAR args -> raise (GeneralError "pi1 expected a pair (1)")
-	| CDR args -> raise (GeneralError "pi2 expected a pair (1)")
-        | END -> e)
-  in repeat e args
+  let c = apply_args_counter() in
+  if debug_subst then printf "entering apply_args(%d): e = %a, args = %a\n%!" c _e e _s args;
+  let r =
+  let pos = get_pos e in
+  match unmark e with
+  | APPLY(h,brgs) -> (pos, APPLY(h, join_args brgs args))
+  | CONS(x,y) -> (
+      match args with
+      | ARG _ -> raise (GeneralError "application of a pair to an argument")
+      | CAR args -> apply_args x args
+      | CDR args -> apply_args y args
+      | END -> e)
+  | LAMBDA(_,body) -> (
+      match args with
+      | ARG(x,args) -> 
+	  apply_args (subst_expr 0 [|x|] body) args
+      | CAR args -> raise (GeneralError "pi1 expected a pair but got a function")
+      | CDR args -> raise (GeneralError "pi2 expected a pair but got a function")
+      | END -> e)
+  in
+  if debug_subst then printf "leaving apply_args(%d): r = %a\n%!" c _e r;
+  r
 
-and subst_type_list (subl : (var * lf_expr) list) ts = List.map (subst_type subl) ts
+and subst_type shift subs t =
+  if debug_subst then printf "subst_type shift=%d subs=%a t=%a\n%!" shift _a subs _t t;
+  match unmark t with
+  | F_Pi(v,a,b) ->
+      let a' = subst_type shift subs a in
+      let shift = shift + 1 in
+      let b' = subst_type shift subs b in
+      if a' == a && b' == b then t else get_pos t, F_Pi(v,a',b')
+  | F_Sigma(v,a,b) ->
+      let a' = subst_type shift subs a in
+      let shift = shift + 1 in
+      let b' = subst_type shift subs b in
+      if a' == a && b' == b then t else get_pos t, F_Sigma(v,a',b')
+  | F_Singleton(e,u) ->
+      let e' = subst_expr shift subs e in
+      let u' = subst_type shift subs u in
+      if e' == e && u' == u then t else get_pos t, F_Singleton(e',u')
+  | F_Apply(label,args) -> 
+      let args' = map_list (subst_expr shift subs) args in
+      if args' == args then t else get_pos t, F_Apply(label, args')
 
-and subst_type (subl : (var * lf_expr) list) (pos,t) = 
-  (pos,
-   match t with
-   | F_Pi(v,a,b) ->
-       let a = subst_type subl a in
-       let (v,b) = subst_type_fresh pos subl (v,b) in
-       F_Pi(v,a,b)
-   | F_Sigma(v,a,b) -> 
-       let a = subst_type subl a in
-       let (v,b) = subst_type_fresh pos subl (v,b) in
-       F_Sigma(v,a,b)
-   | F_Apply(label,args) -> F_Apply(label, subst_list subl args)
-   | F_Singleton(e,t) -> F_Singleton( subst_expr subl e, subst_type subl t )
-  )
-
-and subst_type_fresh pos subl (v,t) =
-  let (v,subl) = fresh pos v subl in
-  let t = subst_type subl t in
-  v,t
-
-let rec subst_kind_list (subl : (var * lf_expr) list) ts = List.map (subst_kind subl) ts
-
-and subst_kind (subl : (var * lf_expr) list) k = 
+let rec subst_kind shift subs k =
    match k with
    | K_primitive_judgment | K_ulevel | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression -> k
-   | K_Pi(v,a,b) -> 
-       let a = subst_type subl a in
-       let (v,b) = subst_kind_fresh (get_pos a) subl (v,b) in K_Pi(v, a, b)
+   | K_Pi(v,a,b) ->
+       let a' = subst_type shift subs a in
+       let shift = shift + 1 in
+       let b' = subst_kind shift subs b in
+       if a' == a && b' == b then k else K_Pi(v,a',b')
 
-and subst_kind_fresh pos subl (v,t) =
-  let (v,subl) = fresh pos v subl in
-  v, subst_kind subl t  
+let subst_l subs e = if Array.length subs = 0 then e else subst_expr 0 subs e
 
-let subst_l subs e = if subs = [] then e else subst_expr subs e
+let subst_type_l subs t = if Array.length subs = 0 then t else subst_type 0 subs t
 
-let subst_type_l subs t = if subs = [] then t else subst_type subs t
-
-let preface subber (v,x) e = subber [(v,x)] e
+let preface subber x e = subber 0 [|x|] e
 
 let subst_expr = preface subst_expr
 
@@ -111,17 +113,7 @@ let subst_type = preface subst_type
 
 let subst_kind = preface subst_kind
 
-let subst_fresh pos (v,e) = 
-  if isunused v 
-  then v,e 
-  else subst_fresh pos [] (v,e)
-
-let subst_type_fresh pos (v,e) = 
-  if isunused v 
-  then v,e 
-  else subst_type_fresh pos [] (v,e)
-
-(* 
+(*
   Local Variables:
   compile-command: "make -C .. src/substitute.cmo "
   End:

@@ -16,7 +16,7 @@ Check TS : (T:texp) =>             : T.                 # an o-expression with a
 
 Check TS : (T:texp) => (U:texp) => [ T ≡ U ].           # a proof that T ≡ U (type equality)
 
-Check TS : (T:texp) => (t:oexp) 
+Check TS : (T:texp) => (t:oexp)
                     => (u:oexp) => [ t ≡ u : T ].       # a proof that t ≡ u : T (object equality)
 
 # Here are the base judgments again, but this time with binders for pairs.  For example,
@@ -40,7 +40,7 @@ Check TS : { |- T Type, t u:T } [ t ≡ u : T ].          # a proof that t ≡ u
 
 # Here are the judgments involving ulevel equality:
 
-Check TS : (T:texp) => (t:oexp) => 
+Check TS : (T:texp) => (t:oexp) =>
       		       (u:oexp) => [ t ~ u : T ].       # ulevel equivalence for o-expressions
 Check TS : (T:texp) => (U:texp) => [ T ~ U Type ].      # ulevel equivalence for t-expressions
 Check TS : (u:uexp) => (v:uexp) => [ u ~ v Ulevel ].    # ulevel equivalence for u-expressions

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# abbreviations for TS expressions 
+# abbreviations for TS expressions
 
 Definition LF UU : uexp ⟶ texp := @[U].
 

@@ -28,7 +28,7 @@ open Variables
 type uHead = | U_next | U_max
 
 (** Labels for t-expressions of TS. *)
-type tHead = | T_El | T_El' | T_U | T_U' | T_Pi | T_Pi' | T_Sigma | T_Pt 
+type tHead = | T_El | T_El' | T_U | T_U' | T_Pi | T_Pi' | T_Sigma | T_Pt
              | T_Coprod | T_Coprod2 | T_Empty | T_IP | T_Id | T_Proof
 
 (** Labels for o-expressions of TS. *)
@@ -68,16 +68,18 @@ type lf_type_head =
   | F_judged_type_equal
   | F_judged_obj_equal
   | F_wexp
-      (* the next four are types, whose objects are witnesses *)
+      (* the next four are types, whose objects are witnesses; we use these as containers for the judgments of TTS *)
   | F_istype_witness
-  | F_hastype_witness
+  | F_hastype_witness			(* i.e., p:o:T means p is of type o:T and is a witness that o is of type T *)
   | F_type_equality_witness
   | F_object_equality_witness
-      (* the next four are statements, with no objects *)
+      (* the next four are judgments, with no objects when running in TTS mode, or with LF derivation trees as objects when running in LF mode *)
   | F_witnessed_istype
-  | F_witnessed_hastype
+  | F_witnessed_hastype			(* i.e., p:o:T is a judgment, which must be derived *)
   | F_witnessed_type_equality
   | F_witnessed_object_equality
+      (* the next one is a type parametrized by a t-expression T whose objects are pairs (p,o) with p:o:T  *)
+  | F_obj_of_type_with_witness
       (* the next one is needed just to accommodate undefined type constants encountered by the parser *)
   | F_undeclared_type_constant of position * string
 
@@ -106,18 +108,11 @@ type lf_expr_head =
   | W of wHead			(** labels for w-expressions of TS *)
   | V of var			(** labels for variables of TS *)
   | TAC of tactic_expr		(** An empty hole, to be filled in later by calling a tactic routine. *)
-  | FUN of lf_expr * lf_type
-	(** In context with the spine, this is a [beta-redex] ready to be
-	    reduced, i.e., it's a function [f] of type [t] and an argument
-	    spine [args], and we're ready to apply [f] to [args].  The main
-	    justification for introducing it is for implementing local
-	    definitions with a head of the form [(x |-> b, (x:Singleton(a)) ->
-	    B)]. *)
 
 (** The expressions of LF, including the expressions of TS as instances of [APPLY].*)
 and lf_expr = unmarked_expr marked
 and unmarked_expr =
-  | LAMBDA of var * lf_expr
+  | LAMBDA of identifier * lf_expr
 	(** Lambda expression of LF. *)
   | CONS of lf_expr * lf_expr
 	(** A pair of dependent type. *)
@@ -145,13 +140,13 @@ and spine =
 
 and lf_type = bare_lf_type marked
 and bare_lf_type =
-  | F_Pi of var * lf_type * lf_type
-  | F_Sigma of var * lf_type * lf_type
+  | F_Pi of identifier * lf_type * lf_type
+  | F_Sigma of identifier * lf_type * lf_type
   | F_Apply of lf_type_head * lf_expr list
   | F_Singleton of (lf_expr * lf_type)
 
 (** Tactics *)
-and tactic_expr = 
+and tactic_expr =
   | Tactic_index of int				 (* $3 *)
   | Tactic_name of string			 (* $foo *)
   | Tactic_sequence of tactic_expr * tactic_expr (* $(a;b;c) *)
@@ -165,7 +160,7 @@ let wexp = F_wexp @@ []
 let texp = F_texp @@ []
 let oexp = F_oexp @@ []
 
-let arrow a b = nowhere 4 (F_Pi(newunused(), a, b))
+let arrow a b = nowhere 4 (F_Pi(id "_", a, b))
 let ( @-> ) = arrow
 
 let istype t = F_istype @@ [t]				       (* t Type *)
@@ -175,6 +170,13 @@ let type_uequality t t' = F_type_uequality @@ [t;t']	       (* t ~ t' *)
 let type_equality t t' = F_type_equality @@ [t;t']	       (* t = t' *)
 let object_uequality o o' t = F_object_uequality @@ [o;o';t]   (* o ~ o' : t *)
 let object_equality o o' t = F_object_equality @@ [o;o';t]     (* o = o' : t *)
+
+let a_type = F_a_type @@ []				       (* |- T Type *)
+let obj_of_type t = F_obj_of_type @@ [t]		       (* |- x : T *)
+let judged_type_equal t u = F_judged_type_equal @@ [t;u]       (* |- T = U *)
+let judged_obj_equal t x y = F_judged_obj_equal @@ [t;x;y]     (* |- x = y : T *)
+
+let obj_of_type_witness t = F_obj_of_type_with_witness @@ [t]  (* |- p : o : T *)
 
 let istype_witness t = F_istype_witness @@ [t]		       (* t Type *)
 let hastype_witness o t = F_hastype_witness @@ [o;t]	       (* o : t *)
@@ -186,11 +188,6 @@ let witnessed_hastype p o t = F_witnessed_hastype @@ [p;o;t]   (* p : o : t *)
 let witnessed_type_equality p t t' = F_witnessed_type_equality @@ [p;t;t'] (* p : t = t' *)
 let witnessed_object_equality p o o' t = F_witnessed_object_equality @@ [ p;o;o';t] (* p : o = o' : t *)
 
-let a_type = F_a_type @@ []				       (* |- T Type *)
-let obj_of_type t = F_obj_of_type @@ [t]		       (* |- x : T *)
-let judged_type_equal t u = F_judged_type_equal @@ [t;u]       (* |- T = U *)
-let judged_obj_equal t x y = F_judged_obj_equal @@ [t;x;y]     (* |- x = y : T *)
-
 let texp1 = oexp @-> texp
 let texp2 = oexp @-> oexp @-> texp
 let texp3 = oexp @-> oexp @-> oexp @-> texp
@@ -199,9 +196,9 @@ let oexp1 = oexp @-> oexp
 let oexp2 = oexp @-> oexp @-> oexp
 let oexp3 = oexp @-> oexp @-> oexp @-> oexp
 
-let wexp_w = wexp @-> oexp @-> wexp
-let texp_w = wexp @-> oexp @-> texp
-let oexp_w = wexp @-> oexp @-> oexp
+let wexp_w = oexp @-> wexp @-> wexp
+let texp_w = oexp @-> wexp @-> texp
+let oexp_w = oexp @-> wexp @-> oexp
 
 let uhead_to_lf_type = function	(* optimize later by precomputing the constant return values *)
   | U_next -> uexp @-> uexp
@@ -307,7 +304,7 @@ let head_to_vardist = function (* optimize later by precomputing the constant re
   | O O_nat_r -> Some(1, [] :: [] :: [] :: [SingleVariable 0] :: [])
   | _ -> None
 
-(** The "kinds" of LF.  
+(** The "kinds" of LF.
 
     Objects are classified by their type, and (parametrized) types are classified by their kind.
 
@@ -319,26 +316,9 @@ type lf_kind =
   | K_judgment
   | K_judged_expression
   | K_witnessed_judgment
-  | K_Pi of var * lf_type * lf_kind
+  | K_Pi of identifier * lf_type * lf_kind
 
-let ( @@-> ) a b = K_Pi(newunused(), a, b)
-
-let some_type () = 
-  let v = newfresh (Var "T") in
-  nowhere 123 (F_Sigma(v,texp,istype (nowhere 124 (APPLY(V v,END)))))
-
-let some_object_of_type t = 
-  let v = newfresh (Var "x") in
-  nowhere 125 (F_Sigma(v,oexp,hastype (nowhere 126 (APPLY(V v,END))) t))
-
-let this_object_of_type pos o t = 
-  let v = newfresh (Var "x") in
-  with_pos pos (F_Sigma(v,with_pos pos (F_Singleton(o,oexp)),hastype (nowhere 126 (APPLY(V v,END))) t))
-
-let k_pi t k =
-  let v = newfresh (Var "T") in
-  let v' = nowhere 126 (APPLY(V v,END)) in
-  K_Pi(v,t,k v')
+let ( @@-> ) a b = K_Pi(id "_", a, b)
 
 let istype_kind = texp @@-> K_primitive_judgment
 
@@ -360,6 +340,8 @@ let obj_of_type_kind = a_type @@-> K_judged_expression
 
 let judged_kind_equal_kind = a_type @@-> a_type @@-> K_judged_expression
 
+let obj_of_type_with_witness_kind = texp @@-> K_witnessed_judgment
+
 let istype_witness_kind = texp @@-> K_witnessed_judgment (* unused by VV *)
 let hastype_witness_kind = oexp @@-> texp @@-> K_witnessed_judgment
 let type_equality_witness_kind = texp @@-> texp @@-> K_witnessed_judgment
@@ -371,11 +353,14 @@ let witnessed_type_equality_kind = wexp @@-> texp @@-> texp @@-> K_witnessed_jud
 let witnessed_object_equality_kind = wexp @@-> oexp @@-> oexp @@-> texp @@-> K_witnessed_judgment
 
 let var_to_lf v = nowhere 1 (APPLY(V v,END))
+let  id_to_lf v = var_to_lf (Var v)
 
-let judged_obj_equal_kind = 
-  let t = newfresh (Var "T") in
-  let tt = var_to_lf t in
-  K_Pi(t, a_type, obj_of_type tt @@-> obj_of_type tt @@-> K_judged_expression)
+let judged_obj_equal_kind =
+  K_Pi(id "T",
+       a_type,
+       obj_of_type (var_to_lf (VarRel 0))
+       @@-> obj_of_type (var_to_lf (VarRel 1))
+	 @@-> K_judged_expression)
 
 let tfhead_to_kind = function
   | F_uexp -> K_ulevel
@@ -402,6 +387,8 @@ let tfhead_to_kind = function
   | F_witnessed_type_equality -> witnessed_type_equality_kind
   | F_witnessed_object_equality -> witnessed_object_equality_kind
 
+  | F_obj_of_type_with_witness -> obj_of_type_with_witness_kind
+
   | F_undeclared_type_constant(pos,name) -> raise (UndeclaredTypeConstant(pos,name))
 
 (** Subordination: see section 2.4 of Mechanizing Meta-theory by Harper and Licata *)
@@ -427,62 +414,185 @@ let rec compare_kinds k l =
   | K_ulevel,             _
   | K_expression,         K_judgment
   | K_expression,         K_primitive_judgment
-  | K_expression,         K_witnessed_judgment 
+  | K_expression,         K_witnessed_judgment
   | K_primitive_judgment, K_witnessed_judgment
     -> K_less
-  | _,                    K_ulevel 
+  | _,                    K_ulevel
   | K_judgment,           K_expression
   | K_primitive_judgment, K_expression
-  | K_witnessed_judgment, K_expression 
+  | K_witnessed_judgment, K_expression
   | K_witnessed_judgment, K_primitive_judgment
     -> K_greater
   | _ -> K_incomparable
 
+(** spines *)
+
+let rec map_spine f s = match s with
+  | ARG(x,a) -> let x' = f x in let a' = map_spine f a in if x' == x && a' == a then s else ARG(x',a')
+  | CAR a -> let a' = map_spine f a in if a' == a then s else CAR(a')
+  | CDR a -> let a' = map_spine f a in if a' == a then s else CDR(a')
+  | END -> s
+
+(** relative indices *)
+
+let rec rel_shift_expr limit shift e =
+  match unmark e with
+  | APPLY(h,args) ->
+      let args' = map_spine (rel_shift_expr limit shift) args in
+      let h' = rel_shift_head limit shift h in
+      if h' == h && args' == args then e else get_pos e, APPLY(h',args')
+  | CONS(x,y) ->
+      let x' = rel_shift_expr limit shift x in
+      let y' = rel_shift_expr limit shift y in
+      if x' == x && y' == y then e else get_pos e, CONS(x',y')
+  | LAMBDA(v, body) ->
+      let limit = limit + 1 in
+      let body' = rel_shift_expr limit shift body in
+      if body' == body then e else get_pos e, LAMBDA(v, body')
+
+and rel_shift_head limit shift h = 
+  match h with
+  | V (VarRel i) when i >= limit -> V (VarRel (shift+i))
+  | _ -> h
+
+and rel_shift_type limit shift t =
+  match unmark t with
+  | F_Pi(v,a,b) ->
+      let a' = rel_shift_type limit shift a in
+      let limit = limit + 1 in
+      let b' = rel_shift_type limit shift b in
+      if a' == a && b' == b then t else get_pos t, F_Pi(v,a',b')
+  | F_Sigma(v,a,b) ->
+      let a' = rel_shift_type limit shift a in
+      let limit = limit + 1 in
+      let b' = rel_shift_type limit shift b in
+      if a' == a && b' == b then t else get_pos t, F_Sigma(v,a',b')
+  | F_Apply(label,args) ->
+      let args' = List.map (rel_shift_expr limit shift) args in
+      if args' == args then t else get_pos t, F_Apply(label, args')
+  | F_Singleton(e,u) ->
+      let e' = rel_shift_expr limit shift e in
+      let u' = rel_shift_type limit shift u in
+      if e' == e && u' == u then t else get_pos t, F_Singleton(e',u')
+
+let rel_shift_expr shift e = if shift = 0 then e else rel_shift_expr 0 shift e
+
+let rel_shift_head shift h = if shift = 0 then h else rel_shift_head 0 shift h
+
+let rel_shift_type shift t = if shift = 0 then t else rel_shift_type 0 shift t
+
 (** Contexts. *)
 
-module VarMap = Map.Make(VarOrd)
+module MapString = Map.Make(String)
+module MapIdentifier = Map.Make(Identifier)
+
+type tts_judgment = TTS_istype | TTS_hastype of lf_expr
 
 type environment = {
     state : int;
-    interactive : bool;
-    tts_context : (var * var * lf_expr) list; (* p:o:T -- here p is the witness *)
-    ts_context : (var * lf_expr) list;	      (* o:T -- example: n:nat *)
-    lf_context : (var * lf_type) list;	      (* e:E -- example: t:texp *)
-    global_lf_context : lf_type VarMap.t;
+    local_tts_context : (string * tts_judgment) list;
+    global_tts_context : tts_judgment MapString.t;
+    local_lf_context : (identifier * lf_type) list;
+    global_lf_context : lf_type MapIdentifier.t;
   }
 
-let empty_context = { 
-  state = 0; interactive = false; 
-  lf_context = []; ts_context = []; tts_context = []; 
-  global_lf_context = VarMap.empty 
+let empty_context = {
+  state = 0;
+  local_tts_context = [];
+  global_tts_context = MapString.empty;
+  local_lf_context = [];
+  global_lf_context = MapIdentifier.empty;
 }
 
-let incr_state context = 
-  if context.interactive
-  then { context with state = context.state + 1 }
-  else context
+let interactive = ref false
 
-let lf_bind env v t = { env with lf_context = (v,t) :: env.lf_context }
+let incr_state env =
+  if !interactive
+  then { env with state = env.state + 1 }
+  else env
 
-let global_lf_bind env v t = { env with global_lf_context = VarMap.add v t env.global_lf_context }
+let local_lf_bind env v t = { env with local_lf_context = (v,t) :: env.local_lf_context }
 
-let ts_bind env v t = { env with ts_context = (v,t) :: env.ts_context }
+let local_lf_fetch env i = 			(* (VarRel i) *)
+  try rel_shift_type (i+1) (snd (List.nth env.local_lf_context i))
+  with Failure "nth" -> raise Not_found
 
-let ts_fetch env v = List.assoc v env.ts_context
+let global_lf_bind env pos name t = 
+  if MapIdentifier.mem name env.global_lf_context then raise (MarkedError (pos, "identifier already defined: " ^ idtostring name));
+  { env with global_lf_context = MapIdentifier.add name t env.global_lf_context }
 
-let tts_bind env p v t = { env with tts_context = (p,v,t) :: env.tts_context }
+let global_lf_fetch env name = MapIdentifier.find name env.global_lf_context
 
-let tts_fetch v env =
-  let rec repeat = function
-      [] -> raise Not_found
-    | (p,o,t)::l -> if compare o v = 0 then (p,t) else repeat l in
-  repeat env.tts_context
+let lf_fetch env = function
+  | Var name -> global_lf_fetch env name
+  | VarRel i -> local_lf_fetch env i
 
-let tts_fetch_w w env = 
-  let rec repeat = function
-      [] -> raise Not_found
-    | (p,o,t)::l -> if compare p w = 0 then (o,t) else repeat l in
-  repeat env.tts_context
+let local_tts_declare_type   env name   = { env with local_tts_context = (name,TTS_istype   ) :: env.local_tts_context }
+
+let local_tts_declare_object env name t = { env with local_tts_context = (name,TTS_hastype t) :: env.local_tts_context }
+
+let global_tts_declare_type env pos name = 
+  if MapString.mem name env.global_tts_context then raise (MarkedError (pos, "variable already defined: " ^ name));
+  { env with global_tts_context = MapString.add name TTS_istype env.global_tts_context }
+
+let global_tts_declare_object env pos name t = 
+  if MapString.mem name env.global_tts_context then raise (MarkedError (pos, "variable already defined: " ^ name));
+  { env with global_tts_context = MapString.add name (TTS_hastype t) env.global_tts_context }
+
+let ts_bind env v t = 
+  if isid v then local_tts_declare_object env (id_to_name v) t else raise Internal
+
+let local_tts_fetch env i =			(* (VarRel i) *)
+  (* note: each TTS_hastype consumes two relative indices, whereas each TTS_istype consumes only one; that should change *)
+  let rec repeat shift i context =
+    match context with
+    | (_,TTS_istype) :: context -> if i = 0 then TTS_istype else repeat (shift+1) (i-1) context
+    | (_,TTS_hastype t) :: context -> if i = 0 || i = 1 then TTS_hastype (rel_shift_expr shift t) else repeat (shift+2) (i-2) context
+    | [] -> raise Not_found
+  in repeat 2 i env.local_tts_context
+
+let global_tts_fetch env name = MapString.find name env.global_tts_context
+
+let global_tts_fetch_type env name =
+  match
+    global_tts_fetch env name
+  with
+  | TTS_istype -> raise Not_found
+  | TTS_hastype t -> t
+
+let is_tts_type_variable env name =
+  try
+    match
+      global_tts_fetch env name
+    with
+    | TTS_istype -> true
+    | TTS_hastype _ -> false
+  with
+  | Not_found -> false
+
+let tts_fetch env = function
+  | Var id -> global_tts_fetch env (id_to_name id)
+  | VarRel i -> local_tts_fetch env i
+
+let tts_fetch_type env name =
+  match tts_fetch env name with
+  | TTS_istype -> raise Not_found
+  | TTS_hastype t -> t
+
+let ts_fetch env v = 
+  match tts_fetch env v with
+  | TTS_hastype t -> t
+  | TTS_istype -> raise Internal
+
+let first_var env =
+  match env.local_tts_context with
+  | (name,_) :: _ -> id name
+  | _ -> raise Internal
+
+let first_w_var env =
+  match env.local_tts_context with
+  | (name,_) :: _ -> idw name
+  | _ -> raise Internal
 
 type uContext = UContext of var marked list * (lf_expr * lf_expr) marked list
 
@@ -502,7 +612,7 @@ type tactic_return =
   | TacticSuccess of lf_expr
 
 type tactic_function =
-       surrounding         (* the ambient APPLY(...), if any, and the index among its head and arguments of the hole *)        
+       surrounding         (* the ambient APPLY(...), if any, and the index among its head and arguments of the hole *)
     -> environment						      (* the active context *)
     -> position							      (* the source code position of the tactic hole *)
     -> lf_type							      (* the type of the hole, e.g., [texp] *)
@@ -513,7 +623,7 @@ let tactics : (string * tactic_function) list ref = ref []
 
 let add_tactic (name,f) = tactics := (name,f) :: !tactics
 
-(* 
+(*
   Local Variables:
   compile-command: "make -C .. src/typesystem.cmo "
   End:
