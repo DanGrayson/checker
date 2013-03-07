@@ -8,12 +8,12 @@ open Names
 let rec tau (env:environment) e : lf_expr =
   let pos = get_pos e in
   match unmark e with
-  | APPLY(V v,CAR END) -> (		(* pi1 v *)
-      if !debug_mode then printf " v = %a\n%!" _v v;
+  | APPLY(V (Var v),CAR END) -> (		(* pi1 v *)
+      if !debug_mode then printf " v = %a\n%!" _i v;
       if !debug_mode then print_context (Some 4) stderr env;
       let t =
 	try List.assoc v env.local_lf_context
-	with Not_found -> raise (TypeCheckingFailure(env, [], [pos, "variable not in LF context: " ^ vartostring v])) in
+	with Not_found -> raise (TypeCheckingFailure(env, [], [pos, "variable not in LF context: " ^ idtostring v])) in
       match unmark t with
       | F_Sigma(_,_,(_,F_Apply(F_hastype,[(_,APPLY(V v',END)); t]))) -> t
       | _ -> (trap(); raise Internal))
@@ -44,7 +44,7 @@ let rec tau (env:environment) e : lf_expr =
               | ARG(m1,ARG(m2,END)) ->
                   Helpers.make_T_Pi
                     (with_pos_of m1 (Helpers.make_T_U m1))
-                    (Var "_", (with_pos_of m2 (Helpers.make_T_U m2)))
+                    (Id "_", (with_pos_of m2 (Helpers.make_T_U m2)))
               | _ -> raise (TypeCheckingFailure(env, [], [pos, "expected [j] to have two branches"])))
           | O_ev' -> raise NotImplemented
           | O_ev -> (
@@ -56,8 +56,8 @@ let rec tau (env:environment) e : lf_expr =
           | O_lambda -> (
               match args with
               | ARG(t,ARG(o,END)) ->
-		  let x = Var "x" in
-		  let x' = var_to_lf x in
+		  let x = Id "x" in
+		  let x' = id_to_lf x in
                   Helpers.make_T_Pi t (x, tau (ts_bind env x t) (Substitute.apply_args o (ARG(x',END))))
               | _ -> raise Internal)
           | O_forall -> (

@@ -30,12 +30,12 @@ let car (hd,reversed_args) = (hd, CAR reversed_args)
 
 let cdr (hd,reversed_args) = (hd, CDR reversed_args)
 
-type binder = position * var * lf_type
+type binder = position * identifier * lf_type
 
 let show_binders bname b ename e = 
-  iteri (fun i (pos,v,t) -> printf " %s.%d = %a:%a\n%!" bname i _v v _t t) b;
+  iteri (fun i (pos,v,t) -> printf " %s.%d = %a:%a\n%!" bname i _i v _t t) b;
   match e with 
-  | Some (pos,v,t) -> printf " %s = %a:%a\n%!" ename _v v _t t
+  | Some (pos,v,t) -> printf " %s = %a:%a\n%!" ename _i v _t t
   | None -> ()
 
 let bind_sigma binder b =
@@ -155,11 +155,11 @@ let pi1_implication ((vpos,v),t) u =
       r
   | None -> raise NotImplemented
 
-let apply_binder pos (c:(var marked * lf_expr) list) (v : var marked) (t1 : lf_type) (t2 : position -> var -> lf_type) (u : lf_type) =
+let apply_binder pos (c:(identifier marked * lf_expr) list) (v : identifier marked) (t1 : lf_type) (t2 : position -> identifier -> lf_type) (u : lf_type) =
   (* syntax is { v_1 : T_1 , ... , v_n : T_n |- v Type } u  or  { v_1 : T_1 , ... , v_n : T_n |- v:T } u *)
   (* t1 is texp or oexp; t2 is (fun t -> istype t) or (fun o -> hastype o t) *)
   let (vpos,v) = v in
-  let c = List.map (fun ((vpos,v),t) -> (vpos,v), (vpos, make_F_Sigma oexp (v,hastype (var_to_lf_pos pos v) t))) c in
+  let c = List.map (fun ((vpos,v),t) -> (vpos,v), (vpos, make_F_Sigma oexp (v,hastype (var_to_lf_pos pos (Var v)) t))) c in
   let t = pos, make_F_Sigma t1 (v,t2 pos v) in
   let t = List.fold_right pi1_implication c t in
   let u = pi1_implication ((vpos,v),t) u in

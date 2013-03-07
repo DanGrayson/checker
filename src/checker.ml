@@ -86,8 +86,8 @@ let add_tVars env tvars =
   List.fold_left
     (fun env (pos,t) ->
       let env = { env with type_variables = t :: env.type_variables } in
-      let env = global_lf_bind env pos t texp in
-      let env = global_lf_bind env pos (t ^ "$istype") (istype (var_to_lf (Var t))) in
+      let env = global_lf_bind env pos (Id t) texp in
+      let env = global_lf_bind env pos (Id (t ^ "$istype")) (istype (var_to_lf (Var (Id t)))) in
       env 
     ) env tvars
 
@@ -95,42 +95,42 @@ let add_oVars env ovars t =
   List.fold_left
     (fun env (pos,o) -> 
       let env = global_tts_bind env pos o t in
-      let env = global_lf_bind env pos o oexp in
-      let env = global_lf_bind env pos (o ^ "$hastype") (hastype (var_to_lf (Var o)) t) in
+      let env = global_lf_bind env pos (Id o) oexp in
+      let env = global_lf_bind env pos (Id (o ^ "$hastype")) (hastype (var_to_lf (Var (Id o))) t) in
       env 
     ) env ovars
 
 let lf_axiomCommand env pos name t =
-  if show_rules then printf "Axiom LF %a: %a\n%!" _v name _t t;
+  if show_rules then printf "Axiom LF %a: %a\n%!" _i name _t t;
   let t = Lfcheck.type_validity [] env t in
   let r = axiom_bind name pos t env in
-  if !proof_general_mode then printf "%a is declared\n%!" _v name;
+  if !proof_general_mode then printf "%a is declared\n%!" _i name;
   r
 
 let defCommand env defs =
   List.fold_left
-    (fun env (v, pos, tm, tp) ->
-      if show_definitions then printf "Define %a = %a\n%!" _v v  _e tm (* else printf "Define %a\n%!" _v v *);
-      if show_definitions then printf "       %a : %a\n%!" _v v  _t tp;
+    (fun env (name, pos, tm, tp) ->
+      if show_definitions then printf "Define %s = %a\n%!" name  _e tm (* else printf "Define %a\n%!" name *);
+      if show_definitions then printf "       %s : %a\n%!" name  _t tp;
       let tp' = type_validity [] env tp in
       if not (type_equiv tp tp') then
-      if show_definitions then printf "       %a : %a [after tactics]\n%!" _v v  _t tp';
+      if show_definitions then printf "       %s : %a [after tactics]\n%!" name  _t tp';
       let tm' = type_check [] env tm tp' in
       if not (term_equiv tm tm') then (
-	if show_definitions then printf "       %a = %a [after tactics]\n%!" _v v  _e tm');
+	if show_definitions then printf "       %s = %a [after tactics]\n%!" name  _e tm');
       let tm'' = term_normalization env tm' tp' in
       if not (term_equiv tm' tm'') then (
-	if show_definitions then printf "       %a = %a [normalized]\n%!" _v v  _e tm'';
-	(* if show_definitions then printf "       %a = %a [normalized, TS format]\n%!" _v v  _ts tm''; *)
+	if show_definitions then printf "       %s = %a [normalized]\n%!" name  _e tm'';
+	(* if show_definitions then printf "       %s = %a [normalized, TS format]\n%!" name  _ts tm''; *)
 	let _ = type_check [] env tm'' tp' in ();
        );
       let tp'' = type_normalization env tp' in
       if not (type_equiv tp' tp'') then (
-	if show_definitions then printf "       %a : %a [normalized]\n%!" _v v  _t tp'';
+	if show_definitions then printf "       %s : %a [normalized]\n%!" name  _t tp'';
 	let _ = type_validity [] env tp'' in ();
        );
-      let env = def_bind v pos tm' tp' env in
-      if !proof_general_mode then printf "%a is defined\n%!" _v v;
+      let env = def_bind (Id name) pos tm' tp' env in
+      if !proof_general_mode then printf "%s is defined\n%!" name;
       env
     )
     env defs
@@ -205,11 +205,13 @@ let chk_u env u =
   let u = Lfcheck.type_check [] env u uexp in
   Lfcheck.term_normalization env u uexp
 
+let ueqn_counter = new_counter()
+
 let ubind env uvars ueqns =
-  let env = List.fold_left (fun env (pos,u) -> global_lf_bind env pos u uexp) env uvars in
+  let env = List.fold_left (fun env (pos,u) -> global_lf_bind env pos (Id u) uexp) env uvars in
   (* let uvars = List.map (fun u -> Var u) uvars in *)
-  let ueqns = List.map (fun (u,v) -> ("ueq" ^ (string_of_int (next_genctr()))), chk_u env u, chk_u env v) ueqns in
-  let env = List.fold_left (fun env (name,u,v) -> global_lf_bind env (no_pos 123) name (ulevel_equality u v)) env ueqns in
+  let ueqns = List.map (fun (u,v) -> ("ueq" ^ (string_of_int (ueqn_counter()))), chk_u env u, chk_u env v) ueqns in
+  let env = List.fold_left (fun env (name,u,v) -> global_lf_bind env (no_pos 123) (Id name) (ulevel_equality u v)) env ueqns in
   (* chk_ueqns env ueqns; *)
   env
 
@@ -231,7 +233,7 @@ let rec process_command env lexbuf =
     | Toplevel.CheckWitness x -> checkWitnessedJudgmentCommand env x; env
     | Toplevel.CheckTS x -> checkTSCommand env x; env
     | Toplevel.Alpha (x,y) -> alphaCommand env (x,y); env
-    | Toplevel.Theorem (pos,name,deriv,thm) -> defCommand env [ Var name, pos, deriv, thm ]
+    | Toplevel.Theorem (pos,name,deriv,thm) -> defCommand env [ name, pos, deriv, thm ]
     | Toplevel.Show n -> show_command env n; env
     | Toplevel.Back n -> if n > 0 then raise (GoBack n) else env
     | Toplevel.BackTo n ->

@@ -223,7 +223,7 @@ let apply_2 shift f x y = Substitute.apply_args (rel_shift_expr shift f) (x ** y
 
 let rec check_istype env t =
   match unmark t with
-  | APPLY(V (Var name), END) -> if not (List.mem name env.type_variables) then err env (get_pos t) "variable not declared as a type"
+  | APPLY(V (Var (Id name)), END) -> if not (List.mem name env.type_variables) then err env (get_pos t) "variable not declared as a type"
   | APPLY(T th, args) -> (
       match th with
       | T_Pi' ->
@@ -247,7 +247,7 @@ let rec check_istype env t =
 and check_hastype env p o t =
   if true then printf "check_hastype\n p = %a\n o = %a\n t = %a\n%!" _e p _e o _e t;
   match unmark p with
-  | APPLY(V (VarRel _ | Var_wd _ as p'), END) -> (
+  | APPLY(V (VarRel _ | Var (Idw _) as p'), END) -> (
       let o' = base_var p' in
       let t' =
 	try tts_fetch env p'
@@ -575,7 +575,7 @@ and type_synthesis (surr:surrounding) (env:environment) (m:lf_expr) : lf_expr * 
   | LAMBDA _ -> err env pos ("function has no type: " ^ lf_expr_to_string m)
   | CONS(x,y) ->
       let x',t = type_synthesis surr env x in
-      let y',u = type_synthesis surr env y in (pos,CONS(x',y')), (pos,F_Sigma(Var "_",t,u))
+      let y',u = type_synthesis surr env y in (pos,CONS(x',y')), (pos,F_Sigma(Id "_",t,u))
   | APPLY(head,args) ->
       match head with
       | TAC _ -> err env pos "tactic found in context where no type advice is available"
@@ -702,12 +702,14 @@ let rec num_args t = match unmark t with
   | F_Pi(_,_,b) -> 1 + num_args b
   | _ -> 0
 
+let term_normalization_ctr = new_counter()
+
 let rec term_normalization (env:environment) (x:lf_expr) (t:lf_type) : lf_expr =
   (* see figure 9 page 696 [EEST] *)
   let (pos,t0) = t in
   match t0 with
   | F_Pi(v,a,b) ->
-      let c = next_genctr() in
+      let c = term_normalization_ctr() in
       let env = local_lf_bind env v a in
       if !debug_mode then printf "term_normalization(%d) x = %a\n%!" c _e x;
       let result = apply_args (rel_shift_expr 1 x) (ARG(var_to_lf (VarRel 0),END)) in (* optimization: if x is a LAMBDA, then get the body out *)

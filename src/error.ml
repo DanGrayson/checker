@@ -8,9 +8,7 @@ let debug_subst = false
 
 let internal_location_trap = 0
 
-let genctr_trap = 0			(* raise an exception when a fresh variable with this number is created *)
-
-let genctr_exception = 0                (* raise a trap and an exception when a fresh variable with this number is created *)
+let new_counter () = let n = ref 0 in fun () -> incr n; !n
 
 let trap () = ()			(* set a break point here *)
 

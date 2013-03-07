@@ -2,40 +2,54 @@
 
 open Error
 
+type identifier =			(* variables come in pairs, with the *_wd version being the witness twin *)
+  | Id of string
+  | Idw of string
+
+module Identifier = struct
+  type t = identifier
+  let compare v w = match v,w with
+  | Id a, Id b -> compare a b
+  | Idw a, Idw b -> compare a b
+  | Id a, Idw b -> let r = compare a b in if r = 0 then  1 else r
+  | Idw a, Id b -> let r = compare a b in if r = 0 then -1 else r
+end
+
+let idtostring = function
+  | Id name -> name
+  | Idw name -> name ^ "$"
+
+let base_id = function
+  | Id name -> raise Internal
+  | Idw name -> Id name
+
+let witness_id = function
+  | Id name -> Idw name
+  | Idw name -> raise Internal
+
 type var =
-  | Var of string
-  | Var_wd of string			(* variables come in pairs, with the *_wd version being the witness twin *)
+  | Var of identifier
   | VarRel of int			(* deBruijn index, starting with 0 *)
 
 let vartostring = function
-  | Var x -> x
-  | Var_wd x -> x ^ "$"
-  | VarRel i -> string_of_int i ^ "^"
+  | Var x -> idtostring x
+  | VarRel i -> string_of_int i ^ "^"	(* raw form *)
 
-let base_var = function
-  | Var_wd x -> Var x
+let base_var = function			(* deprecated *)
+  | Var x -> Var (base_id x)
   | VarRel i -> if i mod 2 = 0 then VarRel (i+1) else raise Internal
-  | Var _ -> raise Internal
 
-let witness_var = function
-  | Var x -> Var_wd x
+let witness_var = function		(* deprecated *)
+  | Var x -> Var (witness_id x)
   | VarRel i -> if i mod 2 = 1 then VarRel (i-1) else raise Internal
-  | Var_wd _ -> raise Internal
 
 exception GensymCounterOverflow
 
-let isunused v = 			(* anything using this is likely to be wrong in the presence of tactics *)
+let isunused v = 			(* deprecated *)
   match v with
-  | Var id | Var_wd id -> id = "_"
+  | Var (Id "_" | Idw "_") -> true
+  | Var _ -> false
   | VarRel _ -> raise Internal
-
-let next_genctr =
-  let genctr = ref 0 in
-  fun () -> incr genctr;
-    if !genctr < 0 then raise GensymCounterOverflow;
-    if !genctr = genctr_trap then trap();
-    if !genctr = genctr_exception then (trap(); raise DebugMe);
-    !genctr
 
 (*
   Local Variables:

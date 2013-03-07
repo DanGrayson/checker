@@ -34,14 +34,14 @@ let chk uv ((lhs:lf_expr),(rhs:lf_expr)) =
   let rec ev e =
     let (pos,e0) = e
     in match e0 with
-    | APPLY(V u,END) -> 
-	if true then printf " Universe.chk: u=%a uv=%a\n%!" _v u _vl uv;
-	- step_size * (index u)
+    | APPLY(V (Var u),END) -> 
+        if true then printf " Universe.chk: u=%a uv=%a\n%!" _i u _il uv;
+        - step_size * (index u)
     | APPLY(U U_next,ARG(u,END)) -> (ev u) + 1
     | APPLY(U U_max,ARG(u,ARG(v,END))) -> max (ev u) (ev v)
     | _ -> (
-	printf "%a: unexpected u-expression: %a\n%!" _pos pos _e e;
-	trap(); raise Internal)
+        printf "%a: unexpected u-expression: %a\n%!" _pos pos _e e;
+        trap(); raise Internal)
   in
   if (ev lhs) != (ev rhs) then raise (Inconsistency (lhs, rhs))
 

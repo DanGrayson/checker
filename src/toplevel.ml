@@ -5,7 +5,7 @@ open Variables
 open Typesystem
 
 type command' =
-  | Axiom of (int list) option * var * lf_type
+  | Axiom of (int list) option * identifier * lf_type
   | CheckLF of lf_expr
   | CheckWitness of lf_type
   | CheckLFtype of lf_type

@@ -96,15 +96,14 @@ let marked_var_to_lf (pos,v) = pos, APPLY(V v,END)
 let var_to_lf_pos pos v = with_pos pos (APPLY(V v,END))
 
 let ensure_new_name env pos name =
-  if MapString.mem name env.global_lf_context then
-    raise (MarkedError (pos, "variable already defined: " ^ name))
+  if MapIdentifier.mem name env.global_lf_context then
+    raise (MarkedError (pos, "identifier already defined: " ^ idtostring name))
 
-let axiom_bind v (pos:position) t (env:environment) =
-  let name = vartostring v in
+let axiom_bind name pos t env =
   global_lf_bind env pos name t
 
-let def_bind v (pos:position) o t (env:environment) =
-  axiom_bind v pos (with_pos pos (F_Singleton(o,t))) env
+let def_bind name (pos:position) o t env =
+  axiom_bind name pos (with_pos pos (F_Singleton(o,t))) env
 
 (*
   Local Variables:

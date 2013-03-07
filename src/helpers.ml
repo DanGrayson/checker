@@ -136,23 +136,19 @@ let head_to_type env pos = function
   | V (Var name) -> (
       try global_lf_fetch env name
       with Not_found ->
-	raise (TypeCheckingFailure (env, [], [pos, "unbound variable: " ^ name])))
-  | V (Var_wd name) -> (
-      try ignore (global_lf_fetch env name); wexp (* is this a good way to do it ? *)
-      with Not_found ->
-	raise (TypeCheckingFailure (env, [], [pos, "unbound variable: " ^ name])))
+	raise (TypeCheckingFailure (env, [], [pos, "unbound variable: " ^ idtostring name])))
   | TAC _ -> raise Internal
 
 (** Routines for replacing named variables by relative index variables in expressions. 
 
     Warning: the first variable of subl is the *innermost* variable.
  *)
-let rec var_subst_expr shift subl e =
+let rec id_subst_expr shift subl e =
   match unmark e with
   | APPLY(h,args) -> (
-      let args' = map_spine (var_subst_expr shift subl) args in
+      let args' = map_spine (id_subst_expr shift subl) args in
       match h with
-      | V ((Var _ | Var_wd _) as v) -> (
+      | V (Var v) -> (
 	  try
 	    get_pos e, APPLY(V (VarRel (locate v subl + shift)),args')
 	  with Not_found ->
@@ -160,62 +156,62 @@ let rec var_subst_expr shift subl e =
       | W _ | V _ | U _ | T _ | O _ | TAC _ ->
 	  if args == args' then e else get_pos e, APPLY(h,args'))
   | CONS(x,y) ->
-      let x' = var_subst_expr shift subl x in
-      let y' = var_subst_expr shift subl y in
+      let x' = id_subst_expr shift subl x in
+      let y' = id_subst_expr shift subl y in
       if x' == x && y' == y then e else get_pos e, CONS(x',y')
   | LAMBDA(v, body) ->
       let shift = shift + 1 in
-      let body' = var_subst_expr shift subl body in
+      let body' = id_subst_expr shift subl body in
       if body' == body then e else get_pos e, LAMBDA(v, body')
 
-and var_subst_type shift subl t =
+and id_subst_type shift subl t =
   match unmark t with
   | F_Pi(v,a,b) ->
-      let a' = var_subst_type shift subl a in
+      let a' = id_subst_type shift subl a in
       let shift = shift + 1 in
-      let b' = var_subst_type shift subl b in
+      let b' = id_subst_type shift subl b in
       if a' == a && b' == b then t else get_pos t, F_Pi(v,a',b')
   | F_Sigma(v,a,b) ->
-      let a' = var_subst_type shift subl a in
+      let a' = id_subst_type shift subl a in
       let shift = shift + 1 in
-      let b' = var_subst_type shift subl b in
+      let b' = id_subst_type shift subl b in
       if a' == a && b' == b then t else get_pos t, F_Sigma(v,a',b')
   | F_Apply(label,args) ->
-      let args' = List.map (var_subst_expr shift subl) args in
+      let args' = List.map (id_subst_expr shift subl) args in
       if args' == args then t else get_pos t, F_Apply(label, args')
   | F_Singleton(e,u) ->
-      let e' = var_subst_expr shift subl e in
-      let u' = var_subst_type shift subl u in
+      let e' = id_subst_expr shift subl e in
+      let u' = id_subst_type shift subl u in
       if e' == e && u' == u then t else get_pos t, F_Singleton(e',u')
 
-let rec var_subst_kind shift subl k =
+let rec id_subst_kind shift subl k =
    match k with
    | K_primitive_judgment | K_ulevel | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression -> k
    | K_Pi(v,a,b) ->
-       let a' = var_subst_type shift subl a in
+       let a' = id_subst_type shift subl a in
        let shift = shift + 1 in
-       let b' = var_subst_kind shift subl b in
+       let b' = id_subst_kind shift subl b in
        if a' == a && b' == b then k else K_Pi(v, a, b)
 
-let var_subst_expr subl e = var_subst_expr 0 subl e
+let id_subst_expr subl e = id_subst_expr 0 subl e
 
-let var_subst_type subl t = var_subst_type 0 subl t
+let id_subst_type subl t = id_subst_type 0 subl t
 
-let var_subst_kind subl t = var_subst_kind 0 subl t
+let id_subst_kind subl t = id_subst_kind 0 subl t
 
 (** Helper functions for making new ts-expressions from old ts-expressions. *)
 
-let rel1_expr v0 x = var_subst_expr [v0] x
+let rel1_expr v0 x = id_subst_expr [v0] x
 
-let rel2_expr v0 v1 x = var_subst_expr [v1;v0] x
+let rel2_expr v0 v1 x = id_subst_expr [v1;v0] x
 
-let rel3_expr v0 v1 v2 x = var_subst_expr [v2;v1;v0] x
+let rel3_expr v0 v1 v2 x = id_subst_expr [v2;v1;v0] x
 
-let rel1_type v0 t = var_subst_type [v0] t
+let rel1_type v0 t = id_subst_type [v0] t
 
-let rel2_type v0 v1 t = var_subst_type [v1;v0] t
+let rel2_type v0 v1 t = id_subst_type [v1;v0] t
 
-let rel3_type v0 v1 v2 t = var_subst_type [v2;v1;v0] t
+let rel3_type v0 v1 v2 t = id_subst_type [v2;v1;v0] t
 
 let abstract_expr v x = v, rel1_expr v x
 
@@ -243,9 +239,9 @@ let lambda3 v0 v1 v2 x =
 let make_Var c = Var c
 
 let make_F_Pi t (v,u) = F_Pi(v, t, rel1_type v u)
-let make_F_Pi_simple t u = F_Pi(Var "_", t, u)
+let make_F_Pi_simple t u = F_Pi(Id "_", t, u)
 let make_F_Sigma t (v,u) = F_Sigma(v, t, rel1_type v u)
-let make_F_Sigma_simple t u = F_Sigma(Var "_", t, u)
+let make_F_Sigma_simple t u = F_Sigma(Id "_", t, u)
 
 let make_U h a = APPLY(U h, a)
 let make_T h a = APPLY(T h, a)
@@ -306,10 +302,11 @@ let make_W_Wrefl = make_W W_wrefl END
 let make_T_Pi' t1 t2 = make_T T_Pi' (t1 ** t2 ** END)
 
 let this_object_of_type pos o t =
-  let v = Var "x" in
+  let id = Id "x" in
+  let v = Var id in
   let a = with_pos pos (F_Singleton(o,oexp)) in
   let b = hastype (nowhere 126 (APPLY(V v,END))) t in
-  with_pos pos (make_F_Sigma a (v,b))
+  with_pos pos (make_F_Sigma a (id,b))
 
 (*
   Local Variables:

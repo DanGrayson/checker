@@ -127,8 +127,8 @@ rule expr_tokens = parse
 
   | "@[" (ident as id) "]" { utf8_fix lexbuf id; CONSTANT id }
   | "@[" (ident as id) ";" { utf8_fix lexbuf id; CONSTANT_SEMI id }
-  | ident as id { utf8_fix lexbuf id; try Hashtbl.find commands id with Not_found -> IDENTIFIER id }
-  | (ident as id) '$' { utf8_fix lexbuf id; VARIABLE (Var_wd id) }
+  | ident as id { utf8_fix lexbuf id; try Hashtbl.find commands id with Not_found -> NAME id }
+  | (ident as id) '$' { utf8_fix lexbuf id; NAME_W id }
 
 (* constants *)
 

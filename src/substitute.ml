@@ -20,6 +20,8 @@ open Printf
 
  *)
 
+let apply_args_counter = new_counter()
+
 let rec subst_expr shift subs e =
   if debug_subst then printf "subst_expr shift=%d subs=%a e=%a\n%!" shift _a subs _e e;
   let pos = get_pos e in
@@ -46,7 +48,7 @@ let rec subst_expr shift subs e =
       if body' == body then e else pos, LAMBDA(v, body')
 
 and apply_args e args =
-  let c = next_genctr() in
+  let c = apply_args_counter() in
   if debug_subst then printf "entering apply_args(%d): e = %a, args = %a\n%!" c _e e _s args;
   let r =
   let pos = get_pos e in

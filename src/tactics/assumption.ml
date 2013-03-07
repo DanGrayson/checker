@@ -5,7 +5,7 @@ open Errorcheck
 open Variables
 open Helpers
 
-exception FoundOne of var
+exception FoundOne of identifier
 
 let type_equiv = Alpha.UEquivA.type_equiv empty_uContext
 
@@ -16,14 +16,14 @@ let assumption surr env pos t args =
     | (v,u) :: envp -> (
 	if Lfcheck.is_subtype env (rel_shift_type (i+1) u) t
 	then TacticSuccess(var_to_lf (VarRel i))
-	else repeat (i+1) envp)
+        else repeat (i+1) envp)
     | [] -> (
-	try
-	  MapString.iter
-	    (fun v u -> if Lfcheck.is_subtype env u t then raise (FoundOne (Var v))) (* this is probably too expensive to keep doing *)
-	    env.global_lf_context;
-	  TacticFailure
-	with FoundOne v -> TacticSuccess(var_to_lf v)
+        try
+          MapIdentifier.iter
+            (fun v u -> if Lfcheck.is_subtype env u t then raise (FoundOne v)) (* this is probably too expensive to keep doing *)
+            env.global_lf_context;
+          TacticFailure
+        with FoundOne v -> TacticSuccess(var_to_lf (Var v))
 	)
   in repeat 0 env.local_lf_context
 

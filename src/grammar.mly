@@ -17,12 +17,10 @@ open Printer
 %type <Typesystem.lf_expr> ts_exprEof
 
 %token <int> NUMBER
-%token <string> IDENTIFIER CONSTANT CONSTANT_SEMI STRING
-%token <Variables.var> VARIABLE
+
+%token <string> CONSTANT CONSTANT_SEMI STRING NAME NAME_W
+
 %token
-
-  (* tokens *)
-
   LeftParen RightParen RightBracket LeftBracket Comma Period Colon Star Arrow
   ArrowFromBar Equal Underscore Axiom GreaterEqual Greater LessEqual Less
   Semicolon Ulevel Kumax Type Pi Lambda Sigma Check Show End Variable Alpha EOF
@@ -66,8 +64,8 @@ open Printer
   (* These are the tokens that can begin a TS-expression, and
      thus might be involved in the decision about reducing an application: *)
 
-  IDENTIFIER Underscore LeftParen Kumax CONSTANT_SEMI CONSTANT Lambda
-  Sigma Pi VARIABLE Dollar
+  Underscore LeftParen Kumax CONSTANT_SEMI CONSTANT Lambda Sigma Pi Dollar NAME
+  NAME_W
 
 %nonassoc
 
@@ -96,19 +94,19 @@ unmarked_lf_type:
     | f= lf_type_constant args= lf_expr*
 	{ F_Apply(f,args) }
 
-    | Pi v= variable Colon a= lf_type Comma b= lf_type
+    | Pi v= identifier Colon a= lf_type Comma b= lf_type
 	%prec Reduce_binder
 	{ make_F_Pi a (v,b) }
 
-    | Sigma v= variable Colon a= lf_type Comma b= lf_type
+    | Sigma v= identifier Colon a= lf_type Comma b= lf_type
 	%prec Reduce_binder
-    | LeftParen v= variable Colon a= lf_type RightParen Times b= lf_type
+    | LeftParen v= identifier Colon a= lf_type RightParen Times b= lf_type
 	{ make_F_Sigma a (v,b) }
 
     | a= lf_type Times b= lf_type
 	{ make_F_Sigma_simple a b }
 
-    | LeftParen v= variable Colon a= lf_type RightParen Arrow b= lf_type
+    | LeftParen v= identifier Colon a= lf_type RightParen Arrow b= lf_type
        { make_F_Pi a (v,b) }
 
     | a= lf_type Arrow b= lf_type
@@ -136,22 +134,22 @@ unmarked_lf_type:
 	{ unmark (object_uequality a b t) }
 
     | a= lf_type Turnstile b= lf_type
-    	{ let v = good_var_name a (Var "foo") in (* the "|-" operator is not fully implemented yet *)
+    	{ let v = good_var_name a (Id "foo") in (* the "|-" operator is not fully implemented yet *)
 	  let v = get_pos a, v in
 	  unmark (pi1_implication (v,a) b) }
 
-    | v= marked_variable Type
-	{ let (pos,v) = v in make_F_Sigma texp (v,istype (var_to_lf_pos pos v)) }
+    | v= marked_identifier Type
+	{ let (pos,v) = v in make_F_Sigma texp (v,istype (var_to_lf_pos pos (Var v))) }
 
-    | v= marked_variable ColonColon t= lf_expr
-	{ let (pos,v) = v in make_F_Sigma oexp (v,hastype (var_to_lf_pos pos v) t) }
+    | v= marked_identifier ColonColon t= lf_expr
+	{ let (pos,v) = v in make_F_Sigma oexp (v,hastype (var_to_lf_pos pos (Var v)) t) }
 
-    | v= marked_variable ColonColonEqual e= lf_expr ColonColon t= lf_expr
-	{ let (pos,v) = v in make_F_Sigma (with_pos_of e (F_Singleton(e,oexp))) (v,hastype (var_to_lf_pos pos v) t) }
+    | v= marked_identifier ColonColonEqual e= lf_expr ColonColon t= lf_expr
+	{ let (pos,v) = v in make_F_Sigma (with_pos_of e (F_Singleton(e,oexp))) (v,hastype (var_to_lf_pos pos (Var v)) t) }
 
 lf_type_constant:
 
-    | l= IDENTIFIER
+    | l= NAME
 	{ let pos = Position($startpos, $endpos) in lookup_type_constant pos l }
 
 lf_expr:
@@ -167,8 +165,8 @@ unmarked_lf_expr:
     | LeftParen a= lf_expr Comma b= lf_expr RightParen
 	{ CONS(a, b) }
 
-    | Lambda v= marked_variable_or_unused Comma body= lf_expr
-    | v= marked_variable_or_unused ArrowFromBar body= lf_expr
+    | Lambda v= marked_identifier_or_unused Comma body= lf_expr
+    | v= marked_identifier_or_unused ArrowFromBar body= lf_expr
 	{ unmark (lambda1 (unmark v) body) }
 
     | empty_hole
@@ -197,8 +195,8 @@ short_head_and_reversed_spine:
     | tsterm_head
 	{ $1, END }
 
-    | variable
-	{ V $1, END }
+    | identifier
+	{ V (Var $1), END }
 
     | head_and_args= short_head_and_reversed_spine K_1
     | head_and_args= parenthesized(lf_expr_head_and_reversed_spine) K_1
@@ -216,7 +214,7 @@ closed_tactic_expr:
     | Dollar LeftParen e= tactic_expr RightParen
 	{ e }
 
-    | Dollar name= IDENTIFIER
+    | Dollar name= NAME
 	{ Tactic_name name }
 
     | Dollar index= NUMBER
@@ -232,7 +230,7 @@ tactic_expr:
 
 tactic_expr_2:
 
-    | name= IDENTIFIER
+    | name= NAME
 	{ Tactic_name name }
 
 dotted_number: n= separated_nonempty_list(Period,NUMBER) {n}
@@ -254,19 +252,19 @@ command:
 
 unmarked_command:
 
-    | Variable vars= marked_identifier+ Colon t= ts_expr Period
+    | Variable vars= marked_name+ Colon t= ts_expr Period
 	{ Toplevel.OVariable (vars,t) }
 
-    | Variable vars= marked_identifier+ Type Period
+    | Variable vars= marked_name+ Type Period
 	{ Toplevel.TVariable vars }
 
-    | Variable vars= marked_identifier+ Ulevel eqns= preceded(Semicolon,uEquation)* Period
+    | Variable vars= marked_name+ Ulevel eqns= preceded(Semicolon,uEquation)* Period
 	{ Toplevel.UVariable (vars,eqns) }
 
-    | Axiom num= dotted_number? name= variable t= ts_judgment Period
-	{ Toplevel.Axiom (num,name,t) }
+    | Axiom num= dotted_number? name= NAME t= ts_judgment Period
+	{ Toplevel.Axiom (num,Id name,t) }
 
-    | Axiom LF num= dotted_number? name= variable Colon t= lf_type Period
+    | Axiom LF num= dotted_number? name= identifier Colon t= lf_type Period
 	{ Toplevel.Axiom (num,name,t) }
 
     | Check TS? o= ts_expr Period
@@ -288,9 +286,9 @@ unmarked_command:
     | Alpha e1= ts_expr EqualEqual e2= ts_expr Period
 	{ Toplevel.Alpha (e1, e2) }
 
-    | Theorem LF name= IDENTIFIER Colon thm= lf_type ColonEqual deriv= lf_expr Period
-    | Theorem name= IDENTIFIER thm= ts_judgment ColonColonEqual deriv= lf_expr Period
-    | Theorem name= IDENTIFIER thm= ts_judgment ColonEqual deriv= ts_expr Period
+    | Theorem LF name= NAME Colon thm= lf_type ColonEqual deriv= lf_expr Period
+    | Theorem name= NAME thm= ts_judgment ColonColonEqual deriv= lf_expr Period
+    | Theorem name= NAME thm= ts_judgment ColonEqual deriv= ts_expr Period
 	{
 	  let pos = Position($startpos, $endpos) in
 	  Toplevel.Theorem (pos, name, deriv, thm) }
@@ -313,14 +311,14 @@ unmarked_command:
     | End Period
 	{ Toplevel.End }
 
-marked_variable:
-
-    | IDENTIFIER
-	{ Position($startpos, $endpos), Var $1 }
-
 marked_identifier:
 
-    | IDENTIFIER
+    | identifier
+	{ Position($startpos, $endpos), $1 }
+
+marked_name:
+
+    | NAME
 	{ Position($startpos, $endpos), $1 }
 
 uEquation:
@@ -353,20 +351,20 @@ unmarked_ts_judgment:
     | f= lf_type_constant
 	{ F_Apply(f,[]) }
 
-    | LeftParen v= variable Colon a= ts_judgment RightParen DoubleArrow b= ts_judgment
+    | LeftParen v= identifier Colon a= ts_judgment RightParen DoubleArrow b= ts_judgment
 	{ make_F_Pi a (v,b) }
 
     | a= ts_judgment DoubleArrow b= ts_judgment
 	{ unmark (a @-> b) }
 
-    | LeftParen v= variable Colon a= ts_judgment RightParen Times b= ts_judgment
+    | LeftParen v= identifier Colon a= ts_judgment RightParen Times b= ts_judgment
 	{ make_F_Sigma a (v,b) }
 
     | a= ts_judgment Times b= ts_judgment
 	{ make_F_Sigma_simple a b }
 
     | a= ts_judgment TurnstileDouble b= ts_judgment
-    	{ let v = good_var_name a (Var "foo") in (* the "|-" operator is not fully implemented yet *)
+    	{ let v = good_var_name a (Id "foo") in (* the "|-" operator is not fully implemented yet *)
 	  let v = get_pos a, v in
 	  unmark (pi1_implication (v,a) b) }
 
@@ -374,22 +372,22 @@ unmarked_ts_judgment:
 
     | Type
 	{ let pos = Position($startpos, $endpos) in
-	  let v = Var "T" in
-	  make_F_Sigma texp (v,with_pos pos (F_Apply(F_istype, [var_to_lf_pos pos v]))) }
+	  let v = Id "T" in
+	  make_F_Sigma texp (v,with_pos pos (F_Apply(F_istype, [var_to_lf_pos pos (Var v)]))) }
 
     | Colon t= ts_expr
-	{ let v = Var "o" in
+	{ let v = Id "o" in
 	  let pos = get_pos t in
-	  make_F_Sigma oexp (v,with_pos pos (F_Apply(F_hastype, [var_to_lf_pos pos v; t]))) }
+	  make_F_Sigma oexp (v,with_pos pos (F_Apply(F_hastype, [var_to_lf_pos pos (Var v); t]))) }
 
     | Turnstile x= ts_expr Colon t= ts_expr
 	{ unmark (this_object_of_type (get_pos x) x t) }
 
     | Turnstile a= ts_expr Type
-	{ let v = Var "t" in
+	{ let v = Id "t" in
 	  let pos = get_pos a in
 	  let a = with_pos pos (F_Singleton(a,texp)) in
-	  let b = with_pos pos (F_Apply(F_istype, [var_to_lf_pos pos v])) in
+	  let b = with_pos pos (F_Apply(F_istype, [var_to_lf_pos pos (Var v)])) in
 	  make_F_Sigma a (v,b)
 	}
 
@@ -404,10 +402,9 @@ unmarked_ts_judgment:
           let pos = Position($startpos, $endpos) in
           let jpos = Position($startpos(j), $endpos(j)) in
 	  let w = apply_judgment_binder pos (with_pos jpos j) u in
-	  unmark w
-        }
+	  unmark w }
 
-    | LeftBrace c= context vbj= separated_nonempty_list(Comma,pair(marked_variable+,binder_judgment)) RightBrace u= ts_judgment
+    | LeftBrace c= context vbj= separated_nonempty_list(Comma,pair(marked_identifier+,binder_judgment)) RightBrace u= ts_judgment
 	%prec Reduce_binder
 	{
 	  let pos = Position($startpos, $endpos) in
@@ -421,11 +418,11 @@ unmarked_ts_judgment:
 		 | IST ->
 		     (fun v u -> with_pos_of v
 			 (apply_binder pos c v texp
-			    (fun pos t -> let t = var_to_lf_pos pos t in istype t) u))
+			    (fun pos t -> let t = var_to_lf_pos pos (Var t) in istype t) u))
 		 | HAST t ->
 		     (fun v u -> with_pos_of v
 			 (apply_binder pos c v oexp
-			    (fun pos o -> let o = var_to_lf_pos pos o in hastype o t) u))
+			    (fun pos o -> let o = var_to_lf_pos pos (Var o) in hastype o t) u))
 		 | W_HAST(o,t) ->
 		     (fun v u ->
 		       let ov = (
@@ -441,11 +438,11 @@ unmarked_ts_judgment:
 		 | W_TEQ(t1,t2) ->
 		     (fun v u -> with_pos_of v
 			 (apply_binder pos c v wexp
-			    (fun pos p -> let p = var_to_lf_pos pos p in witnessed_type_equality p t1 t2 ) u))
+			    (fun pos p -> let p = var_to_lf_pos pos (Var p) in witnessed_type_equality p t1 t2 ) u))
 		 | W_OEQ(o1,o2,t) ->
 		     (fun v u -> with_pos_of v
 			 (apply_binder pos c v wexp
-			    (fun pos p -> let p = var_to_lf_pos pos p in witnessed_object_equality p o1 o2 t ) u))
+			    (fun pos p -> let p = var_to_lf_pos pos (Var p) in witnessed_object_equality p o1 o2 t ) u))
 		 in
 		 List.fold_right f v u)
 	      vbj u in
@@ -517,7 +514,7 @@ context:
 
     | c= terminated( separated_list( Comma,
 			  separated_pair(
-			       marked_variable_or_unused,
+			       marked_identifier_or_unused,
 			       Colon, ts_expr)),
 		     Turnstile)
 	{c}
@@ -534,17 +531,16 @@ arglist:
 
 empty_hole: Underscore { cite_tactic (Tactic_name "default") END }
 
-unused_variable: Underscore { (* Var "_" *) Var "_" }
+unused_identifier: Underscore { Id "_" }
 
-variable_or_unused: variable {$1} | unused_variable {$1}
+identifier:
 
-marked_variable_or_unused: variable_or_unused { Position($startpos, $endpos), $1 }
+    | NAME { Id $1 }
+    | NAME_W { Idw $1 }
 
-variable:
+identifier_or_unused: identifier {$1} | unused_identifier {$1}
 
-    | IDENTIFIER { Var $1 }
-
-    | v= VARIABLE { v }
+marked_identifier_or_unused: identifier_or_unused { Position($startpos, $endpos), $1 }
 
 ts_expr:
 
@@ -567,7 +563,7 @@ ts_spine_member:
 
 unmarked_ts_expr:
 
-    | v= marked_variable_or_unused DoubleArrowFromBar body= ts_expr
+    | v= marked_identifier_or_unused DoubleArrowFromBar body= ts_expr
 	{ unmark (lambda1 (unmark v) body) }
 
     | e= ts_expr K_1
@@ -582,8 +578,8 @@ unmarked_ts_expr:
     | f= ts_expr LeftBracket o= separated_list(Comma,ts_spine_member) RightBracket
 	{ unmark (Substitute.apply_args f (spine_member_list_to_spine o)) }
 
-    | variable
-	{ APPLY(V $1,END) }
+    | identifier
+	{ APPLY(V (Var $1),END) }
 
     | empty_hole {$1}
 
@@ -592,27 +588,27 @@ unmarked_ts_expr:
 	{ let pos = Position($startpos, $endpos) in
 	  APPLY(O O_ev, f ** o ** (pos, cite_tactic (Tactic_name "ev3") END) ** END) }
 
-    | Lambda x= variable Colon t= ts_expr Comma o= ts_expr
+    | Lambda x= identifier Colon t= ts_expr Comma o= ts_expr
 	%prec Reduce_binder
 	{ make_O_lambda t (x,o) }
 
     | Star o= ts_expr
 	{ make_T_El o }
 
-    | Pi x= variable Colon t1= ts_expr Comma t2= ts_expr
+    | Pi x= identifier Colon t1= ts_expr Comma t2= ts_expr
 	%prec Reduce_binder
 	{ make_T_Pi t1 (x,t2) }
 
-    | LeftParen x= variable Colon t= ts_expr RightParen Arrow u= ts_expr
+    | LeftParen x= identifier Colon t= ts_expr RightParen Arrow u= ts_expr
 	{ make_T_Pi t (x,u) }
 
     | x= ts_expr Equal y= ts_expr
 	{ make_T_Id (with_pos_of x (cite_tactic (Tactic_name "tn12") END)) x y }
 
     | t= ts_expr Arrow u= ts_expr
-	{ make_T_Pi t (Var "_",u) }
+	{ make_T_Pi t (Id "_",u) }
 
-    | Sigma x= variable Colon t1= ts_expr Comma t2= ts_expr
+    | Sigma x= identifier Colon t1= ts_expr Comma t2= ts_expr
 	%prec Reduce_binder
 	{ make_T_Sigma t1 (x,t2) }
 
@@ -625,7 +621,7 @@ unmarked_ts_expr:
     | LeftParen a= ts_expr Comma b= ts_expr RightParen
 	{ CONS(a,b) }
 
-    | name= CONSTANT_SEMI vars= separated_list(Comma,marked_variable_or_unused) RightBracket args= arglist
+    | name= CONSTANT_SEMI vars= separated_list(Comma,marked_identifier_or_unused) RightBracket args= arglist
 	{
 	 let label =
 	   let pos = Position($startpos, $endpos) in
@@ -656,7 +652,7 @@ unmarked_ts_expr:
 		   | SingleVariable index -> unmark (lambda1 (unmark (List.nth vars index)) arg)
                    | WitnessPair index ->
                        let (pos,v) = List.nth vars index in
-                       let p = witness_var v in
+                       let p = witness_id v in
 		       unmark (lambda2 v p arg)
 		  )
 		) indices arg

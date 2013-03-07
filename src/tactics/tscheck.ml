@@ -93,16 +93,16 @@ let rec tscheck surr env pos tp args =
       if tactic_tracing then see "t" t;
       match unmark t with
       | APPLY(T T_Pi,args) -> (
-	  let (a,b) = args2 args in
-	  if tactic_tracing then (see "a" a; see "b" b);
-	  TacticSuccess ( with_pos_of t (APPLY(V (Var "∏_istype"), a ** b ** CDR(self ** self ** END))) )
-	 )
+          let (a,b) = args2 args in
+          if tactic_tracing then (see "a" a; see "b" b);
+          TacticSuccess ( with_pos_of t (APPLY(V (Var (Id "∏_istype")), a ** b ** CDR(self ** self ** END))) )
+         )
       | _ -> Default.default surr env pos tp args
       )
   | F_Apply(F_hastype,[x;t]) -> (
       if tactic_tracing then printf "tscheck\n\t  x = %a\n\t  t = %a\n%!" _e x _e t;
       try
-	let dt = type_validity env t in	(* we should be able to get this from the context *)
+        let dt = type_validity env t in (* we should be able to get this from the context *)
 	TacticSuccess (type_check env x t dt)
       with
 	NotImplemented|Args_match_failure -> TacticFailure

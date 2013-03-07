@@ -39,29 +39,26 @@ and head_to_vars h =
   | U _ | T _ | W _ | O _ | TAC _ -> []
 
 and lf_expr_to_vars (pos,e) = match e with
-  | LAMBDA(x,body) -> remove x (lf_expr_to_vars body)
+  | LAMBDA(x,body) -> lf_expr_to_vars body
   | CONS(x,y) -> lf_expr_to_vars x @ lf_expr_to_vars y
   | APPLY(V v,END) -> [v]
   | APPLY(h,args) -> head_to_vars h @ vars_in_spine args
 
-and dependent_vars (v,t,u) = lf_type_to_vars t @ remove v (lf_type_to_vars u)
-
 and lf_type_to_vars (_,t) = match t with
-  | F_Pi   (v,t,u) -> dependent_vars (v,t,u)
-  | F_Sigma(v,t,u) -> dependent_vars (v,t,u)
+  | F_Pi   (v,t,u) | F_Sigma(v,t,u) -> lf_type_to_vars t @ lf_type_to_vars u
   | F_Singleton(x,t) -> lf_expr_to_vars x @ lf_type_to_vars t
   | F_Apply(hd,args) -> vars_in_list lf_expr_to_vars args
 
 let rec lf_kind_to_vars = function
   | K_primitive_judgment | K_ulevel | K_expression | K_witnessed_judgment | K_judgment | K_judged_expression -> []
-  | K_Pi(v,t,k) -> lf_type_to_vars t @ remove v (lf_kind_to_vars k)
+  | K_Pi(v,t,k) -> lf_type_to_vars t @ lf_kind_to_vars k
 
 (** Whether [x] occurs as a free variable in an expression. *)
 
 let rec occurs_in_head w h =
   match h with
-  | V v -> w = v
-  | W _ | U _ | T _ | O _ | TAC _ -> false
+  | V (Var id) -> w = id
+  | V _ | W _ | U _ | T _ | O _ | TAC _ -> false
 
 and occurs_in_expr w e =
   match unmark e with
@@ -117,8 +114,9 @@ let var_tester w subs occurs_in e =
     &&
   not( occurs_in w e )
 
-let var_chooser x subs occurs_in e =
-  if not enable_variable_prettification then x, subs else
+let var_chooser x subs occurs_in e = 
+  if not enable_variable_prettification then (Var x), subs else
+  raise NotImplemented (*
   match x with
   | Var_wd name ->
       if not (occurs_in x e) then Var_wd "_", subs else
@@ -139,6 +137,7 @@ let var_chooser x subs occurs_in e =
         else repeat (i+1)
       in repeat 1			(*omit the "'" case*)
   | VarRel _ -> raise Internal
+*)
 
 let occurs_in_list occurs_in x args = List.exists (occurs_in x) args
 
@@ -358,7 +357,7 @@ and ts_expr_to_string e : smart_string =
       let x = ts_expr_to_string x in
       let y = ts_expr_to_string y in
       top_prec, concat ["(pair ";paren_left list_prec x;" ";paren_left list_prec y;")"] (* does not correspond to our parser *)
-  | LAMBDA(v,body) -> arrow_prec, vartostring v ^ " ⟾ " ^ paren_right arrow_prec (ts_expr_to_string body)
+  | LAMBDA(v,body) -> arrow_prec, idtostring v ^ " ⟾ " ^ paren_right arrow_prec (ts_expr_to_string body)
   | APPLY(V v,END) -> top_prec, vartostring v
   | APPLY(h,args) ->
       match h with
@@ -367,19 +366,19 @@ and ts_expr_to_string e : smart_string =
           | ARG(t1,ARG((_,LAMBDA(x, t2)),END)) ->
               if false
               then arrow_prec, concat [paren_left arrow_prec (ts_expr_to_string t1);" ⟶ ";paren_right arrow_prec (ts_expr_to_string t2)]
-              else top_prec, concat ["@[" ^ expr_head_to_string h ^ ";";vartostring x;"][";
+              else top_prec, concat ["@[" ^ expr_head_to_string h ^ ";";idtostring x;"][";
 				     paren_left comma_prec (ts_expr_to_string t1);",";
 				     paren_right comma_prec (ts_expr_to_string t2);"]"]
           | _ -> lf_atomic_p h args)
       | T T_Sigma -> (
           match args with ARG(t1,ARG((_,LAMBDA(x, t2)),END)) ->
-            top_prec, "@[" ^ expr_head_to_string h ^ ";" ^ vartostring x ^ "]" ^
+            top_prec, "@[" ^ expr_head_to_string h ^ ";" ^ idtostring x ^ "]" ^
             "(" ^ paren_left comma_prec (ts_expr_to_string t1) ^ "," ^ paren_right comma_prec (ts_expr_to_string t2) ^ ")"
           | _ -> lf_atomic_p h args)
       | O O_ev -> (
           match args with
           | ARG(f,ARG(o,ARG((_,LAMBDA(x, t)),END))) ->
-              top_prec, "[ev;" ^ vartostring x ^ "][" ^
+              top_prec, "[ev;" ^ idtostring x ^ "][" ^
 	      paren_left comma_prec (ts_expr_to_string f) ^ "," ^
 	      paren_left comma_prec (ts_expr_to_string o) ^ "," ^
 	      paren_left comma_prec (ts_expr_to_string t) ^ "]"
@@ -391,14 +390,14 @@ and ts_expr_to_string e : smart_string =
       | O O_lambda -> (
           match args with
           | ARG(t,ARG((_,LAMBDA(x,o)),END)) ->
-              top_prec, "[λ;" (* lambda *) ^ vartostring x ^ "][" ^
+              top_prec, "[λ;" (* lambda *) ^ idtostring x ^ "][" ^
 	      paren_left comma_prec (ts_expr_to_string t) ^ "," ^
 	      paren_left comma_prec (ts_expr_to_string o) ^ "]"
           | _ -> lf_atomic_p h args)
       | O O_forall -> (
           match args with
           | ARG(u,ARG(u',ARG(o,ARG((_,LAMBDA(x,o')),END)))) ->
-              top_prec, "[forall;" ^ vartostring x ^ "][" ^
+              top_prec, "[forall;" ^ idtostring x ^ "][" ^
               paren_left comma_prec (ts_expr_to_string u) ^ "," ^
 	      paren_left comma_prec (ts_expr_to_string u') ^ "," ^
               paren_left comma_prec (ts_expr_to_string o) ^ "," ^
@@ -465,6 +464,12 @@ let phantom s = String.make (String.length s) ' '
 
 let _pos file x = output_string file (errfmt x)
 
+let _i file x = output_string file (idtostring x)
+
+let _il file x = List.iter (fun x -> printf " "; _i file x) x
+
+let _i_phantom file x = output_string file (phantom (idtostring x))
+
 let _v file x = output_string file (vartostring x)
 
 let _vl file x = List.iter (fun x -> printf " "; _v file x) x
@@ -517,14 +522,14 @@ let print_signature env file =
 
 let print_global_lf_context file env =
   fprintf file "Global LF Context (definitions and axioms):\n";
-  MapString.iter
+  MapIdentifier.iter
     (fun name t -> (
       match unmark t with
       | F_Singleton(e,t) ->
-          fprintf file "     %s := %a\n"   name          _e e;
-          fprintf file "     %a :  %a\n%!" _phantom name _t t
+          fprintf file "     %a := %a\n"   _i name _e e;
+          fprintf file "     %a :  %a\n%!" _i_phantom name _t t
       | _ ->
-          fprintf file "     %s : %a\n%!" name _t t))
+          fprintf file "     %a : %a\n%!" _i name _t t))
     env.global_lf_context
 
 let print_context n file (c:environment) =
@@ -537,10 +542,10 @@ let print_context n file (c:environment) =
         if i = n then raise Limit;
         match unmark t with
         | F_Singleton(e,t) ->
-            fprintf file " %d %a := %a\n"   (cl-i-1) _v v          _e e;
-            fprintf file " %d %a  : %a\n%!" (cl-i-1) _v_phantom v  _t t
+            fprintf file " %d %a := %a\n"   (cl-i-1) _i v          _e e;
+            fprintf file " %d %a  : %a\n%!" (cl-i-1) _i_phantom v  _t t
         | _ ->
-            fprintf file " %d %a : %a\n%!" (cl-i-1) _v v  _t t
+            fprintf file " %d %a : %a\n%!" (cl-i-1) _i v  _t t
       )
       env
   with Limit -> fprintf file "   ...\n");
