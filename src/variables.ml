@@ -37,6 +37,8 @@ let base_id v = id (id_to_name v)
 
 let witness_id v = idw (id_to_name v)
 
+let is_witness_pair i j = isid i && isidw j && id_to_name i = id_to_name j
+
 type var =
   | Var of identifier
   | VarRel of int			(* deBruijn index, starting with 0 *)

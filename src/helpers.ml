@@ -239,9 +239,11 @@ let lambda3 v0 v1 v2 x =
 let make_Var c = Var c
 
 let make_F_Pi t (v,u) = F_Pi(v, t, rel1_type v u)
-let make_F_Pi_simple t u = F_Pi(id "_", t, u)
+let make_F_Pi_simple t u = F_Pi(arrow_good_var_name t, t, u)
+let make_F_Pi_reassemble t (v,u) = F_Pi(v, t, u)
 let make_F_Sigma t (v,u) = F_Sigma(v, t, rel1_type v u)
-let make_F_Sigma_simple t u = F_Sigma(id "_", t, u)
+let make_F_Sigma_simple t u = F_Sigma(arrow_good_var_name t, t, u)
+let make_F_Sigma_reassemble t (v,u) = F_Sigma(v, t, u)
 
 let make_U h a = APPLY(U h, a)
 let make_T h a = APPLY(T h, a)

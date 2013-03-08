@@ -1,6 +1,6 @@
 (** Functions for converting expressions to strings for printing *)
 
-let enable_variable_prettification = false
+let enable_variable_prettification = true
 
 open Error
 open Variables
@@ -17,87 +17,93 @@ let concat = String.concat ""
 
 let concatl = concat <<- List.flatten
 
-let rec remove x = function
-  | [] -> []
-  | y :: rest -> if x = y then remove x rest else y :: remove x rest
-
-let pvar free_vars v = if List.mem v free_vars then vartostring v else "_"
-
 (** Lists of free variables. *)
 
-let rec vars_in_list p_arg args = List.flatten (List.map p_arg args)
+let rec names_in_list p_arg args = List.flatten (List.map p_arg args)
 
-let rec vars_in_spine args =
+let rec names_in_spine args =
   match args with
-  | ARG(x,args) -> lf_expr_to_vars x @ vars_in_spine args
-  | CAR args | CDR args -> vars_in_spine args
+  | ARG(x,args) -> names_in_expr x @ names_in_spine args
+  | CAR args | CDR args -> names_in_spine args
   | END -> []
 
-and head_to_vars h =
-  match h with
-  | V v -> [v]
-  | U _ | T _ | W _ | O _ | TAC _ -> []
+and names_in_head = function V (Var v) -> [id_to_name v] | V (VarRel _) | U _ | T _ | W _ | O _ | TAC _ -> []
 
-and lf_expr_to_vars (pos,e) = match e with
-  | LAMBDA(x,body) -> lf_expr_to_vars body
-  | CONS(x,y) -> lf_expr_to_vars x @ lf_expr_to_vars y
-  | APPLY(V v,END) -> [v]
-  | APPLY(h,args) -> head_to_vars h @ vars_in_spine args
+and names_in_expr (pos,e) = match e with
+  | LAMBDA(x,body) -> names_in_expr body
+  | CONS(x,y) -> names_in_expr x @ names_in_expr y
+  | APPLY(h,args) -> names_in_head h @ names_in_spine args
 
-and lf_type_to_vars (_,t) = match t with
-  | F_Pi   (v,t,u) | F_Sigma(v,t,u) -> lf_type_to_vars t @ lf_type_to_vars u
-  | F_Singleton(x,t) -> lf_expr_to_vars x @ lf_type_to_vars t
-  | F_Apply(hd,args) -> vars_in_list lf_expr_to_vars args
+and names_in_type (pos,t) = match t with
+  | F_Pi(v,t,u) | F_Sigma(v,t,u) -> names_in_type t @ names_in_type u
+  | F_Singleton(x,t) -> names_in_expr x @ names_in_type t
+  | F_Apply(hd,args) -> names_in_list names_in_expr args
 
-let rec lf_kind_to_vars = function
+let rec names_in_kind = function
   | K_primitive_judgment | K_ulevel | K_expression | K_witnessed_judgment | K_judgment | K_judged_expression -> []
-  | K_Pi(v,t,k) -> lf_type_to_vars t @ lf_kind_to_vars k
+  | K_Pi(v,t,k) -> names_in_type t @ names_in_kind k
 
-(** Whether [x] occurs as a free variable in an expression. *)
+(** Whether [VarRel 0] occurs as a bound variable in an expression. *)
+
+let rec rel_occurs_in_head shift h =
+  match h with
+  | V (VarRel i) -> i = shift
+  | V (Var _) | W _ | U _ | T _ | O _ | TAC _ -> false
+
+and rel_occurs_in_expr shift e =
+  match unmark e with
+  | LAMBDA(v,body) -> rel_occurs_in_expr (shift+1) body
+  | CONS(x,y) -> rel_occurs_in_expr shift x || rel_occurs_in_expr shift y
+  | APPLY(h,args) -> rel_occurs_in_head shift h || exists_in_spine (rel_occurs_in_expr shift) args
+
+let rec rel_occurs_in_type shift (pos,t) = match t with
+  | F_Pi(v,t,u) | F_Sigma(v,t,u) -> rel_occurs_in_type shift t || rel_occurs_in_type (shift+1) u
+  | F_Singleton(e,t) -> rel_occurs_in_expr shift e || rel_occurs_in_type shift t
+  | F_Apply(h,args) -> List.exists (rel_occurs_in_expr shift) args
+
+let rec rel_occurs_in_kind shift = function
+  | K_Pi(v,t,k) -> rel_occurs_in_type shift t || rel_occurs_in_kind (shift+1) k
+  | K_primitive_judgment | K_ulevel | K_expression | K_witnessed_judgment | K_judgment | K_judged_expression -> false
+
+(** Whether [x] occurs as a name of a free variable in an expression.  Bound variables will get renamed, if in use. *)
 
 let rec occurs_in_head w h =
   match h with
-  | V (Var id) -> w = id
-  | V _ | W _ | U _ | T _ | O _ | TAC _ -> false
+  | V (Var id) -> id_to_name id = w
+  | V (VarRel _) | W _ | U _ | T _ | O _ | TAC _ -> false
 
 and occurs_in_expr w e =
   match unmark e with
-  | LAMBDA(v,body) -> w <> v && occurs_in_expr w body
+  | LAMBDA(v,body) -> occurs_in_expr w body
   | CONS(x,y) -> occurs_in_expr w x || occurs_in_expr w y
-  | APPLY(h,  args) -> occurs_in_head w h || exists_in_spine (occurs_in_expr w) args
+  | APPLY(h,args) -> occurs_in_head w h || exists_in_spine (occurs_in_expr w) args
 
-and occurs_in_type w (_,t) = match t with
-  | F_Pi   (v,t,u)
-  | F_Sigma(v,t,u) -> occurs_in_type w t || w <> v && occurs_in_type w u
+let rec occurs_in_type w (pos,t) = match t with
+  | F_Pi(v,t,u) | F_Sigma(v,t,u) -> occurs_in_type w t || occurs_in_type w u
   | F_Singleton(e,t) -> occurs_in_expr w e || occurs_in_type w t
   | F_Apply(h,args) -> List.exists (occurs_in_expr w) args
 
 let rec occurs_in_kind w = function
+  | K_Pi(v,t,k) -> occurs_in_type w t || occurs_in_kind w k
   | K_primitive_judgment | K_ulevel | K_expression | K_witnessed_judgment | K_judgment | K_judged_expression -> false
-  | K_Pi(v,t,k) -> occurs_in_type w t || w <> v && occurs_in_kind w k
 
-(** Printing of LF and TS expressions.
-
-    In the names of the following routines, "fvs" refers to "free variables and strings".
-*)
+(** Printing of LF and TS expressions. *)
 
 (*
   Example of pretty printing of variables:
 
-  x$111 |-> ... x$111 ... x$222 ... x2 ...
+  x |-> ... 0^ ... x ... x0 ...
 
-  Can't make it pretty in one pass
+  Maintain a list of variable substitutions, e.g., [x;x0;...], which means 0^
+  prints as x and 1^ prints as x0.  Here x,x0,... are identifiers.
 
-  Maintain a list of variable substitutions, e.g., x$222 => x, x$333 => x0, ...
-
-  Refer to the list whenever printing a variable
-
-  Replace x$111 by x555 where 555 is the smallest number (or empty) so that x555 is not in the target of the list
-  and also not free in the body
+  Replace (relative) references to x by x555 where 555 is the smallest number
+  (or empty) so that x555 is not already in the list and also not free or bound
+  in the body.
 
   Then
 
-      x$222 |-> x$111 |-> ... x$111 ... x$222 ... x2 ...
+      x |-> x |-> ... 0^ ... 1^ ... x2 ...
 
   will print as
 
@@ -105,41 +111,20 @@ let rec occurs_in_kind w = function
 
  *)
 
-let var_sub subs v = try List.assoc v subs with Not_found -> v
+let rel_to_string subs i = try idtostring (List.nth subs i) with Failure "nth" -> vartostring (VarRel i)
 
-let in_range w subs = List.exists (fun (_,v) -> v = w) subs
+let var_tester w subs occurs_in e = not ( List.exists (fun x -> id_to_name x == w ) subs ) && not ( occurs_in w e )
 
-let var_tester w subs occurs_in e =
-  not( in_range w subs )
-    &&
-  not( occurs_in w e )
+let new_name_id name x = if isid x then id name else idw name
 
-let var_chooser x subs occurs_in e = 
-  if not enable_variable_prettification then (Var x), subs else
-  raise NotImplemented (*
-  match x with
-  | Var_wd name ->
-      if not (occurs_in x e) then Var_wd "_", subs else
-      let w = Var_wd name in
-      if x = w && not( in_range w subs ) || var_tester w subs occurs_in e then w, (x,w) :: subs
-      else let rec repeat i =
-        let w = Var_wd (name ^ (if i = 0 then "'" else string_of_int i)) in
-        if var_tester w subs occurs_in e then w, (x,w) :: subs
-        else repeat (i+1)
-      in repeat 1			(*omit the "'" case*)
-  | Var name ->
-      if not (occurs_in x e) then Var "_", subs else
-      let w = Var name in
-      if x = w && not( in_range w subs ) || var_tester w subs occurs_in e then w, (x,w) :: subs
-      else let rec repeat i =
-        let w = Var (name ^ (if i = 0 then "'" else string_of_int i)) in
-        if var_tester w subs occurs_in e then w, (x,w) :: subs
-        else repeat (i+1)
-      in repeat 1			(*omit the "'" case*)
-  | VarRel _ -> raise Internal
-*)
-
-let occurs_in_list occurs_in x args = List.exists (occurs_in x) args
+let var_chooser x subs rel_occurs_in occurs_in e = 
+  if not rel_occurs_in then id "_" :: subs else
+  let name = id_to_name x in
+  let rec repeat i =
+    let name' = if i = -1 then name else name ^ string_of_int i in
+    if var_tester name' subs occurs_in e then new_name_id name' x :: subs
+    else repeat (i+1)
+  in repeat (-1)
 
 (* these precedences mirror those in grammar.mly: *)
 type associativity = RIGHT | LEFT | NONASSOC
@@ -239,16 +224,25 @@ let application_to_lf_string p_arg head args : smart_string =
 
 let rec lf_head_to_string_with_subs subs h : string =
   match h with
-  | V v -> vartostring (var_sub subs v)
+  | V (VarRel i as v) -> if enable_variable_prettification then rel_to_string subs i else vartostring v
+  | V (Var id) -> idtostring id
   | W _ | U _ | T _ | O _ -> "@[" ^ expr_head_to_string h ^ "]"
   | TAC tac -> tactic_to_string tac
 
 and lf_expr_to_string_with_subs subs e : smart_string =
   match unmark e with
-  | LAMBDA(x,body) ->
-      let w,subs = var_chooser x subs occurs_in_expr body in
+  | LAMBDA(x,(pos,LAMBDA(x',body))) when is_witness_pair x x' ->
+      let subs = var_chooser x subs (rel_occurs_in_expr 0 body || rel_occurs_in_expr 1 body) occurs_in_expr body in
+      let subs = (witness_id (List.nth subs 0)) :: subs in
       let s = lf_expr_to_string_with_subs subs body in
-      arrow_prec, concat [vartostring (var_sub subs w);" ⟼ ";paren_right arrow_prec s]
+      let x = if enable_variable_prettification then rel_to_string subs 1 else id_to_name x in
+      let x' = if enable_variable_prettification then rel_to_string subs 0 else id_to_name x' in
+      arrow_prec, concat [x;" ⟼ ";x';" ⟼ ";paren_right arrow_prec s]
+  | LAMBDA(x,body) ->
+      let subs = var_chooser x subs (rel_occurs_in_expr 0 body) occurs_in_expr body in
+      let s = lf_expr_to_string_with_subs subs body in
+      let x = if enable_variable_prettification then rel_to_string subs 0 else id_to_name x in
+      arrow_prec, concat [x;" ⟼ ";paren_right arrow_prec s]
   | CONS(x,y) ->
       let x = lf_expr_to_string_with_subs subs x in
       let y = lf_expr_to_string_with_subs subs y in
@@ -259,14 +253,15 @@ and lf_expr_to_string_with_subs subs e : smart_string =
       application_to_lf_string (lf_expr_to_string_with_subs subs) h args
 
 and dependent_sub subs prefix infix infix_prec (v,t,u) =
-  let used = not enable_variable_prettification || occurs_in_type v u in
-  let w,subs = var_chooser v subs occurs_in_type u in
-  let u = lf_type_to_string_with_subs subs u in
+  let used = not enable_variable_prettification || rel_occurs_in_type 0 u in
   let t = lf_type_to_string_with_subs subs t in
+  let subs = var_chooser v subs (rel_occurs_in_type 0 u) occurs_in_type u in
+  let u = lf_type_to_string_with_subs subs u in
+  let v = if enable_variable_prettification then List.nth subs 0 else v in
   infix_prec,
   (
    if used then
-     concat ["("; vartostring w; ":"; paren_right colon_prec t; ")"]
+     concat ["("; id_to_name v; ":"; paren_right colon_prec t; ")"]
    else
      paren_left infix_prec t
   )
@@ -286,14 +281,15 @@ and lf_type_to_string_with_subs subs (_,t) : smart_string = match t with
 let rec lf_kind_to_string_with_subs subs = function
   | ( K_ulevel | K_expression | K_judgment | K_primitive_judgment | K_witnessed_judgment | K_judged_expression ) as k -> top_prec, List.assoc k lf_kind_constant_table
   | K_Pi(v,t,k) ->
-      let used = occurs_in_kind v k in
-      let w,subs = var_chooser v subs occurs_in_kind k in
+      let used = rel_occurs_in_kind 0 k in
+      let t = lf_type_to_string_with_subs subs t in
+      let subs = var_chooser v subs (rel_occurs_in_kind 0 k) occurs_in_kind k in
       let infix = " ⟶ " in
       let infix_prec = arrow_prec in
-      let t = lf_type_to_string_with_subs subs t in
       let k = lf_kind_to_string_with_subs subs k in
+      let v = if enable_variable_prettification then rel_to_string subs 0 else id_to_name v in
       if used then
-        binder_prec, concat ["(";vartostring w; ":"; paren_right colon_prec t; ")";infix; paren_right binder_prec k]
+        binder_prec, concat ["(";v; ":"; paren_right colon_prec t; ")";infix; paren_right binder_prec k]
       else
         infix_prec, concat [paren_left infix_prec t; infix; paren_right infix_prec k]
 

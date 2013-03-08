@@ -712,7 +712,10 @@ let rec term_normalization (env:environment) (x:lf_expr) (t:lf_type) : lf_expr =
       let c = term_normalization_ctr() in
       let env = local_lf_bind env v a in
       if !debug_mode then printf "term_normalization(%d) x = %a\n%!" c _e x;
-      let result = apply_args (rel_shift_expr 1 x) (ARG(var_to_lf (VarRel 0),END)) in (* optimization: if x is a LAMBDA, then get the body out *)
+      let result =
+	match unmark x with
+	| LAMBDA(_,body) -> body	(* this is just an optimization *)
+	| _ -> apply_args (rel_shift_expr 1 x) (ARG(var_to_lf (VarRel 0),END)) in
       let body = term_normalization env result b in
       let r = pos, LAMBDA(v,body) in
       if !debug_mode then printf "term_normalization(%d) r = %a\n%!" c _e result;

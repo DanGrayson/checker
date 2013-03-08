@@ -46,6 +46,10 @@ let bind_pi binder b =
   match binder with
   | (pos,v,a) -> pos, make_F_Pi a (v,b)
 
+let bind_pi_reassemble binder b =
+  match binder with
+  | (pos,v,a) -> pos, make_F_Pi_reassemble a (v,b)
+
 let bind_some_sigma binder b =
   match binder with
   | Some binder -> bind_sigma binder b
@@ -54,7 +58,7 @@ let bind_some_sigma binder b =
 let rec bind_pi_list_rev binders b =
   match binders with
   | [] -> b
-  | binder :: binders -> bind_pi_list_rev binders (bind_pi binder b)
+  | binder :: binders -> bind_pi_list_rev binders (bind_pi_reassemble binder b)
 
 let apply_vars f binders =
   let i = ref 0 in
@@ -83,13 +87,15 @@ let good_var_name p v =
      inseid, then return [],None,p
   *)
 let unbind_relative p : binder list * binder option * lf_type =
-  let rec repeat binders p =
-    match unmark p with
-    | F_Pi(v,a,b) -> repeat ((get_pos p,v,a) :: binders) b
-    | F_Sigma(v,a,b) -> binders, Some (get_pos p,v,a), b
-    | _ -> [], None, bind_pi_list_rev binders p (* it would be better to raise an exception here, instead of reassembling p *)
-  in
-  repeat [] p
+  try
+    let rec repeat binders p =
+      match unmark p with
+      | F_Pi(v,a,b) -> repeat ((get_pos p,v,a) :: binders) b
+      | F_Sigma(v,a,b) -> binders, Some (get_pos p,v,a), b
+      | _ -> raise Not_found
+    in
+    repeat [] p
+  with Not_found -> [], None, p
 
  (** Here "**" is our notation for Sigma type.
      

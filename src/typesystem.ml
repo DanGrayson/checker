@@ -160,7 +160,16 @@ let wexp = F_wexp @@ []
 let texp = F_texp @@ []
 let oexp = F_oexp @@ []
 
-let arrow a b = nowhere 4 (F_Pi(id "_", a, b))
+let rec arrow_good_var_name t =
+  match unmark t with 
+  | F_Apply(F_istype _,_) -> id "i"
+  | F_Apply(F_hastype _,_) -> id "h"
+  | F_Apply(F_type_equality _,_) -> id "teq"
+  | F_Apply(F_object_equality _,_) -> id "oeq"
+  | F_Pi(_,_,u) -> arrow_good_var_name u
+  | _ -> id "x"
+
+let arrow a b = nowhere 4 (F_Pi(arrow_good_var_name a, a, b))
 let ( @-> ) = arrow
 
 let istype t = F_istype @@ [t]				       (* t Type *)
@@ -318,7 +327,7 @@ type lf_kind =
   | K_witnessed_judgment
   | K_Pi of identifier * lf_type * lf_kind
 
-let ( @@-> ) a b = K_Pi(id "_", a, b)
+let ( @@-> ) a b = K_Pi(arrow_good_var_name a, a, b)
 
 let istype_kind = texp @@-> K_primitive_judgment
 
