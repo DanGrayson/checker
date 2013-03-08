@@ -27,7 +27,7 @@ open Printer
   Universes Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_CAR K_CDR Times
   Turnstile DoubleArrow DoubleArrowFromBar ColonColonEqual ColonEqual Theorem
   LeftBrace RightBrace TurnstileDouble ColonColon Include Clear EqualEqual
-  TTS Back BackTo
+  TTS Back BackTo Mode
 
 (* precedences, lowest first *)
 
@@ -307,6 +307,12 @@ unmarked_command:
 
     | BackTo n= NUMBER Period
 	{ Toplevel.BackTo n }
+
+    | Mode TTS Period
+	{ Toplevel.Mode "TTS" }
+
+    | Mode TS Period
+	{ Toplevel.Mode "TS" }
 
     | End Period
 	{ Toplevel.End }

@@ -40,7 +40,7 @@ let tts_mode_lf_expr_head_table = List.flatten [
     O O_lambda', "λ"; O O_lambda', "lambda"; O O_ev', "ev" ]; 
   lf_expr_head_table ]
 
-let ts_mode = ref false
+let ts_mode = ref true
 
 let lf_expr_heads = List.map fst lf_expr_head_table
 

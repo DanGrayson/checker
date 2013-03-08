@@ -22,6 +22,7 @@ type command' =
   | Include of string
   | Clear
   | SyntaxError
+  | Mode of string
   | End
 
 type command = Error.position * command'

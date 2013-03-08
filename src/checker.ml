@@ -246,6 +246,12 @@ let rec process_command env lexbuf =
 	env
     | Toplevel.Clear -> empty_context
     | Toplevel.SyntaxError -> env
+    | Toplevel.Mode s ->
+	(match s with 
+	| "TTS" -> ts_mode := false;
+	| "TS" -> ts_mode := true;
+	| _ -> raise Internal);
+	env
     | Toplevel.End ->
 	error_summary pos;
 	fprintf stderr "%a: End.\n%!" _pos pos;
@@ -300,7 +306,6 @@ let toplevel() =
       (Arg.align
 	 [
 	  ("--proof-general" , Arg.Set proof_general_mode, " Turn on Proof General mode");
-	  ("--ts" , Arg.Set ts_mode, " Turn on TS mode (default is TTS)");
 	  ("--debug" , Arg.Set debug_mode, " Turn on debug mode");
 	  ("--no-debug" , Arg.Clear debug_mode, " Turn off debug mode")
 	])
