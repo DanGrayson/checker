@@ -9,11 +9,11 @@ open Names
 open Helpers
 
 let lookup_label pos name =
-  try List.assoc name Names.lf_expr_head_strings
+  try list_assoc2 name (lf_expr_head_table())
   with Not_found as e -> fprintf stderr "%a: unknown expression label: @[%s]\n%!" _pos pos name; raise e
 
 let lookup_type_constant pos name =
-  try List.assoc name Names.string_to_type_constant
+  try list_assoc2 name lf_type_constant_table
   with Not_found -> F_undeclared_type_constant(pos,name)
 
 type binder_judgment =

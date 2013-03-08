@@ -5,6 +5,10 @@ open Variables
 open Typesystem
 open Names
 
+let rec list_assoc2 x = function (* like List.assoc, but matches on the second member of the pair and returns the first *)
+    [] -> raise Not_found
+  | (b,a)::l -> if a = x then b else list_assoc2 x l
+
 let isunused_variable_expression x =
   match unmark x with
   | APPLY(V v, END) -> isunused v

@@ -35,13 +35,18 @@ let lf_expr_head_table = [
   W W_wbeta, "wbeta"; W W_weta, "weta"
 ]
 
-let expr_head_to_string h = List.assoc h lf_expr_head_table
+let tts_mode_lf_expr_head_table = List.flatten [
+  [ T T_U', "U";  T T_El', "El"; T T_Pi', "Pi"; T T_Pi', "∏";
+    O O_lambda', "λ"; O O_lambda', "lambda"; O O_ev', "ev" ]; 
+  lf_expr_head_table ]
+
+let ts_mode = ref false
 
 let lf_expr_heads = List.map fst lf_expr_head_table
 
-let swap (x,y) = (y,x)
+let lf_expr_head_table() = if !ts_mode then lf_expr_head_table else tts_mode_lf_expr_head_table
 
-let lf_expr_head_strings = List.map swap lf_expr_head_table
+let expr_head_to_string h = List.assoc h (lf_expr_head_table())
 
 let rec tactic_to_string = function
   | Tactic_name n -> if n = "default" then "_" else "$" ^ n
@@ -90,8 +95,6 @@ let lf_kind_constant_table = [
 let lf_type_head_to_string h = List.assoc h lf_type_constant_table
 
 let lf_type_heads = List.map fst lf_type_constant_table
-
-let string_to_type_constant = List.map swap lf_type_constant_table
 
 let marked_var_to_lf (pos,v) = pos, APPLY(V v,END)
 

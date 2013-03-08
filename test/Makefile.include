@@ -1,8 +1,14 @@
-TSNAMES = demo judgments miscellaneous foo interpretations intrinsic theorem-binders ts-elf show witnessed-judgments plus
+TSNAMES = demo judgments miscellaneous foo interpretations intrinsic theorem-binders ts-elf show plus
 TSFILES = $(patsubst %,test/%.ts,$(TSNAMES))
+TTSNAMES = witnessed-judgments 
+TTSFILES = $(patsubst %,test/%.ts,$(TTSNAMES))
+TSFLAGS = --ts
+TTSFLAGS = 
+
 all: tests
-tests : $(TSNAMES)
+tests : $(TSNAMES) $(TTSNAMES)
 $(TSNAMES): src/$(CHECKER_EXE) ; $(CHECKER) $(TSFLAGS) test/$@.ts
+$(TTSNAMES): src/$(CHECKER_EXE) ; $(CHECKER) $(TTSFLAGS) test/$@.ts
 
 #  Local Variables:
 #  compile-command: "make -C .. tests "

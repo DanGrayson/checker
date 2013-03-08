@@ -300,6 +300,7 @@ let toplevel() =
       (Arg.align
 	 [
 	  ("--proof-general" , Arg.Set proof_general_mode, " Turn on Proof General mode");
+	  ("--ts" , Arg.Set ts_mode, " Turn on TS mode (default is TTS)");
 	  ("--debug" , Arg.Set debug_mode, " Turn on debug mode");
 	  ("--no-debug" , Arg.Clear debug_mode, " Turn off debug mode")
 	])
