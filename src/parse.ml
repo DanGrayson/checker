@@ -33,9 +33,9 @@ let cdr (hd,reversed_args) = (hd, CDR reversed_args)
 type binder = position * identifier * lf_type
 
 let show_binders bname b ename e = 
-  iteri (fun i (pos,v,t) -> printf " %s.%d = %a:%a\n%!" bname i _i v _t t) b;
+  iteri (fun i (pos,v,t) -> printf " %s.%d = %a:%a\n%!" bname i _i v _t (empty_environment,t)) b;
   match e with 
-  | Some (pos,v,t) -> printf " %s = %a:%a\n%!" ename _i v _t t
+  | Some (pos,v,t) -> printf " %s = %a:%a\n%!" ename _i v _t (empty_environment,t)
   | None -> ()
 
 let bind_sigma binder b =
@@ -132,32 +132,32 @@ let unbind_relative p : binder list * binder option * lf_type =
 let pi1_debug = false
 
 let pi1_implication ((vpos,v),t) u =
-  if pi1_debug then printf "\npi1_implication:\n t = %a\n%!" _t t;
-  if pi1_debug then printf " u = %a\n%!" _t u;
+  if pi1_debug then printf "\npi1_implication:\n t = %a\n%!" _t (empty_environment,t);
+  if pi1_debug then printf " u = %a\n%!" _t (empty_environment,u);
   let (p,e,j) = unbind_relative t in
   let m = List.length p in
   if pi1_debug then show_binders "p" p "e" e;
-  if pi1_debug then printf " j = %a\n%!" _t j;
+  if pi1_debug then printf " j = %a\n%!" _t (empty_environment,j);
   let (q,f,k) = unbind_relative u in
   let n = List.length q + match f with Some _ -> 1 | None -> 0 in
   if pi1_debug then show_binders "q" q "f" f;
-  if pi1_debug then printf " k = %a\n%!" _t k;
+  if pi1_debug then printf " k = %a\n%!" _t (empty_environment,k);
   match e with
   | Some (pos,e,ee) ->
       let j = Substitute.subst_type (with_pos pos (apply_vars (VarRel (m+n)) (List.rev p))) j in
-      if pi1_debug then printf " j = substituted = %a\n%!" _t j;
+      if pi1_debug then printf " j = substituted = %a\n%!" _t (empty_environment,j);
       let ee = bind_pi_list_rev p ee in
-      if pi1_debug then printf " ee = bind_pi_list_rev p ee = %a\n%!" _t ee;
+      if pi1_debug then printf " ee = bind_pi_list_rev p ee = %a\n%!" _t (empty_environment,ee);
       let j = bind_pi_list_rev p j in
-      if pi1_debug then printf " j = bind_pi_list_rev p j = %a\n%!" _t j;
+      if pi1_debug then printf " j = bind_pi_list_rev p j = %a\n%!" _t (empty_environment,j);
       let k = rel_shift_type 1 k in
-      if pi1_debug then printf " k = rel_shift_type 1 k = %a\n%!" _t k;
+      if pi1_debug then printf " k = rel_shift_type 1 k = %a\n%!" _t (empty_environment,k);
       let k = arrow j k in
-      if pi1_debug then printf " k = arrow j k = %a\n%!" _t k;
+      if pi1_debug then printf " k = arrow j k = %a\n%!" _t (empty_environment,k);
       let j = bind_pi_list_rev q (bind_some_sigma f k) in
-      if pi1_debug then printf " j = bind_pi_list_rev q (bind_some_sigma f k) = %a\n%!" _t j;
+      if pi1_debug then printf " j = bind_pi_list_rev q (bind_some_sigma f k) = %a\n%!" _t (empty_environment,j);
       let r = bind_pi (pos,v,ee) j in
-      if pi1_debug then printf " r = bind_pi (pos,v,ee) j = %a\n%!" _t r;
+      if pi1_debug then printf " r = bind_pi (pos,v,ee) j = %a\n%!" _t (empty_environment,r);
       r
   | None -> raise NotImplemented
 
@@ -173,19 +173,19 @@ let apply_binder pos (c:(identifier marked * lf_expr) list) (v : identifier mark
 
 let apply_judgment_binder pos (j:lf_type) (u:lf_type) =
   (* just like pi1_implication above, except t consists just of j, with no p or e *)
-  if pi1_debug then printf "\napply_judgment_binder:\n j = %a\n u = %a\n%!" _t j _t u;
+  if pi1_debug then printf "\napply_judgment_binder:\n j = %a\n u = %a\n%!" _t (empty_environment,j) _t (empty_environment,u);
   let (q,f,k) = unbind_relative u in
   if pi1_debug then show_binders "q" q "f" f;
-  if pi1_debug then printf " k = %a\n%!" _t k;
+  if pi1_debug then printf " k = %a\n%!" _t (empty_environment,k);
   let n = List.length q + match f with Some _ -> 1 | None -> 0 in
   let j = Substitute.subst_type (var_to_lf_pos pos (VarRel n)) j in
-  if pi1_debug then printf " j = substituted = %a\n%!" _t j;
+  if pi1_debug then printf " j = substituted = %a\n%!" _t (empty_environment,j);
   let k = rel_shift_type 1 k in
-  if pi1_debug then printf " k = rel_shift_type 1 k = %a\n%!" _t k;
+  if pi1_debug then printf " k = rel_shift_type 1 k = %a\n%!" _t (empty_environment,k);
   let k = arrow j k in
-  if pi1_debug then printf " k = arrow j k = %a\n%!" _t k;
+  if pi1_debug then printf " k = arrow j k = %a\n%!" _t (empty_environment,k);
   let r = bind_pi_list_rev q (bind_some_sigma f k) in
-  if pi1_debug then printf " r = bind_pi_list_rev q (bind_some_sigma f k) = %a\n%!" _t r;
+  if pi1_debug then printf " r = bind_pi_list_rev q (bind_some_sigma f k) = %a\n%!" _t (empty_environment,r);
   r
 
 (*

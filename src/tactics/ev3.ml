@@ -9,7 +9,7 @@ open Printf
 let ev3 (surr:surrounding) env pos t args =
   (* This code was formerly a part of the file fillin.ml, removed. *)
   match surr with
-  | (_, Some (pos,APPLY( O O_ev, ARG(f,_))), _) :: _ -> (
+  | (env,_, Some (pos,APPLY( O O_ev, ARG(f,_))), _) :: _ -> (
       try
 	let tf =
 	  Tau.tau env f
@@ -23,7 +23,7 @@ let ev3 (surr:surrounding) env pos t args =
 		      "\n  : " ^ ts_expr_to_string tf ])))
 
       with NotImplemented ->
-	printf "warning: ev3: \"tau\" not implemented for %a\n%!" _e f;
+	printf "warning: ev3: \"tau\" not implemented for %a\n%!" _e (env,f);
 	TacticFailure)
   | _ ->
       printf "error: ev3 - unexpected surroundings:\n%!";

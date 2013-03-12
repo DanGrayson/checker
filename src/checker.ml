@@ -101,7 +101,7 @@ let add_oVars env ovars t =
     ) env ovars
 
 let lf_axiomCommand env pos name t =
-  if show_rules then printf "Axiom LF %a: %a\n%!" _i name _t t;
+  if show_rules then printf "Axiom LF %a: %a\n%!" _i name _t (env,t);
   let t = Lfcheck.type_validity [] env t in
   let r = axiom_bind name pos t env in
   if !proof_general_mode then printf "%a is declared\n%!" _i name;
@@ -110,23 +110,23 @@ let lf_axiomCommand env pos name t =
 let defCommand env defs =
   List.fold_left
     (fun env (name, pos, tm, tp) ->
-      if show_definitions then printf "Define %s = %a\n%!" name  _e tm (* else printf "Define %a\n%!" name *);
-      if show_definitions then printf "       %s : %a\n%!" name  _t tp;
+      if show_definitions then printf "Define %s = %a\n%!" name  _e (env,tm) (* else printf "Define %a\n%!" name *);
+      if show_definitions then printf "       %s : %a\n%!" name  _t (env,tp);
       let tp' = type_validity [] env tp in
       if not (type_equiv tp tp') then
-      if show_definitions then printf "       %s : %a [after tactics]\n%!" name  _t tp';
+      if show_definitions then printf "       %s : %a [after tactics]\n%!" name  _t (env,tp');
       let tm' = type_check [] env tm tp' in
       if not (term_equiv tm tm') then (
-	if show_definitions then printf "       %s = %a [after tactics]\n%!" name  _e tm');
+	if show_definitions then printf "       %s = %a [after tactics]\n%!" name  _e (env,tm'));
       let tm'' = term_normalization env tm' tp' in
       if not (term_equiv tm' tm'') then (
-	if show_definitions then printf "       %s = %a [normalized]\n%!" name  _e tm'';
+	if show_definitions then printf "       %s = %a [normalized]\n%!" name  _e (env,tm'');
 	(* if show_definitions then printf "       %s = %a [normalized, TS format]\n%!" name  _ts tm''; *)
 	let _ = type_check [] env tm'' tp' in ();
        );
       let tp'' = type_normalization env tp' in
       if not (type_equiv tp' tp'') then (
-	if show_definitions then printf "       %s : %a [normalized]\n%!" name  _t tp'';
+	if show_definitions then printf "       %s : %a [normalized]\n%!" name  _t (env,tp'');
 	let _ = type_validity [] env tp'' in ();
        );
       let env = def_bind (id name) pos tm' tp' env in
@@ -138,43 +138,43 @@ let defCommand env defs =
 let is_can x = (function (APPLY _) -> true | _ -> false) (unmark x)
 
 let checkLFCommand env pos x =
-  printf "Check LF   = %a\n%!" _e x;
+  printf "Check LF   = %a\n%!" _e (env,x);
   if is_can x then
     let (x',t) = Lfcheck.type_synthesis env x in
-    printf "           = %a\n" _e x';
-    printf "           : %a\n%!" _t t;
+    printf "           = %a\n" _e (env,x');
+    printf "           : %a\n%!" _t (env,t);
     if try_normalization then
       let x'' = Lfcheck.term_normalization env x' t in
-      printf "           = %a [normalized]\n%!" _e x'';
+      printf "           = %a [normalized]\n%!" _e (env,x'');
       let t' = Lfcheck.type_normalization env t in
-      printf "           : %a [normalized]\n%!" _t t'
+      printf "           : %a [normalized]\n%!" _t (env,t')
 
 let checkLFtypeCommand env t =
-  printf "Check      : %a\n%!" _t t;
+  printf "Check      : %a\n%!" _t (env,t);
   let t' = Lfcheck.type_validity [] env t in
   if not (type_equiv t t') then
-    printf "           : %a [after tactics]\n%!" _t t';
+    printf "           : %a [after tactics]\n%!" _t (env,t');
   if try_normalization then (
     let t'' = Lfcheck.type_normalization env t' in
     if not (type_equiv t' t'') then (
-      printf "           : %a [after normalization] ... %!" _t t'';
+      printf "           : %a [after normalization] ... %!" _t (env,t'');
       ignore (Lfcheck.type_validity [] env t'');
       printf "okay\n%!";
       )
    )
 
 let checkWitnessedJudgmentCommand env t =
-  printf "Check      : %a\n%!" _t t;
+  printf "Check      : %a\n%!" _t (env,t);
   let t' = Lfcheck.type_validity [] env t in
   if not (type_equiv t t') then
-    printf "           : %a [after tactics]\n%!" _t t';
+    printf "           : %a [after tactics]\n%!" _t (env,t');
   Lfcheck.check env t';
   printf "           : okay\n%!"
 
 let checkTSCommand env x =
   printf "Check      : %a\n%!" _ts x;
   let (x,t) = Lfcheck.type_synthesis env x in
-  printf "     type :: %a\n" _t t;
+  printf "     type :: %a\n" _t (env,t);
   if unmark t = unmark oexp then (
     match unmark x with
     | LAMBDA _ ->
@@ -184,7 +184,7 @@ let checkTSCommand env x =
    );
   if try_normalization then
     let x' = Lfcheck.term_normalization env x t in
-    printf "           = %a [normalized]\n%!" _e x'
+    printf "           = %a [normalized]\n%!" _e (env,x')
 
 let alphaCommand env (x,y) =
   printf "Alpha      : %s\n" (if (term_equiv x y) then "true" else "false");
@@ -244,7 +244,7 @@ let rec process_command env lexbuf =
 	let env = parse_file env filename in
 	interactive := save_interactive;
 	env
-    | Toplevel.Clear -> empty_context
+    | Toplevel.Clear -> empty_environment
     | Toplevel.SyntaxError -> env
     | Toplevel.Mode s ->
 	(match s with 
@@ -300,7 +300,7 @@ let parse_string env grammar s =
 let expr_from_string env s = parse_string env Grammar.ts_exprEof s
 
 let toplevel() =
-  let env = ref empty_context in
+  let env = ref empty_environment in
   (try
     Arg.parse
       (Arg.align
@@ -341,9 +341,9 @@ with
 (* | Internal -> *)
 (*     fprintf stderr "error: internal error\n%!" *)
 | Internal_expr e ->
-    fprintf stderr "%a: internal error: %a\n%!" _pos_of e  _e e
+    fprintf stderr "%a: internal error: %a\n%!" _pos_of e  _e (empty_environment,e)
 | Unimplemented_expr e ->
-    fprintf stderr "%a: unimplemented feature: %a\n%!" _pos_of e  _e e
+    fprintf stderr "%a: unimplemented feature: %a\n%!" _pos_of e  _e (empty_environment,e)
 
 (*
   Local Variables:

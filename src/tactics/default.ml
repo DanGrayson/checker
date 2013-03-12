@@ -5,7 +5,7 @@ open Printer
 open Printf
 
 let rec default surr env pos t args =
-  if tactic_tracing then printf "default: t = %a\n%!" _t t;
+  if tactic_tracing then printf "default: t = %a\n%!" _t (env,t);
   match unmark t with
   | F_Singleton(e,_) -> TacticSuccess e
   | F_Pi(v,a,b) -> (

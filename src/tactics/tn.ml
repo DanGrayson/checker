@@ -11,7 +11,7 @@ let tn1 surr env pos t args =
   if not (Alpha.UEqual.type_equiv empty_uContext 0 t texp)
   then raise (TypeCheckingFailure(env, surr, [ pos, "error: tactic tn1: expected a hole for a t-expression" ]));
   match surr with
-  | (S_argument i, Some (pos, APPLY(head,args)), _) :: _ -> TacticSuccess (Tau.tau env (nth_arg (i+1) args))
+  | (env,S_argument i, Some (pos, APPLY(head,args)), _) :: _ -> TacticSuccess (Tau.tau env (nth_arg (i+1) args))
   | _ -> TacticFailure
 
 (** insert the type of either of the next two arguments *)
@@ -20,10 +20,10 @@ let tn12 surr env pos t args =
   then raise (TypeCheckingFailure(
               env, surr,
               [ pos, "error: tactic tn12: expected a hole of LF type texp" ;
-                get_pos t, "but found a hole of type " ^ lf_type_to_string t
+                get_pos t, "but found a hole of type " ^ lf_type_to_string env t
               ]));
   match surr with
-  | (S_argument i, Some (pos, APPLY(head,args)), _) :: _ -> TacticSuccess (
+  | (env,S_argument i, Some (pos, APPLY(head,args)), _) :: _ -> TacticSuccess (
       try
 	Tau.tau env (nth_arg (i+1) args)
       with (NotImplemented | TypeCheckingFailure _) ->

@@ -300,11 +300,13 @@ let spine_to_string args = paren_left bottom_prec (
     (fun accu -> spine_prec, paren_left spine_prec accu ^ ";CDR")
     (top_prec,"") args)
 
-let lf_expr_to_string e = paren_right bottom_prec (lf_expr_to_string_with_subs [] e)
+let env_to_subs env = List.map fst env.local_lf_context
 
-let lf_type_to_string t = paren_right bottom_prec (lf_type_to_string_with_subs [] t)
+let lf_expr_to_string env e = paren_right bottom_prec (lf_expr_to_string_with_subs (env_to_subs env) e)
 
-let lf_kind_to_string k = paren_right bottom_prec (lf_kind_to_string_with_subs [] k)
+let lf_type_to_string env t = paren_right bottom_prec (lf_type_to_string_with_subs (env_to_subs env) t)
+
+let lf_kind_to_string env k = paren_right bottom_prec (lf_kind_to_string_with_subs (env_to_subs env) k)
 
 (** Printing of TS terms in TS format. *)
 
@@ -480,17 +482,17 @@ let _tac file tac = output_string file (tactic_to_string tac)
 
 let _s file x = output_string file (spine_to_string x)
 
-let _e file x = output_string file (lf_expr_to_string x)
+let _e file (env,x) = output_string file (lf_expr_to_string env x)
 
-let _l file x = List.iter (fun x -> printf " "; _e file x) x
+let _l file (env,x) = List.iter (fun x -> printf " "; _e file (env,x)) x
 
-let _a file x = Array.iter (fun x -> printf " "; _e file x) x
+let _a file (env,x) = Array.iter (fun x -> printf " "; _e file (env,x)) x
 
 let _h file x = output_string file (lf_head_to_string x)
 
-let _t file x = output_string file (lf_type_to_string x)
+let _t file (env,x) = output_string file (lf_type_to_string env x)
 
-let _k file x = output_string file (lf_kind_to_string x)
+let _k file (env,x) = output_string file (lf_kind_to_string env x)
 
 let _th file x = output_string file (lf_type_head_to_string x)
 
@@ -506,11 +508,11 @@ let print_signature env file =
            ) lf_kind_constant_table;
   fprintf file "  Type constants:\n";
   List.iter (fun h ->
-    fprintf file "     %a : %a\n" _th h  _k (tfhead_to_kind h)
+    fprintf file "     %a : %a\n" _th h  _k (env,tfhead_to_kind h)
            ) lf_type_heads;
   fprintf file "  Object constants:\n";
   List.iter (fun h ->
-    fprintf file "     %a : %a\n" _h h  _t (head_to_type env (Error.no_pos 23) h)
+    fprintf file "     %a : %a\n" _h h  _t (env,head_to_type env (Error.no_pos 23) h)
            ) lf_expr_heads;
   flush file
 
@@ -522,55 +524,55 @@ let print_global_lf_context file env =
     (fun name t -> (
       match unmark t with
       | F_Singleton(e,t) ->
-          fprintf file "     %a := %a\n"   _i name _e e;
-          fprintf file "     %a :  %a\n%!" _i_phantom name _t t
+          fprintf file "     %a := %a\n"   _i name _e (env,e);
+          fprintf file "     %a :  %a\n%!" _i_phantom name _t (env,t)
       | _ ->
-          fprintf file "     %a : %a\n%!" _i name _t t))
+          fprintf file "     %a : %a\n%!" _i name _t (env,t)))
     env.global_lf_context
 
-let print_context n file (c:environment) =
+let print_context n file env =
   let n = match n with None -> -1 | Some n -> n in
   fprintf file "LF Context:\n";
-  let env = c.local_lf_context in
-  let cl = List.length env in (
+  let lfc = env.local_lf_context in
+  let cl = List.length lfc in (
   try iteri
       (fun i (v,t) ->
         if i = n then raise Limit;
         match unmark t with
         | F_Singleton(e,t) ->
-            fprintf file " %d %a := %a\n"   (cl-i-1) _i v          _e e;
-            fprintf file " %d %a  : %a\n%!" (cl-i-1) _i_phantom v  _t t
+            fprintf file " %d %a := %a\n"   (cl-i-1) _i v          _e (env,e);
+            fprintf file " %d %a  : %a\n%!" (cl-i-1) _i_phantom v  _t (env,t)
         | _ ->
-            fprintf file " %d %a : %a\n%!" (cl-i-1) _i v  _t t
+            fprintf file " %d %a : %a\n%!" (cl-i-1) _i v  _t (env,t)
       )
-      env
+      lfc
   with Limit -> fprintf file "   ...\n");
   fprintf file "TTS Context:\n";
-  let env = c.local_tts_context in
-  let env = if n < 0 then List.rev env else env in (
+  let lfc = env.local_tts_context in
+  let lfc = if n < 0 then List.rev lfc else lfc in (
   try iteri
       (fun i (name,j) ->
         if i = n then raise Limit;
 	match j with
 	| TTS_istype -> fprintf file "   %s Type\n%!" name
-	| TTS_hastype t -> fprintf file "   %s : %a\n%!" name _e t
+	| TTS_hastype t -> fprintf file "   %s : %a\n%!" name _e (env,t)
       )
-      env
+      lfc
   with Limit -> fprintf file "     ...\n");
-  if n = -1 then print_global_lf_context file c
+  if n = -1 then print_global_lf_context file env
 
 let print_surroundings (surr:surrounding) =
   printf "Surroundings:\n";
-  let show_surr (i,e,t) =
+  let show_surr (env,i,e,t) =
     (match i with
     | S_projection i -> printf "     projection pi_%d\n" i
     | S_argument i -> printf "     part %d\n" i
     | S_body -> printf "     body\n");
     (match e with
-    | Some e -> printf "        in expression %a\n" _e e
+    | Some e -> printf "        in expression %a\n" _e (env,e)
     | None -> ());
     (match t with
-    | Some t -> printf "        of type %a\n" _t t
+    | Some t -> printf "        of type %a\n" _t (env,t)
     | None -> ())
   in
   List.iter show_surr surr;

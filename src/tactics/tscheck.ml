@@ -14,7 +14,7 @@ open Lfcheck
 open Error
 open Helpers
 
-let see n x = printf "\t  %s = %a\n%!" n _e x
+let see env n x = printf "\t  %s = %a\n%!" n _e (env,x)
 
 (** returns a term y and a derivation of hastype y t and a derivation of oequal x y t *)
 let rec head_reduction (env:environment) (t:lf_expr) (dt:lf_expr) (x:lf_expr) (dx:lf_expr) : lf_expr * lf_expr * lf_expr =
@@ -87,20 +87,20 @@ let rec type_normalization (env:environment) (t:lf_expr) : lf_expr =
 let self = nowhere 1234 (cite_tactic (Tactic_name "tscheck") END)
 
 let rec tscheck surr env pos tp args =
-  if tactic_tracing then printf "tscheck: tp = %a\n%!" _t tp;
+  if tactic_tracing then printf "tscheck: tp = %a\n%!" _t (env,tp);
   match unmark tp with
   | F_Apply(F_istype,[t]) -> (
-      if tactic_tracing then see "t" t;
+      if tactic_tracing then see env "t" t;
       match unmark t with
       | APPLY(T T_Pi,args) -> (
           let (a,b) = args2 args in
-          if tactic_tracing then (see "a" a; see "b" b);
+          if tactic_tracing then (see env "a" a; see env "b" b);
           TacticSuccess ( with_pos_of t (APPLY(V (Var (id "∏_istype")), a ** b ** CDR(self ** self ** END))) )
          )
       | _ -> Default.default surr env pos tp args
       )
   | F_Apply(F_hastype,[x;t]) -> (
-      if tactic_tracing then printf "tscheck\n\t  x = %a\n\t  t = %a\n%!" _e x _e t;
+      if tactic_tracing then printf "tscheck\n\t  x = %a\n\t  t = %a\n%!" _e (env,x) _e (env,t);
       try
         let dt = type_validity env t in (* we should be able to get this from the context *)
 	TacticSuccess (type_check env x t dt)

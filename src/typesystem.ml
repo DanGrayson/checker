@@ -505,7 +505,7 @@ type environment = {
     global_lf_context : lf_type MapIdentifier.t;
   }
 
-let empty_context = {
+let empty_environment = {
   state = 0;
   local_tts_context = [];
   global_tts_context = MapString.empty;
@@ -614,7 +614,7 @@ type surrounding_component =
   | S_projection of int
   | S_body
 
-type surrounding = (surrounding_component * lf_expr option * lf_type option) list
+type surrounding = (environment * surrounding_component * lf_expr option * lf_type option) list
 
 type tactic_return =
   | TacticFailure

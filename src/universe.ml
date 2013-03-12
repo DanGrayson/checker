@@ -40,7 +40,7 @@ let chk uv ((lhs:lf_expr),(rhs:lf_expr)) =
     | APPLY(U U_next,ARG(u,END)) -> (ev u) + 1
     | APPLY(U U_max,ARG(u,ARG(v,END))) -> max (ev u) (ev v)
     | _ -> (
-        printf "%a: unexpected u-expression: %a\n%!" _pos pos _e e;
+        printf "%a: unexpected u-expression: %a\n%!" _pos pos _e (empty_environment,e);
         trap(); raise Internal)
   in
   if (ev lhs) != (ev rhs) then raise (Inconsistency (lhs, rhs))

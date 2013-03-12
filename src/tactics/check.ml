@@ -11,7 +11,7 @@ let check surr env pos t args =
       let (x',t) = type_synthesis env x in
       let t = un_singleton t in
       let x' = term_normalization env x' t in
-      printf "$check = %a\n       = %a [normalized]\n       : %a\n%!" _e x _e x' _t t;
+      printf "$check = %a\n       = %a [normalized]\n       : %a\n%!" _e (env,x) _e (env,x') _t (env,t);
     )
     (fun () -> ())
     (fun () -> ())

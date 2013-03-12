@@ -23,7 +23,7 @@ open Printf
 let apply_args_counter = new_counter()
 
 let rec subst_expr shift subs e =
-  if debug_subst then printf "subst_expr shift=%d subs=%a e=%a\n%!" shift _a subs _e e;
+  if debug_subst then printf "subst_expr shift=%d subs=%a e=%a\n%!" shift _a (empty_environment,subs) _e (empty_environment,e);
   let pos = get_pos e in
   match unmark e with
   | APPLY(h,args) -> (
@@ -49,7 +49,7 @@ let rec subst_expr shift subs e =
 
 and apply_args e args =
   let c = apply_args_counter() in
-  if debug_subst then printf "entering apply_args(%d): e = %a, args = %a\n%!" c _e e _s args;
+  if debug_subst then printf "entering apply_args(%d): e = %a, args = %a\n%!" c _e (empty_environment,e) _s args;
   let r =
   let pos = get_pos e in
   match unmark e with
@@ -68,11 +68,11 @@ and apply_args e args =
       | CDR args -> raise (GeneralError "pi2 expected a pair but got a function")
       | END -> e)
   in
-  if debug_subst then printf "leaving apply_args(%d): r = %a\n%!" c _e r;
+  if debug_subst then printf "leaving apply_args(%d): r = %a\n%!" c _e (empty_environment,r);
   r
 
 and subst_type shift subs t =
-  if debug_subst then printf "subst_type shift=%d subs=%a t=%a\n%!" shift _a subs _t t;
+  if debug_subst then printf "subst_type shift=%d subs=%a t=%a\n%!" shift _a (empty_environment,subs) _t (empty_environment,t);
   match unmark t with
   | F_Pi(v,a,b) ->
       let a' = subst_type shift subs a in

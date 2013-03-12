@@ -36,7 +36,7 @@ let rec this_head_reduces env o =   (* returns (p,o'), where p : o == o' : _ *)
     FalseWitness -> raise Not_found
 
 and find_w_hastype env o t : lf_expr = (
-  if false then printf "find_w_hastype  o=%a  t=%a\n%!" _e o _e t;
+  if false then printf "find_w_hastype  o=%a  t=%a\n%!" _e (env,o) _e (env,t);
   match unmark o with
   | APPLY(V v, END) ->
       let t' = tts_fetch_type env v in
@@ -96,13 +96,13 @@ and find_w_object_equality env o o' t =
 let witness (surr:surrounding) (env:environment) (pos:position) (t:lf_type) (args:spine) : tactic_return =
   try
     match surr with
-    | (S_argument 1, None, Some (pos,F_Apply(F_witnessed_hastype,[_;o;t]))) :: _ ->
+    | (env,S_argument 1, None, Some (pos,F_Apply(F_witnessed_hastype,[_;o;t]))) :: _ ->
 	TacticSuccess (find_w_hastype env o t)
-    | (S_argument 1, None, Some (pos,F_Apply(F_witnessed_object_equality,[_;o;o';t]))) :: _ ->
+    | (env,S_argument 1, None, Some (pos,F_Apply(F_witnessed_object_equality,[_;o;o';t]))) :: _ ->
 	TacticSuccess (find_w_object_equality env o o' t)
-    | (S_argument 1, None, Some (pos,F_Apply(F_witnessed_type_equality,[_;t;t']))) :: _ ->
+    | (env,S_argument 1, None, Some (pos,F_Apply(F_witnessed_type_equality,[_;t;t']))) :: _ ->
 	TacticSuccess (find_w_type_equality env t t')
-    | (S_argument 1, Some (pos,APPLY(T T_El', ARG(o, _))), None) :: _ ->
+    | (env,S_argument 1, Some (pos,APPLY(T T_El', ARG(o, _))), None) :: _ ->
 	TacticSuccess (find_w_hastype env o uuu)
     | _ -> TacticFailure
   with
