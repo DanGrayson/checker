@@ -300,7 +300,9 @@ let spine_to_string args = paren_left bottom_prec (
     (fun accu -> spine_prec, paren_left spine_prec accu ^ ";CDR")
     (top_prec,"") args)
 
-let env_to_subs env = List.map fst env.local_lf_context
+let env_to_subs env = (* concatenation of the two contexts might not be appropriate later on *)
+  List.map fst env.local_lf_context
+    @ List.flatten ( List.map ( fun (name,t) -> [ id name; idw name ] ) env.local_tts_context)
 
 let lf_expr_to_string env e = paren_right bottom_prec (lf_expr_to_string_with_subs (env_to_subs env) e)
 
