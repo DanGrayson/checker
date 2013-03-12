@@ -18,21 +18,22 @@ Variable W Type.
 Check TTS : [ @[U] Type ].
 Variable xo : T. 
 
-Check TTS : [ @[Pi;_][T,@[U]] Type ].
-Variable xf : @[Pi;_][T,@[U]].
+Check TTS : [ T -> @[U] Type ].
+Variable xf : T -> @[U].
 Axiom LF xf$ : wexp.
 Axiom LF xo$ : wexp.
 Show.
-Check TTS : [ _ : xf : @[Pi;_][T,@[U]] ].
+Check TTS : [ _ : xf : T -> @[U] ].
 Check TTS : [ _ : xo : T ].
 Check TTS : [ _ : @[ev;_][xf,xo,T,@[U]] : @[U] ].
 Check TTS : [ _ : @[ev;_][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,@[U]]: @[U]].
 
-Lemma a1 [ : xf : @[Pi;_][T,@[U]] ] ::= xf$ .
-Lemma a2 [ : xf : @[Pi;_][T,@[U]] ] ::= _ .
+Lemma a1 [ : xf : T->@[U] ] ::= xf$ .
+Lemma a2 [ : xf : T->@[U] ] ::= _ .
 Check TTS : [ @[El][@[ev;_][xf,xo,T,@[U]],@[wev][xf$,xo$]] Type ].
 Check TTS : [ @[El][@[ev;_][xf,xo,T,@[U]],@[wev][a1,xo$]] Type ].
 Check TTS : [ @[El][@[ev;_][xf,xo,T,@[U]],_] Type ].
+Check TTS : [ *@[ev;_][xf,xo,T,@[U]] Type ].		    # * is notation for El
 
 Check TTS : [ @[Proof][
     @[wev][@[wlam;o][@[wev][xf$,o$]],xo$],
@@ -45,7 +46,7 @@ Variable A : @[Proof][
     @[ev;_][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,@[U]],
     @[U]].
 
-Check TTS : [ @[El][ @[ev;_][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,@[U]], _ ] Type ].
+Check TTS : [ *@[ev;_][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,@[U]] Type ].
 
 Check TTS : [
     _ : @[ev;_][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,@[U]]
@@ -74,18 +75,25 @@ Lemma a4 [
 #       ].
 
 Check TTS : [
-    _ : @[El][ @[ev;_][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,@[U]], _]
-      ≡ @[El][ @[ev;_][xf,xo,T,@[U]], _]
+    _ : * @[ev;_][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,@[U]]
+      ≡ * @[ev;_][xf,xo,T,@[U]]
       ].
 
 Lemma a3 [
-      : @[El][ @[ev;_][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,@[U]], _]
-      ≡ @[El][ @[ev;_][xf,xo,T,@[U]], _]
+      : * @[ev;_][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,@[U]]
+      ≡ * @[ev;_][xf,xo,T,@[U]]
       ] := _ .
 
 Check LF a3.
 
-Lemma a2a [ : xf : @[Pi;_][T,@[U]] ] := a2 .
+Lemma a2a [ : xf : T->@[U] ] := a2 .
+
+End. # working on simplifying the syntax for the user
+
+Lemma a4 [
+      : * @[ev;_][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,_]
+      ≡ * @[ev;_][xf,xo,T,@[U]]
+      ] := _ .
 
 # Check TTS : [ @[El][A,A$] Type ].
 

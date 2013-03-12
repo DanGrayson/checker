@@ -599,20 +599,21 @@ unmarked_ts_expr:
 	{ make_O_lambda t (x,o) }
 
     | Star o= ts_expr
-	{ make_T_El o }
+	{ let pos = Position($startpos, $endpos) in
+	  if !ts_mode then make_T_El o else make_T_El' o (pos, (cite_tactic (Tactic_name "default") END)) }
 
     | Pi x= identifier Colon t1= ts_expr Comma t2= ts_expr
 	%prec Reduce_binder
 	{ make_T_Pi t1 (x,t2) }
 
     | LeftParen x= identifier Colon t= ts_expr RightParen Arrow u= ts_expr
-	{ make_T_Pi t (x,u) }
+	{ if !ts_mode then make_T_Pi t (x,u) else make_T_Pi' t (lambda1 x (lambda1 (witness_id x) u)) }
 
     | x= ts_expr Equal y= ts_expr
 	{ make_T_Id (with_pos_of x (cite_tactic (Tactic_name "tn12") END)) x y }
 
     | t= ts_expr Arrow u= ts_expr
-	{ make_T_Pi t (id "_",u) }
+	{ if !ts_mode then make_T_Pi t (id "_",u) else make_T_Pi' t (lambda1 (id "_") (lambda1 (idw "_") u)) }
 
     | Sigma x= identifier Colon t1= ts_expr Comma t2= ts_expr
 	%prec Reduce_binder

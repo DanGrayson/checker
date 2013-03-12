@@ -55,7 +55,7 @@ let ts_binders = [
   ((O O_ev, 2), abstraction3)
 ]
 
-let enable_ts_binders = false
+let enable_ts_binders = true
 
 let apply_ts_binder env i e =
   if not enable_ts_binders then env else

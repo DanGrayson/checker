@@ -260,8 +260,10 @@ let make_U_max x y = make_U U_max (x **  y ** END)
 let uuu = nowhere 187 (APPLY(T T_U', END))
 
 let make_T_El x = make_T T_El (x ** END)
+let make_T_El' x w = make_T T_El' (x ** w ** END)
 let make_T_U x = make_T T_U ( x ** END)
 let make_T_Pi    t1 (x,t2) = make_T T_Pi    (t1 ** lambda1 x t2 ** END)
+let make_T_Pi'   t1    t2  = make_T T_Pi'   (t1 ** t2 ** END)
 let make_T_Sigma t1 (x,t2) = make_T T_Sigma (t1 ** lambda1 x t2 ** END)
 let make_T_Pt = make_T T_Pt END
 let make_T_Coprod t t' = make_T T_Coprod (t ** t' ** END)
@@ -305,7 +307,6 @@ let make_W_wlam p = make_W W_wlam (p ** END)
 let make_W_wrefl p p' = make_W W_wrefl (p ** p' ** END)
 let make_W_weleq peq = make_W W_weleq (peq ** END)
 let make_W_Wrefl = make_W W_wrefl END
-let make_T_Pi' t1 t2 = make_T T_Pi' (t1 ** t2 ** END)
 
 let this_object_of_type pos o t =
   let id = id "x" in

@@ -33,9 +33,13 @@ module Identifier :
 
 include Identifier
 
-let base_id v = id (id_to_name v)
+let base_id v = 
+  assert (isidw v);
+  id (id_to_name v)
 
-let witness_id v = idw (id_to_name v)
+let witness_id v = 
+  assert (isid v);
+  idw (id_to_name v)
 
 let is_witness_pair i j = isid i && isidw j && id_to_name i = id_to_name j
 
