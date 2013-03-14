@@ -3,7 +3,7 @@
 Include "rules/TS2.ts".
 
 Variable T Type.
-Show.
+
 Theorem TT |- T Type ::= (pair _ _).
 Variable u0 u1 u2 Ulevel ; next[u0] <= u1; next[u1] < u2.
 Variable T' U V X Y Type.

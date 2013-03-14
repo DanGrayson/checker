@@ -4,31 +4,43 @@ open Names
 open Error
 open Printer
 open Printf
+open Variables
+open Helpers
 
-(** fill in the third argument of @[ev][f,x,_] using tau *)
+(** fill in argument 3 of @[ev][f,x,T,_] using tau *)
 let ev3 (surr:surrounding) env pos t args =
-  (* This code was formerly a part of the file fillin.ml, removed. *)
   match surr with
-  | (env,_, Some (pos,APPLY( O O_ev, ARG(f,_))), _) :: _ -> (
+  | (env,S_argument 3, Some (pos,APPLY( O ( O_ev | O_ev' ), ARG(f,_))), _) :: _ -> (
       try
 	let tf =
 	  Tau.tau env f
 	in (
 	match Error.unmark tf with
-	| APPLY(T T_Pi, ARG(_,ARG(t,END))) -> TacticSuccess t
+	| APPLY(T ( T_Pi | T_Pi' ), ARG(_,ARG(t,END))) -> TacticSuccess t
 	| _ -> raise (TypeCheckingFailure(
 		      env, surr, [
 		      get_pos f,
-		      "expected a TS function:\n    " ^ ts_expr_to_string env f ^
+		      "ev3: expected a TS function:\n    " ^ ts_expr_to_string env f ^
 		      "\n  : " ^ ts_expr_to_string env tf ])))
 
-      with NotImplemented ->
-	printf "warning: ev3: \"tau\" not implemented for %a\n%!" _e (env,f);
-	TacticFailure)
-  | _ ->
-      printf "error: ev3 - unexpected surroundings:\n%!";
-      print_surroundings surr;
-      TacticFailure
+      with NotImplemented -> TacticFailure)
+  | _ :: _ :: (env,S_argument 3, Some (pos,APPLY( O ( O_ev | O_ev' ), ARG(f,_))), _) :: _ -> (
+      try
+	let tf =
+	  Tau.tau env f
+	in (
+	match Error.unmark tf with
+	| APPLY(T ( T_Pi | T_Pi' ), ARG(_,ARG(t,END))) -> 
+	    let t = Substitute.apply_args t (var_to_lf (VarRel 1) ** var_to_lf (VarRel 0) ** END) in
+	    TacticSuccess t
+	| _ -> raise (TypeCheckingFailure(
+		      env, surr, [
+		      get_pos f,
+		      "ev3: expected a TS function:\n    " ^ ts_expr_to_string env f ^
+		      "\n  : " ^ ts_expr_to_string env tf ])))
+
+      with NotImplemented -> TacticFailure)
+  | _ -> TacticFailure
 
 (*
   Local Variables:

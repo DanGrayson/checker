@@ -535,7 +535,7 @@ arglist:
     | LeftBracket a= separated_list(Comma,ts_expr) RightBracket
 	{a}
 
-empty_hole: Underscore { cite_tactic (Tactic_name "default") END }
+empty_hole: Underscore { default_tactic }
 
 unused_identifier: Underscore { id "_" }
 

@@ -43,7 +43,7 @@ let abstraction3 pos (env:environment) = function
 	| APPLY(T T_Pi, ARG(t, _)) -> ts_bind env x t
 	| _ -> env)
       with TypeCheckingFailure _ | NotImplemented ->
-	(* printf "%a: warning: abstraction3: \"tau\" not implemented for %a\n%!" _pos_of f _e (env,f); *)
+	printf "%a: warning: abstraction3: \"tau\" not implemented for %a\n%!" _pos_of f _e (env,f);
 	env)
   | _ -> env
 
@@ -52,7 +52,8 @@ let ts_binders = [
   ((T T_Pi, 1), abstraction1);
   ((T T_Sigma, 1), abstraction1);
   ((O O_forall, 3), abstraction2);
-  ((O O_ev, 2), abstraction3)
+  ((O O_ev, 2), abstraction3);
+  ((O O_ev', 2), abstraction3)
 ]
 
 let enable_ts_binders = true
@@ -597,7 +598,7 @@ and type_synthesis (surr:surrounding) (env:environment) (m:lf_expr) : lf_expr * 
             let m' = type_check surr env m' a' in
 	    if !debug_mode then (
 	      printf " type_synthesis repeat\n head= %a, i=%d, head_type=%a, args_passed=%a, args=%a\n%!" _h head i _t (env,head_type) _s args_passed _s args;
-	      printf "      a'=%a a''=%a m'=%a\n%!" _t (env,a') _t (env,a'') _e (env,m');
+	      printf "      a'=%a, a''=%a, m'=%a\n%!" _t (env,a') _t (env,a'') _e (env,m');
 	     );
             let (args'',u) = repeat (i+1) env (subst_type m' a'') (ARG(m',args_passed)) args' in
             ARG(m',args''), u

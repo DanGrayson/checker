@@ -36,8 +36,12 @@ let lf_expr_head_table = [
 ]
 
 let tts_mode_lf_expr_head_table = List.flatten [
-  [ T T_U', "U";  T T_El', "El"; T T_Pi', "Pi"; T T_Pi', "∏";
-    O O_lambda', "λ"; O O_lambda', "lambda"; O O_ev', "ev" ]; 
+  [ T T_U', "U";  T T_U, "U$";
+    T T_El', "El"; T T_El, "El$";
+    T T_Pi', "Pi"; T T_Pi, "Pi$";
+    T T_Pi', "∏"; O O_lambda', "λ"; O O_lambda, "lambda$";
+    O O_lambda', "lambda"; O O_ev', "ev" ; O O_ev, "ev$"
+  ]; 
   lf_expr_head_table ]
 
 let ts_mode = ref true

@@ -88,12 +88,28 @@ Check LF a3.
 
 Lemma a2a [ : xf : T->@[U] ] := a2 .
 
-End. # working on simplifying the syntax for the user
-
-Lemma a4 [
-      : * @[ev;a][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,$fail[a,a$]]
+Lemma a3' [
+      : * @[ev][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,_]
       ≡ * @[ev;_][xf,xo,T,@[U]]
       ] := _ .
+
+Lemma a3'' [
+      : * @[ev;a][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,_]
+      ≡ * @[ev;_][xf,xo,T,@[U]]
+      ] := _ .
+
+End. # working on simplifying the syntax for the user
+
+Lemma a3''' [
+      : * @[ev][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,_,_]
+      ≡ * @[ev;_][xf,xo,T,@[U]]
+      ] := _ .
+
+Lemma a3'''' [
+      : * @[ev;a][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,_,_]
+      ≡ * @[ev;_][xf,xo,T,@[U]]
+      ] := _ .
+
 
 # Check TTS : [ @[El][A,A$] Type ].
 

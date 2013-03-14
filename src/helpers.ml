@@ -38,6 +38,8 @@ let args4 s =
 
 let cite_tactic tac args = APPLY(TAC tac, args)
 
+let default_tactic = cite_tactic (Tactic_name "default") END
+
 let ( ** ) x s = ARG(x,s)		(* right associative *)
 
 let rec nth_arg n args =

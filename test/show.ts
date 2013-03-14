@@ -2,7 +2,7 @@
 
 Include "rules/TS7.ts".
 
-Show.
+# Show.
 
 #   Local Variables:
 #   compile-command: "make -C .. show "

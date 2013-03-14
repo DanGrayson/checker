@@ -4,6 +4,7 @@ open Error
 open Variables
 open Typesystem
 open Names
+open Helpers
 
 let rec tau (env:environment) e : lf_expr =
   let pos = get_pos e in
@@ -37,35 +38,49 @@ let rec tau (env:environment) e : lf_expr =
           match oh with
           | O_u -> (
               match args with
-              | ARG(u,END) -> Helpers.make_T_U (pos, (Helpers.make_U_next u))
+              | ARG(u,END) -> make_T_U (pos, (make_U_next u))
               | _ -> raise (TypeCheckingFailure(env, [], [pos, "expected [u] to have one branch"])))
           | O_j -> (
               match args with
               | ARG(m1,ARG(m2,END)) ->
-                  Helpers.make_T_Pi
-                    (with_pos_of m1 (Helpers.make_T_U m1))
-                    (id "_", (with_pos_of m2 (Helpers.make_T_U m2)))
+                  make_T_Pi
+                    (with_pos_of m1 (make_T_U m1))
+                    (id "_", (with_pos_of m2 (make_T_U m2)))
               | _ -> raise (TypeCheckingFailure(env, [], [pos, "expected [j] to have two branches"])))
-          | O_ev' -> raise NotImplemented
+          | O_ev' -> (
+              match args with
+              | ARG(f,ARG(o,ARG(t1,ARG((_,LAMBDA(x,(pos,LAMBDA(w,t2)))),END)))) ->
+		  let t2 = Substitute.subst_expr o t2 in
+		  let t2 = Substitute.subst_expr (pos,default_tactic (* ? *)) t2 in
+                  unmark t2
+              | _ -> raise Internal)
           | O_ev -> (
               match args with
               | ARG(f,ARG(o,ARG(t1,ARG((_,LAMBDA(x,t2)),END)))) ->
                   unmark (Substitute.subst_expr o t2)
               | _ -> raise Internal)
-          | O_lambda' -> raise NotImplemented
+          | O_lambda' -> (
+              match args with
+              | ARG(t,ARG(o,END)) ->
+		  let x = id "x" in
+		  let x' = id_to_lf x in
+		  let w = idw "x" in
+		  let w' = id_to_lf w in
+                  make_T_Pi' t (lambda2 x w (tau (ts_bind env x t) (Substitute.apply_args o (ARG(x',ARG(w',END))))))
+              | _ -> raise Internal)
           | O_lambda -> (
               match args with
               | ARG(t,ARG(o,END)) ->
 		  let x = id "x" in
 		  let x' = id_to_lf x in
-                  Helpers.make_T_Pi t (x, tau (ts_bind env x t) (Substitute.apply_args o (ARG(x',END))))
+                  make_T_Pi t (x, tau (ts_bind env x t) (Substitute.apply_args o (ARG(x',END))))
               | _ -> raise Internal)
           | O_forall -> (
               match args with
               | ARG(u,ARG(u',_)) ->
-                  Helpers.make_T_U (nowhere 6 (Helpers.make_U_max u u'))
+                  make_T_U (nowhere 6 (make_U_max u u'))
               | _ -> raise Internal)
-          | O_tt -> Helpers.make_T_Pt
+          | O_tt -> make_T_Pt
           | O_pair | O_pr1 | O_pr2 | O_total | O_pt | O_pt_r | O_coprod | O_ii1
           | O_ii2 | O_sum | O_empty | O_empty_r | O_c | O_ip_r | O_ip
           | O_paths | O_refl | O_J | O_rr0 | O_rr1
