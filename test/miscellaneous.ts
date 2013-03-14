@@ -21,8 +21,8 @@ Check Universes.
 
 Axiom A |- T Type.
 
-Check LF (λ x, (@[ev] f x T (λ y, T))).
-Check LF (x⟼(@[ev] f x T (λ y, T))).
+Check LF (λ x, (@[ev] f x T (λ y, T))).			    # two notations for the LF-lambda
+Check LF (x ⟼ (@[ev] f x T (y ⟼ T))).
 
 Check TS λ x:T, x.
 Check TS T.

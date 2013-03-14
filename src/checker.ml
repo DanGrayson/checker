@@ -40,9 +40,10 @@ let error_summary pos =
    )
 
 let print_inconsistency pos lhs rhs =
+  let env = empty_environment in
   Printf.fprintf stderr "%a: universe inconsistency:\n" _pos_of lhs;
-  Printf.fprintf stderr "%a:         %a\n"  _pos_of lhs  _ts lhs;
-  Printf.fprintf stderr "%a:      != %a\n%!"  _pos_of rhs  _ts rhs;
+  Printf.fprintf stderr "%a:         %a\n"  _pos_of lhs  _ts (env,lhs);
+  Printf.fprintf stderr "%a:      != %a\n%!"  _pos_of rhs  _ts (env,rhs);
   bump_error_count pos
 
 let protect f posfun =
@@ -121,7 +122,6 @@ let defCommand env defs =
       let tm'' = term_normalization env tm' tp' in
       if not (term_equiv tm' tm'') then (
 	if show_definitions then printf "       %s = %a [normalized]\n%!" name  _e (env,tm'');
-	(* if show_definitions then printf "       %s = %a [normalized, TS format]\n%!" name  _ts tm''; *)
 	let _ = type_check [] env tm'' tp' in ();
        );
       let tp'' = type_normalization env tp' in
@@ -172,24 +172,24 @@ let checkWitnessedJudgmentCommand env t =
   printf "           : okay\n%!"
 
 let checkTSCommand env x =
-  printf "Check      : %a\n%!" _ts x;
+  printf "Check      : %a\n%!" _ts (env,x);
   let (x,t) = Lfcheck.type_synthesis env x in
   printf "     type :: %a\n" _t (env,t);
   if unmark t = unmark oexp then (
     match unmark x with
     | LAMBDA _ ->
 	let ts = Tau.tau env x in
-	printf "      type : %a ?\n%!" _ts ts
+	printf "      type : %a ?\n%!" _ts (env,ts)
     | _ -> ()
    );
   if try_normalization then
     let x' = Lfcheck.term_normalization env x t in
-    printf "           = %a [normalized]\n%!" _e (env,x')
+    printf "           = %a [normalized]\n%!" _ts (env,x')
 
 let alphaCommand env (x,y) =
   printf "Alpha      : %s\n" (if (term_equiv x y) then "true" else "false");
-  printf "           : %a\n" _ts x;
-  printf "           : %a\n%!" _ts y
+  printf "           : %a\n" _ts (env,x);
+  printf "           : %a\n%!" _ts (env,y)
 
 let checkUniversesCommand env pos =
   try

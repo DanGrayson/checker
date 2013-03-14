@@ -46,6 +46,6 @@ let function_expected env f t =
 
 let mismatch_term_tstype_tstype env e s t =
   raise (TypeCheckingFailure (env, [], [
-               get_pos e, "error: expected term\n\t" ^ ts_expr_to_string e;
-               get_pos s, "of type\n\t" ^ ts_expr_to_string s;
-               get_pos t, "to be compatible with type\n\t" ^ ts_expr_to_string t]))
+               get_pos e, "error: expected term\n\t" ^ ts_expr_to_string env e;
+               get_pos s, "of type\n\t" ^ ts_expr_to_string env s;
+               get_pos t, "to be compatible with type\n\t" ^ ts_expr_to_string env t]))

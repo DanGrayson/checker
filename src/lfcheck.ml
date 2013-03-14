@@ -242,7 +242,7 @@ let rec check_istype env t =
 	  let p,o,t = args3 args in
 	  check_hastype env p o t
       | _ -> err env (get_pos t) "invalid type, or not implemented yet.")
-  | _ -> err env (get_pos t) ("invalid type, or not implemented yet: " ^ ts_expr_to_string t)
+  | _ -> err env (get_pos t) ("invalid type, or not implemented yet: " ^ ts_expr_to_string env t)
 
 and check_hastype env p o t =
   if false then printf "check_hastype\n p = %a\n o = %a\n t = %a\n%!" _e (env,p) _e (env,o) _e (env,t);

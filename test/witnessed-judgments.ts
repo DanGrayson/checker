@@ -22,7 +22,7 @@ Check TTS : [ T -> @[U] Type ].
 Variable xf : T -> @[U].
 Axiom LF xf$ : wexp.
 Axiom LF xo$ : wexp.
-Show.
+
 Check TTS : [ _ : xf : T -> @[U] ].
 Check TTS : [ _ : xo : T ].
 Check TTS : [ _ : @[ev;_][xf,xo,T,@[U]] : @[U] ].
@@ -91,7 +91,7 @@ Lemma a2a [ : xf : T->@[U] ] := a2 .
 End. # working on simplifying the syntax for the user
 
 Lemma a4 [
-      : * @[ev;_][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,_]
+      : * @[ev;a][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,$fail[a,a$]]
       ≡ * @[ev;_][xf,xo,T,@[U]]
       ] := _ .
 

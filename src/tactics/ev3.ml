@@ -19,8 +19,8 @@ let ev3 (surr:surrounding) env pos t args =
 	| _ -> raise (TypeCheckingFailure(
 		      env, surr, [
 		      get_pos f,
-		      "expected a TS function:\n    " ^ ts_expr_to_string f ^
-		      "\n  : " ^ ts_expr_to_string tf ])))
+		      "expected a TS function:\n    " ^ ts_expr_to_string env f ^
+		      "\n  : " ^ ts_expr_to_string env tf ])))
 
       with NotImplemented ->
 	printf "warning: ev3: \"tau\" not implemented for %a\n%!" _e (env,f);
