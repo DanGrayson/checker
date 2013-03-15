@@ -103,7 +103,7 @@ let show_tactic_result env k =
   k
 
 let rec natural_type (env:environment) (x:lf_expr) : lf_type =
-  (* if true then raise Internal;          (\* this function is unused *\) *)
+  (* this function is not well-debugged *)
   (* assume nothing *)
   (* see figure 9 page 696 [EEST] *)
   let pos = get_pos x in
@@ -111,9 +111,13 @@ let rec natural_type (env:environment) (x:lf_expr) : lf_type =
   | APPLY(l,args) ->
       let t = head_to_type env pos l in
       let rec repeat i args t =
+	let t = un_singleton t 		(* even this is probably not enough to ensure that a function type t looks like one *)
+	in
         match args, unmark t with
         | ARG(x,args), F_Pi(v,a,b) -> repeat (i+1) args (subst_type x b)
-        | ARG _, _ -> err env pos "at least one argument too many"
+        | ARG(x,args), _ -> 
+	    printf " t=%a\n x=%a\n%!" _t (env,t) _e (env,x);
+	    err env pos "at least one argument too many"
         | CAR args, F_Sigma(v,a,b) -> repeat (i+1) args a
         | CAR _, _ -> err env pos "pi1 expected a pair (2)"
         | CDR args, F_Sigma(v,a,b) -> repeat (i+1) args b

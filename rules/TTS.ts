@@ -10,7 +10,12 @@ Axiom 1.6 Wtrans { ⊢ T U V Type } { ⊢ p12 : T ≡ U } { ⊢ p23: U ≡ V } [
 
 Axiom 1.7 wrefl { ⊢ T Type } { ⊢ p : o : T } { ⊢ p' : o' : T } [ o ~ o' : T ] [ @[wrefl][p,p'] : o ≡ o' : T ].
 
-Check wrefl.
+Axiom 1.8 wsymm { ⊢ T Type } (o:oexp) ⇒ (o':oexp) ⇒ { ⊢ q : o ≡ o' : T } [ @[wsymm][q] : o' ≡ o : T ].
+
+# this just displays an alternative possibility, in case we would prefer to write @[wsymm][p,p',q]:
+Axiom 1.8 wsymm' { ⊢ T Type } { ⊢ p : o : T } { ⊢ p' : o' : T } { ⊢ q : o ≡ o' : T } [ @[wsymm][q] : o' ≡ o : T ]. 
+
+Axiom 1.9 wtrans { ⊢ T Type } (o1:oexp) ⇒ (o2:oexp) ⇒ (o3:oexp) ⇒ { ⊢ p12 : o1 ≡ o2 : T } { ⊢ p23 : o2 ≡ o3 : T } [ @[wtrans][p12,p23,o2] : o1 ≡ o3 : T ].
 
 # End.
 
