@@ -580,7 +580,7 @@ let print_surroundings (surr:surrounding) =
   let show_surr (env,i,e,t) =
     (match i with
     | S_projection i -> printf "     projection pi_%d\n" i
-    | S_argument i -> printf "     part %d\n" i
+    | S_arg i -> printf "     part %d\n" i
     | S_body -> printf "     body\n");
     (match e with
     | Some e -> printf "        in expression %a\n" _e (env,e)

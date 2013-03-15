@@ -5,7 +5,10 @@ open Lfcheck
 open Printer
 open Printf
 
-let other_tactics : tactic_function list = [Ev3.ev3]
+let other_tactics : tactic_function list = [
+  Ev2.ev2;
+  Ev3.ev3;
+]
 
 let try_other_tactics surr env pos t args =
   let rec repeat tactics =

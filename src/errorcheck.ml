@@ -44,6 +44,11 @@ let function_expected env f t =
                     get_pos f, "error: encountered a non-function\n\t" ^ lf_expr_to_string env f;
                     get_pos t, "of type\n\t" ^ lf_type_to_string env t]))
 
+let ts_function_expected env f t =
+  raise (TypeCheckingFailure (env, [], [
+                    get_pos f, "error: encountered a non-function\n\t" ^ lf_expr_to_string env f;
+                    get_pos t, "of type\n\t" ^ lf_expr_to_string env t]))
+
 let mismatch_term_tstype_tstype env e s t =
   raise (TypeCheckingFailure (env, [], [
                get_pos e, "error: expected term\n\t" ^ ts_expr_to_string env e;

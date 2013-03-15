@@ -593,7 +593,7 @@ and type_synthesis (surr:surrounding) (env:environment) (m:lf_expr) : lf_expr * 
       let rec repeat i env head_type args_passed args = (
         match unmark head_type, args with
         | F_Pi(v,a',a''), ARG(m',args') ->
-            let surr = (env,S_argument i,Some m,None) :: surr in
+            let surr = (env,S_arg i,Some m,None) :: surr in
             let env = apply_ts_binder env i m in
             let m' = type_check surr env m' a' in
 	    if !debug_mode then (
@@ -655,8 +655,8 @@ let type_validity (surr:surrounding) (env:environment) (t:lf_type) : lf_type =
     ( pos,
       match t with
       | F_Pi(v,t,u) ->
-          let t = type_validity ((env,S_argument 1,None,Some t0) :: surr) env t in
-          let u = type_validity ((env,S_argument 2,None,Some t0) :: surr) (local_lf_bind env v t) u in (
+          let t = type_validity ((env,S_arg 1,None,Some t0) :: surr) env t in
+          let u = type_validity ((env,S_arg 2,None,Some t0) :: surr) (local_lf_bind env v t) u in (
 	  try
 	    check_less_equal t u
 	  with
@@ -667,8 +667,8 @@ let type_validity (surr:surrounding) (env:environment) (t:lf_type) : lf_type =
 			get_pos u, "to be subordinate to type of kind involving \"" ^ lf_kind_to_string env l ^ "\""])));
           F_Pi(v,t,u)
       | F_Sigma(v,t,u) ->
-          let t = type_validity ((env,S_argument 1,None,Some t0) :: surr) env t in
-          let u = type_validity ((env,S_argument 2,None,Some t0) :: surr) (local_lf_bind env v t) u in
+          let t = type_validity ((env,S_arg 1,None,Some t0) :: surr) env t in
+          let u = type_validity ((env,S_arg 2,None,Some t0) :: surr) (local_lf_bind env v t) u in
           F_Sigma(v,t,u)
       | F_Apply(head,args) ->
           let kind =
@@ -680,15 +680,15 @@ let type_validity (surr:surrounding) (env:environment) (t:lf_type) : lf_type =
             | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), [] -> []
             | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), x :: args -> err env pos "at least one argument too many";
             | K_Pi(v,a,kind'), x :: args ->
-                let x' = type_check ((env,S_argument i,None,Some t0) :: surr) env x a in
+                let x' = type_check ((env,S_arg i,None,Some t0) :: surr) env x a in
                 x' :: repeat (i+1) env (subst_kind x' kind') args
             | K_Pi(_,a,_), [] -> errmissingarg env pos a
           in
           let args' = repeat 1 env kind args in
           F_Apply(head,args')
       | F_Singleton(x,t) ->
-          let t = type_validity ((env,S_argument 2,None,Some t0) :: surr) env t in
-          let x = type_check ((env,S_argument 1,None,Some t0) :: surr) env x t in                (* rule 46 *)
+          let t = type_validity ((env,S_arg 2,None,Some t0) :: surr) env t in
+          let x = type_check ((env,S_arg 1,None,Some t0) :: surr) env x t in                (* rule 46 *)
           F_Singleton(x,t)
      ) in
   type_validity surr env t

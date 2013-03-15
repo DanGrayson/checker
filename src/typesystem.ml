@@ -610,7 +610,7 @@ let empty_uContext = UContext([],[])
 (** Tactics. *)
 
 type surrounding_component =
-  | S_argument of int
+  | S_arg of int
   | S_projection of int
   | S_body
 
