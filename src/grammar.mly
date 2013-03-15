@@ -43,6 +43,7 @@ open Printer
 %right
 
   DoubleArrowFromBar			(* TS notation for LF lambda *)
+  ArrowFromBar				(* TS notation for TS lambda *)
   DoubleArrow				(* function type *)
   Arrow					(* function type *)
   Times					(* product type *)
@@ -592,11 +593,19 @@ unmarked_ts_expr:
     | f= ts_expr o= ts_expr
 	%prec Reduce_application
 	{ let pos = Position($startpos, $endpos) in
-	  APPLY(O O_ev, f ** o ** (pos, cite_tactic (Tactic_name "ev3") END) ** END) }
+	  if !ts_mode
+	  then APPLY(O O_ev,  f ** o ** (pos, default_tactic) ** END) 
+	  else APPLY(O O_ev', f ** o ** (pos, default_tactic) ** (pos, default_tactic) ** END) 
+	}
 
+    | LeftParen x= identifier Colon t= ts_expr RightParen ArrowFromBar o= ts_expr
     | Lambda x= identifier Colon t= ts_expr Comma o= ts_expr
 	%prec Reduce_binder
-	{ make_O_lambda t (x,o) }
+	{ 
+	  if !ts_mode
+	  then make_O_lambda  t (x,o) 
+	  else make_O_lambda' t (x,o) 
+	}
 
     | Star o= ts_expr
 	{ let pos = Position($startpos, $endpos) in

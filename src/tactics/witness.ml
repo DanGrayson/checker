@@ -102,8 +102,7 @@ let witness (surr:surrounding) (env:environment) (pos:position) (t:lf_type) (arg
 	TacticSuccess (find_w_object_equality env o o' t)
     | (env,S_arg 1, None, Some (pos,F_Apply(F_witnessed_type_equality,[_;t;t']))) :: _ ->
 	TacticSuccess (find_w_type_equality env t t')
-    | (env,S_arg 1, Some (pos,APPLY(T T_El', ARG(o, _))), None) :: _ ->
-	TacticSuccess (find_w_hastype env o uuu)
+    | (env,S_arg'(1,T T_El',ARG(o,_),_), _, _) :: _ -> TacticSuccess (find_w_hastype env o uuu)
     | _ -> TacticFailure
   with
     WitnessNotFound -> TacticFailure

@@ -88,30 +88,37 @@ Check LF a3.
 
 Lemma a2a [ : xf : T->@[U] ] := a2 .
 
-Lemma a3' [
-      : * @[ev][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,_]
-      ≡ * @[ev;_][xf,xo,T,@[U]]
-      ] := _ .
-
-Lemma a3'' [
-      : * @[ev;a][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,_]
-      ≡ * @[ev;_][xf,xo,T,@[U]]
-      ] := _ .
-
-End. # working on simplifying the syntax for the user
-
-Lemma a3''' [
+Lemma a5 [
       : * @[ev][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,_,_]
       ≡ * @[ev;_][xf,xo,T,@[U]]
       ] := _ .
 
-Lemma a3'''' [
+Lemma a6 [
       : * @[ev;a][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,_,_]
       ≡ * @[ev;_][xf,xo,T,@[U]]
       ] := _ .
 
+Lemma a7 [
+      : * @[λ;y][T,xf y] xo
+      ≡ * xf xo
+      ] := _ .
 
-# Check TTS : [ @[El][A,A$] Type ].
+Lemma a8 [
+      : * (λ y:T,xf y) xo
+      ≡ * xf xo
+      ] := _ .
+
+Lemma a9 [
+      : * ((y:T) |-> xf y) xo
+      ≡ * xf xo
+      ] := _ .
+
+Lemma a10 [
+      : * ((y:T) ⟼ xf y) xo
+      ≡ * xf xo
+      ] := _ .
+
+End. # working on simplifying the syntax for the user
 
 #   Local Variables:
 #   compile-command: "make -C .. witnessed-judgments "

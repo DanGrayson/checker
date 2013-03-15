@@ -9,7 +9,6 @@ let _ = List.iter add_tactic [
   "fail", Fail.fail;
   (* "admit", Admit.admit; *)
   "apply", Apply.apply;
-  "tn1", Tn.tn1;
   "tn12", Tn.tn12;
   "check", Check.check;
   "shuffle", Shuffle.shuffle;

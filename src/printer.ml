@@ -580,7 +580,10 @@ let print_surroundings (surr:surrounding) =
   let show_surr (env,i,e,t) =
     (match i with
     | S_projection i -> printf "     projection pi_%d\n" i
-    | S_arg i -> printf "     part %d\n" i
+    | S_arg i -> printf "     argument %d\n" i
+    | S_arg'(i,h,args_passed,args_coming) -> 
+	printf "     argument %d\n        with head %a\n        and with arguments passed: %a\n        and with arguments coming: %a\n" 
+	  i _h h _s (reverse_spine args_passed) _s (args_coming)
     | S_body -> printf "     body\n");
     (match e with
     | Some e -> printf "        in expression %a\n" _e (env,e)

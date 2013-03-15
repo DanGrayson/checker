@@ -593,7 +593,7 @@ and type_synthesis (surr:surrounding) (env:environment) (m:lf_expr) : lf_expr * 
       let rec repeat i env head_type args_passed args = (
         match unmark head_type, args with
         | F_Pi(v,a',a''), ARG(m',args') ->
-            let surr = (env,S_arg i,Some m,None) :: surr in
+            let surr = (env,S_arg'(i,head,args_passed,args'),Some m,None) :: surr in
             let env = apply_ts_binder env i m in
             let m' = type_check surr env m' a' in
 	    if !debug_mode then (

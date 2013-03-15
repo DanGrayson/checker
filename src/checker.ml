@@ -4,7 +4,7 @@ let debug = false
 
 let show_rules = false
 
-let show_definitions = false
+let show_definitions = true
 
 let try_normalization = true
 
