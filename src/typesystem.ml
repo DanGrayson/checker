@@ -162,10 +162,10 @@ let oexp = F_oexp @@ []
 
 let rec arrow_good_var_name t =
   match unmark t with 
-  | F_Apply(F_istype _,_) -> id "i"
-  | F_Apply(F_hastype _,_) -> id "h"
-  | F_Apply(F_type_equality _,_) -> id "teq"
-  | F_Apply(F_object_equality _,_) -> id "oeq"
+  | F_Apply(F_istype,_) -> id "i"
+  | F_Apply(F_hastype,_) -> id "h"
+  | F_Apply(F_type_equality,_) -> id "teq"
+  | F_Apply(F_object_equality,_) -> id "oeq"
   | F_Pi(_,_,u) -> arrow_good_var_name u
   | _ -> id "x"
 

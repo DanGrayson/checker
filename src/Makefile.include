@@ -20,8 +20,8 @@ SRCFILES =					\
 	src/checker.ml				\
 	$(TACTIC_FILES)
 
-# CODE = native
 CODE = byte
+# CODE = native
 
 CHECKER_EXE = checker.$(CODE)
 
@@ -41,7 +41,12 @@ CHECKER := $(CHECKER_ENV) ./$(CHECKER_EXE) $(CHECKER_OPTIONS)
 
 # 8 below refers to Warning 8: this pattern-matching is not exhaustive.
 OCFLAGS = -g,-annot,-w,@8
-BFLAGS = -I src -I src/tactics -cflags $(OCFLAGS) -lflags -g -yaccflag -v -menhir 'menhir --explain --error-recovery' -use-menhir
+COMMON_BFLAGS = -I src -I src/tactics -lflags -g -yaccflag -v -menhir 'menhir --explain --error-recovery' -use-menhir 
+BFLAGS        = $(COMMON_BFLAGS) -cflags $(OCFLAGS)
+
+# this doesn't work because of a bug in ocamlbuild:
+#BFLAGS_NATIVE = $(COMMON_BFLAGS) -cflags $(OCFLAGS),-S
+BFLAGS_NATIVE = $(COMMON_BFLAGS) -cflags $(OCFLAGS)
 
 # add -yaccflag --trace to ocamlbuild command line to get the menhir parser to display a trace
 # BFLAGS += -yaccflag --trace
@@ -54,13 +59,16 @@ BASENAMES = $(shell for i in $(patsubst %.mli, %, $(patsubst %.mly, %, $(patsubs
 %.cmo: %.ml; ocamlbuild $(BFLAGS) $*.cmo
 %.cmo: %.mll; ocamlbuild $(BFLAGS) $*.cmo
 %.cmo: %.mly; ocamlbuild $(BFLAGS) $*.cmo
-%.cmx: %.ml; ocamlbuild $(BFLAGS) $*.cmx
-%.cmx: %.mll; ocamlbuild $(BFLAGS) $*.cmx
-%.cmx: %.mly; ocamlbuild $(BFLAGS) $*.cmx
+%.cmx: %.ml; ocamlbuild $(BFLAGS_NATIVE) $*.cmx
+%.cmx: %.mll; ocamlbuild $(BFLAGS_NATIVE) $*.cmx
+%.cmx: %.mly; ocamlbuild $(BFLAGS_NATIVE) $*.cmx
 
 all: build
 build: src/$(CHECKER_EXE)
-src/checker.byte src/checker.native: always; ocamlbuild $(BFLAGS) $@
+
+# note: building checker.native will build both *.cmo and *.cmx files (???)
+src/checker.native: BFLAGS = $(BFLAGS_NATIVE)
+src/checker.native src/checker.byte: always; ocamlbuild $(BFLAGS) $@
 always:
 clean: clean_src
 clean_src:; ocamlbuild -clean
