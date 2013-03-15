@@ -478,11 +478,15 @@ let _pos file x = output_string file (errfmt x)
 
 let _i file x = output_string file (idtostring x)
 
+let _im file x = output_string file (idtostring (unmark x))
+
 let _il file x = List.iter (fun x -> printf " "; _i file x) x
 
 let _i_phantom file x = output_string file (phantom (idtostring x))
 
 let _v file x = output_string file (vartostring x)
+
+let _vm file x = output_string file (vartostring (unmark x))
 
 let _vl file x = List.iter (fun x -> printf " "; _v file x) x
 
@@ -505,6 +509,8 @@ let _a file (env,x) = Array.iter (fun x -> printf " "; _e file (env,x)) x
 let _h file x = output_string file (lf_head_to_string x)
 
 let _t file (env,x) = output_string file (lf_type_to_string env x)
+
+let _tn file (env,x) = output_string file (lf_type_to_string env (no_pos 123,x))
 
 let _k file (env,x) = output_string file (lf_kind_to_string env x)
 

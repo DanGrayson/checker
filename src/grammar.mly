@@ -140,13 +140,13 @@ unmarked_lf_type:
 	  unmark (pi1_implication (v,a) b) }
 
     | v= marked_identifier Type
-	{ let (pos,v) = v in make_F_Sigma texp (v,istype (var_to_lf_pos pos (Var v))) }
+	{ let (pos,v) = v in make_F_Sigma texp (v,istype (id_to_expr pos v)) }
 
     | v= marked_identifier ColonColon t= lf_expr
-	{ let (pos,v) = v in make_F_Sigma oexp (v,hastype (var_to_lf_pos pos (Var v)) t) }
+	{ let (pos,v) = v in make_F_Sigma oexp (v,hastype (id_to_expr pos v) t) }
 
     | v= marked_identifier ColonColonEqual e= lf_expr ColonColon t= lf_expr
-	{ let (pos,v) = v in make_F_Sigma (with_pos_of e (F_Singleton(e,oexp))) (v,hastype (var_to_lf_pos pos (Var v)) t) }
+	{ let (pos,v) = v in make_F_Sigma (with_pos_of e (F_Singleton(e,oexp))) (v,hastype (id_to_expr pos v) t) }
 
 lf_type_constant:
 
@@ -380,12 +380,12 @@ unmarked_ts_judgment:
     | Type
 	{ let pos = Position($startpos, $endpos) in
 	  let v = id "T" in
-	  make_F_Sigma texp (v,with_pos pos (F_Apply(F_istype, [var_to_lf_pos pos (Var v)]))) }
+	  make_F_Sigma texp (v,with_pos pos (F_Apply(F_istype, [id_to_expr pos v]))) }
 
     | Colon t= ts_expr
 	{ let v = id "o" in
 	  let pos = get_pos t in
-	  make_F_Sigma oexp (v,with_pos pos (F_Apply(F_hastype, [var_to_lf_pos pos (Var v); t]))) }
+	  make_F_Sigma oexp (v,with_pos pos (F_Apply(F_hastype, [id_to_expr pos v; t]))) }
 
     | Turnstile x= ts_expr Colon t= ts_expr
 	{ unmark (this_object_of_type (get_pos x) x t) }
@@ -394,7 +394,7 @@ unmarked_ts_judgment:
 	{ let v = id "t" in
 	  let pos = get_pos a in
 	  let a = with_pos pos (F_Singleton(a,texp)) in
-	  let b = with_pos pos (F_Apply(F_istype, [var_to_lf_pos pos (Var v)])) in
+	  let b = with_pos pos (F_Apply(F_istype, [id_to_expr pos v])) in
 	  make_F_Sigma a (v,b)
 	}
 
@@ -421,37 +421,23 @@ unmarked_ts_judgment:
 		 let f = match bj with
 		 | ULEV ->
 		     if c <> [] then $syntaxerror;
-		     (fun v u -> with_pos_of v (make_F_Pi uexp (unmark v, u)))
+		     fun v u -> with_pos_of v (make_F_Pi uexp (unmark v, u))
 		 | IST ->
-		     (fun v u -> with_pos_of v
-			 (apply_binder pos c v texp
-			    (fun pos t -> let t = var_to_lf_pos pos (Var t) in istype t) u))
+		     fun v u -> apply_binder pos c v texp u istype_v
 		 | HAST t ->
-		     (fun v u -> with_pos_of v
-			 (apply_binder pos c v oexp
-			    (fun pos o -> let o = var_to_lf_pos pos (Var o) in hastype o t) u))
+		     fun v u -> apply_binder pos c v oexp u (hastype_v t)
 		 | W_HAST(o,t) ->
-		     (fun v u ->
-		       let ov = (
-			 match unmark o with
-			 | APPLY(V ov, END) -> with_pos_of o ov
-			 | _ ->
-			     fprintf stderr "%a: expected a variable\n%!" _pos (get_pos o);
-			     $syntaxerror)
-		       in
-		       ignore ov;
-		       raise NotImplemented (* should rewrite and simplify apply_binder first, so it can be adapted here *)
-		     )
+		     fun v u -> 
+		       let o' = id_to_expr (get_pos o) (unmark o) in
+		       let u = apply_binder pos c v wexp u (witnessed_hastype_v o' t) in
+		       let w = bind_pi (pos,unmark o,oexp) u in
+		       printf " binder result = %a\n%!" _t (empty_environment,w);
+		       w
 		 | W_TEQ(t1,t2) ->
-		     (fun v u -> with_pos_of v
-			 (apply_binder pos c v wexp
-			    (fun pos p -> let p = var_to_lf_pos pos (Var p) in witnessed_type_equality p t1 t2 ) u))
+		     fun v u -> apply_binder pos c v wexp u (witnessed_type_equality_v t1 t2)
 		 | W_OEQ(o1,o2,t) ->
-		     (fun v u -> with_pos_of v
-			 (apply_binder pos c v wexp
-			    (fun pos p -> let p = var_to_lf_pos pos (Var p) in witnessed_object_equality p o1 o2 t ) u))
-		 in
-		 List.fold_right f v u)
+		     fun v u -> apply_binder pos c v wexp u (witnessed_object_equality_v o1 o2 t)
+		 in List.fold_right f v u)
 	      vbj u in
 	  unmark r
 	}
@@ -511,7 +497,7 @@ binder_judgment:
 
     | Colon t= ts_expr { HAST t }
 
-    | Colon o= ts_expr Colon t= ts_expr { W_HAST(o,t) }
+    | Colon o= marked_identifier Colon t= ts_expr { W_HAST(o,t) }
 
     | Colon x= ts_expr EqualEqual y= ts_expr { W_TEQ(x,y) }
 

@@ -172,8 +172,16 @@ let rec arrow_good_var_name t =
 let arrow a b = nowhere 4 (F_Pi(arrow_good_var_name a, a, b))
 let ( @-> ) = arrow
 
+let var_to_lf_bare v = nowhere 1    (APPLY(V v,END))
+let var_to_expr pos v = with_pos pos (APPLY(V v,END))
+
+let id_to_expr_bare v = var_to_lf_bare (Var v)
+let id_to_expr pos v = var_to_expr pos (Var v)
+
 let istype t = F_istype @@ [t]				       (* t Type *)
+let istype_v pos t = let t = id_to_expr pos t in istype t
 let hastype o t = F_hastype @@ [o;t]			       (* o : t *)
+let hastype_v t pos o = let o = id_to_expr pos o in hastype o t
 let ulevel_equality u u' = F_ulevel_equality @@ [u;u']	       (* u ~ u' *)
 let type_uequality t t' = F_type_uequality @@ [t;t']	       (* t ~ t' *)
 let type_equality t t' = F_type_equality @@ [t;t']	       (* t = t' *)
@@ -194,8 +202,11 @@ let object_equality_witness o o' t = F_object_equality_witness @@ [ o;o';t] (* o
 
 let witnessed_istype p t = F_witnessed_istype @@ [p;t]	       (* p : t Type *)
 let witnessed_hastype p o t = F_witnessed_hastype @@ [p;o;t]   (* p : o : t *)
+let witnessed_hastype_v o t pos p = let p = id_to_expr pos p in witnessed_hastype p o t
 let witnessed_type_equality p t t' = F_witnessed_type_equality @@ [p;t;t'] (* p : t = t' *)
+let witnessed_type_equality_v t t' pos p = let p = id_to_expr pos p in witnessed_type_equality p t t'
 let witnessed_object_equality p o o' t = F_witnessed_object_equality @@ [ p;o;o';t] (* p : o = o' : t *)
+let witnessed_object_equality_v o o' t' pos p = let p = id_to_expr pos p in witnessed_object_equality p o o' t'
 
 let texp1 = oexp @-> texp
 let texp2 = oexp @-> oexp @-> texp
@@ -361,14 +372,11 @@ let witnessed_hastype_kind = wexp @@-> oexp @@-> texp @@-> K_witnessed_judgment
 let witnessed_type_equality_kind = wexp @@-> texp @@-> texp @@-> K_witnessed_judgment
 let witnessed_object_equality_kind = wexp @@-> oexp @@-> oexp @@-> texp @@-> K_witnessed_judgment
 
-let var_to_lf v = nowhere 1 (APPLY(V v,END))
-let  id_to_lf v = var_to_lf (Var v)
-
 let judged_obj_equal_kind =
   K_Pi(id "T",
        a_type,
-       obj_of_type (var_to_lf (VarRel 0))
-       @@-> obj_of_type (var_to_lf (VarRel 1))
+       obj_of_type (var_to_lf_bare (VarRel 0))
+       @@-> obj_of_type (var_to_lf_bare (VarRel 1))
 	 @@-> K_judged_expression)
 
 let tfhead_to_kind = function

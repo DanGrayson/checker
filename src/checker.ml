@@ -88,7 +88,7 @@ let add_tVars env tvars =
     (fun env (pos,t) ->
       let env = global_tts_declare_type env pos t in
       let env = global_lf_bind env pos (id t) texp in
-      let env = global_lf_bind env pos (id (t ^ "$istype")) (istype (var_to_lf (Var (id t)))) in
+      let env = global_lf_bind env pos (id (t ^ "$istype")) (istype (var_to_lf_bare (Var (id t)))) in
       env 
     ) env tvars
 
@@ -97,7 +97,7 @@ let add_oVars env ovars t =
     (fun env (pos,o) -> 
       let env = global_tts_declare_object env pos o t in
       let env = global_lf_bind env pos (id o) oexp in
-      let env = global_lf_bind env pos (id (o ^ "$hastype")) (hastype (var_to_lf (Var (id o))) t) in
+      let env = global_lf_bind env pos (id (o ^ "$hastype")) (hastype (var_to_lf_bare (Var (id o))) t) in
       env 
     ) env ovars
 
@@ -141,13 +141,16 @@ let checkLFCommand env pos x =
   printf "Check LF   = %a\n%!" _e (env,x);
   if is_can x then
     let (x',t) = Lfcheck.type_synthesis env x in
-    printf "           = %a\n" _e (env,x');
+    if not (term_equiv x x') then
+      printf "           = %a [after tactics]\n" _e (env,x');
     printf "           : %a\n%!" _t (env,t);
     if try_normalization then
       let x'' = Lfcheck.term_normalization env x' t in
-      printf "           = %a [normalized]\n%!" _e (env,x'');
+      if not (term_equiv x' x'') then
+	printf "           = %a [normalized]\n%!" _e (env,x'');
       let t' = Lfcheck.type_normalization env t in
-      printf "           : %a [normalized]\n%!" _t (env,t')
+      if not (type_equiv t t') then
+	printf "           : %a [normalized]\n%!" _t (env,t')
 
 let checkLFtypeCommand env t =
   printf "Check      : %a\n%!" _t (env,t);
@@ -172,19 +175,23 @@ let checkWitnessedJudgmentCommand env t =
   printf "           : okay\n%!"
 
 let checkTSCommand env x =
-  printf "Check      : %a\n%!" _ts (env,x);
-  let (x,t) = Lfcheck.type_synthesis env x in
-  printf "     type :: %a\n" _t (env,t);
+  printf "Check      = %a\n%!" _ts (env,x);
+  let (x',t) = Lfcheck.type_synthesis env x in
+  if not (term_equiv x x') then 
+  printf "           = %a [after tactics]\n%!" _ts (env,x');
+  let t' = Lfcheck.natural_type env x' in
+  printf "  nat type : %a\n%!" _t (env,t');
+  printf "      type : %a\n%!" _t (env,t);
   if unmark t = unmark oexp then (
-    match unmark x with
+    match unmark x' with
     | LAMBDA _ ->
-	let ts = Tau.tau env x in
-	printf "      type : %a ?\n%!" _ts (env,ts)
+	let ts = Tau.tau env x' in
+	printf "   TS type : %a ?\n%!" _ts (env,ts)
     | _ -> ()
    );
   if try_normalization then
-    let x' = Lfcheck.term_normalization env x t in
-    printf "           = %a [normalized]\n%!" _ts (env,x')
+    let x'' = Lfcheck.term_normalization env x' t in
+    printf "           = %a [normalized]\n%!" _ts (env,x'')
 
 let alphaCommand env (x,y) =
   printf "Alpha      : %s\n" (if (term_equiv x y) then "true" else "false");

@@ -91,7 +91,7 @@ let apply_tactic surr env pos t args = function
       tactic surr env pos t args
   | Tactic_index n ->
       if n < List.length env.local_lf_context
-      then TacticSuccess (var_to_lf_pos pos (VarRel n))
+      then TacticSuccess (var_to_expr pos (VarRel n))
       else err env pos ("index out of range: "^string_of_int n)
 
 let show_tactic_result env k =
@@ -103,7 +103,7 @@ let show_tactic_result env k =
   k
 
 let rec natural_type (env:environment) (x:lf_expr) : lf_type =
-  if true then raise Internal;          (* this function is unused *)
+  (* if true then raise Internal;          (\* this function is unused *\) *)
   (* assume nothing *)
   (* see figure 9 page 696 [EEST] *)
   let pos = get_pos x in
@@ -118,7 +118,6 @@ let rec natural_type (env:environment) (x:lf_expr) : lf_type =
         | CAR _, _ -> err env pos "pi1 expected a pair (2)"
         | CDR args, F_Sigma(v,a,b) -> repeat (i+1) args b
         | CDR _, _ -> err env pos "pi2 expected a pair (2)"
-        | END, F_Pi(v,a,b) -> errmissingarg env pos a
         | END, t -> t
       in nowhere 5 (repeat 0 args t)
   | LAMBDA _ -> err env pos "LF lambda expression found, has no natural type"
@@ -194,7 +193,7 @@ let open_context t1 (env,p,o,t2) =
   let env = local_tts_declare_object env "x" t1 in
   let v = VarRel 1 in
   let v' = VarRel 0 in
-  let e = var_to_lf v ** var_to_lf v' ** END in
+  let e = var_to_lf_bare v ** var_to_lf_bare v' ** END in
   let p = Substitute.apply_args (rel_shift_expr 1 p) e in
   let o = Substitute.apply_args (rel_shift_expr 1 o) e in
   let t2 = Substitute.apply_args (rel_shift_expr 1 t2) e in
@@ -231,8 +230,8 @@ let rec check_istype env t =
 	  let t1,t2 = args2 args in
 	  check_istype env t1;
 	  let env = local_tts_declare_object env "o" t1 in
-	  let o = var_to_lf (VarRel 1) in
-	  let p = var_to_lf (VarRel 0) in
+	  let o = var_to_lf_bare (VarRel 1) in
+	  let p = var_to_lf_bare (VarRel 0) in
 	  let t2 = Substitute.apply_args (rel_shift_expr 1 t2) (o ** p ** END) in
 	  check_istype env t2
       | T_U' -> ()
@@ -384,7 +383,7 @@ let rec term_equivalence (env:environment) (x:lf_expr) (y:lf_expr) (t:lf_type) :
       term_equivalence env (pi2 x) (pi2 y) (subst_type (pi1 x) b)
   | F_Pi (v,a,b) ->
       let env = local_lf_bind env v a in
-      let v = var_to_lf (VarRel 0) in
+      let v = var_to_lf_bare (VarRel 0) in
       let xres = apply_args (rel_shift_expr 1 x) (ARG(v,END)) in
       let yres = apply_args (rel_shift_expr 1 y) (ARG(v,END)) in
       term_equivalence env xres yres b
@@ -664,7 +663,10 @@ let type_validity (surr:surrounding) (env:environment) (t:lf_type) : lf_type =
 	      raise (TypeCheckingFailure
 		       (env, [], [
 			get_pos t, "expected type of kind involving \"" ^ lf_kind_to_string env k ^ "\"";
-			get_pos u, "to be subordinate to type of kind involving \"" ^ lf_kind_to_string env l ^ "\""])));
+			get_pos u, "to be subordinate to type of kind involving \"" ^ lf_kind_to_string env l ^ "\"";
+			get_pos t, "when expecting type \"" ^ lf_type_to_string env t ^ "\"";
+			get_pos u, "to be a subtype of type \"" ^ lf_type_to_string env u ^ "\"";
+		      ])));
           F_Pi(v,t,u)
       | F_Sigma(v,t,u) ->
           let t = type_validity ((env,S_arg 1,None,Some t0) :: surr) env t in
@@ -716,7 +718,7 @@ let rec term_normalization (env:environment) (x:lf_expr) (t:lf_type) : lf_expr =
       let result =
 	match unmark x with
 	| LAMBDA(_,body) -> body	(* this is just an optimization *)
-	| _ -> apply_args (rel_shift_expr 1 x) (ARG(var_to_lf (VarRel 0),END)) in
+	| _ -> apply_args (rel_shift_expr 1 x) (ARG(var_to_lf_bare (VarRel 0),END)) in
       let body = term_normalization env result b in
       let r = pos, LAMBDA(v,body) in
       if !debug_mode then printf "term_normalization(%d) r = %a\n%!" c _e (env,result);

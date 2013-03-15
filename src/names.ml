@@ -102,8 +102,6 @@ let lf_type_heads = List.map fst lf_type_constant_table
 
 let marked_var_to_lf (pos,v) = pos, APPLY(V v,END)
 
-let var_to_lf_pos pos v = with_pos pos (APPLY(V v,END))
-
 let ensure_new_name env pos name =
   if MapIdentifier.mem name env.global_lf_context then
     raise (MarkedError (pos, "identifier already defined: " ^ idtostring name))

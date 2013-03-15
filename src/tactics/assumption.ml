@@ -15,7 +15,7 @@ let assumption surr env pos t args =
   let rec repeat i = function
     | (v,u) :: envp -> (
 	if Lfcheck.is_subtype env (rel_shift_type (i+1) u) t
-	then TacticSuccess(var_to_lf (VarRel i))
+	then TacticSuccess(var_to_lf_bare (VarRel i))
         else repeat (i+1) envp)
     | [] -> (
         try
@@ -23,7 +23,7 @@ let assumption surr env pos t args =
             (fun v u -> if Lfcheck.is_subtype env u t then raise (FoundOne v)) (* this is probably too expensive to keep doing *)
             env.global_lf_context;
           TacticFailure
-        with FoundOne v -> TacticSuccess(var_to_lf (Var v))
+        with FoundOne v -> TacticSuccess(var_to_lf_bare (Var v))
 	)
   in repeat 0 env.local_lf_context
 

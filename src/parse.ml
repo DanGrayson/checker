@@ -20,7 +20,7 @@ type binder_judgment =
   | ULEV
   | IST
   | HAST of lf_expr
-  | W_HAST of lf_expr * lf_expr
+  | W_HAST of identifier marked * lf_expr
   | W_TEQ of lf_expr * lf_expr
   | W_OEQ of lf_expr * lf_expr * lf_expr
 
@@ -65,7 +65,7 @@ let apply_vars f binders =
   APPLY(V f, 
 	List.fold_right 
 	  (fun (pos,v,a) args -> 
-	    let r = ARG(var_to_lf_pos pos (VarRel !i),args) in
+	    let r = ARG(var_to_expr pos (VarRel !i),args) in
 	    incr i;
 	    r) 
 	  binders
@@ -161,15 +161,15 @@ let pi1_implication ((vpos,v),t) u =
       r
   | None -> raise NotImplemented
 
-let apply_binder pos (c:(identifier marked * lf_expr) list) (v : identifier marked) (t1 : lf_type) (t2 : position -> identifier -> lf_type) (u : lf_type) =
+let apply_binder pos (c:(identifier marked * lf_expr) list) (v : identifier marked) (t1 : lf_type) (u : lf_type) (t2 : position -> identifier -> lf_type) =
   (* syntax is { v_1 : T_1 , ... , v_n : T_n |- v Type } u  or  { v_1 : T_1 , ... , v_n : T_n |- v:T } u *)
   (* t1 is texp or oexp; t2 is (fun t -> istype t) or (fun o -> hastype o t) *)
   let (vpos,v) = v in
-  let c = List.map (fun ((vpos,v),t) -> (vpos,v), (vpos, make_F_Sigma oexp (v,hastype (var_to_lf_pos pos (Var v)) t))) c in
+  let c = List.map (fun ((vpos,v),t) -> (vpos,v), (vpos, make_F_Sigma oexp (v,hastype (var_to_expr pos (Var v)) t))) c in
   let t = pos, make_F_Sigma t1 (v,t2 pos v) in
   let t = List.fold_right pi1_implication c t in
   let u = pi1_implication ((vpos,v),t) u in
-  unmark u
+  u
 
 let apply_judgment_binder pos (j:lf_type) (u:lf_type) =
   (* just like pi1_implication above, except t consists just of j, with no p or e *)
@@ -178,7 +178,7 @@ let apply_judgment_binder pos (j:lf_type) (u:lf_type) =
   if pi1_debug then show_binders "q" q "f" f;
   if pi1_debug then printf " k = %a\n%!" _t (empty_environment,k);
   let n = List.length q + match f with Some _ -> 1 | None -> 0 in
-  let j = Substitute.subst_type (var_to_lf_pos pos (VarRel n)) j in
+  let j = Substitute.subst_type (var_to_expr pos (VarRel n)) j in
   if pi1_debug then printf " j = substituted = %a\n%!" _t (empty_environment,j);
   let k = rel_shift_type 1 k in
   if pi1_debug then printf " k = rel_shift_type 1 k = %a\n%!" _t (empty_environment,k);

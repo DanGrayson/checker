@@ -1,10 +1,16 @@
 # -*- mode: ts; coding: utf-8 -*-
 
-Axiom 4 trefl { ⊢ T U Type } [ T ~ U Type ] [ @[Wrefl] : T ≡ U ].
+Mode TTS.
 
-Axiom 5 teqsymm { ⊢ T U Type } { ⊢ p : T ≡ U } [ @[Wsymm][p] : U ≡ T ].
+Axiom 1.4 Wrefl { ⊢ T U Type } [ T ~ U Type ] [ @[Wrefl] : T ≡ U ].
 
-Axiom 6 teqtrans { ⊢ T U V Type } { ⊢ p12 : T ≡ U } { ⊢ p23: U ≡ V } [ @[Wtrans][p12,p23,U] : T ≡ V ].
+Axiom 1.5 Wsymm { ⊢ T U Type } { ⊢ p : T ≡ U } [ @[Wsymm][p] : U ≡ T ].
+
+Axiom 1.6 Wtrans { ⊢ T U V Type } { ⊢ p12 : T ≡ U } { ⊢ p23: U ≡ V } [ @[Wtrans][p12,p23,U] : T ≡ V ].
+
+Axiom 1.7 wrefl { ⊢ T Type } { ⊢ p : o : T } { ⊢ p' : o' : T } [ o ~ o' : T ] [ @[wrefl][p,p'] : o ≡ o' : T ].
+
+Check wrefl.
 
 # End.
 

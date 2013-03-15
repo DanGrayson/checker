@@ -16,7 +16,7 @@ let abstract env x =
 
 let open_context t1 (env,o,t2) =
   let env = local_tts_declare_object env "x" t1 in
-  let e = var_to_lf (VarRel 1) ** var_to_lf (VarRel 0) ** END in
+  let e = var_to_lf_bare (VarRel 1) ** var_to_lf_bare (VarRel 0) ** END in
   let o = Substitute.apply_args (rel_shift_expr 1 o) e in
   let t2 = Substitute.apply_args (rel_shift_expr 1 t2) e in
   (env,o,t2)
@@ -41,7 +41,7 @@ and find_w_hastype env o t : lf_expr = (
   | APPLY(V v, END) ->
       let t' = tts_fetch_type env v in
       if term_equiv t t'
-      then var_to_lf_pos (get_pos o) (witness_var v)
+      then var_to_expr (get_pos o) (witness_var v)
       else raise WitnessNotFound
   | APPLY(O O_ev',args) ->
       let (f,o,t1,t2) = args4 args in

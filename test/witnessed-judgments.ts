@@ -120,6 +120,8 @@ Lemma a10 [
 
 End. # working on simplifying the syntax for the user
 
+Lemma a8 : * (λ y:T,xf y) xo ≡ * xf xo.
+
 #   Local Variables:
 #   compile-command: "make -C .. witnessed-judgments "
 #   End:

@@ -21,12 +21,17 @@ SRCFILES =					\
 	$(TACTIC_FILES)
 
 CODE = byte
-# CODE = native
+# A convenient way to select native code on the command line is:
+#    make CODE=native
+# A convenient way to select native code without changing the makefile or the command line is:
+#    export MAKEFLAGS=" CODE=native "
 
 CHECKER_EXE = checker.$(CODE)
 
+ifeq ($(CODE),byte)
 # -b indicates a backtrace should be printed for an uncaught exception:
 CHECKER_ENV = OCAMLRUNPARAM=-b
+endif
 # add ,p to get the ocamlyacc parser to display a trace
 # CHECKER_ENV += ,p
 
@@ -37,7 +42,7 @@ ifeq "$(DEBUG)" "yes"
 CHECKER_OPTIONS += --debug
 endif
 
-CHECKER := $(CHECKER_ENV) ./$(CHECKER_EXE) $(CHECKER_OPTIONS)
+CHECKER := $(CHECKER_ENV) time ./$(CHECKER_EXE) $(CHECKER_OPTIONS)
 
 # 8 below refers to Warning 8: this pattern-matching is not exhaustive.
 OCFLAGS = -g,-annot,-w,@8
@@ -64,7 +69,8 @@ BASENAMES = $(shell for i in $(patsubst %.mli, %, $(patsubst %.mly, %, $(patsubs
 %.cmx: %.mly; ocamlbuild $(BFLAGS_NATIVE) $*.cmx
 
 all: build
-build: src/$(CHECKER_EXE)
+build: notify src/$(CHECKER_EXE)
+notify:; @ echo "make: building $(CODE) code"
 
 # note: building checker.native will build both *.cmo and *.cmx files (???)
 src/checker.native: BFLAGS = $(BFLAGS_NATIVE)

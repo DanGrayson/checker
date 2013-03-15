@@ -63,16 +63,16 @@ let rec tau (env:environment) e : lf_expr =
               match args with
               | ARG(t,ARG(o,END)) ->
 		  let x = id "x" in
-		  let x' = id_to_lf x in
+		  let x' = id_to_expr_bare x in
 		  let w = idw "x" in
-		  let w' = id_to_lf w in
+		  let w' = id_to_expr_bare w in
                   make_T_Pi' t (lambda2 x w (tau (ts_bind env x t) (Substitute.apply_args o (ARG(x',ARG(w',END))))))
               | _ -> raise Internal)
           | O_lambda -> (
               match args with
               | ARG(t,ARG(o,END)) ->
 		  let x = id "x" in
-		  let x' = id_to_lf x in
+		  let x' = id_to_expr_bare x in
                   make_T_Pi t (x, tau (ts_bind env x t) (Substitute.apply_args o (ARG(x',END))))
               | _ -> raise Internal)
           | O_forall -> (
