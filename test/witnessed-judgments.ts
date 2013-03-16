@@ -1,8 +1,8 @@
 Mode TTS.
 
-Check LF : (p:wexp) -> (t:texp) -> (o:oexp) -> witnessed_hastype p o t.
-Check LF : (p:wexp) -> (t:texp) -> (t':texp) -> witnessed_type_equality p t t'.
-Check LF : (p:wexp) -> (t:texp) -> (o:oexp) -> (o':oexp) -> witnessed_object_equality p o o' t.
+Check LF : (p:wexp) -> (t:texp) -> (o:oexp) -> witnessed_hastype t o p.
+Check LF : (p:wexp) -> (t:texp) -> (t':texp) -> witnessed_type_equality t t' p.
+Check LF : (p:wexp) -> (t:texp) -> (o:oexp) -> (o':oexp) -> witnessed_object_equality t o o' p.
 
 Axiom LF p : wexp.
 Variable T Type.
@@ -16,111 +16,110 @@ Check TS : [ p : o ≡ o' : T ].
 
 Variable W Type.
 Check TTS : [ @[U] Type ].
-Variable xo : T. 
+Variable x : T. 
 
 Check TTS : [ T -> @[U] Type ].
-Variable xf : T -> @[U].
-Axiom LF xf$ : wexp.
-Axiom LF xo$ : wexp.
+Variable f : T -> @[U].
+Axiom LF f$ : wexp.
+Axiom LF x$ : wexp.
 
-Check TTS : [ _ : xf : T -> @[U] ].
-Check TTS : [ _ : xo : T ].
-Check TTS : [ _ : @[ev;_][xf,xo,T,@[U]] : @[U] ].
-Check TTS : [ _ : @[ev;_][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,@[U]]: @[U]].
+Check TTS : [ _ : f : T -> @[U] ].
+Check TTS : [ _ : x : T ].
+Check TTS : [ _ : @[ev;_][f,x,T,@[U]] : @[U] ].
+Check TTS : [ _ : @[ev;_][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,T,@[U]]: @[U]].
 
-Lemma a1 [ : xf : T->@[U] ] ::= xf$ .
-Lemma a2 [ : xf : T->@[U] ] ::= _ .
-Check TTS : [ @[El][@[ev;_][xf,xo,T,@[U]],@[wev][xf$,xo$]] Type ].
-Check TTS : [ @[El][@[ev;_][xf,xo,T,@[U]],@[wev][a1,xo$]] Type ].
-Check TTS : [ @[El][@[ev;_][xf,xo,T,@[U]],_] Type ].
-Check TTS : [ *@[ev;_][xf,xo,T,@[U]] Type ].		    # * is notation for El
+# Lemma a1 [ : f : T->@[U] ] ::= f$ .
+# Lemma a2 [ : f : T->@[U] ] ::= _ .
+
+Check TTS : [ @[El][@[ev;_][f,x,T,@[U]],@[wev][f$,x$]] Type ].
+# Check TTS : [ @[El][@[ev;_][f,x,T,@[U]],@[wev][a1,x$]] Type ].
+Check TTS : [ @[El][@[ev;_][f,x,T,@[U]],_] Type ].
+Check TTS : [ *@[ev;_][f,x,T,@[U]] Type ].		    # * is notation for El
 
 Check TTS : [ @[Proof][
-    @[wev][@[wlam;o][@[wev][xf$,o$]],xo$],
-    @[ev;_][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,@[U]],
+    @[wev][@[wlam;o][@[wev][f$,o$]],x$],
+    @[ev;_][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,T,@[U]],
     @[U]]
   Type ].
 
 Variable A : @[Proof][
-    @[wev][@[wlam;o][@[wev][xf$,o$]],xo$],
-    @[ev;_][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,@[U]],
+    @[wev][@[wlam;o][@[wev][f$,o$]],x$],
+    @[ev;_][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,T,@[U]],
     @[U]].
 
-Check TTS : [ *@[ev;_][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,@[U]] Type ].
+Check TTS : [ *@[ev;_][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,T,@[U]] Type ].
 
 Check TTS : [
-    _ : @[ev;_][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,@[U]]
-      ≡ @[ev;_][@[λ;z][T,@[ev;_][xf,z,T,@[U]]],xo,T,@[U]]
+    _ : @[ev;_][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,T,@[U]]
+      ≡ @[ev;_][@[λ;z][T,@[ev;_][f,z,T,@[U]]],x,T,@[U]]
       : @[U]
       ].
 
 Check TTS : [
-    _ : @[ev;_][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,@[U]]
-      ≡ @[ev;_][xf,xo,T,@[U]]
+    _ : @[ev;_][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,T,@[U]]
+      ≡ @[ev;_][f,x,T,@[U]]
       : @[U]
       ].
 
-Lemma a4 [
-      : @[ev;_][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,@[U]]
-      ≡ @[ev;_][xf,xo,T,@[U]]
+Check TTS : [ 
+    _ : @[ev;_][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,T,@[U]]
+      ≡ @[ev;_][f,x,T,@[U]]
       : @[U]
-      ] := _.
+      ].
 
 # Make head reduction work.
 # This one is the same as the one above, with objects reversed.
 # Check TTS : [ _
-#       : @[ev;_][xf,xo,T,@[U]]
-#       ≡ @[ev;_][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,@[U]]
+#       : @[ev;_][f,x,T,@[U]]
+#       ≡ @[ev;_][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,T,@[U]]
 #       : @[U]
 #       ].
 
 Check TTS : [
-    _ : * @[ev;_][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,@[U]]
-      ≡ * @[ev;_][xf,xo,T,@[U]]
+    _ : * @[ev;_][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,T,@[U]]
+      ≡ * @[ev;_][f,x,T,@[U]]
       ].
 
-Lemma a3 [
-      : * @[ev;_][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,T,@[U]]
-      ≡ * @[ev;_][xf,xo,T,@[U]]
-      ] := _ .
+Check TTS : [
+    _ : * @[ev;_][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,T,@[U]]
+      ≡ * @[ev;_][f,x,T,@[U]]
+      ].
 
-Check LF a3.
+# Check TTS : [ a2 : f : T->@[U] ] .
 
-Lemma a2a [ : xf : T->@[U] ] := a2 .
+Check TTS : [
+    _ : * @[ev][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,_,_]
+      ≡ * @[ev;_][f,x,T,@[U]]
+      ].
 
-Lemma a5 [
-      : * @[ev][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,_,_]
-      ≡ * @[ev;_][xf,xo,T,@[U]]
-      ] := _ .
+Check TTS : [
+    _ : * @[ev;a][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,_,_]
+      ≡ * @[ev;_][f,x,T,@[U]]
+      ].
 
-Lemma a6 [
-      : * @[ev;a][@[λ;y][T,@[ev;_][xf,y,T,@[U]]],xo,_,_]
-      ≡ * @[ev;_][xf,xo,T,@[U]]
-      ] := _ .
+Check TTS : [
+    _ : * @[λ;y][T,f y] x
+      ≡ * f x
+      ].
 
-Lemma a7 [
-      : * @[λ;y][T,xf y] xo
-      ≡ * xf xo
-      ] := _ .
+Check TTS : [
+    _ : * (λ y:T,f y) x
+      ≡ * f x
+      ].
 
-Lemma a8 [
-      : * (λ y:T,xf y) xo
-      ≡ * xf xo
-      ] := _ .
+Check TTS : [
+    _ : * ((y:T) |-> f y) x
+      ≡ * f x
+      ] .
 
-Lemma a9 [
-      : * ((y:T) |-> xf y) xo
-      ≡ * xf xo
-      ] := _ .
-
-Lemma a10 [
-      : * ((y:T) ⟼ xf y) xo
-      ≡ * xf xo
-      ] := _ .
+Check TTS : [
+    _ : * ((y:T) ⟼ f y) x
+      ≡ * f x
+      ] .
 
 End. # working on simplifying the syntax for the user
 
-Lemma a8 : * (λ y:T,xf y) xo ≡ * xf xo.
+Lemma a8 : * (λ y:T,f y) x ≡ * f x.
 
 #   Local Variables:
 #   compile-command: "make -C .. witnessed-judgments "

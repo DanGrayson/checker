@@ -502,13 +502,15 @@ let _s file x = output_string file (spine_to_string x)
 
 let _e file (env,x) = output_string file (lf_expr_to_string env x)
 
-let _l file (env,x) = List.iter (fun x -> printf " "; _e file (env,x)) x
+let _el file (env,x) = List.iter (fun x -> printf " "; _e file (env,x)) x
 
 let _a file (env,x) = Array.iter (fun x -> printf " "; _e file (env,x)) x
 
 let _h file x = output_string file (lf_head_to_string x)
 
 let _t file (env,x) = output_string file (lf_type_to_string env x)
+
+let _tl file (env,x) = List.iter (fun t -> printf " "; _t file (env,t)) x
 
 let _tn file (env,x) = output_string file (lf_type_to_string env (no_pos 123,x))
 
@@ -586,10 +588,14 @@ let print_surroundings (surr:surrounding) =
   let show_surr (env,i,e,t) =
     (match i with
     | S_projection i -> printf "     projection pi_%d\n" i
-    | S_arg i -> printf "     argument %d\n" i
-    | S_arg'(i,h,args_passed,args_coming) -> 
+    | S_spine i -> printf "     argument %d\n" i
+    | S_spine'(i,h,args_passed,args_coming) -> 
 	printf "     argument %d\n        with head %a\n        and with arguments passed: %a\n        and with arguments coming: %a\n" 
 	  i _h h _s (reverse_spine args_passed) _s (args_coming)
+    | S_type_args(i,args_passed) -> 
+	printf "     type argument %d\n        with arguments passed: %a\n" i _tl (env,args_passed)
+    | S_type_family_args(i,args_passed) ->
+	printf "     type family argument %d\n        with arguments passed: %a\n" i _el (env,args_passed)
     | S_body -> printf "     body\n");
     (match e with
     | Some e -> printf "        in expression %a\n" _e (env,e)

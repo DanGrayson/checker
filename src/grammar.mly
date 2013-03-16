@@ -117,7 +117,7 @@ unmarked_lf_type:
 	{ F_Singleton(x,t) }
 
     | LeftBracket t= lf_expr Type RightBracket
-	{ unmark (istype t) }
+	{ unmark (if !ts_mode then istype t else istype_embedded_witnesses t) }
 
     | LeftBracket a= lf_expr Colon t= lf_expr RightBracket
 	{ unmark (hastype a t) }
@@ -140,7 +140,7 @@ unmarked_lf_type:
 	  unmark (pi1_implication (v,a) b) }
 
     | v= marked_identifier Type
-	{ let (pos,v) = v in make_F_Sigma texp (v,istype (id_to_expr pos v)) }
+	{ let (pos,v) = v in make_F_Sigma texp (v,(if !ts_mode then istype_v else istype_embedded_witnesses_v) pos v) }
 
     | v= marked_identifier ColonColon t= lf_expr
 	{ let (pos,v) = v in make_F_Sigma oexp (v,hastype (id_to_expr pos v) t) }
@@ -380,7 +380,7 @@ unmarked_ts_judgment:
     | Type
 	{ let pos = Position($startpos, $endpos) in
 	  let v = id "T" in
-	  make_F_Sigma texp (v,with_pos pos (F_Apply(F_istype, [id_to_expr pos v]))) }
+	  make_F_Sigma texp (v,(if !ts_mode then istype_v else istype_embedded_witnesses_v) pos v) }
 
     | Colon t= ts_expr
 	{ let v = id "o" in
@@ -391,12 +391,12 @@ unmarked_ts_judgment:
 	{ unmark (this_object_of_type (get_pos x) x t) }
 
     | Turnstile a= ts_expr Type
-	{ let v = id "t" in
-	  let pos = get_pos a in
-	  let a = with_pos pos (F_Singleton(a,texp)) in
-	  let b = with_pos pos (F_Apply(F_istype, [id_to_expr pos v])) in
-	  make_F_Sigma a (v,b)
-	}
+        { let v = id "t" in
+          let pos = get_pos a in
+          let a = with_pos pos (F_Singleton(a,texp)) in
+          let b = if !ts_mode then istype_v pos v else istype_embedded_witnesses_v pos v in
+          make_F_Sigma a (v,b)
+        }
 
     | j= ts_bracketed_judgment
 	{ j }
@@ -423,20 +423,20 @@ unmarked_ts_judgment:
 		     if c <> [] then $syntaxerror;
 		     fun v u -> with_pos_of v (make_F_Pi uexp (unmark v, u))
 		 | IST ->
-		     fun v u -> apply_binder pos c v texp u istype_v
+		     fun v u -> apply_binder pos c v texp u (if !ts_mode then istype_v else istype_embedded_witnesses_v)
 		 | HAST t ->
 		     fun v u -> apply_binder pos c v oexp u (hastype_v t)
 		 | W_HAST(o,t) ->
 		     fun v u -> 
 		       let o' = id_to_expr (get_pos o) (unmark o) in
-		       let u = apply_binder pos c v wexp u (witnessed_hastype_v o' t) in
+		       let u = apply_binder pos c v wexp u (witnessed_hastype_v t o') in
 		       let w = bind_pi (pos,unmark o,oexp) u in
 		       printf " binder result = %a\n%!" _t (empty_environment,w);
 		       w
 		 | W_TEQ(t1,t2) ->
 		     fun v u -> apply_binder pos c v wexp u (witnessed_type_equality_v t1 t2)
 		 | W_OEQ(o1,o2,t) ->
-		     fun v u -> apply_binder pos c v wexp u (witnessed_object_equality_v o1 o2 t)
+		     fun v u -> apply_binder pos c v wexp u (witnessed_object_equality_v t o1 o2)
 		 in List.fold_right f v u)
 	      vbj u in
 	  unmark r
@@ -445,7 +445,7 @@ unmarked_ts_judgment:
 ts_bracketed_judgment:
 
     | LeftBracket a= ts_expr Type RightBracket
-	{ unmark (istype a) }
+	{ unmark (if !ts_mode then istype a else istype_embedded_witnesses a) }
 
     | LeftBracket a= ts_expr EqualEqual b= ts_expr RightBracket
 	{ unmark (type_equality a b) }
@@ -465,29 +465,14 @@ ts_bracketed_judgment:
     | LeftBracket a= ts_expr Tilde b= ts_expr Colon t= ts_expr RightBracket
 	{ unmark (object_uequality a b t) }
 
-    | LeftBracket Colon t= ts_expr Type RightBracket
-	{ unmark (istype_witness t) }
-
-    | LeftBracket Colon x= ts_expr Colon t= ts_expr RightBracket
-	{ unmark (hastype_witness x t) }
-
-    | LeftBracket Colon a= ts_expr EqualEqual b= ts_expr RightBracket
-	{ unmark (type_equality_witness a b) }
-
-    | LeftBracket Colon x= ts_expr EqualEqual y= ts_expr Colon t= ts_expr RightBracket
-	{ unmark (object_equality_witness x y t) }
-
-    | LeftBracket p= ts_expr Colon t= ts_expr Type RightBracket
-	{ unmark (witnessed_istype p t) }
-
     | LeftBracket p= ts_expr Colon x= ts_expr Colon t= ts_expr RightBracket
-	{ unmark (witnessed_hastype p x t) }
+	{ unmark (witnessed_hastype t x p) }
 
     | LeftBracket p= ts_expr Colon a= ts_expr EqualEqual b= ts_expr RightBracket
-	{ unmark (witnessed_type_equality p a b) }
+	{ unmark (witnessed_type_equality a b p) }
 
     | LeftBracket p= ts_expr Colon x= ts_expr EqualEqual y= ts_expr Colon t= ts_expr RightBracket
-	{ unmark (witnessed_object_equality p x y t) }
+	{ unmark (witnessed_object_equality t x y p) }
 
 binder_judgment:
 

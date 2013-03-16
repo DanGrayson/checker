@@ -68,14 +68,9 @@ type lf_type_head =
   | F_judged_type_equal
   | F_judged_obj_equal
   | F_wexp
-      (* the next four are types, whose objects are witnesses; we use these as containers for the judgments of TTS *)
-  | F_istype_witness
-  | F_hastype_witness			(* i.e., p:o:T means p is of type o:T and is a witness that o is of type T *)
-  | F_type_equality_witness
-  | F_object_equality_witness
       (* the next four are judgments, with no objects when running in TTS mode, or with LF derivation trees as objects when running in LF mode *)
-  | F_witnessed_istype
-  | F_witnessed_hastype			(* i.e., p:o:T is a judgment, which must be derived *)
+  | F_istype_witnessed_inside
+  | F_witnessed_hastype
   | F_witnessed_type_equality
   | F_witnessed_object_equality
       (* the next one is a type parametrized by a t-expression T whose objects are pairs (p,o) with p:o:T  *)
@@ -195,18 +190,14 @@ let judged_obj_equal t x y = F_judged_obj_equal @@ [t;x;y]     (* |- x = y : T *
 
 let obj_of_type_witness t = F_obj_of_type_with_witness @@ [t]  (* |- p : o : T *)
 
-let istype_witness t = F_istype_witness @@ [t]		       (* t Type *)
-let hastype_witness o t = F_hastype_witness @@ [o;t]	       (* o : t *)
-let type_equality_witness t t' = F_type_equality_witness @@ [t;t'] (* t = t' *)
-let object_equality_witness o o' t = F_object_equality_witness @@ [ o;o';t] (* o = o' : t *)
-
-let witnessed_istype p t = F_witnessed_istype @@ [p;t]	       (* p : t Type *)
-let witnessed_hastype p o t = F_witnessed_hastype @@ [p;o;t]   (* p : o : t *)
-let witnessed_hastype_v o t pos p = let p = id_to_expr pos p in witnessed_hastype p o t
-let witnessed_type_equality p t t' = F_witnessed_type_equality @@ [p;t;t'] (* p : t = t' *)
-let witnessed_type_equality_v t t' pos p = let p = id_to_expr pos p in witnessed_type_equality p t t'
-let witnessed_object_equality p o o' t = F_witnessed_object_equality @@ [ p;o;o';t] (* p : o = o' : t *)
-let witnessed_object_equality_v o o' t' pos p = let p = id_to_expr pos p in witnessed_object_equality p o o' t'
+let istype_embedded_witnesses t = F_istype_witnessed_inside @@ [t] (* t Type *)
+let istype_embedded_witnesses_v pos t = let t = id_to_expr pos t in istype_embedded_witnesses t
+let witnessed_hastype t o p = F_witnessed_hastype @@ [t;o;p]   (* p : o : t *)
+let witnessed_hastype_v t o pos p = let p = id_to_expr pos p in witnessed_hastype t o p
+let witnessed_type_equality t t' p = F_witnessed_type_equality @@ [t;t';p] (* p : t = t' *)
+let witnessed_type_equality_v t t' pos p = let p = id_to_expr pos p in witnessed_type_equality t t' p
+let witnessed_object_equality t o o' p = F_witnessed_object_equality @@ [t;o;o';p] (* p : o = o' : t *)
+let witnessed_object_equality_v t o o' pos p = let p = id_to_expr pos p in witnessed_object_equality t o o' p
 
 let texp1 = oexp @-> texp
 let texp2 = oexp @-> oexp @-> texp
@@ -362,15 +353,10 @@ let judged_kind_equal_kind = a_type @@-> a_type @@-> K_judged_expression
 
 let obj_of_type_with_witness_kind = texp @@-> K_witnessed_judgment
 
-let istype_witness_kind = texp @@-> K_witnessed_judgment (* unused by VV *)
-let hastype_witness_kind = oexp @@-> texp @@-> K_witnessed_judgment
-let type_equality_witness_kind = texp @@-> texp @@-> K_witnessed_judgment
-let object_equality_witness_kind = oexp @@-> oexp @@-> texp @@-> K_witnessed_judgment
-
-let witnessed_istype_kind = wexp @@-> texp @@-> K_witnessed_judgment (* unused by VV *)
-let witnessed_hastype_kind = wexp @@-> oexp @@-> texp @@-> K_witnessed_judgment
-let witnessed_type_equality_kind = wexp @@-> texp @@-> texp @@-> K_witnessed_judgment
-let witnessed_object_equality_kind = wexp @@-> oexp @@-> oexp @@-> texp @@-> K_witnessed_judgment
+let istype_witnessed_internally_kind = texp @@-> K_witnessed_judgment
+let witnessed_hastype_kind = texp @@-> oexp @@-> wexp @@-> K_witnessed_judgment
+let witnessed_type_equality_kind = texp @@-> texp @@-> wexp @@-> K_witnessed_judgment
+let witnessed_object_equality_kind = texp @@-> oexp @@-> oexp @@-> wexp @@-> K_witnessed_judgment
 
 let judged_obj_equal_kind =
   K_Pi(id "T",
@@ -394,12 +380,8 @@ let tfhead_to_kind = function
   | F_judged_type_equal -> judged_kind_equal_kind
   | F_judged_obj_equal -> judged_obj_equal_kind
 
-  | F_istype_witness -> istype_witness_kind
-  | F_hastype_witness -> hastype_witness_kind
-  | F_type_equality_witness -> type_equality_witness_kind
-  | F_object_equality_witness -> object_equality_witness_kind
+  | F_istype_witnessed_inside -> istype_witnessed_internally_kind
 
-  | F_witnessed_istype -> witnessed_istype_kind
   | F_witnessed_hastype -> witnessed_hastype_kind
   | F_witnessed_type_equality -> witnessed_type_equality_kind
   | F_witnessed_object_equality -> witnessed_object_equality_kind
@@ -618,11 +600,15 @@ let empty_uContext = UContext([],[])
 (** Tactics. *)
 
 type surrounding_component =
-  | S_arg of int			 (* argument position *)
-  | S_arg' of int			 (* argument position *)
+  | S_spine of int			 (* argument position, starting with 1 *)
+  | S_spine' of int			 (* argument position, starting with 1 *)
 	* lf_expr_head			 (* head *)
 	* spine				 (* arguments passed, in reverse order *)
 	* spine				 (* arguments coming *)
+  | S_type_args of int                   (* argument position, starting with 1 *)
+	* lf_type list			 (* arguments passed, possibly updated by tactics *)
+  | S_type_family_args of int            (* argument position, starting with 1 *)
+	* lf_expr list			 (* arguments passed, possibly updated by tactics *)
   | S_projection of int
   | S_body
 

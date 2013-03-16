@@ -11,7 +11,7 @@ let type_equiv = Alpha.UEquivA.type_equiv empty_uContext
 
 (** find the first variable in the context of the right type and return it *)
 let assumption surr env pos t args =
-  if Lfcheck.tactic_tracing then printf "assumption: t = %a\n%!" _t (env,t);
+  if Lfcheck.tactic_tracing then printf "tactic: assumption: t = %a\n%!" _t (env,t);
   let rec repeat i = function
     | (v,u) :: envp -> (
 	if Lfcheck.is_subtype env (rel_shift_type (i+1) u) t

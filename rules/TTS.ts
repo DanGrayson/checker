@@ -2,20 +2,24 @@
 
 Mode TTS.
 
-Axiom 1.4 Wrefl { ⊢ T U Type } [ T ~ U Type ] [ @[Wrefl] : T ≡ U ].
+Axiom Wrefl { ⊢ T U Type } [ T ~ U Type ] [ @[Wrefl] : T ≡ U ].
 
-Axiom 1.5 Wsymm { ⊢ T U Type } { ⊢ p : T ≡ U } [ @[Wsymm][p] : U ≡ T ].
+Axiom Wsymm { ⊢ T U Type, p : T ≡ U } [ @[Wsymm][p] : U ≡ T ].
 
-Axiom 1.6 Wtrans { ⊢ T U V Type } { ⊢ p12 : T ≡ U } { ⊢ p23: U ≡ V } [ @[Wtrans][p12,p23,U] : T ≡ V ].
+Axiom Wtrans { ⊢ T U V Type, p12 : T ≡ U, p23: U ≡ V } [ @[Wtrans][p12,p23,U] : T ≡ V ].
 
-Axiom 1.7 wrefl { ⊢ T Type } { ⊢ p : o : T } { ⊢ p' : o' : T } [ o ~ o' : T ] [ @[wrefl][p,p'] : o ≡ o' : T ].
+Axiom wrefl { ⊢ T Type, p : o : T, p' : o' : T } [ o ~ o' : T ] [ @[wrefl][p,p'] : o ≡ o' : T ].
 
-Axiom 1.8 wsymm { ⊢ T Type } (o:oexp) ⇒ (o':oexp) ⇒ { ⊢ q : o ≡ o' : T } [ @[wsymm][q] : o' ≡ o : T ].
+Axiom wsymm { ⊢ T Type } (o:oexp) ⇒ (o':oexp) ⇒ { ⊢ q : o ≡ o' : T } [ @[wsymm][q] : o' ≡ o : T ].
 
 # this just displays an alternative possibility, in case we would prefer to write @[wsymm][p,p',q]:
-Axiom 1.8 wsymm' { ⊢ T Type } { ⊢ p : o : T } { ⊢ p' : o' : T } { ⊢ q : o ≡ o' : T } [ @[wsymm][q] : o' ≡ o : T ]. 
+Axiom wsymm' { ⊢ T Type, p : o : T, p' : o' : T, q : o ≡ o' : T } [ @[wsymm][q] : o' ≡ o : T ]. 
 
-Axiom 1.9 wtrans { ⊢ T Type } (o1:oexp) ⇒ (o2:oexp) ⇒ (o3:oexp) ⇒ { ⊢ p12 : o1 ≡ o2 : T } { ⊢ p23 : o2 ≡ o3 : T } [ @[wtrans][p12,p23,o2] : o1 ≡ o3 : T ].
+Axiom wtrans { ⊢ T Type } (o1:oexp) ⇒ (o2:oexp) ⇒ (o3:oexp) ⇒ { ⊢ p12 : o1 ≡ o2 : T, p23 : o2 ≡ o3 : T } [ @[wtrans][p12,p23,o2] : o1 ≡ o3 : T ].
+
+Check LF wtrans.
+
+Axiom WEl { ⊢ p : o : @[U] } [ @[El][o,p] Type ].
 
 # End.
 

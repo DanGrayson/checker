@@ -87,7 +87,7 @@ let rec type_normalization (env:environment) (t:lf_expr) : lf_expr =
 let self = nowhere 1234 (cite_tactic (Tactic_name "tscheck") END)
 
 let rec tscheck surr env pos tp args =
-  if tactic_tracing then printf "tscheck: tp = %a\n%!" _t (env,tp);
+  if tactic_tracing then printf "tactic: tscheck: tp = %a\n%!" _t (env,tp);
   match unmark tp with
   | F_Apply(F_istype,[t]) -> (
       if tactic_tracing then see env "t" t;
@@ -100,7 +100,7 @@ let rec tscheck surr env pos tp args =
       | _ -> Default.default surr env pos tp args
       )
   | F_Apply(F_hastype,[x;t]) -> (
-      if tactic_tracing then printf "tscheck\n\t  x = %a\n\t  t = %a\n%!" _e (env,x) _e (env,t);
+      if tactic_tracing then printf "tactic: tscheck\n\t  x = %a\n\t  t = %a\n%!" _e (env,x) _e (env,t);
       try
         let dt = type_validity env t in (* we should be able to get this from the context *)
 	TacticSuccess (type_check env x t dt)

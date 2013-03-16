@@ -13,7 +13,7 @@
 
 *)
 
-let tactic_tracing = false
+let tactic_tracing = true
 
 open Error
 open Errorcheck
@@ -94,12 +94,12 @@ let apply_tactic surr env pos t args = function
       then TacticSuccess (var_to_expr pos (VarRel n))
       else err env pos ("index out of range: "^string_of_int n)
 
-let show_tactic_result env k =
+let show_tactic_result env tac k =
   if tactic_tracing then
   (
    match k with
-   | TacticSuccess e -> printf "tactic success: %a\n%!" _e (env,e)
-   | TacticFailure -> printf "tactic failure\n%!" );
+   | TacticSuccess e -> printf "tactic: %a; success: %a\n%!" _tac tac _e (env,e)
+   | TacticFailure -> printf "tactic: %a; failure\n%!" _tac tac);
   k
 
 let rec natural_type (env:environment) (x:lf_expr) : lf_type =
@@ -241,15 +241,15 @@ let rec check_istype env t =
       | T_U' -> ()
       | T_El' ->
 	  let o,p = args2 args in
-	  check_hastype env p o uuu
+	  check_hastype env uuu o p
       | T_Proof ->
 	  let p,o,t = args3 args in
-	  check_hastype env p o t
+	  check_hastype env t o p
       | _ -> err env (get_pos t) "invalid type, or not implemented yet.")
   | _ -> err env (get_pos t) ("invalid type, or not implemented yet: " ^ ts_expr_to_string env t)
 
-and check_hastype env p o t =
-  if false then printf "check_hastype\n p = %a\n o = %a\n t = %a\n%!" _e (env,p) _e (env,o) _e (env,t);
+and check_hastype env t o p =
+  if !debug_mode then printf "check_hastype\n p = %a\n o = %a\n t = %a\n%!" _e (env,p) _e (env,o) _e (env,t);
   match unmark p with
   | APPLY(V p', END) when is_witness_var p' -> (
       let o' = base_var p' in
@@ -263,9 +263,9 @@ and check_hastype env p o t =
       | W_wev ->
 	  let pf,po = args2 pargs in
           let f,o,t1,t2 = unpack_ev' o in
-          check_hastype env po o t1;
+          check_hastype env t1 o po;
           let u = nowhere 123 (APPLY(T T_Pi', t1 ** t2 ** END)) in
-          check_hastype env pf f u;
+          check_hastype env u f pf;
           let t2' = Substitute.apply_args t2 (po ** o ** END) in
           if not (term_equiv t2' t) then mismatch_term_tstype_tstype env o t t2'
       | W_wlam ->
@@ -274,7 +274,7 @@ and check_hastype env p o t =
 	  let t1,t2 = unpack_Pi' t in
 	  if not (term_equiv t1' t1) then mismatch_term env (get_pos t) t (get_pos t1) t1;
 	  let env,p,o,t2 = open_context t1 (env,p,o,t2) in
-	  check_hastype env p o t2
+	  check_hastype env t2 o p
       | W_wconv | W_wconveq | W_weleq | W_wpi1 | W_wpi2 | W_wl1 | W_wl2 | W_wevt1 | W_wevt2
       | W_wevf | W_wevo | W_wbeta | W_weta | W_Wsymm | W_Wtrans | W_wrefl | W_wsymm | W_wtrans
       | W_Wrefl
@@ -282,11 +282,11 @@ and check_hastype env p o t =
      )
   | _ ->
       try
-	check_hastype env (head_reduction env p) o t
+	check_hastype env t o (head_reduction env p)
       with
 	Not_found -> err env (get_pos p) ("expected a witness expression: " ^ lf_expr_to_string env p)
 
-and check_type_equality env p t t' =
+and check_type_equality env t t' p =
   match unmark p with
   | APPLY(W wh, pargs) -> (
       match wh with
@@ -294,9 +294,9 @@ and check_type_equality env p t t' =
 	  let peq = args1 pargs in
 	  let o,p = unpack_El' t in
 	  let o',p' = unpack_El' t' in
-	  check_object_equality env peq o o' uuu;
-	  check_hastype env p o uuu;
-	  check_hastype env p' o' uuu
+	  check_witnessed_object_equality env uuu o o' peq;
+	  check_hastype env uuu o p;
+	  check_hastype env uuu o' p'
       | W_wrefl | W_Wrefl | W_Wsymm | W_Wtrans | W_wsymm | W_wtrans | W_wconv
       | W_wconveq | W_wpi1 | W_wpi2 | W_wlam | W_wl1 | W_wl2 | W_wev
       | W_wevt1 | W_wevt2 | W_wevf | W_wevo | W_wbeta | W_weta
@@ -305,7 +305,7 @@ and check_type_equality env p t t' =
   | _ -> err env (get_pos p) ("expected a witness expression :  " ^ lf_expr_to_string env p)
 
 
-and check_object_equality env p o o' t =
+and check_witnessed_object_equality env t o o' p =
   match unmark p with
   | APPLY(W wh, pargs) -> (
       match wh with
@@ -314,17 +314,17 @@ and check_object_equality env p o o' t =
 	  let f,o1,t1',t2 = unpack_ev' o in
 	  let t1,o2 = unpack_lambda' f in
 	  if not (term_equiv t1 t1') then mismatch_term env (get_pos t1) t1 (get_pos t1') t1';
-	  check_hastype env p1 o1 t1;
+	  check_hastype env t1 o1 p1;
 	  let env,p2',o2',t2' = open_context t1 (env,p2,o2,t2) in
-	  check_hastype env p2' o2' t2';
+	  check_hastype env t2' o2' p2';
 	  let t2'' = apply_2 1 t2 o1 p1 in
 	  if not (term_equiv t2'' t) then mismatch_term env (get_pos t2'') t2'' (get_pos t) t;
 	  let o2' = apply_2 1 o2 o1 p1 in
 	  if not (term_equiv o2' o') then mismatch_term env (get_pos o2') o2' (get_pos o') o'
       | W_wrefl -> (
 	  let p,p' = args2 pargs in
-	  check_hastype env p o t;
-	  check_hastype env p' o' t;
+	  check_hastype env t o p;
+	  check_hastype env t o' p';
 	  if not (term_equiv o o') then mismatch_term env (get_pos o) o (get_pos o') o';
 	 )
       | _ -> raise FalseWitness)
@@ -333,11 +333,10 @@ and check_object_equality env p o o' t =
 let check (env:environment) (t:lf_type) =
   try
     match unmark t with
-    | F_Apply(F_istype,[t]) -> check_istype env t
-    | F_Apply(F_witnessed_istype,[w;t]) -> raise NotImplemented
-    | F_Apply(F_witnessed_hastype,[w;o;t]) -> check_hastype env w o t
-    | F_Apply(F_witnessed_type_equality,[w;t;t']) -> check_type_equality env w t t'
-    | F_Apply(F_witnessed_object_equality,[w;o;o';t]) -> check_object_equality env w o o' t
+    | F_Apply(F_istype_witnessed_inside,[t]) -> check_istype env t
+    | F_Apply(F_witnessed_hastype,[t;o;w]) -> check_hastype env t o w
+    | F_Apply(F_witnessed_type_equality,[t;t';w]) -> check_type_equality env t t' w
+    | F_Apply(F_witnessed_object_equality,[t;o;o';w]) -> check_witnessed_object_equality env t o o' w
     | _ -> err env (get_pos t) "expected a witnessed judgment"
   with
     FalseWitness -> err env (get_pos t) "incorrect witness"
@@ -498,10 +497,6 @@ and subtype (env:environment) (t:lf_type) (u:lf_type) : unit =
     | F_Sigma(x,a,b) , F_Sigma(y,c,d) ->
         subtype env a c;                        (* covariant *)
         subtype (local_lf_bind env x a) b d
-    | F_Apply(F_istype_witness,_), F_Apply(F_wexp,[])
-    | F_Apply(F_hastype_witness,_), F_Apply(F_wexp,[])
-    | F_Apply(F_type_equality_witness,_), F_Apply(F_wexp,[])
-    | F_Apply(F_object_equality_witness,_), F_Apply(F_wexp,[]) -> ()
     | _ -> type_equivalence env (tpos,t0) (upos,u0)
   with TypeEquivalenceFailure -> raise SubtypeFailure
 
@@ -525,7 +520,7 @@ let rec type_check (surr:surrounding) (env:environment) (e0:lf_expr) (t:lf_type)
   match unmark e0, unmark t with
   | APPLY(TAC tac,args), _ -> (
       let pos = get_pos e0 in
-      match show_tactic_result env (apply_tactic surr env pos t args tac) with
+      match show_tactic_result env tac (apply_tactic surr env pos t args tac) with
       | TacticSuccess suggestion -> type_check surr env suggestion t
       | TacticFailure -> (* we may want the tactic itself to raise the error message, when tactics are chained *)
           raise (TypeCheckingFailure (env, surr, [
@@ -554,11 +549,6 @@ let rec type_check (surr:surrounding) (env:environment) (e0:lf_expr) (t:lf_type)
       let b = subst_type x b in
       let y = type_check ((env,S_projection 2,Some e0,Some t) :: surr) env y b in
       pos, CONS(x,y)
-
-  | _, F_Apply(F_istype_witness, [t]) -> raise NotImplemented
-  | _, F_Apply(F_hastype_witness, [o;t]) -> check_hastype env e0 o t; e0 (* should apply possible tactics somehow here *)
-  | _, F_Apply(F_type_equality_witness,[t;t']) -> check_type_equality env e0 t t'; e0
-  | _, F_Apply(F_object_equality_witness,[o;o';t]) -> check_object_equality env e0 o o' t; e0
 
   | _, _  ->
       let (e,s) = type_synthesis surr env e0 in
@@ -596,7 +586,7 @@ and type_synthesis (surr:surrounding) (env:environment) (m:lf_expr) : lf_expr * 
       let rec repeat i env head_type args_passed args = (
         match unmark head_type, args with
         | F_Pi(v,a',a''), ARG(m',args') ->
-            let surr = (env,S_arg'(i,head,args_passed,args'),Some m,None) :: surr in
+            let surr = (env,S_spine'(i,head,args_passed,args'),Some m,None) :: surr in
             let env = apply_ts_binder env i m in
             let m' = type_check surr env m' a' in
 	    if !debug_mode then (
@@ -658,43 +648,45 @@ let type_validity (surr:surrounding) (env:environment) (t:lf_type) : lf_type =
     ( pos,
       match t with
       | F_Pi(v,t,u) ->
-          let t = type_validity ((env,S_arg 1,None,Some t0) :: surr) env t in
-          let u = type_validity ((env,S_arg 2,None,Some t0) :: surr) (local_lf_bind env v t) u in (
-	  try
-	    check_less_equal t u
-	  with
-	  | InsubordinateKinds(k,l) | IncomparableKinds(k,l) ->
+          let t = type_validity ((env,S_type_args(1,[ ]),None,Some t0) :: surr) env t in
+          let u = type_validity ((env,S_type_args(2,[t]),None,Some t0) :: surr) (local_lf_bind env v t) u in (
+          try
+            check_less_equal t u
+          with
+          | InsubordinateKinds(k,l) | IncomparableKinds(k,l) ->
 	      raise (TypeCheckingFailure
 		       (env, [], [
 			get_pos t, "expected type of kind involving \"" ^ lf_kind_to_string env k ^ "\"";
+			get_pos t, "arising from type \"" ^ lf_type_to_string env t ^ "\"";
 			get_pos u, "to be subordinate to type of kind involving \"" ^ lf_kind_to_string env l ^ "\"";
-			get_pos t, "when expecting type \"" ^ lf_type_to_string env t ^ "\"";
-			get_pos u, "to be a subtype of type \"" ^ lf_type_to_string env u ^ "\"";
+			get_pos u, "arising from type \"" ^ lf_type_to_string env u ^ "\"";
 		      ])));
           F_Pi(v,t,u)
       | F_Sigma(v,t,u) ->
-          let t = type_validity ((env,S_arg 1,None,Some t0) :: surr) env t in
-          let u = type_validity ((env,S_arg 2,None,Some t0) :: surr) (local_lf_bind env v t) u in
+          let t = type_validity ((env,S_type_args(1,[ ]),None,Some t0) :: surr) env t in
+          let u = type_validity ((env,S_type_args(2,[t]),None,Some t0) :: surr) (local_lf_bind env v t) u in
           F_Sigma(v,t,u)
       | F_Apply(head,args) ->
           let kind =
 	    try tfhead_to_kind head
 	    with UndeclaredTypeConstant(pos,name) -> err env pos ("undeclared type constant: " ^ name)
 	  in
-          let rec repeat i env kind (args:lf_expr list) =
+          let rec repeat i env kind args_passed (args:lf_expr list) =
             match kind, args with
-            | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), [] -> []
-            | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), x :: args -> err env pos "at least one argument too many";
+            | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), [] 
+	      -> List.rev args_passed
+            | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), x :: args 
+	      -> err env pos "at least one argument too many";
             | K_Pi(v,a,kind'), x :: args ->
-                let x' = type_check ((env,S_arg i,None,Some t0) :: surr) env x a in
-                x' :: repeat (i+1) env (subst_kind x' kind') args
+                let x' = type_check ((env,S_spine i,None,Some t0) :: surr) env x a in
+                repeat (i+1) env (subst_kind x' kind') (x' :: args_passed) args
             | K_Pi(_,a,_), [] -> errmissingarg env pos a
           in
-          let args' = repeat 1 env kind args in
+          let args' = repeat 1 env kind [] args in
           F_Apply(head,args')
       | F_Singleton(x,t) ->
-          let t = type_validity ((env,S_arg 2,None,Some t0) :: surr) env t in
-          let x = type_check ((env,S_arg 1,None,Some t0) :: surr) env x t in                (* rule 46 *)
+          let t = type_validity ((env,S_spine 2,None,Some t0) :: surr) env t in
+          let x = type_check ((env,S_spine 1,None,Some t0) :: surr) env x t in                (* rule 46 *)
           F_Singleton(x,t)
      ) in
   type_validity surr env t

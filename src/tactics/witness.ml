@@ -36,7 +36,8 @@ let rec this_head_reduces env o =   (* returns (p,o'), where p : o == o' : _ *)
     FalseWitness -> raise Not_found
 
 and find_w_hastype env o t : lf_expr = (
-  if false then printf "find_w_hastype  o=%a  t=%a\n%!" _e (env,o) _e (env,t);
+  if tactic_tracing then printf "tactic: find_w_hastype: t=%a; o=%a\n%!" _e (env,t) _e (env,o);
+  let r = 
   match unmark o with
   | APPLY(V v, END) ->
       let t' = tts_fetch_type env v in
@@ -60,6 +61,9 @@ and find_w_hastype env o t : lf_expr = (
   | _ ->
       printf "%a: $witness failure\n%!" _pos (get_pos o);
       raise WitnessNotFound
+  in
+  if tactic_tracing then printf "tactic: find_w_hastype: returning %a\n%!" _e (env,r);
+  r
  )
 
 let rec find_w_type_equality env t t' =
@@ -96,14 +100,17 @@ and find_w_object_equality env o o' t =
 let witness (surr:surrounding) (env:environment) (pos:position) (t:lf_type) (args:spine) : tactic_return =
   try
     match surr with
-    | (env,S_arg 1, None, Some (pos,F_Apply(F_witnessed_hastype,[_;o;t]))) :: _ ->
+    | (env,S_spine 3, None, Some (pos,F_Apply(F_witnessed_hastype,[t;o;_]))) :: _ ->
 	TacticSuccess (find_w_hastype env o t)
-    | (env,S_arg 1, None, Some (pos,F_Apply(F_witnessed_object_equality,[_;o;o';t]))) :: _ ->
+    | (env,S_spine 4, None, Some (pos,F_Apply(F_witnessed_object_equality,[t;o;o';_]))) :: _ ->
 	TacticSuccess (find_w_object_equality env o o' t)
-    | (env,S_arg 1, None, Some (pos,F_Apply(F_witnessed_type_equality,[_;t;t']))) :: _ ->
+    | (env,S_spine 3, None, Some (pos,F_Apply(F_witnessed_type_equality,[t;t';_]))) :: _ ->
 	TacticSuccess (find_w_type_equality env t t')
-    | (env,S_arg'(1,T T_El',ARG(o,_),_), _, _) :: _ -> TacticSuccess (find_w_hastype env o uuu)
-    | _ -> TacticFailure
+    | (env,S_spine'(1,T T_El',ARG(o,_),_), _, _) :: _ -> TacticSuccess (find_w_hastype env o uuu)
+    | _ -> 
+	printf "witness: unfamiliar surrounding\n%!";
+	print_surroundings surr;
+	TacticFailure
   with
     WitnessNotFound -> TacticFailure
 
