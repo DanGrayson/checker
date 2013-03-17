@@ -7,7 +7,7 @@ module type S =
   sig
     val uequiv     : uContext -> expr -> expr -> bool
     val term_equiv : uContext -> int -> expr -> expr -> bool
-    val type_equiv : uContext -> int -> lf_type -> lf_type -> bool
+    val type_equiv : uContext -> int -> judgment -> judgment -> bool
   end
 
 module UEqual : S

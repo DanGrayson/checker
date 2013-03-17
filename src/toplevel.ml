@@ -5,16 +5,16 @@ open Variables
 open Typesystem
 
 type command' =
-  | Axiom of (int list) option * identifier * lf_type
+  | Axiom of (int list) option * identifier * judgment
   | CheckLF of expr
-  | CheckWitness of lf_type
-  | CheckLFtype of lf_type
+  | CheckWitness of judgment
+  | CheckLFtype of judgment
   | CheckTS of expr
   | UVariable of (string marked) list * (expr * expr) list
   | TVariable of (string marked) list
   | OVariable of (string marked) list * expr
   | Alpha of expr * expr
-  | Theorem of (position * string * expr * lf_type)
+  | Theorem of (position * string * expr * judgment)
   | CheckUniverses
   | Show of int option
   | Back of int

@@ -10,7 +10,7 @@ open Printer
 %}
 %start command ts_exprEof
 %type <Toplevel.command> command
-%type <Typesystem.lf_type> lf_type ts_judgment
+%type <Typesystem.judgment> judgment ts_judgment
 %type <Typesystem.expr> expr ts_expr
 
 (* for parsing a single expression *)
@@ -82,38 +82,38 @@ open Printer
 
 %%
 
-lf_type:
+judgment:
 
-    | t= unmarked_lf_type
+    | t= unmarked_judgment
 	{ Position($startpos, $endpos), t}
 
-    | LeftParen t= lf_type RightParen
+    | LeftParen t= judgment RightParen
 	{ t }
 
-unmarked_lf_type:
+unmarked_judgment:
 
-    | f= lf_type_constant args= expr*
+    | f= judgment_constant args= expr*
 	{ F_Apply(f,args) }
 
-    | Pi v= identifier Colon a= lf_type Comma b= lf_type
+    | Pi v= identifier Colon a= judgment Comma b= judgment
 	%prec Reduce_binder
 	{ make_F_Pi a (v,b) }
 
-    | Sigma v= identifier Colon a= lf_type Comma b= lf_type
+    | Sigma v= identifier Colon a= judgment Comma b= judgment
 	%prec Reduce_binder
-    | LeftParen v= identifier Colon a= lf_type RightParen Times b= lf_type
+    | LeftParen v= identifier Colon a= judgment RightParen Times b= judgment
 	{ make_F_Sigma a (v,b) }
 
-    | a= lf_type Times b= lf_type
+    | a= judgment Times b= judgment
 	{ make_F_Sigma_simple a b }
 
-    | LeftParen v= identifier Colon a= lf_type RightParen Arrow b= lf_type
+    | LeftParen v= identifier Colon a= judgment RightParen Arrow b= judgment
        { make_F_Pi a (v,b) }
 
-    | a= lf_type Arrow b= lf_type
+    | a= judgment Arrow b= judgment
        { unmark (a @-> b) }
 
-    | Singleton LeftParen x= expr Colon t= lf_type RightParen
+    | Singleton LeftParen x= expr Colon t= judgment RightParen
 	{ F_Singleton(x,t) }
 
     | LeftBracket t= expr Type RightBracket
@@ -134,7 +134,7 @@ unmarked_lf_type:
     | LeftBracket a= expr Tilde b= expr Colon t= expr RightBracket
 	{ unmark (object_uequality a b t) }
 
-    | a= lf_type Turnstile b= lf_type
+    | a= judgment Turnstile b= judgment
     	{ let v = good_var_name a (id "foo") in (* the "|-" operator is not fully implemented yet *)
 	  let v = get_pos a, v in
 	  unmark (pi1_implication (v,a) b) }
@@ -148,7 +148,7 @@ unmarked_lf_type:
     | v= marked_identifier ColonColonEqual e= expr ColonColon t= expr
 	{ let (pos,v) = v in make_F_Sigma (with_pos_of e (F_Singleton(e,oexp))) (v,hastype (id_to_expr pos v) t) }
 
-lf_type_constant:
+judgment_constant:
 
     | l= NAME
 	{ let pos = Position($startpos, $endpos) in lookup_type_constant pos l }
@@ -208,25 +208,12 @@ short_head_and_reversed_expr_list:
     	{ cdr head_and_args }
 
     | tac= closed_tactic_expr
-	{ TAC tac, END }
+	{ TACTIC tac, END }
 
 closed_tactic_expr:
 
-    | Dollar LeftParen e= tactic_expr RightParen
-	{ e }
-
     | Dollar name= NAME
-	{ Tactic_name name }
-
-tactic_expr:
-
-    | s= tactic_expr_2
-	{s}
-
-tactic_expr_2:
-
-    | name= NAME
-	{ Tactic_name name }
+	{ name }
 
 dotted_number: n= separated_nonempty_list(Period,NUMBER) {n}
 
@@ -259,7 +246,7 @@ unmarked_command:
     | Axiom num= dotted_number? name= NAME t= ts_judgment Period
 	{ Toplevel.Axiom (num,id name,t) }
 
-    | Axiom LF num= dotted_number? name= identifier Colon t= lf_type Period
+    | Axiom LF num= dotted_number? name= identifier Colon t= judgment Period
 	{ Toplevel.Axiom (num,name,t) }
 
     | Check TS? o= ts_expr Period
@@ -269,7 +256,7 @@ unmarked_command:
 	{ Toplevel.CheckLF e }
 
     | Check TS? Colon t= ts_judgment Period
-    | Check LF Colon t= lf_type Period
+    | Check LF Colon t= judgment Period
 	{ Toplevel.CheckLFtype t }
 
     | Check TTS Colon t= ts_judgment Period
@@ -281,7 +268,7 @@ unmarked_command:
     | Alpha e1= ts_expr EqualEqual e2= ts_expr Period
 	{ Toplevel.Alpha (e1, e2) }
 
-    | Theorem LF name= NAME Colon thm= lf_type ColonEqual deriv= expr Period
+    | Theorem LF name= NAME Colon thm= judgment ColonEqual deriv= expr Period
     | Theorem name= NAME thm= ts_judgment ColonColonEqual deriv= expr Period
     | Theorem name= NAME thm= ts_judgment ColonEqual deriv= ts_expr Period
 	{
@@ -349,7 +336,7 @@ ts_judgment:
 
 unmarked_ts_judgment:
 
-    | f= lf_type_constant
+    | f= judgment_constant
 	{ F_Apply(f,[]) }
 
     | LeftParen v= identifier Colon a= ts_judgment RightParen DoubleArrow b= ts_judgment
@@ -402,7 +389,7 @@ unmarked_ts_judgment:
         {
           let pos = Position($startpos, $endpos) in
           let jpos = Position($startpos(j), $endpos(j)) in
-	  let w = apply_judgment_binder pos (with_pos jpos j) u in
+	  let w = apply_simple_binder pos (with_pos jpos j) u in
 	  unmark w }
 
     | LeftBrace c= context vbj= separated_nonempty_list(Comma,pair(marked_identifier+,binder_judgment)) RightBrace u= ts_judgment
@@ -574,7 +561,7 @@ unmarked_ts_expr:
 
     | Star o= ts_expr
 	{ let pos = Position($startpos, $endpos) in
-	  if !ts_mode then make_T_El o else make_T_El' o (pos, (cite_tactic (Tactic_name "default") END)) }
+	  if !ts_mode then make_T_El o else make_T_El' o (pos, (cite_tactic "default" END)) }
 
     | Pi x= identifier Colon t1= ts_expr Comma t2= ts_expr
 	%prec Reduce_binder
@@ -584,7 +571,7 @@ unmarked_ts_expr:
 	{ if !ts_mode then make_T_Pi t (x,u) else make_T_Pi' t (lambda1 x (lambda1 (witness_id x) u)) }
 
     | x= ts_expr Equal y= ts_expr
-	{ make_T_Id (with_pos_of x (cite_tactic (Tactic_name "tn12") END)) x y }
+	{ make_T_Id (with_pos_of x (cite_tactic "tn12" END)) x y }
 
     | t= ts_expr Arrow u= ts_expr
 	{ if !ts_mode then make_T_Pi t (id "_",u) else make_T_Pi' t (lambda1 (id "_") (lambda1 (idw "_") u)) }

@@ -13,7 +13,7 @@ let lookup_label pos name =
   with Not_found as e -> fprintf stderr "%a: unknown expression label: @[%s]\n%!" _pos pos name; raise e
 
 let lookup_type_constant pos name =
-  try list_assoc2 name lf_type_constant_table
+  try list_assoc2 name judgment_constant_table
   with Not_found -> F_undeclared_type_constant(pos,name)
 
 type binder_judgment =
@@ -30,7 +30,7 @@ let car (hd,reversed_args) = (hd, CAR reversed_args)
 
 let cdr (hd,reversed_args) = (hd, CDR reversed_args)
 
-type binder = position * identifier * lf_type
+type binder = position * identifier * judgment
 
 let show_binders bname b ename e = 
   iteri (fun i (pos,v,t) -> printf " %s.%d = %a:%a\n%!" bname i _i v _t (empty_environment,t)) b;
@@ -72,7 +72,7 @@ let apply_vars f binders =
 	  END)
 
  (** for a type p of the form (e:E) ** J we return (e,E),J *)
-let unbind_pair p : binder option * lf_type =
+let unbind_pair p : binder option * judgment =
   match unmark p with
   | F_Sigma(v,a,b) -> Some (get_pos p,v,a), b
   | _ -> None, p
@@ -86,7 +86,7 @@ let good_var_name p v =
      return [p_n,P_n;...;p_1,P_n],Some (e,E),J.  If there is no Sigma-type
      inseid, then return [],None,p
   *)
-let unbind_relative p : binder list * binder option * lf_type =
+let unbind_relative p : binder list * binder option * judgment =
   try
     let rec repeat binders p =
       match unmark p with
@@ -161,7 +161,7 @@ let pi1_implication ((vpos,v),t) u =
       r
   | None -> raise NotImplemented
 
-let apply_binder pos (c:(identifier marked * expr) list) (v : identifier marked) (t1 : lf_type) (u : lf_type) (t2 : position -> identifier -> lf_type) =
+let apply_binder pos (c:(identifier marked * expr) list) (v : identifier marked) (t1 : judgment) (u : judgment) (t2 : position -> identifier -> judgment) =
   (* syntax is { v_1 : T_1 , ... , v_n : T_n |- v Type } u  or  { v_1 : T_1 , ... , v_n : T_n |- v:T } u *)
   (* t1 is texp or oexp; t2 is (fun t -> istype t) or (fun o -> hastype o t) *)
   let (vpos,v) = v in
@@ -171,9 +171,9 @@ let apply_binder pos (c:(identifier marked * expr) list) (v : identifier marked)
   let u = pi1_implication ((vpos,v),t) u in
   u
 
-let apply_judgment_binder pos (j:lf_type) (u:lf_type) =
+let apply_simple_binder pos (j:judgment) (u:judgment) =
   (* just like pi1_implication above, except t consists just of j, with no p or e *)
-  if pi1_debug then printf "\napply_judgment_binder:\n j = %a\n u = %a\n%!" _t (empty_environment,j) _t (empty_environment,u);
+  if pi1_debug then printf "\napply_simple_binder:\n j = %a\n u = %a\n%!" _t (empty_environment,j) _t (empty_environment,u);
   let (q,f,k) = unbind_relative u in
   if pi1_debug then show_binders "q" q "f" f;
   if pi1_debug then printf " k = %a\n%!" _t (empty_environment,k);

@@ -22,8 +22,8 @@ type wHead = | W_Wrefl | W_Wsymm | W_Wtrans | W_wrefl | W_wsymm | W_wtrans | W_w
 type expr_head =
   | U of uHead | T of tHead | O of oHead | W of wHead
   | V of var
-  | TAC of tactic_expr
-and expr = unmarked_expr marked
+  | TACTIC of string
+type expr = unmarked_expr marked
 and unmarked_expr =
   | BASIC of expr_head * expr_list
   | TEMPLATE of identifier * expr
@@ -32,53 +32,38 @@ and expr_list =
   | ARG of expr * expr_list
   | END
   | CAR of expr_list | CDR of expr_list
-and tactic_expr =
-  | Tactic_name of string			 (* $foo *)
 
-(** Canonical type families of LF.
-
-    The following type family constants for LF type families segregate TS
-    expressions into three forms: u-expressions, t-expressions, and
-    o-expressions, and they introduce the four forms of judgments.
-
-    Notation: constructors starting with "F_" refer to type families of
-    LF. *)
-type lf_type_head =
-  | F_uexp
-  | F_texp
-  | F_oexp
+type judgment_head =
+  (* syntactic judgments: *)
+  | F_uexp | F_texp | F_oexp | F_wexp
+  (* type-theoretic judgments: *)
+  | F_istype_witnessed_inside
+  | F_witnessed_hastype
+  | F_witnessed_type_equality
+  | F_witnessed_object_equality
+  (* obsolete: *)
   | F_istype
   | F_hastype
   | F_type_equality
   | F_object_equality
   | F_ulevel_equality
-  | F_type_uequality			(* written with ~ in the paper *)
-  | F_object_uequality			(* written with ~ in the paper *)
+  | F_type_uequality			(* written with ~ *)
+  | F_object_uequality			(* written with ~ *)
   | F_a_type
   | F_obj_of_type
   | F_judged_type_equal
   | F_judged_obj_equal
-  | F_wexp
-      (* the next four are judgments, with no objects when running in TTS mode, or with LF derivation trees as objects when running in LF mode *)
-  | F_istype_witnessed_inside
-  | F_witnessed_hastype
-  | F_witnessed_type_equality
-  | F_witnessed_object_equality
-      (* the next one is a type parametrized by a t-expression T whose objects are pairs (p,o) with p:o:T  *)
   | F_obj_of_type_with_witness
-      (* the next one is needed just to accommodate undefined type constants encountered by the parser *)
   | F_undeclared_type_constant of position * string
 
-type lf_type = bare_lf_type marked
-and bare_lf_type =
-  | F_Pi of identifier * lf_type * lf_type
-  | F_Sigma of identifier * lf_type * lf_type
-  | F_Apply of lf_type_head * expr list
-  | F_Singleton of (expr * lf_type)
+type judgment = bare_judgment marked
+and bare_judgment =
+  | F_Pi of identifier * judgment * judgment
+  | F_Sigma of identifier * judgment * judgment
+  | F_Apply of judgment_head * expr list
+  | F_Singleton of (expr * judgment)
 
-let name_F_Pi = "Pi"
-
-let ( @@ ) f x : lf_type = nowhere 3 (F_Apply(f,x))
+let ( @@ ) f x : judgment = nowhere 3 (F_Apply(f,x))
 
 let uexp = F_uexp @@ []
 let wexp = F_wexp @@ []
@@ -141,11 +126,11 @@ let wexp_w = oexp @-> wexp @-> wexp
 let texp_w = oexp @-> wexp @-> texp
 let oexp_w = oexp @-> wexp @-> oexp
 
-let uhead_to_lf_type = function	(* optimize later by precomputing the constant return values *)
+let uhead_to_judgment = function	(* optimize later by precomputing the constant return values *)
   | U_next -> uexp @-> uexp
   | U_max -> uexp @-> uexp @-> uexp
 
-let thead_to_lf_type = function	(* optimize later by precomputing the constant return values *)
+let thead_to_judgment = function	(* optimize later by precomputing the constant return values *)
   | T_El -> oexp @-> texp
   | T_El' -> oexp @-> wexp @-> texp
   | T_U -> uexp @-> texp
@@ -161,7 +146,7 @@ let thead_to_lf_type = function	(* optimize later by precomputing the constant r
   | T_Id -> texp @-> oexp @-> oexp @-> texp
   | T_Proof -> wexp @-> oexp @-> texp @-> texp
 
-let ohead_to_lf_type = function	(* optimize later by precomputing the constant return values *)
+let ohead_to_judgment = function	(* optimize later by precomputing the constant return values *)
   | O_u -> uexp @-> oexp
   | O_j -> uexp @-> uexp @-> oexp
   | O_ev -> oexp @-> oexp @-> texp @-> texp1 @-> oexp
@@ -195,7 +180,7 @@ let ohead_to_lf_type = function	(* optimize later by precomputing the constant r
   | O_S -> oexp
   | O_nat_r -> oexp @-> oexp @-> oexp @-> texp1 @-> oexp
 
-let whead_to_lf_type = function	(* optimize later by precomputing the constant return values *)
+let whead_to_judgment = function	(* optimize later by precomputing the constant return values *)
   | W_Wrefl -> wexp
   | W_Wsymm -> wexp @-> wexp
   | W_Wtrans -> wexp @-> wexp @-> texp @-> wexp
@@ -257,7 +242,7 @@ type lf_kind =
   | K_judgment
   | K_judged_expression
   | K_witnessed_judgment
-  | K_Pi of identifier * lf_type * lf_kind
+  | K_Pi of identifier * judgment * lf_kind
 
 let ( @@-> ) a b = K_Pi(arrow_good_var_name a, a, b)
 
@@ -421,8 +406,8 @@ type environment = {
     state : int;
     local_tts_context : (string * tts_judgment) list;
     global_tts_context : tts_judgment MapString.t;
-    local_lf_context : (identifier * lf_type) list;
-    global_lf_context : lf_type MapIdentifier.t;
+    local_lf_context : (identifier * judgment) list;
+    global_lf_context : judgment MapIdentifier.t;
   }
 
 let empty_environment = {
@@ -536,13 +521,13 @@ type surrounding_component =
 	* expr_list				 (* arguments passed, in reverse order, possibly updated by tactics *)
 	* expr_list				 (* arguments coming *)
   | S_type_args of int                   (* argument position, starting with 1 *)
-	* lf_type list			 (* arguments passed, possibly updated by tactics *)
+	* judgment list			 (* arguments passed, possibly updated by tactics *)
   | S_type_family_args of int            (* argument position, starting with 1 *)
 	* expr list			 (* arguments passed, in reverse order, possibly updated by tactics *)
   | S_projection of int
   | S_body
 
-type surrounding = (environment * surrounding_component * expr option * lf_type option) list
+type surrounding = (environment * surrounding_component * expr option * judgment option) list
 
 type tactic_return =
   | TacticFailure
@@ -552,7 +537,7 @@ type tactic_function =
        surrounding         (* the ambient BASIC(...), if any, and the index among its head and arguments of the hole *)
     -> environment						      (* the active context *)
     -> position							      (* the source code position of the tactic hole *)
-    -> lf_type							      (* the type of the hole, e.g., [texp] *)
+    -> judgment							      (* the type of the hole, e.g., [texp] *)
     -> expr_list							      (* the arguments *)
  -> tactic_return						      (* the proffered expression *)
 

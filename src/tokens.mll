@@ -13,7 +13,7 @@
 
  let commands = Hashtbl.create 20
  let _ = List.iter (fun (w,t) -> Hashtbl.add commands w t) [
-   "∏", Pi; "λ", Lambda; "Σ", Sigma; name_F_Pi, Pi; "lambda", Lambda;
+   "∏", Pi; "λ", Lambda; "Σ", Sigma; "Pi", Pi; "lambda", Lambda;
    "Ulevel", Ulevel; "Type", Type; "max", Kumax; "Singleton", Singleton; "Sigma", Sigma;
    "pair", Kpair; "CAR", K_CAR; "CDR", K_CDR; "Clear", Clear; "Universes", Universes;
    "LF", LF; "TS", TS; "TTS", TTS; "Check", Check; "Axiom", Axiom; "Alpha", Alpha; "Mode", Mode;

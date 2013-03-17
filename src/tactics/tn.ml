@@ -12,7 +12,7 @@ let tn12 surr env pos t args =
   then raise (TypeCheckingFailure(
               env, surr,
               [ pos, "error: tactic tn12: expected a hole of LF type texp" ;
-                get_pos t, "but found a hole of type " ^ lf_type_to_string env t
+                get_pos t, "but found a hole of type " ^ judgment_to_string env t
               ]));
   match surr with
   | (env,S_expr_list i, Some (pos, BASIC(head,args)), _) :: _ -> TacticSuccess (

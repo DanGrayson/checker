@@ -27,7 +27,7 @@ let rec names_in_expr_list args =
   | CAR args | CDR args -> names_in_expr_list args
   | END -> []
 
-and names_in_head = function V (Var v) -> [id_to_name v] | V (VarRel _) | U _ | T _ | W _ | O _ | TAC _ -> []
+and names_in_head = function V (Var v) -> [id_to_name v] | V (VarRel _) | U _ | T _ | W _ | O _ | TACTIC _ -> []
 
 and names_in_expr (pos,e) = match e with
   | TEMPLATE(x,body) -> names_in_expr body
@@ -48,7 +48,7 @@ let rec names_in_kind = function
 let rec rel_occurs_in_head shift h =
   match h with
   | V (VarRel i) -> i = shift
-  | V (Var _) | W _ | U _ | T _ | O _ | TAC _ -> false
+  | V (Var _) | W _ | U _ | T _ | O _ | TACTIC _ -> false
 
 and rel_occurs_in_expr shift e =
   match unmark e with
@@ -70,7 +70,7 @@ let rec rel_occurs_in_kind shift = function
 let rec occurs_in_head w h =
   match h with
   | V (Var id) -> id_to_name id = w
-  | V (VarRel _) | W _ | U _ | T _ | O _ | TAC _ -> false
+  | V (VarRel _) | W _ | U _ | T _ | O _ | TACTIC _ -> false
 
 and occurs_in_expr w e =
   match unmark e with
@@ -232,7 +232,7 @@ let rec lf_head_to_string_with_subs subs h : string =
   | V (VarRel i as v) -> if enable_variable_prettification then rel_to_string subs i else vartostring v
   | V (Var id) -> idtostring id
   | W _ | U _ | T _ | O _ -> "@[" ^ expr_head_to_string h ^ "]"
-  | TAC tac -> tactic_to_string tac
+  | TACTIC tac -> tactic_to_string tac
 
 and expr_to_string_with_subs subs e : smart_string =
   match unmark e with
@@ -259,9 +259,9 @@ and expr_to_string_with_subs subs e : smart_string =
 
 and dependent_sub subs prefix infix infix_prec (v,t,u) =
   let used = not enable_variable_prettification || rel_occurs_in_type 0 u in
-  let t = lf_type_to_string_with_subs subs t in
+  let t = judgment_to_string_with_subs subs t in
   let subs = var_chooser v subs (rel_occurs_in_type 0 u) occurs_in_type u in
-  let u = lf_type_to_string_with_subs subs u in
+  let u = judgment_to_string_with_subs subs u in
   let v = if enable_variable_prettification then List.nth subs 0 else v in
   infix_prec,
   (
@@ -273,21 +273,21 @@ and dependent_sub subs prefix infix infix_prec (v,t,u) =
   ^ infix
   ^ paren_right infix_prec u
 
-and lf_type_to_string_with_subs subs (_,t) : smart_string = match t with
+and judgment_to_string_with_subs subs (_,t) : smart_string = match t with
   | F_Pi   (v,t,u) -> dependent_sub subs "∏ " " ⟶ " arrow_prec (v,t,u)
   | F_Sigma(v,t,u) -> dependent_sub subs "Σ " " × " times_prec (v,t,u)
   | F_Singleton(x,t) ->
       let x = expr_to_string_with_subs subs x in
-      let t = lf_type_to_string_with_subs subs t in
+      let t = judgment_to_string_with_subs subs t in
       top_prec, concat ["Singleton(";paren_left colon_prec x;" : ";paren_right colon_prec t;")"]
   | F_Apply(hd,args) ->
-      list_application_to_string (mark_top <<- lf_type_head_to_string) (expr_to_string_with_subs subs) (hd,args)
+      list_application_to_string (mark_top <<- judgment_head_to_string) (expr_to_string_with_subs subs) (hd,args)
 
 let rec lf_kind_to_string_with_subs subs = function
   | ( K_ulevel | K_expression | K_judgment | K_primitive_judgment | K_witnessed_judgment | K_judged_expression ) as k -> top_prec, List.assoc k lf_kind_constant_table
   | K_Pi(v,t,k) ->
       let used = rel_occurs_in_kind 0 k in
-      let t = lf_type_to_string_with_subs subs t in
+      let t = judgment_to_string_with_subs subs t in
       let subs = var_chooser v subs (rel_occurs_in_kind 0 k) occurs_in_kind k in
       let infix = " ⟶ " in
       let infix_prec = arrow_prec in
@@ -311,7 +311,7 @@ let env_to_subs env = (* concatenation of the two contexts might not be appropri
 
 let expr_to_string env e = paren_right bottom_prec (expr_to_string_with_subs (env_to_subs env) e)
 
-let lf_type_to_string env t = paren_right bottom_prec (lf_type_to_string_with_subs (env_to_subs env) t)
+let judgment_to_string env t = paren_right bottom_prec (judgment_to_string_with_subs (env_to_subs env) t)
 
 let lf_kind_to_string env k = paren_right bottom_prec (lf_kind_to_string_with_subs (env_to_subs env) k)
 
@@ -508,15 +508,15 @@ let _a file (env,x) = Array.iter (fun x -> printf " "; _e file (env,x)) x
 
 let _h file x = output_string file (lf_head_to_string x)
 
-let _t file (env,x) = output_string file (lf_type_to_string env x)
+let _t file (env,x) = output_string file (judgment_to_string env x)
 
 let _tl file (env,x) = List.iter (fun t -> printf " "; _t file (env,t)) x
 
-let _tn file (env,x) = output_string file (lf_type_to_string env (no_pos 123,x))
+let _tn file (env,x) = output_string file (judgment_to_string env (no_pos 123,x))
 
 let _k file (env,x) = output_string file (lf_kind_to_string env x)
 
-let _th file x = output_string file (lf_type_head_to_string x)
+let _th file x = output_string file (judgment_head_to_string x)
 
 let _pos_of file x = output_string file (errfmt (get_pos x))
 
@@ -531,7 +531,7 @@ let print_signature env file =
   fprintf file "  Type constants:\n";
   List.iter (fun h ->
     fprintf file "     %a : %a\n" _th h  _k (env,tfhead_to_kind h)
-           ) lf_type_heads;
+           ) judgment_heads;
   fprintf file "  Object constants:\n";
   List.iter (fun h ->
     fprintf file "     %a : %a\n" _h h  _t (env,head_to_type env (Error.no_pos 23) h)

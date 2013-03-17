@@ -46,10 +46,10 @@ let whash = function
   | W_weta -> 12
 
 let tachash = function
-  | Tactic_name _ -> 1233		(* ?? *)
+  | _ -> 1233
 
 let rec hhash = function
-  | TAC tac -> tachash tac
+  | TACTIC tac -> tachash tac
   | W h -> whash h
   | U h -> uhash h
   | T h -> thash h

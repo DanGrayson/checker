@@ -20,7 +20,7 @@ let rec tau (env:environment) e : expr =
       | _ -> (trap(); raise Internal))
   | BASIC(h,args) -> (
       match h with
-      | TAC _ -> raise NotImplemented
+      | TACTIC _ -> raise NotImplemented
       | V v ->
           let t =
             try ts_fetch env v

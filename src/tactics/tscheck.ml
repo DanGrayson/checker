@@ -84,7 +84,7 @@ and path_normalization (env:environment) (x:expr) : expr * expr * expr =
 let rec type_normalization (env:environment) (t:expr) : expr =
   raise NotImplemented
 
-let self = nowhere 1234 (cite_tactic (Tactic_name "tscheck") END)
+let self = nowhere 1234 (cite_tactic "tscheck" END)
 
 let rec tscheck surr env pos tp args =
   if tactic_tracing then printf "tactic: tscheck: tp = %a\n%!" _t (env,tp);

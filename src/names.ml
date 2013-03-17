@@ -53,9 +53,9 @@ let expr_head_table() = if !ts_mode then expr_head_table else tts_mode_expr_head
 let expr_head_to_string h = List.assoc h (expr_head_table())
 
 let rec tactic_to_string = function
-  | Tactic_name n -> if n = "default" then "_" else "$" ^ n
+  | n -> if n = "default" then "_" else "$" ^ n
 
-let lf_type_constant_table = [
+let judgment_constant_table = [
   F_uexp, "uexp" ;
   F_texp, "texp" ;
   F_oexp, "oexp" ;
@@ -89,9 +89,9 @@ let lf_kind_constant_table = [
   K_witnessed_judgment, "witnessed_judgment"
 ]
 
-let lf_type_head_to_string h = List.assoc h lf_type_constant_table
+let judgment_head_to_string h = List.assoc h judgment_constant_table
 
-let lf_type_heads = List.map fst lf_type_constant_table
+let judgment_heads = List.map fst judgment_constant_table
 
 let marked_var_to_lf (pos,v) = pos, BASIC(V v,END)
 

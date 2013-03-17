@@ -36,9 +36,9 @@ let args4 s =
   | ARG(x,ARG(y,ARG(z,ARG(a,END)))) -> x,y,z,a
   | _ -> raise Args_match_failure
 
-let cite_tactic tac args = BASIC(TAC tac, args)
+let cite_tactic tac args = BASIC(TACTIC tac, args)
 
-let default_tactic = cite_tactic (Tactic_name "default") END
+let default_tactic = cite_tactic "default" END
 
 let ( ** ) x s = ARG(x,s)		(* right associative *)
 
@@ -138,16 +138,16 @@ let locate x l =
     in repeat 0 l
 
 let head_to_type env pos = function
-  | W h -> whead_to_lf_type h
-  | U h -> uhead_to_lf_type h
-  | T h -> thead_to_lf_type h
-  | O h -> ohead_to_lf_type h
+  | W h -> whead_to_judgment h
+  | U h -> uhead_to_judgment h
+  | T h -> thead_to_judgment h
+  | O h -> ohead_to_judgment h
   | V (VarRel name) -> local_lf_fetch env name
   | V (Var name) -> (
       try global_lf_fetch env name
       with Not_found ->
 	raise (TypeCheckingFailure (env, [], [pos, "unbound variable: " ^ idtostring name])))
-  | TAC _ -> raise Internal
+  | TACTIC _ -> raise Internal
 
 (** Routines for replacing named variables by relative index variables in expressions. 
 
@@ -163,7 +163,7 @@ let rec id_subst_expr shift subl e =
 	    get_pos e, BASIC(V (VarRel (locate v subl + shift)),args')
 	  with Not_found ->
 	    if args == args' then e else get_pos e, BASIC(h,args'))
-      | W _ | V _ | U _ | T _ | O _ | TAC _ ->
+      | W _ | V _ | U _ | T _ | O _ | TACTIC _ ->
 	  if args == args' then e else get_pos e, BASIC(h,args'))
   | PAIR(x,y) ->
       let x' = id_subst_expr shift subl x in
