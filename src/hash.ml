@@ -46,9 +46,7 @@ let whash = function
   | W_weta -> 12
 
 let tachash = function
-  | Tactic_sequence _ -> 124		(* ?? *)
   | Tactic_name _ -> 1233		(* ?? *)
-  | Tactic_index n -> 55 * n
 
 let rec hhash = function
   | TAC tac -> tachash tac
@@ -59,14 +57,14 @@ let rec hhash = function
   | V h -> 2
 
 and expr_hash e = match Error.unmark e with
-  | CONS(x,y) -> 611 * expr_hash x + 711 * expr_hash y
-  | LAMBDA(_,body) -> expr_hash body
-  | APPLY(h,args) -> hhash h + spine_hash args
+  | PAIR(x,y) -> 611 * expr_hash x + 711 * expr_hash y
+  | TEMPLATE(_,body) -> expr_hash body
+  | BASIC(h,args) -> hhash h + expr_list_hash args
 
 and type_hash t = raise Error.NotImplemented
 
-and spine_hash = function
+and expr_list_hash = function
   | END -> 1
-  | CAR r -> 123 + spine_hash r
-  | CDR r -> 13 + spine_hash r
-  | ARG(c,r) -> expr_hash c + 2345 * (spine_hash r)
+  | CAR r -> 123 + expr_list_hash r
+  | CDR r -> 13 + expr_list_hash r
+  | ARG(c,r) -> expr_hash c + 2345 * (expr_list_hash r)

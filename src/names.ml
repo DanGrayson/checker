@@ -4,11 +4,11 @@ open Error
 open Variables
 open Typesystem
 
-exception Internal_expr of lf_expr
-exception Unimplemented_expr of lf_expr
+exception Internal_expr of expr
+exception Unimplemented_expr of expr
 exception TypeCheckingFailure of environment * surrounding * (position * string) list
 
-let lf_expr_head_table = [
+let expr_head_table = [
   T T_Pi, "∏"; O O_lambda, "λ"; O O_ev, "ev";
   O O_forall, "forall";
   T T_El, "El";
@@ -35,27 +35,25 @@ let lf_expr_head_table = [
   W W_wbeta, "wbeta"; W W_weta, "weta"
 ]
 
-let tts_mode_lf_expr_head_table = List.flatten [
+let tts_mode_expr_head_table = List.flatten [
   [ T T_U', "U";  T T_U, "U$";
     T T_El', "El"; T T_El, "El$";
     T T_Pi', "Pi"; T T_Pi, "Pi$";
     T T_Pi', "∏"; O O_lambda', "λ"; O O_lambda, "lambda$";
     O O_lambda', "lambda"; O O_ev', "ev" ; O O_ev, "ev$"
   ]; 
-  lf_expr_head_table ]
+  expr_head_table ]
 
 let ts_mode = ref true
 
-let lf_expr_heads = List.map fst lf_expr_head_table
+let expr_heads = List.map fst expr_head_table
 
-let lf_expr_head_table() = if !ts_mode then lf_expr_head_table else tts_mode_lf_expr_head_table
+let expr_head_table() = if !ts_mode then expr_head_table else tts_mode_expr_head_table
 
-let expr_head_to_string h = List.assoc h (lf_expr_head_table())
+let expr_head_to_string h = List.assoc h (expr_head_table())
 
 let rec tactic_to_string = function
   | Tactic_name n -> if n = "default" then "_" else "$" ^ n
-  | Tactic_sequence(x,rest) -> "$(" ^ tactic_to_string x ^ ";" ^ tactic_to_string rest ^ ")"
-  | Tactic_index n -> "$" ^ string_of_int n
 
 let lf_type_constant_table = [
   F_uexp, "uexp" ;
@@ -95,7 +93,7 @@ let lf_type_head_to_string h = List.assoc h lf_type_constant_table
 
 let lf_type_heads = List.map fst lf_type_constant_table
 
-let marked_var_to_lf (pos,v) = pos, APPLY(V v,END)
+let marked_var_to_lf (pos,v) = pos, BASIC(V v,END)
 
 let ensure_new_name env pos name =
   if MapIdentifier.mem name env.global_lf_context then

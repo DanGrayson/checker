@@ -19,7 +19,7 @@ open Typesystem
 open Printf
 open Printer
 
-exception Inconsistency of lf_expr * lf_expr
+exception Inconsistency of expr * expr
 
 let rec memi' i x = function
     [] -> (trap(); raise Internal)
@@ -29,16 +29,16 @@ let memi x = memi' 0 x
 
 let step_size = 10
 
-let chk uv ((lhs:lf_expr),(rhs:lf_expr)) =
+let chk uv ((lhs:expr),(rhs:expr)) =
   let index name = memi name uv in
   let rec ev e =
     let (pos,e0) = e
     in match e0 with
-    | APPLY(V (Var u),END) -> 
+    | BASIC(V (Var u),END) -> 
         if true then printf " Universe.chk: u=%a uv=%a\n%!" _i u _il uv;
         - step_size * (index u)
-    | APPLY(U U_next,ARG(u,END)) -> (ev u) + 1
-    | APPLY(U U_max,ARG(u,ARG(v,END))) -> max (ev u) (ev v)
+    | BASIC(U U_next,ARG(u,END)) -> (ev u) + 1
+    | BASIC(U U_max,ARG(u,ARG(v,END))) -> max (ev u) (ev v)
     | _ -> (
         printf "%a: unexpected u-expression: %a\n%!" _pos pos _e (empty_environment,e);
         trap(); raise Internal)
@@ -71,9 +71,9 @@ module Equal = struct
     let rec ueq a b =
       unmark a == unmark b ||
       match (unmark a,unmark b) with
-      | APPLY(V x,END), APPLY(V x',END) -> x = x'
-      | APPLY(U U_next, ARG(x ,END)), APPLY(U U_next, ARG(x',END)) -> ueq x x'
-      | APPLY(U U_max, ARG(x,ARG(y,END))), APPLY(U U_max, ARG(x',ARG(y',END))) -> ueq x x' && ueq y y'
+      | BASIC(V x,END), BASIC(V x',END) -> x = x'
+      | BASIC(U U_next, ARG(x ,END)), BASIC(U U_next, ARG(x',END)) -> ueq x x'
+      | BASIC(U U_max, ARG(x,ARG(y,END))), BASIC(U U_max, ARG(x',ARG(y',END))) -> ueq x x' && ueq y y'
       | _ -> false
     in ueq
 end
@@ -88,7 +88,7 @@ module EquivA = struct
 end
 
 module type Equivalence = sig
-  val term_equiv : uContext -> lf_expr -> lf_expr -> bool
+  val term_equiv : uContext -> expr -> expr -> bool
 end
 
 (*

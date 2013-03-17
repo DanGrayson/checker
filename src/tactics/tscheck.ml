@@ -17,36 +17,36 @@ open Helpers
 let see env n x = printf "\t  %s = %a\n%!" n _e (env,x)
 
 (** returns a term y and a derivation of hastype y t and a derivation of oequal x y t *)
-let rec head_reduction (env:environment) (t:lf_expr) (dt:lf_expr) (x:lf_expr) (dx:lf_expr) : lf_expr * lf_expr * lf_expr =
+let rec head_reduction (env:environment) (t:expr) (dt:expr) (x:expr) (dx:expr) : expr * expr * expr =
   (* dt : istype t *)
   (* dx : hastype x t *)
   raise NotImplemented
 
 (** returns a term y and a derivation of hastype y t and a derivation of oequal x y t *)
-let rec head_normalization (env:environment) (t:lf_expr) (dt:lf_expr) (x:lf_expr) (dx:lf_expr) : lf_expr * lf_expr * lf_expr =
+let rec head_normalization (env:environment) (t:expr) (dt:expr) (x:expr) (dx:expr) : expr * expr * expr =
   (* dt : istype t *)
   (* dx : hastype x t *)
   raise NotImplemented
 
 (** returns a derivation of oequal x y t *)
-let rec term_equivalence (env:environment) (x:lf_expr) (dx:lf_expr) (y:lf_expr) (dy:lf_expr) (t:lf_expr) (dt:lf_expr) : lf_expr =
+let rec term_equivalence (env:environment) (x:expr) (dx:expr) (y:expr) (dy:expr) (t:expr) (dt:expr) : expr =
   (* dt : istype t *)
   (* dx : hastype x t *)
   (* dy : hastype y t *)
   raise NotImplemented
 
 (** returns a type t and derivation of hastype x t, hastype y t, oequal x y t *)
-and path_equivalence (env:environment) (x:lf_expr) (y:lf_expr) : lf_expr * lf_expr * lf_expr =
+and path_equivalence (env:environment) (x:expr) (y:expr) : expr * expr * expr =
   raise NotImplemented
 
 (** returns a derivation of tequal t u *)
-and type_equivalence (env:environment) (t:lf_expr) (dt:lf_expr) (u:lf_expr) (du:lf_expr) : lf_expr =
+and type_equivalence (env:environment) (t:expr) (dt:expr) (u:expr) (du:expr) : expr =
   (* dt : istype t *)
   (* du : istype u *)
   raise NotImplemented
 
 (** returns a derivation of hastype e t *)
-let rec type_check (env:environment) (e:lf_expr) (t:lf_expr) (dt:lf_expr) : lf_expr =
+let rec type_check (env:environment) (e:expr) (t:expr) (dt:expr) : expr =
   (* dt : istype t *)
   (* see figure 13, page 716 [EEST] *)
   let (s,ds,h) = type_synthesis env e in	(* ds : istype x ; h : hastype e s *)
@@ -57,31 +57,31 @@ let rec type_check (env:environment) (e:lf_expr) (t:lf_expr) (dt:lf_expr) : lf_e
   raise NotImplemented			(* here we'll apply the rule "cast" *)
 
 (** returns a type t and derivations of istype t and hastype x t *)
-and type_synthesis (env:environment) (x:lf_expr) : lf_expr * lf_expr * lf_expr =
+and type_synthesis (env:environment) (x:expr) : expr * expr * expr =
   (* assume nothing *)
   (* see figure 13, page 716 [EEST] *)
 
   (* match unmark e with *)
-  (* | APPLY(O O_lambda, tx) -> ( *)
+  (* | BASIC(O O_lambda, tx) -> ( *)
   (*     let (t,x) = args2 tx in *)
 
   raise NotImplemented
 
 (** returns a derivation of istype t *)
-let type_validity (env:environment) (t:lf_expr) : lf_expr =
+let type_validity (env:environment) (t:expr) : expr =
   raise NotImplemented
 
 (** returns a term y and a derivation of hastype y t and a derivation of oequal x y t *)
-let rec term_normalization (env:environment) (t:lf_expr) (dt:lf_expr) (x:lf_expr) (dx:lf_expr) : lf_expr * lf_expr * lf_expr =
+let rec term_normalization (env:environment) (t:expr) (dt:expr) (x:expr) (dx:expr) : expr * expr * expr =
   (* dt : istype t *)
   (* dx : hastype x t *)
   raise NotImplemented
 
 (** returns the type t of x and derivations of istype t and hastype x t  *)
-and path_normalization (env:environment) (x:lf_expr) : lf_expr * lf_expr * lf_expr =
+and path_normalization (env:environment) (x:expr) : expr * expr * expr =
   raise NotImplemented
 
-let rec type_normalization (env:environment) (t:lf_expr) : lf_expr =
+let rec type_normalization (env:environment) (t:expr) : expr =
   raise NotImplemented
 
 let self = nowhere 1234 (cite_tactic (Tactic_name "tscheck") END)
@@ -92,10 +92,10 @@ let rec tscheck surr env pos tp args =
   | F_Apply(F_istype,[t]) -> (
       if tactic_tracing then see env "t" t;
       match unmark t with
-      | APPLY(T T_Pi,args) -> (
+      | BASIC(T T_Pi,args) -> (
           let (a,b) = args2 args in
           if tactic_tracing then (see env "a" a; see env "b" b);
-          TacticSuccess ( with_pos_of t (APPLY(V (Var (id "∏_istype")), a ** b ** CDR(self ** self ** END))) )
+          TacticSuccess ( with_pos_of t (BASIC(V (Var (id "∏_istype")), a ** b ** CDR(self ** self ** END))) )
          )
       | _ -> Default.default surr env pos tp args
       )
@@ -109,7 +109,7 @@ let rec tscheck surr env pos tp args =
      )
   | F_Pi(v,a,b) -> (
       match tscheck surr (local_lf_bind env v a) (get_pos tp) b args with
-      | TacticSuccess e -> TacticSuccess (with_pos pos (LAMBDA(v,e)))
+      | TacticSuccess e -> TacticSuccess (with_pos pos (TEMPLATE(v,e)))
       | TacticFailure as r -> r)
   | _ -> Default.default surr env pos tp args
 

@@ -125,7 +125,7 @@ let defCommand env defs =
     )
     env defs
 
-let is_can x = (function (APPLY _) -> true | _ -> false) (unmark x)
+let is_can x = (function (BASIC _) -> true | _ -> false) (unmark x)
 
 let checkLFCommand env pos x =
   printf "Check LF   = %a\n%!" _e (env,x);
@@ -174,7 +174,7 @@ let checkTSCommand env x =
   printf "      type : %a\n%!" _t (env,t);
   if unmark t = unmark oexp then (
     match unmark x' with
-    | LAMBDA _ ->
+    | TEMPLATE _ ->
 	let ts = Tau.tau env x' in
 	printf "   TS type : %a ?\n%!" _ts (env,ts)
     | _ -> ()

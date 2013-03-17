@@ -26,19 +26,19 @@ open Tau
 open Printer
 
 let abstraction1 pos (env:environment) = function
-  | ARG(t,ARG((_,LAMBDA(x, _)),_)) -> ts_bind env x t
+  | ARG(t,ARG((_,TEMPLATE(x, _)),_)) -> ts_bind env x t
   | _ -> env
 
 let abstraction2 pos (env:environment) = function
-  | ARG(_,ARG(_,ARG(n,ARG((_,LAMBDA(x,_)),_)))) -> ts_bind env x (get_pos n, make_T_El n)
+  | ARG(_,ARG(_,ARG(n,ARG((_,TEMPLATE(x,_)),_)))) -> ts_bind env x (get_pos n, make_T_El n)
   | _ -> env
 
 let abstraction3 pos (env:environment) = function
-  | ARG(f,ARG(_,ARG((_,LAMBDA(x, _)),_))) -> (
+  | ARG(f,ARG(_,ARG((_,TEMPLATE(x, _)),_))) -> (
       try
 	let tf = tau env f in (
 	match unmark tf with
-	| APPLY(T T_Pi, ARG(t, _)) -> ts_bind env x t
+	| BASIC(T T_Pi, ARG(t, _)) -> ts_bind env x t
 	| _ -> env)
       with TypeCheckingFailure _ | NotImplemented ->
 	printf "%a: warning: abstraction3: \"tau\" not implemented for %a\n%!" _pos_of f _e (env,f);
@@ -60,7 +60,7 @@ let apply_ts_binder env i e =
   if not enable_ts_binders then env else
   let pos = get_pos e in
   match unmark e with
-  | APPLY(h,args) -> (
+  | BASIC(h,args) -> (
       try
         (List.assoc (h,i) ts_binders) pos env args
       with
@@ -81,16 +81,11 @@ let rec un_singleton t =
 (* background assumption: all types in the environment have been verified *)
 
 let apply_tactic surr env pos t args = function
-  | Tactic_sequence _ -> raise NotImplemented
   | Tactic_name name ->
       let tactic =
         try List.assoc name !tactics
         with Not_found -> err env pos ("unknown tactic: " ^ name) in
       tactic surr env pos t args
-  | Tactic_index n ->
-      if n < List.length env.local_lf_context
-      then TacticSuccess (var_to_expr pos (VarRel n))
-      else err env pos ("index out of range: "^string_of_int n)
 
 let show_tactic_result env tac k =
   if tactic_tracing then
@@ -100,13 +95,13 @@ let show_tactic_result env tac k =
    | TacticFailure -> printf "tactic: %a; failure\n%!" _tac tac);
   k
 
-let rec natural_type (env:environment) (x:lf_expr) : lf_type =
+let rec natural_type (env:environment) (x:expr) : lf_type =
   (* this function is not well-debugged *)
   (* assume nothing *)
   (* see figure 9 page 696 [EEST] *)
   let pos = get_pos x in
   match unmark x with
-  | APPLY(l,args) ->
+  | BASIC(l,args) ->
       let t = head_to_type env pos l in
       let rec repeat i args t =
 	let t = un_singleton t 		(* even this is probably not enough to ensure that a function type t looks like one *)
@@ -122,10 +117,10 @@ let rec natural_type (env:environment) (x:lf_expr) : lf_type =
         | CDR _, _ -> err env pos "pi2 expected a pair (2)"
         | END, t -> t
       in nowhere 5 (repeat 0 args t)
-  | LAMBDA _ -> err env pos "LF lambda expression found, has no natural type"
-  | CONS _ -> err env pos "LF pair found, has no natural type"
+  | TEMPLATE _ -> err env pos "LF lambda expression found, has no natural type"
+  | PAIR _ -> err env pos "LF pair found, has no natural type"
 
-let car_passed_term pos head args_passed = with_pos pos (APPLY(head,reverse_spine (CAR args_passed)))
+let car_passed_term pos head args_passed = with_pos pos (BASIC(head,reverse_expr_list (CAR args_passed)))
 
 let subst_car_passed_term pos head args_passed b = 
   if !debug_mode then printf "subst_car_passed_term head %a args_passed %a b %a\n%!" _h head _s args_passed _t (empty_environment,b);
@@ -133,7 +128,7 @@ let subst_car_passed_term pos head args_passed b =
   if !debug_mode then printf "subst_car_passed_term returns %a\n%!" _t (empty_environment,r);
   r
 
-let rec head_reduction (env:environment) (x:lf_expr) : lf_expr =
+let rec head_reduction (env:environment) (x:expr) : expr =
   (* see figure 9 page 696 [EEST] *)
   (* assume x is not a pair or a function *)
   (* raises Not_found if there is no head reduction *)
@@ -141,7 +136,7 @@ let rec head_reduction (env:environment) (x:lf_expr) : lf_expr =
      while looking for singletons, instead of calling the routine natural_type *)
   let pos = get_pos x in
   match unmark x with
-  | APPLY(h,args) -> (
+  | BASIC(h,args) -> (
       match h with
       | TAC _ -> raise Internal	(* all tactics should have been handled during type checking *)
       | (U _|O _|T _) -> raise Not_found (* we know the constants in our signature don't involve singleton types *)
@@ -167,10 +162,10 @@ let rec head_reduction (env:environment) (x:lf_expr) : lf_expr =
 		raise Internal
 	  in repeat t args_passed args
      )
-  | CONS _ 
-  | LAMBDA _ -> raise Internal
+  | PAIR _ 
+  | TEMPLATE _ -> raise Internal
 
-let rec head_normalization (env:environment) (x:lf_expr) : lf_expr =
+let rec head_normalization (env:environment) (x:expr) : expr =
   (* see figure 9 page 696 [EEST] *)
   if !debug_mode then printf "entering head_normalization: x = %a\n%!" _e (env,x);
   try 
@@ -188,7 +183,7 @@ let type_equiv = Alpha.UEqual.type_equiv empty_uContext 0
 
 let compare_var_to_expr v e =
   match unmark e with
-  | APPLY(V w, END) -> v = w
+  | BASIC(V w, END) -> v = w
   | _ -> false
 
 let open_context t1 (env,p,o,t2) =
@@ -203,30 +198,30 @@ let open_context t1 (env,p,o,t2) =
 
 let unpack_El' t =
   match unmark t with
-  | APPLY(T T_El',args) -> args2 args
+  | BASIC(T T_El',args) -> args2 args
   | _ -> raise FalseWitness
 
 let unpack_Pi' t =
   match unmark t with
-  | APPLY(T T_Pi',args) -> args2 args
+  | BASIC(T T_Pi',args) -> args2 args
   | _ -> raise FalseWitness
 
 let unpack_ev' o =
   match unmark o with
-  | APPLY(O O_ev',args) -> args4 args
+  | BASIC(O O_ev',args) -> args4 args
   | _ -> raise FalseWitness
 
 let unpack_lambda' o =
   match unmark o with
-  | APPLY(O O_lambda',args) -> args2 args
+  | BASIC(O O_lambda',args) -> args2 args
   | _ -> raise FalseWitness
 
 let apply_2 shift f x y = Substitute.apply_args (rel_shift_expr shift f) (x ** y ** END)
 
 let rec check_istype env t =
   match unmark t with
-  | APPLY(V (Var i), END) -> if not (isid i && is_tts_type_variable env (id_to_name i)) then err env (get_pos t) "variable not declared as a type"
-  | APPLY(T th, args) -> (
+  | BASIC(V (Var i), END) -> if not (isid i && is_tts_type_variable env (id_to_name i)) then err env (get_pos t) "variable not declared as a type"
+  | BASIC(T th, args) -> (
       match th with
       | T_Pi' ->
 	  let t1,t2 = args2 args in
@@ -249,20 +244,20 @@ let rec check_istype env t =
 and check_hastype env t o p =
   if !debug_mode then printf "check_hastype\n p = %a\n o = %a\n t = %a\n%!" _e (env,p) _e (env,o) _e (env,t);
   match unmark p with
-  | APPLY(V p', END) when is_witness_var p' -> (
+  | BASIC(V p', END) when is_witness_var p' -> (
       let o' = base_var p' in
       let t' =
 	try tts_fetch_type env p'
 	with Not_found -> err env (get_pos p) "variable not in context" in
       if not (compare_var_to_expr o' o) then err env (get_pos o) ("expected variable " ^ vartostring o');
       if not (term_equiv t t') then mismatch_term_tstype_tstype env o t' t)
-  | APPLY(W wh, pargs) -> (
+  | BASIC(W wh, pargs) -> (
       match wh with
       | W_wev ->
 	  let pf,po = args2 pargs in
           let f,o,t1,t2 = unpack_ev' o in
           check_hastype env t1 o po;
-          let u = nowhere 123 (APPLY(T T_Pi', t1 ** t2 ** END)) in
+          let u = nowhere 123 (BASIC(T T_Pi', t1 ** t2 ** END)) in
           check_hastype env u f pf;
           let t2' = Substitute.apply_args t2 (po ** o ** END) in
           if not (term_equiv t2' t) then mismatch_term_tstype_tstype env o t t2'
@@ -282,11 +277,11 @@ and check_hastype env t o p =
       try
 	check_hastype env t o (head_reduction env p)
       with
-	Not_found -> err env (get_pos p) ("expected a witness expression: " ^ lf_expr_to_string env p)
+	Not_found -> err env (get_pos p) ("expected a witness expression: " ^ expr_to_string env p)
 
 and check_type_equality env t t' p =
   match unmark p with
-  | APPLY(W wh, pargs) -> (
+  | BASIC(W wh, pargs) -> (
       match wh with
       | W_weleq ->
 	  let peq = args1 pargs in
@@ -300,12 +295,12 @@ and check_type_equality env t t' p =
       | W_wevt1 | W_wevt2 | W_wevf | W_wevo | W_wbeta | W_weta
 	-> raise FalseWitness
      )
-  | _ -> err env (get_pos p) ("expected a witness expression :  " ^ lf_expr_to_string env p)
+  | _ -> err env (get_pos p) ("expected a witness expression :  " ^ expr_to_string env p)
 
 
 and check_witnessed_object_equality env t o o' p =
   match unmark p with
-  | APPLY(W wh, pargs) -> (
+  | BASIC(W wh, pargs) -> (
       match wh with
       | W_wbeta ->
 	  let p1,p2 = args2 pargs in
@@ -372,7 +367,7 @@ let rec min_target_kind t =
 
 (** Type checking and term_equiv routines. *)
 
-let rec term_equivalence (env:environment) (x:lf_expr) (y:lf_expr) (t:lf_type) : unit =
+let rec term_equivalence (env:environment) (x:expr) (y:expr) (t:lf_type) : unit =
   (* assume x and y have already been verified to be of type t *)
   (* see figure 11, page 711 [EEST] *)
   if !debug_mode then printf " term_equiv\n\t x=%a\n\t y=%a\n\t t=%a\n%!" _e (env,x) _e (env,y) _t (env,t);
@@ -402,14 +397,14 @@ let rec term_equivalence (env:environment) (x:lf_expr) (y:lf_expr) (t:lf_type) :
 	  ));
   if !debug_mode then printf " term_equiv okay\n%!"
 
-and path_equivalence (env:environment) (x:lf_expr) (y:lf_expr) : lf_type =
+and path_equivalence (env:environment) (x:expr) (y:expr) : lf_type =
   (* assume x and y are head reduced *)
   (* see figure 11, page 711 [EEST] *)
   if !debug_mode then printf " path_equivalence\n\t x=%a\n\t y=%a\n%!" _e (env,x) _e (env,y);
   let t =
   (
   match x,y with
-  | (xpos,APPLY(head,args)), (ypos,APPLY(head',args')) -> (
+  | (xpos,BASIC(head,args)), (ypos,BASIC(head',args')) -> (
       if head <> head' then raise TermEquivalenceFailure;
       let t = head_to_type env xpos head in
       let rec repeat t args_passed args args' =
@@ -510,35 +505,35 @@ let rec is_product_type env t =
 
 (** Type checking routines *)
 
-let rec type_check (surr:surrounding) (env:environment) (e0:lf_expr) (t:lf_type) : lf_expr =
+let rec type_check (surr:surrounding) (env:environment) (e0:expr) (t:lf_type) : expr =
   (* assume t has been verified to be a type *)
   (* see figure 13, page 716 [EEST] *)
   (* we modify the algorithm to return a possibly modified expression e, with holes filled in by tactics *)
   let pos = get_pos t in
   match unmark e0, unmark t with
-  | APPLY(TAC tac,args), _ -> (
+  | BASIC(TAC tac,args), _ -> (
       let pos = get_pos e0 in
       match show_tactic_result env tac (apply_tactic surr env pos t args tac) with
       | TacticSuccess suggestion -> type_check surr env suggestion t
       | TacticFailure -> (* we may want the tactic itself to raise the error message, when tactics are chained *)
           raise (TypeCheckingFailure (env, surr, [
-                               pos, "tactic failed: "^ lf_expr_to_string env e0;
+                               pos, "tactic failed: "^ expr_to_string env e0;
                                pos, "in hole of type\n\t"^lf_type_to_string env t])))
 
-  | LAMBDA(v,body), F_Pi(w,a,b) -> (* the published algorithm is not applicable here, since
+  | TEMPLATE(v,body), F_Pi(w,a,b) -> (* the published algorithm is not applicable here, since
                                    our lambda doesn't contain type information for the variable,
                                    and theirs does *)
       let surr = (env,S_body,Some e0,Some t) :: surr in
       let body = type_check surr (local_lf_bind env v a) body b in
-      pos, LAMBDA(v,body)
-  | LAMBDA _, F_Sigma _ ->
+      pos, TEMPLATE(v,body)
+  | TEMPLATE _, F_Sigma _ ->
       raise (TypeCheckingFailure (env, surr, [
-				  get_pos e0, "error: expected a pair but got a function:\n\t" ^ lf_expr_to_string env e0]))
-  | LAMBDA _, _ ->
+				  get_pos e0, "error: expected a pair but got a function:\n\t" ^ expr_to_string env e0]))
+  | TEMPLATE _, _ ->
       (* we don't have singleton kinds, so if t is definitionally equal to a product type, it already looks like one *)
       raise (TypeCheckingFailure (env, surr, [
 				  get_pos t, "error: expected something of type\n\t" ^ lf_type_to_string env t;
-				  get_pos e0, "but got a function\n\t" ^ lf_expr_to_string env e0]))
+				  get_pos e0, "but got a function\n\t" ^ expr_to_string env e0]))
   | _, F_Sigma(w,a,b) -> (* The published algorithm omits this, correctly, but we want to
                             give advice to tactics for filling holes in [p], so we try type-directed
                             type checking as long as possible. *)
@@ -546,7 +541,7 @@ let rec type_check (surr:surrounding) (env:environment) (e0:lf_expr) (t:lf_type)
       let x = type_check ((env,S_projection 1,Some e0,Some t) :: surr) env x a in
       let b = subst_type x b in
       let y = type_check ((env,S_projection 2,Some e0,Some t) :: surr) env y b in
-      pos, CONS(x,y)
+      pos, PAIR(x,y)
 
   | _, _  ->
       let (e,s) = type_synthesis surr env e0 in
@@ -557,18 +552,18 @@ let rec type_check (surr:surrounding) (env:environment) (e0:lf_expr) (t:lf_type)
       with SubtypeFailure -> 
 	mismatch_term_type_type env e0 (un_singleton s) t
 
-and type_synthesis (surr:surrounding) (env:environment) (m:lf_expr) : lf_expr * lf_type =
+and type_synthesis (surr:surrounding) (env:environment) (m:expr) : expr * lf_type =
   (* assume nothing *)
   (* see figure 13, page 716 [EEST] *)
   (* return a pair consisting of the original expression with any tactic holes filled in,
      and the synthesized type *)
   let pos = get_pos m in
   match unmark m with
-  | LAMBDA _ -> err env pos ("function has no type: " ^ lf_expr_to_string env m)
-  | CONS(x,y) ->
+  | TEMPLATE _ -> err env pos ("function has no type: " ^ expr_to_string env m)
+  | PAIR(x,y) ->
       let x',t = type_synthesis surr env x in
-      let y',u = type_synthesis surr env y in (pos,CONS(x',y')), (pos,F_Sigma(id "_",t,u))
-  | APPLY(head,args) ->
+      let y',u = type_synthesis surr env y in (pos,PAIR(x',y')), (pos,F_Sigma(id "_",t,u))
+  | BASIC(head,args) ->
       match head with
       | TAC _ -> err env pos "tactic found in context where no type advice is available"
       | _ -> ();
@@ -580,11 +575,11 @@ and type_synthesis (surr:surrounding) (env:environment) (m:lf_expr) : lf_expr * 
 	  print_context None stdout env;
 	  raise Internal
       in
-      let args_passed = END in            (* we retain the arguments we've passed as a spine in reverse order *)
+      let args_passed = END in            (* we retain the arguments we've passed as a expr_list in reverse order *)
       let rec repeat i env head_type args_passed args = (
         match unmark head_type, args with
         | F_Pi(v,a',a''), ARG(m',args') ->
-            let surr = (env,S_spine'(i,head,args_passed,args'),Some m,None) :: surr in
+            let surr = (env,S_expr_list'(i,head,args_passed,args'),Some m,None) :: surr in
             let env = apply_ts_binder env i m in
             let m' = type_check surr env m' a' in
 	    if !debug_mode then (
@@ -605,12 +600,12 @@ and type_synthesis (surr:surrounding) (env:environment) (m:lf_expr) : lf_expr * 
         | _, ARG(arg,_) ->
 	    printf "%a: head= %a, args_passed= %a, args= %a\n%!" _pos pos _h head _s args_passed _s args;
 	    err env (get_pos arg) "extra argument"
-        | _, CAR _ -> err env pos ("pi1 expected a pair (3) but got " ^ lf_expr_to_string env (with_pos pos (APPLY(head,reverse_spine args_passed))))
+        | _, CAR _ -> err env pos ("pi1 expected a pair (3) but got " ^ expr_to_string env (with_pos pos (BASIC(head,reverse_expr_list args_passed))))
         | _, CDR _ -> err env pos "pi2 expected a pair (3)"
        )
       in
       let (args',t) = repeat 0 env head_type args_passed args in
-      let e = pos, APPLY(head,args') in
+      let e = pos, BASIC(head,args') in
       let t = with_pos_of t (F_Singleton(e,t)) in (* this isn't quite like the algorithm in the paper, but it seems to work *)
       e,t
 
@@ -669,7 +664,7 @@ let type_validity (surr:surrounding) (env:environment) (t:lf_type) : lf_type =
 	    try tfhead_to_kind head
 	    with UndeclaredTypeConstant(pos,name) -> err env pos ("undeclared type constant: " ^ name)
 	  in
-          let rec repeat i env kind args_passed (args:lf_expr list) =
+          let rec repeat i env kind args_passed (args:expr list) =
             match kind, args with
             | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), [] 
 	      -> List.rev args_passed
@@ -683,8 +678,8 @@ let type_validity (surr:surrounding) (env:environment) (t:lf_type) : lf_type =
           let args' = repeat 1 env kind [] args in
           F_Apply(head,args')
       | F_Singleton(x,t) ->
-          let t = type_validity ((env,S_spine 2,None,Some t0) :: surr) env t in
-          let x = type_check ((env,S_spine 1,None,Some t0) :: surr) env x t in                (* rule 46 *)
+          let t = type_validity ((env,S_expr_list 2,None,Some t0) :: surr) env t in
+          let x = type_check ((env,S_expr_list 1,None,Some t0) :: surr) env x t in                (* rule 46 *)
           F_Singleton(x,t)
      ) in
   type_validity surr env t
@@ -701,7 +696,7 @@ let rec num_args t = match unmark t with
 
 let term_normalization_ctr = new_counter()
 
-let rec term_normalization (env:environment) (x:lf_expr) (t:lf_type) : lf_expr =
+let rec term_normalization (env:environment) (x:expr) (t:lf_type) : expr =
   (* see figure 9 page 696 [EEST] *)
   let (pos,t0) = t in
   match t0 with
@@ -711,10 +706,10 @@ let rec term_normalization (env:environment) (x:lf_expr) (t:lf_type) : lf_expr =
       if !debug_mode then printf "term_normalization(%d) x = %a\n%!" c _e (env,x);
       let result =
 	match unmark x with
-	| LAMBDA(_,body) -> body	(* this is just an optimization *)
+	| TEMPLATE(_,body) -> body	(* this is just an optimization *)
 	| _ -> apply_args (rel_shift_expr 1 x) (ARG(var_to_lf_bare (VarRel 0),END)) in
       let body = term_normalization env result b in
-      let r = pos, LAMBDA(v,body) in
+      let r = pos, TEMPLATE(v,body) in
       if !debug_mode then printf "term_normalization(%d) r = %a\n%!" c _e (env,result);
       r
   | F_Sigma(v,a,b) ->
@@ -725,28 +720,28 @@ let rec term_normalization (env:environment) (x:lf_expr) (t:lf_type) : lf_expr =
       let x = term_normalization env x a in
       let b = subst_type x b in
       let y = term_normalization env y b in
-      pos, CONS(x,y)
+      pos, PAIR(x,y)
   | F_Apply _ ->
       let x = head_normalization env x in
       let (x,t) = path_normalization env x in
       x
   | F_Singleton(x',t) -> term_normalization env x t
 
-and path_normalization (env:environment) (x:lf_expr) : lf_expr * lf_type =
+and path_normalization (env:environment) (x:expr) : expr * lf_type =
   (* returns the normalized term x and the inferred type of x *)
   (* see figure 9 page 696 [EEST] *)
   (* assume x is head normalized *)
   if !debug_mode then printf " path_normalization entering with x=%a\n%!" _e (env,x);
   let pos = get_pos x in
   match unmark x with
-  | LAMBDA _ -> err env pos "path_normalization encountered a function"
-  | CONS _ -> err env pos "path_normalization encountered a pair"
-  | APPLY(head,args) -> (
+  | TEMPLATE _ -> err env pos "path_normalization encountered a function"
+  | PAIR _ -> err env pos "path_normalization encountered a pair"
+  | BASIC(head,args) -> (
       if !debug_mode then printf "\thead=%a args=%a\n%!" _h head _s args;
       let t0 = head_to_type env pos head in
       let (t,args) =
         let args_passed = END in          (* we store the arguments we've passed in reverse order *)
-        let rec repeat t args_passed args : lf_type * spine = (
+        let rec repeat t args_passed args : lf_type * expr_list = (
 	  if !debug_mode then printf " path_normalization repeat\n\tt=%a\n\targs_passed=%a\n\targs=%a\n%!" _e (env,x) _s args_passed _s args;
           match unmark t with
           | F_Pi(v,a,b) -> (
@@ -784,7 +779,7 @@ and path_normalization (env:environment) (x:lf_expr) : lf_expr * lf_type =
               | ARG(x,args) -> err env (get_pos x) "unexpected argument")
 	 ) in
 	repeat t0 args_passed args in
-      ((pos,APPLY(head,args)), t))
+      ((pos,BASIC(head,args)), t))
 
 let rec type_normalization (env:environment) (t:lf_type) : lf_type =
   (* see figure 9 page 696 [EEST] *)
@@ -801,7 +796,7 @@ let rec type_normalization (env:environment) (t:lf_type) : lf_type =
   | F_Apply(head,args) ->
       let kind = tfhead_to_kind head in
       let args =
-        let rec repeat env kind (args:lf_expr list) =
+        let rec repeat env kind (args:expr list) =
           match kind, args with
           | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), [] -> []
           | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), x :: args -> err env pos "too many arguments"

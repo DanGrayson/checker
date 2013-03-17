@@ -11,7 +11,7 @@ let rec list_assoc2 x = function (* like List.assoc, but matches on the second m
 
 let isunused_variable_expression x =
   match unmark x with
-  | APPLY(V v, END) -> isunused v
+  | BASIC(V v, END) -> isunused v
   | _ -> false
 
 exception Args_match_failure
@@ -36,7 +36,7 @@ let args4 s =
   | ARG(x,ARG(y,ARG(z,ARG(a,END)))) -> x,y,z,a
   | _ -> raise Args_match_failure
 
-let cite_tactic tac args = APPLY(TAC tac, args)
+let cite_tactic tac args = BASIC(TAC tac, args)
 
 let default_tactic = cite_tactic (Tactic_name "default") END
 
@@ -68,7 +68,7 @@ let rec join_args_rev a b =
   | CDR a -> join_args_rev a (CDR b)
   | END -> b
 
-let reverse_spine a = join_args_rev a END
+let reverse_expr_list a = join_args_rev a END
 
 let rec args_compare expr_compare a b =
   match (a,b) with
@@ -82,25 +82,25 @@ let rec map_list f = function
   | x :: a as s -> let x' = f x in let a' = map_list f a in if x' == x && a' == a then s else x' :: a'
   | [] as s -> s
 
-let rec list_to_spine = function
-  | x :: a -> x ** list_to_spine a
+let rec list_to_expr_list = function
+  | x :: a -> x ** list_to_expr_list a
   | [] -> END
 
-type spine_member =
-  | Spine_arg of lf_expr
+type expr_list_member =
+  | Spine_arg of expr
   | Spine_car
   | Spine_cdr
 
-let rec spine_member_list_to_spine = function
-  | Spine_arg x :: a -> ARG(x,spine_member_list_to_spine a)
-  | Spine_car :: a -> CAR(spine_member_list_to_spine a)
-  | Spine_cdr :: a -> CDR(spine_member_list_to_spine a)
+let rec expr_list_member_list_to_expr_list = function
+  | Spine_arg x :: a -> ARG(x,expr_list_member_list_to_expr_list a)
+  | Spine_car :: a -> CAR(expr_list_member_list_to_expr_list a)
+  | Spine_cdr :: a -> CDR(expr_list_member_list_to_expr_list a)
   | [] -> END
 
-let rec exists_in_spine p args =
+let rec exists_in_expr_list p args =
   match args with
-  | ARG(x,a) -> p x || exists_in_spine p a
-  | CAR a | CDR a -> exists_in_spine p a
+  | ARG(x,a) -> p x || exists_in_expr_list p a
+  | CAR a | CDR a -> exists_in_expr_list p a
   | END -> false
 
 let rec args_length = function
@@ -122,13 +122,13 @@ let rec args_iter f pi1 pi2 args =
   | END -> ()
 
 let pi1 = function
-  | pos, APPLY(h,args) -> (pos,APPLY(h,join_args args (CAR END)))
-  | pos, CONS(x,_) -> x
+  | pos, BASIC(h,args) -> (pos,BASIC(h,join_args args (CAR END)))
+  | pos, PAIR(x,_) -> x
   | _ -> (trap(); raise Internal)
 
 let pi2 = function
-  | pos, APPLY(h,args) -> (pos,APPLY(h,join_args args (CDR END)))
-  | pos, CONS(_,y) -> y
+  | pos, BASIC(h,args) -> (pos,BASIC(h,join_args args (CDR END)))
+  | pos, PAIR(_,y) -> y
   | _ -> (trap(); raise Internal)
 
 let locate x l =
@@ -155,24 +155,24 @@ let head_to_type env pos = function
  *)
 let rec id_subst_expr shift subl e =
   match unmark e with
-  | APPLY(h,args) -> (
-      let args' = map_spine (id_subst_expr shift subl) args in
+  | BASIC(h,args) -> (
+      let args' = map_expr_list (id_subst_expr shift subl) args in
       match h with
       | V (Var v) -> (
 	  try
-	    get_pos e, APPLY(V (VarRel (locate v subl + shift)),args')
+	    get_pos e, BASIC(V (VarRel (locate v subl + shift)),args')
 	  with Not_found ->
-	    if args == args' then e else get_pos e, APPLY(h,args'))
+	    if args == args' then e else get_pos e, BASIC(h,args'))
       | W _ | V _ | U _ | T _ | O _ | TAC _ ->
-	  if args == args' then e else get_pos e, APPLY(h,args'))
-  | CONS(x,y) ->
+	  if args == args' then e else get_pos e, BASIC(h,args'))
+  | PAIR(x,y) ->
       let x' = id_subst_expr shift subl x in
       let y' = id_subst_expr shift subl y in
-      if x' == x && y' == y then e else get_pos e, CONS(x',y')
-  | LAMBDA(v, body) ->
+      if x' == x && y' == y then e else get_pos e, PAIR(x',y')
+  | TEMPLATE(v, body) ->
       let shift = shift + 1 in
       let body' = id_subst_expr shift subl body in
-      if body' == body then e else get_pos e, LAMBDA(v, body')
+      if body' == body then e else get_pos e, TEMPLATE(v, body')
 
 and id_subst_type shift subl t =
   match unmark t with
@@ -229,21 +229,21 @@ let abstract_type v x = v, rel1_type v x
 
 let lambda1 v0 x =
   with_pos_of x (
-  LAMBDA(v0, rel1_expr v0 x))
+  TEMPLATE(v0, rel1_expr v0 x))
 
 let lambda2 v0 v1 x =
   with_pos_of x (
-  LAMBDA(v0,
+  TEMPLATE(v0,
 	 with_pos_of x (
-	 LAMBDA(v1, rel2_expr v0 v1 x))))
+	 TEMPLATE(v1, rel2_expr v0 v1 x))))
 
 let lambda3 v0 v1 v2 x =
   with_pos_of x (
-  LAMBDA(v0,
+  TEMPLATE(v0,
 	 with_pos_of x (
-	 LAMBDA(v1,
+	 TEMPLATE(v1,
 		with_pos_of x (
-		LAMBDA(v2,
+		TEMPLATE(v2,
 		       rel3_expr v0 v1 v2 x))))))
 
 let make_Var c = Var c
@@ -255,15 +255,15 @@ let make_F_Sigma t (v,u) = F_Sigma(v, t, rel1_type v u)
 let make_F_Sigma_simple t u = F_Sigma(arrow_good_var_name t, t, u)
 let make_F_Sigma_reassemble t (v,u) = F_Sigma(v, t, u)
 
-let make_U h a = APPLY(U h, a)
-let make_T h a = APPLY(T h, a)
-let make_O h a = APPLY(O h, a)
-let make_W h a = APPLY(W h, a)
+let make_U h a = BASIC(U h, a)
+let make_T h a = BASIC(T h, a)
+let make_O h a = BASIC(O h, a)
+let make_W h a = BASIC(W h, a)
 
 let make_U_next x = make_U U_next (x ** END)
 let make_U_max x y = make_U U_max (x **  y ** END)
 
-let uuu = nowhere 187 (APPLY(T T_U', END))
+let uuu = nowhere 187 (BASIC(T T_U', END))
 
 let make_T_El x = make_T T_El (x ** END)
 let make_T_El' x w = make_T T_El' (x ** w ** END)
@@ -319,7 +319,7 @@ let this_object_of_type pos o t =
   let id = id "x" in
   let v = Var id in
   let a = with_pos pos (F_Singleton(o,oexp)) in
-  let b = hastype (nowhere 126 (APPLY(V v,END))) t in
+  let b = hastype (nowhere 126 (BASIC(V v,END))) t in
   with_pos pos (make_F_Sigma a (id,b))
 
 (*

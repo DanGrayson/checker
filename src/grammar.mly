@@ -11,10 +11,10 @@ open Printer
 %start command ts_exprEof
 %type <Toplevel.command> command
 %type <Typesystem.lf_type> lf_type ts_judgment
-%type <Typesystem.lf_expr> lf_expr ts_expr
+%type <Typesystem.expr> expr ts_expr
 
 (* for parsing a single expression *)
-%type <Typesystem.lf_expr> ts_exprEof
+%type <Typesystem.expr> ts_exprEof
 
 %token <int> NUMBER
 
@@ -92,7 +92,7 @@ lf_type:
 
 unmarked_lf_type:
 
-    | f= lf_type_constant args= lf_expr*
+    | f= lf_type_constant args= expr*
 	{ F_Apply(f,args) }
 
     | Pi v= identifier Colon a= lf_type Comma b= lf_type
@@ -113,25 +113,25 @@ unmarked_lf_type:
     | a= lf_type Arrow b= lf_type
        { unmark (a @-> b) }
 
-    | Singleton LeftParen x= lf_expr Colon t= lf_type RightParen
+    | Singleton LeftParen x= expr Colon t= lf_type RightParen
 	{ F_Singleton(x,t) }
 
-    | LeftBracket t= lf_expr Type RightBracket
+    | LeftBracket t= expr Type RightBracket
 	{ unmark (if !ts_mode then istype t else istype_embedded_witnesses t) }
 
-    | LeftBracket a= lf_expr Colon t= lf_expr RightBracket
+    | LeftBracket a= expr Colon t= expr RightBracket
 	{ unmark (hastype a t) }
 
-    | LeftBracket a= lf_expr EqualEqual b= lf_expr Colon t= lf_expr RightBracket
+    | LeftBracket a= expr EqualEqual b= expr Colon t= expr RightBracket
 	{ unmark (object_equality a b t) }
 
-    | LeftBracket t= lf_expr EqualEqual u= lf_expr RightBracket
+    | LeftBracket t= expr EqualEqual u= expr RightBracket
 	{ unmark (type_equality t u) }
 
-    | LeftBracket t= lf_expr Tilde u= lf_expr Type RightBracket
+    | LeftBracket t= expr Tilde u= expr Type RightBracket
 	{ unmark (type_uequality t u) }
 
-    | LeftBracket a= lf_expr Tilde b= lf_expr Colon t= lf_expr RightBracket
+    | LeftBracket a= expr Tilde b= expr Colon t= expr RightBracket
 	{ unmark (object_uequality a b t) }
 
     | a= lf_type Turnstile b= lf_type
@@ -142,10 +142,10 @@ unmarked_lf_type:
     | v= marked_identifier Type
 	{ let (pos,v) = v in make_F_Sigma texp (v,(if !ts_mode then istype_v else istype_embedded_witnesses_v) pos v) }
 
-    | v= marked_identifier ColonColon t= lf_expr
+    | v= marked_identifier ColonColon t= expr
 	{ let (pos,v) = v in make_F_Sigma oexp (v,hastype (id_to_expr pos v) t) }
 
-    | v= marked_identifier ColonColonEqual e= lf_expr ColonColon t= lf_expr
+    | v= marked_identifier ColonColonEqual e= expr ColonColon t= expr
 	{ let (pos,v) = v in make_F_Sigma (with_pos_of e (F_Singleton(e,oexp))) (v,hastype (id_to_expr pos v) t) }
 
 lf_type_constant:
@@ -153,45 +153,45 @@ lf_type_constant:
     | l= NAME
 	{ let pos = Position($startpos, $endpos) in lookup_type_constant pos l }
 
-lf_expr:
+expr:
 
-    | e= unmarked_lf_expr
+    | e= unmarked_expr
 	{(Position($startpos, $endpos), e)}
 
-    | e= parenthesized(lf_expr) {e}
+    | e= parenthesized(expr) {e}
 
-unmarked_lf_expr:
+unmarked_expr:
 
-    | LeftParen Kpair a= lf_expr b= lf_expr RightParen
-    | LeftParen a= lf_expr Comma b= lf_expr RightParen
-	{ CONS(a, b) }
+    | LeftParen Kpair a= expr b= expr RightParen
+    | LeftParen a= expr Comma b= expr RightParen
+	{ PAIR(a, b) }
 
-    | Lambda v= marked_identifier_or_unused Comma body= lf_expr
-    | v= marked_identifier_or_unused ArrowFromBar body= lf_expr
+    | Lambda v= marked_identifier_or_unused Comma body= expr
+    | v= marked_identifier_or_unused ArrowFromBar body= expr
 	{ unmark (lambda1 (unmark v) body) }
 
     | empty_hole
 	{$1}
 
-    | head_and_args = short_head_and_reversed_spine
-    | LeftParen head_and_args= lf_expr_head_and_reversed_spine RightParen
-	{ let (hd,args) = head_and_args in APPLY(hd,reverse_spine args) }
+    | head_and_args = short_head_and_reversed_expr_list
+    | LeftParen head_and_args= expr_head_and_reversed_expr_list RightParen
+	{ let (hd,args) = head_and_args in BASIC(hd,reverse_expr_list args) }
 
-lf_expr_head_and_reversed_spine:
+expr_head_and_reversed_expr_list:
 
-    | head_and_args= lf_expr_head_and_reversed_spine arg= lf_expr
-    | head_and_args= short_head_and_reversed_spine arg= lf_expr
+    | head_and_args= expr_head_and_reversed_expr_list arg= expr
+    | head_and_args= short_head_and_reversed_expr_list arg= expr
 	{ app head_and_args arg }
 
-    | head_and_args= lf_expr_head_and_reversed_spine K_CAR
-    | head_and_args= short_head_and_reversed_spine K_CAR
+    | head_and_args= expr_head_and_reversed_expr_list K_CAR
+    | head_and_args= short_head_and_reversed_expr_list K_CAR
 	{ car head_and_args }
 
-    | head_and_args= lf_expr_head_and_reversed_spine K_CDR
-    | head_and_args= short_head_and_reversed_spine K_CDR
+    | head_and_args= expr_head_and_reversed_expr_list K_CDR
+    | head_and_args= short_head_and_reversed_expr_list K_CDR
 	{ cdr head_and_args }
 
-short_head_and_reversed_spine:
+short_head_and_reversed_expr_list:
 
     | tsterm_head
 	{ $1, END }
@@ -199,12 +199,12 @@ short_head_and_reversed_spine:
     | identifier
 	{ V (Var $1), END }
 
-    | head_and_args= short_head_and_reversed_spine K_1
-    | head_and_args= parenthesized(lf_expr_head_and_reversed_spine) K_1
+    | head_and_args= short_head_and_reversed_expr_list K_1
+    | head_and_args= parenthesized(expr_head_and_reversed_expr_list) K_1
     	{ car head_and_args }
 
-    | head_and_args= short_head_and_reversed_spine K_2
-    | head_and_args= parenthesized(lf_expr_head_and_reversed_spine) K_2
+    | head_and_args= short_head_and_reversed_expr_list K_2
+    | head_and_args= parenthesized(expr_head_and_reversed_expr_list) K_2
     	{ cdr head_and_args }
 
     | tac= closed_tactic_expr
@@ -218,16 +218,10 @@ closed_tactic_expr:
     | Dollar name= NAME
 	{ Tactic_name name }
 
-    | Dollar index= NUMBER
-	{ Tactic_index index }
-
 tactic_expr:
 
     | s= tactic_expr_2
 	{s}
-
-    | s= tactic_expr_2 Semicolon t= tactic_expr
-	{ Tactic_sequence (s,t) }
 
 tactic_expr_2:
 
@@ -271,7 +265,7 @@ unmarked_command:
     | Check TS? o= ts_expr Period
 	{ Toplevel.CheckTS o }
 
-    | Check LF e= lf_expr Period
+    | Check LF e= expr Period
 	{ Toplevel.CheckLF e }
 
     | Check TS? Colon t= ts_judgment Period
@@ -287,8 +281,8 @@ unmarked_command:
     | Alpha e1= ts_expr EqualEqual e2= ts_expr Period
 	{ Toplevel.Alpha (e1, e2) }
 
-    | Theorem LF name= NAME Colon thm= lf_type ColonEqual deriv= lf_expr Period
-    | Theorem name= NAME thm= ts_judgment ColonColonEqual deriv= lf_expr Period
+    | Theorem LF name= NAME Colon thm= lf_type ColonEqual deriv= expr Period
+    | Theorem name= NAME thm= ts_judgment ColonColonEqual deriv= expr Period
     | Theorem name= NAME thm= ts_judgment ColonEqual deriv= ts_expr Period
 	{
 	  let pos = Position($startpos, $endpos) in
@@ -502,7 +496,7 @@ tsterm_head:
     | name= CONSTANT
 	{ let pos = Position($startpos, $endpos) in try lookup_label pos name with Not_found -> $syntaxerror }
 
-arglist:
+argumentlist:
 
     | LeftBracket a= separated_list(Comma,ts_expr) RightBracket
 	{a}
@@ -528,7 +522,7 @@ ts_expr:
     | e= unmarked_ts_expr
 	{ Position($startpos, $endpos), e }
 
-ts_spine_member:
+ts_expr_list_member:
 
     | x= ts_expr
 	{ Spine_arg x }
@@ -553,11 +547,11 @@ unmarked_ts_expr:
     | tac= closed_tactic_expr
 	{ cite_tactic tac END }
 
-    | f= ts_expr LeftBracket o= separated_list(Comma,ts_spine_member) RightBracket
-	{ unmark (Substitute.apply_args f (spine_member_list_to_spine o)) }
+    | f= ts_expr LeftBracket o= separated_list(Comma,ts_expr_list_member) RightBracket
+	{ unmark (Substitute.apply_args f (expr_list_member_list_to_expr_list o)) }
 
     | identifier
-	{ APPLY(V (Var $1),END) }
+	{ BASIC(V (Var $1),END) }
 
     | empty_hole {$1}
 
@@ -565,8 +559,8 @@ unmarked_ts_expr:
 	%prec Reduce_application
 	{ let pos = Position($startpos, $endpos) in
 	  if !ts_mode
-	  then APPLY(O O_ev,  f ** o ** (pos, default_tactic) ** END) 
-	  else APPLY(O O_ev', f ** o ** (pos, default_tactic) ** (pos, default_tactic) ** END) 
+	  then BASIC(O O_ev,  f ** o ** (pos, default_tactic) ** END) 
+	  else BASIC(O O_ev', f ** o ** (pos, default_tactic) ** (pos, default_tactic) ** END) 
 	}
 
     | LeftParen x= identifier Colon t= ts_expr RightParen ArrowFromBar o= ts_expr
@@ -600,15 +594,15 @@ unmarked_ts_expr:
 	{ make_T_Sigma t1 (x,t2) }
 
     | Kumax LeftParen u= ts_expr Comma v= ts_expr RightParen
-	{ APPLY(U U_max, u**v**END)  }
+	{ BASIC(U U_max, u**v**END)  }
 
     | label= tsterm_head
-	{ APPLY(label, END ) }
+	{ BASIC(label, END ) }
 
     | LeftParen a= ts_expr Comma b= ts_expr RightParen
-	{ CONS(a,b) }
+	{ PAIR(a,b) }
 
-    | name= CONSTANT_SEMI vars= separated_list(Comma,marked_identifier_or_unused) RightBracket args= arglist
+    | name= CONSTANT_SEMI vars= separated_list(Comma,marked_identifier_or_unused) RightBracket args= argumentlist
 	{
 	 let label =
 	   let pos = Position($startpos, $endpos) in
@@ -630,8 +624,8 @@ unmarked_ts_expr:
 	     let args = List.map2 (
 	       fun indices arg ->
 		 (* examples:
-		    1: if indices = [ SingleVariable 0; SingleVariable 1], change arg to (LAMBDA v0 , (LAMBDA v1, arg))
-		    2: if indices = [ WitnessPair 0                     ], change arg to (LAMBDA v0$, (LAMBDA v0, arg))
+		    1: if indices = [ SingleVariable 0; SingleVariable 1], change arg to (TEMPLATE v0 , (TEMPLATE v1, arg))
+		    2: if indices = [ WitnessPair 0                     ], change arg to (TEMPLATE v0$, (TEMPLATE v0, arg))
 		  *)
 		 List.fold_right (
 		 fun wrapped_index arg -> with_pos (get_pos arg) (
@@ -645,7 +639,7 @@ unmarked_ts_expr:
 		) indices arg
 	      ) varindices args
 	     in
-	     APPLY(label,list_to_spine args)
+	     BASIC(label,list_to_expr_list args)
        }
 
 (*

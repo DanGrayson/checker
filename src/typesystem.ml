@@ -1,48 +1,39 @@
 (* -*- coding: utf-8 -*- *)
 
-(** Voevodsky's type system TS mixed with the type system LF of Logical Frameworks (Edinburgh style).
+(** Voevodsky's type systems TS, TTS, HTS.
 
 @author Dan Grayson
 
     *)
 
-(**
-
-This file encodes the type system TS developed in the paper {i A universe
-polymorphic type system}, by Vladimir Voevodsky, the version dated October,
-2012.  We call that [UPTS].
-
-There is also a preprint {i Description of LF in TS style}, by Vladimir
-Voevodsky, dated November 27, 2012.  We call that [LFinTS].
-
-  *)
-
 open Error
 open Variables
 
-(** A u-level expression, [M], is constructed inductively as: [n], [v], [M+n], or
-    [max(M,M')], where [v] is a universe variable and [n] is a natural number.
- *)
-
-(** Labels for u-expressions of TS. *)
 type uHead = | U_next | U_max
-
-(** Labels for t-expressions of TS. *)
 type tHead = | T_El | T_El' | T_U | T_U' | T_Pi | T_Pi' | T_Sigma | T_Pt
              | T_Coprod | T_Coprod2 | T_Empty | T_IP | T_Id | T_Proof
-
-(** Labels for o-expressions of TS. *)
-type oHead =
-  | O_u | O_j | O_ev | O_ev' | O_lambda | O_lambda' | O_forall | O_pair | O_pr1 | O_pr2 | O_total
-  | O_pt | O_pt_r | O_tt | O_coprod | O_ii1 | O_ii2 | O_sum | O_empty | O_empty_r
-  | O_c | O_ip_r | O_ip | O_paths | O_refl | O_J | O_rr0 | O_rr1
-  | O_nat | O_nat_r | O_O | O_S
-
-(** Labels for w-expressions of TS.  They are witnesses to "extended" judgments. *)
-type wHead =
-  | W_Wrefl | W_Wsymm | W_Wtrans | W_wrefl | W_wsymm | W_wtrans | W_wconv
-  | W_wconveq | W_weleq | W_wpi1 | W_wpi2 | W_wlam | W_wl1 | W_wl2 | W_wev
-  | W_wevt1 | W_wevt2 | W_wevf | W_wevo | W_wbeta | W_weta
+type oHead = | O_u | O_j | O_ev | O_ev' | O_lambda | O_lambda' | O_forall | O_pair | O_pr1
+	     | O_pr2 | O_total | O_pt | O_pt_r | O_tt | O_coprod | O_ii1 | O_ii2 | O_sum
+	     | O_empty | O_empty_r | O_c | O_ip_r | O_ip | O_paths | O_refl | O_J | O_rr0
+	     | O_rr1 | O_nat | O_nat_r | O_O | O_S
+type wHead = | W_Wrefl | W_Wsymm | W_Wtrans | W_wrefl | W_wsymm | W_wtrans | W_wconv
+	     | W_wconveq | W_weleq | W_wpi1 | W_wpi2 | W_wlam | W_wl1 | W_wl2 | W_wev
+	     | W_wevt1 | W_wevt2 | W_wevf | W_wevo | W_wbeta | W_weta
+type expr_head =
+  | U of uHead | T of tHead | O of oHead | W of wHead
+  | V of var
+  | TAC of tactic_expr
+and expr = unmarked_expr marked
+and unmarked_expr =
+  | BASIC of expr_head * expr_list
+  | TEMPLATE of identifier * expr
+  | PAIR of expr * expr
+and expr_list =
+  | ARG of expr * expr_list
+  | END
+  | CAR of expr_list | CDR of expr_list
+and tactic_expr =
+  | Tactic_name of string			 (* $foo *)
 
 (** Canonical type families of LF.
 
@@ -78,73 +69,12 @@ type lf_type_head =
       (* the next one is needed just to accommodate undefined type constants encountered by the parser *)
   | F_undeclared_type_constant of position * string
 
-    (** The type [lf_expr_head] accommodates the variables of LF, and the constants of
-        LF, which in turn include the labels of TS, the inference rules of TS,
-        and the definitions of TS (in various aspects).
-
-	In parsing and printing, the constants have have names enclosed in
-	brackets, e.g., [\[ev\]], reminiscent of the syntax for the labels on
-	nodes of TS expressions.
-
-	We implement "spine form", where applications are represented as [(f x
-	y z ...)], with [f] not being an application, thus being a constant or
-	a variable, i.e., being a "lf_expr_head".
-
-	For definitions, we envision multiple aspects.  For example, aspect 1
-	could be a t-expression T and aspect 2 could be a derivation of the
-	judgment that T is a type.  Or aspect 1 could be an o-expression t,
-	aspect 2 could be a type T, and aspect 3 could be a derivation of the
-	judgment that t has type T.  Similarly for the other two types of
-	judgment in TS. *)
-type lf_expr_head =
-  | U of uHead			(** labels for u-expressions of TS *)
-  | T of tHead			(** labels for t-expressions of TS *)
-  | O of oHead			(** labels for o-expressions of TS *)
-  | W of wHead			(** labels for w-expressions of TS *)
-  | V of var			(** labels for variables of TS *)
-  | TAC of tactic_expr		(** An empty hole, to be filled in later by calling a tactic routine. *)
-
-(** The expressions of LF, including the expressions of TS as instances of [APPLY].*)
-and lf_expr = unmarked_expr marked
-and unmarked_expr =
-  | LAMBDA of identifier * lf_expr
-	(** Lambda expression of LF. *)
-  | CONS of lf_expr * lf_expr
-	(** A pair of dependent type. *)
-  | APPLY of lf_expr_head * spine
-	(** A variable or constant or tactic applied iteratively to its
-	    arguments, if any.  This includes the expressions of TS, with
-	    something such as [\[ev\]] as the head and the branches as the
-	    parts of the spine.
-
-	    Because the head is a variable, we are blocked from further
-	    evaluation, unless the variable has a definition (i.e., belongs to
-	    a singleton type), in which case, the unfolding will happen when
-	    the LF type checker needs to put the expression in weak head
-	    reduced form. *)
-
-(** A spine is basically a list of arguments to which the head function of an
-    atomic term will be applied, in sequence, but with two new instructions,
-    [CAR] and [CDR], which turn the tables on the function, expecting it to be
-    a pair, and replacing it by the first or second component, respectively. *)
-and spine =
-  | ARG of lf_expr * spine
-  | CAR of spine
-  | CDR of spine
-  | END
-
-and lf_type = bare_lf_type marked
+type lf_type = bare_lf_type marked
 and bare_lf_type =
   | F_Pi of identifier * lf_type * lf_type
   | F_Sigma of identifier * lf_type * lf_type
-  | F_Apply of lf_type_head * lf_expr list
-  | F_Singleton of (lf_expr * lf_type)
-
-(** Tactics *)
-and tactic_expr =
-  | Tactic_index of int				 (* $3 *)
-  | Tactic_name of string			 (* $foo *)
-  | Tactic_sequence of tactic_expr * tactic_expr (* $(a;b;c) *)
+  | F_Apply of lf_type_head * expr list
+  | F_Singleton of (expr * lf_type)
 
 let name_F_Pi = "Pi"
 
@@ -167,8 +97,8 @@ let rec arrow_good_var_name t =
 let arrow a b = nowhere 4 (F_Pi(arrow_good_var_name a, a, b))
 let ( @-> ) = arrow
 
-let var_to_lf_bare v = nowhere 1    (APPLY(V v,END))
-let var_to_expr pos v = with_pos pos (APPLY(V v,END))
+let var_to_lf_bare v = nowhere 1    (BASIC(V v,END))
+let var_to_expr pos v = with_pos pos (BASIC(V v,END))
 
 let id_to_expr_bare v = var_to_lf_bare (Var v)
 let id_to_expr pos v = var_to_expr pos (Var v)
@@ -424,30 +354,30 @@ let rec compare_kinds k l =
     -> K_greater
   | _ -> K_incomparable
 
-(** spines *)
+(** expr_lists *)
 
-let rec map_spine f s = match s with
-  | ARG(x,a) -> let x' = f x in let a' = map_spine f a in if x' == x && a' == a then s else ARG(x',a')
-  | CAR a -> let a' = map_spine f a in if a' == a then s else CAR(a')
-  | CDR a -> let a' = map_spine f a in if a' == a then s else CDR(a')
+let rec map_expr_list f s = match s with
+  | ARG(x,a) -> let x' = f x in let a' = map_expr_list f a in if x' == x && a' == a then s else ARG(x',a')
+  | CAR a -> let a' = map_expr_list f a in if a' == a then s else CAR(a')
+  | CDR a -> let a' = map_expr_list f a in if a' == a then s else CDR(a')
   | END -> s
 
 (** relative indices *)
 
 let rec rel_shift_expr limit shift e =
   match unmark e with
-  | APPLY(h,args) ->
-      let args' = map_spine (rel_shift_expr limit shift) args in
+  | BASIC(h,args) ->
+      let args' = map_expr_list (rel_shift_expr limit shift) args in
       let h' = rel_shift_head limit shift h in
-      if h' == h && args' == args then e else get_pos e, APPLY(h',args')
-  | CONS(x,y) ->
+      if h' == h && args' == args then e else get_pos e, BASIC(h',args')
+  | PAIR(x,y) ->
       let x' = rel_shift_expr limit shift x in
       let y' = rel_shift_expr limit shift y in
-      if x' == x && y' == y then e else get_pos e, CONS(x',y')
-  | LAMBDA(v, body) ->
+      if x' == x && y' == y then e else get_pos e, PAIR(x',y')
+  | TEMPLATE(v, body) ->
       let limit = limit + 1 in
       let body' = rel_shift_expr limit shift body in
-      if body' == body then e else get_pos e, LAMBDA(v, body')
+      if body' == body then e else get_pos e, TEMPLATE(v, body')
 
 and rel_shift_head limit shift h = 
   match h with
@@ -485,7 +415,7 @@ let rel_shift_type shift t = if shift = 0 then t else rel_shift_type 0 shift t
 module MapString = Map.Make(String)
 module MapIdentifier = Map.Make(Identifier)
 
-type tts_judgment = TTS_istype | TTS_hastype of lf_expr
+type tts_judgment = TTS_istype | TTS_hastype of expr
 
 type environment = {
     state : int;
@@ -593,37 +523,37 @@ let first_w_var env =
   | (name,_) :: _ -> idw name
   | _ -> raise Internal
 
-type uContext = UContext of var marked list * (lf_expr * lf_expr) marked list
+type uContext = UContext of var marked list * (expr * expr) marked list
 
 let empty_uContext = UContext([],[])
 
 (** Tactics. *)
 
 type surrounding_component =
-  | S_spine of int			 (* argument position, starting with 1 *)
-  | S_spine' of int			 (* argument position, starting with 1 *)
-	* lf_expr_head			 (* head *)
-	* spine				 (* arguments passed, in reverse order, possibly updated by tactics *)
-	* spine				 (* arguments coming *)
+  | S_expr_list of int			 (* argument position, starting with 1 *)
+  | S_expr_list' of int			 (* argument position, starting with 1 *)
+	* expr_head			 (* head *)
+	* expr_list				 (* arguments passed, in reverse order, possibly updated by tactics *)
+	* expr_list				 (* arguments coming *)
   | S_type_args of int                   (* argument position, starting with 1 *)
 	* lf_type list			 (* arguments passed, possibly updated by tactics *)
   | S_type_family_args of int            (* argument position, starting with 1 *)
-	* lf_expr list			 (* arguments passed, in reverse order, possibly updated by tactics *)
+	* expr list			 (* arguments passed, in reverse order, possibly updated by tactics *)
   | S_projection of int
   | S_body
 
-type surrounding = (environment * surrounding_component * lf_expr option * lf_type option) list
+type surrounding = (environment * surrounding_component * expr option * lf_type option) list
 
 type tactic_return =
   | TacticFailure
-  | TacticSuccess of lf_expr
+  | TacticSuccess of expr
 
 type tactic_function =
-       surrounding         (* the ambient APPLY(...), if any, and the index among its head and arguments of the hole *)
+       surrounding         (* the ambient BASIC(...), if any, and the index among its head and arguments of the hole *)
     -> environment						      (* the active context *)
     -> position							      (* the source code position of the tactic hole *)
     -> lf_type							      (* the type of the hole, e.g., [texp] *)
-    -> spine							      (* the arguments *)
+    -> expr_list							      (* the arguments *)
  -> tactic_return						      (* the proffered expression *)
 
 let tactics : (string * tactic_function) list ref = ref []

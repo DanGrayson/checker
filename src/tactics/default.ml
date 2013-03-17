@@ -28,10 +28,10 @@ let rec default surr env pos t args =
   match unmark t with
   | F_Singleton(e,_) -> TacticSuccess e
   | F_Pi(v,a,b) -> (
-      let e0 = pos, LAMBDA(v,(pos,default_tactic)) in
+      let e0 = pos, TEMPLATE(v,(pos,default_tactic)) in
       let surr = (env,S_body,Some e0,Some t) :: surr in
       match default surr (local_lf_bind env v a) (get_pos t) b args with
-      | TacticSuccess e -> TacticSuccess (with_pos pos (LAMBDA(v,e)))
+      | TacticSuccess e -> TacticSuccess (with_pos pos (TEMPLATE(v,e)))
       | TacticFailure as r -> r)
   | F_Apply((F_hastype|F_istype),_) -> Assumption.assumption surr env pos t args
   | F_Apply(F_wexp,[]) -> 

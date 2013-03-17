@@ -15,7 +15,7 @@ let tn12 surr env pos t args =
                 get_pos t, "but found a hole of type " ^ lf_type_to_string env t
               ]));
   match surr with
-  | (env,S_spine i, Some (pos, APPLY(head,args)), _) :: _ -> TacticSuccess (
+  | (env,S_expr_list i, Some (pos, BASIC(head,args)), _) :: _ -> TacticSuccess (
       try
 	Tau.tau env (nth_arg (i+1) args)
       with (NotImplemented | TypeCheckingFailure _) ->

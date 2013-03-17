@@ -9,8 +9,8 @@ open Helpers
 
 module type S =
   sig
-    val uequiv     : uContext -> lf_expr -> lf_expr -> bool
-    val term_equiv : uContext -> int -> lf_expr -> lf_expr -> bool
+    val uequiv     : uContext -> expr -> expr -> bool
+    val term_equiv : uContext -> int -> expr -> expr -> bool
     val type_equiv : uContext -> int -> lf_type -> lf_type -> bool
   end
 
@@ -20,16 +20,16 @@ module Make(Ueq: Universe.Equivalence) : S = struct
 
   let rec term_equiv uc shift x x' =
       match (unmark x, unmark x') with
-      | LAMBDA (_,body), LAMBDA (_,body') -> 
+      | TEMPLATE (_,body), TEMPLATE (_,body') -> 
 	  term_equiv uc shift body body'
-      | APPLY(h,args), APPLY(h',args') -> (
+      | BASIC(h,args), BASIC(h',args') -> (
 	  match (h,h') with
 	  | U _, U _ -> uequiv uc x x'
 	  | V (VarRel i), V (VarRel j) -> shift + i = j
 	  | _ -> 
 	      h = h' && 
 	      args_compare (term_equiv uc shift) args args')
-      | CONS(x,y), CONS(x',y') -> 
+      | PAIR(x,y), PAIR(x',y') -> 
 	  term_equiv uc shift x x' && 
 	  term_equiv uc shift y y'
       | _ -> false

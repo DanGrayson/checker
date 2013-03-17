@@ -119,6 +119,8 @@ Check TTS : [
 
 End. # working on simplifying the syntax for the user
 
+Check TTS : [ _ : x : _ ].
+
 Lemma a8 : * (λ y:T,f y) x ≡ * f x.
 
 #   Local Variables:

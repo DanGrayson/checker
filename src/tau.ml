@@ -6,19 +6,19 @@ open Typesystem
 open Names
 open Helpers
 
-let rec tau (env:environment) e : lf_expr =
+let rec tau (env:environment) e : expr =
   let pos = get_pos e in
   match unmark e with
-  | APPLY(V (Var v),CAR END) -> (		(* pi1 v *)
+  | BASIC(V (Var v),CAR END) -> (		(* pi1 v *)
       if !debug_mode then printf " v = %a\n%!" _i v;
       if !debug_mode then print_context (Some 4) stderr env;
       let t =
 	try List.assoc v env.local_lf_context
 	with Not_found -> raise (TypeCheckingFailure(env, [], [pos, "variable not in LF context: " ^ idtostring v])) in
       match unmark t with
-      | F_Sigma(_,_,(_,F_Apply(F_hastype,[(_,APPLY(V v',END)); t]))) -> t
+      | F_Sigma(_,_,(_,F_Apply(F_hastype,[(_,BASIC(V v',END)); t]))) -> t
       | _ -> (trap(); raise Internal))
-  | APPLY(h,args) -> (
+  | BASIC(h,args) -> (
       match h with
       | TAC _ -> raise NotImplemented
       | V v ->
@@ -49,14 +49,14 @@ let rec tau (env:environment) e : lf_expr =
               | _ -> raise (TypeCheckingFailure(env, [], [pos, "expected [j] to have two branches"])))
           | O_ev' -> (
               match args with
-              | ARG(f,ARG(o,ARG(t1,ARG((_,LAMBDA(x,(pos,LAMBDA(w,t2)))),END)))) ->
+              | ARG(f,ARG(o,ARG(t1,ARG((_,TEMPLATE(x,(pos,TEMPLATE(w,t2)))),END)))) ->
 		  let t2 = Substitute.subst_expr o t2 in
 		  let t2 = Substitute.subst_expr (pos,default_tactic (* ? *)) t2 in
                   unmark t2
               | _ -> raise Internal)
           | O_ev -> (
               match args with
-              | ARG(f,ARG(o,ARG(t1,ARG((_,LAMBDA(x,t2)),END)))) ->
+              | ARG(f,ARG(o,ARG(t1,ARG((_,TEMPLATE(x,t2)),END)))) ->
                   unmark (Substitute.subst_expr o t2)
               | _ -> raise Internal)
           | O_lambda' -> (

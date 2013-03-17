@@ -5,8 +5,8 @@ open Typesystem
 
 module type S =
   sig
-    val uequiv     : uContext -> lf_expr -> lf_expr -> bool
-    val term_equiv : uContext -> int -> lf_expr -> lf_expr -> bool
+    val uequiv     : uContext -> expr -> expr -> bool
+    val term_equiv : uContext -> int -> expr -> expr -> bool
     val type_equiv : uContext -> int -> lf_type -> lf_type -> bool
   end
 

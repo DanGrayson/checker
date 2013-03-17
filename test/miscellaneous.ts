@@ -84,8 +84,6 @@ Theorem fot { ⊢ u Ulevel, t : UU[next[u]] } ⊢ *t Type ::= u |-> t |-> (El_is
 
 Theorem B   { ⊢ u Ulevel, t : UU[u        ] } ⊢ *t Type ::= u |-> t |-> (El_istype u t).
 
-Theorem C { ⊢ u Ulevel, t : UU[u] } ⊢ *t Type ::= u |-> t |-> (El_istype $1 $0).
-
 Check LF : texp ** oexp .
 Check LF      (pair (UU u0) (uu u0)).
 Check LF : Sigma x: uexp, texp.

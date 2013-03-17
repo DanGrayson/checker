@@ -21,18 +21,18 @@ let concatl = concat <<- List.flatten
 
 let rec names_in_list p_arg args = List.flatten (List.map p_arg args)
 
-let rec names_in_spine args =
+let rec names_in_expr_list args =
   match args with
-  | ARG(x,args) -> names_in_expr x @ names_in_spine args
-  | CAR args | CDR args -> names_in_spine args
+  | ARG(x,args) -> names_in_expr x @ names_in_expr_list args
+  | CAR args | CDR args -> names_in_expr_list args
   | END -> []
 
 and names_in_head = function V (Var v) -> [id_to_name v] | V (VarRel _) | U _ | T _ | W _ | O _ | TAC _ -> []
 
 and names_in_expr (pos,e) = match e with
-  | LAMBDA(x,body) -> names_in_expr body
-  | CONS(x,y) -> names_in_expr x @ names_in_expr y
-  | APPLY(h,args) -> names_in_head h @ names_in_spine args
+  | TEMPLATE(x,body) -> names_in_expr body
+  | PAIR(x,y) -> names_in_expr x @ names_in_expr y
+  | BASIC(h,args) -> names_in_head h @ names_in_expr_list args
 
 and names_in_type (pos,t) = match t with
   | F_Pi(v,t,u) | F_Sigma(v,t,u) -> names_in_type t @ names_in_type u
@@ -52,9 +52,9 @@ let rec rel_occurs_in_head shift h =
 
 and rel_occurs_in_expr shift e =
   match unmark e with
-  | LAMBDA(v,body) -> rel_occurs_in_expr (shift+1) body
-  | CONS(x,y) -> rel_occurs_in_expr shift x || rel_occurs_in_expr shift y
-  | APPLY(h,args) -> rel_occurs_in_head shift h || exists_in_spine (rel_occurs_in_expr shift) args
+  | TEMPLATE(v,body) -> rel_occurs_in_expr (shift+1) body
+  | PAIR(x,y) -> rel_occurs_in_expr shift x || rel_occurs_in_expr shift y
+  | BASIC(h,args) -> rel_occurs_in_head shift h || exists_in_expr_list (rel_occurs_in_expr shift) args
 
 let rec rel_occurs_in_type shift (pos,t) = match t with
   | F_Pi(v,t,u) | F_Sigma(v,t,u) -> rel_occurs_in_type shift t || rel_occurs_in_type (shift+1) u
@@ -74,9 +74,9 @@ let rec occurs_in_head w h =
 
 and occurs_in_expr w e =
   match unmark e with
-  | LAMBDA(v,body) -> occurs_in_expr w body
-  | CONS(x,y) -> occurs_in_expr w x || occurs_in_expr w y
-  | APPLY(h,args) -> occurs_in_head w h || exists_in_spine (occurs_in_expr w) args
+  | TEMPLATE(v,body) -> occurs_in_expr w body
+  | PAIR(x,y) -> occurs_in_expr w x || occurs_in_expr w y
+  | BASIC(h,args) -> occurs_in_head w h || exists_in_expr_list (occurs_in_expr w) args
 
 let rec occurs_in_type w (pos,t) = match t with
   | F_Pi(v,t,u) | F_Sigma(v,t,u) -> occurs_in_type w t || occurs_in_type w u
@@ -143,7 +143,7 @@ let comma_prec = 20,NONASSOC
 let binder_prec = 30,RIGHT
 let arrow_prec = 40,RIGHT
 let times_prec = arrow_prec
-let spine_prec = 50,LEFT
+let expr_list_prec = 50,LEFT
 let star_prec = 60,NONASSOC
 let slash_prec = 80,LEFT
 let start_prec = 90,NONASSOC
@@ -223,7 +223,7 @@ let p2 k = subscript_prec, paren_left subscript_prec k ^ "₂"
 let application_to_lf_string p_arg head args : smart_string =
   make_top (
   args_fold
-    (fun accu arg -> spine_prec, paren_left spine_prec accu ^ " " ^ paren_right spine_prec (p_arg arg))
+    (fun accu arg -> expr_list_prec, paren_left expr_list_prec accu ^ " " ^ paren_right expr_list_prec (p_arg arg))
     p1 p2
     head args)
 
@@ -234,28 +234,28 @@ let rec lf_head_to_string_with_subs subs h : string =
   | W _ | U _ | T _ | O _ -> "@[" ^ expr_head_to_string h ^ "]"
   | TAC tac -> tactic_to_string tac
 
-and lf_expr_to_string_with_subs subs e : smart_string =
+and expr_to_string_with_subs subs e : smart_string =
   match unmark e with
-  | LAMBDA(x,(pos,LAMBDA(x',body))) when is_witness_pair x x' ->
+  | TEMPLATE(x,(pos,TEMPLATE(x',body))) when is_witness_pair x x' ->
       let subs = var_chooser x subs (rel_occurs_in_expr 0 body || rel_occurs_in_expr 1 body) occurs_in_expr body in
       let subs = (witness_id (List.nth subs 0)) :: subs in
-      let s = lf_expr_to_string_with_subs subs body in
+      let s = expr_to_string_with_subs subs body in
       let x = if enable_variable_prettification then rel_to_string subs 1 else id_to_name x in
       let x' = if enable_variable_prettification then rel_to_string subs 0 else id_to_name x' in
       arrow_prec, concat [x;" ⟼ ";x';" ⟼ ";paren_right arrow_prec s]
-  | LAMBDA(x,body) ->
+  | TEMPLATE(x,body) ->
       let subs = var_chooser x subs (rel_occurs_in_expr 0 body) occurs_in_expr body in
-      let s = lf_expr_to_string_with_subs subs body in
+      let s = expr_to_string_with_subs subs body in
       let x = if enable_variable_prettification then rel_to_string subs 0 else id_to_name x in
       arrow_prec, concat [x;" ⟼ ";paren_right arrow_prec s]
-  | CONS(x,y) ->
-      let x = lf_expr_to_string_with_subs subs x in
-      let y = lf_expr_to_string_with_subs subs y in
+  | PAIR(x,y) ->
+      let x = expr_to_string_with_subs subs x in
+      let y = expr_to_string_with_subs subs y in
       (* printf " printing pair: prec x = %s, prec y = %s\n\t x = %s\n\t y = %s\n%!" (prec_to_string (fst x)) (prec_to_string (fst y)) (snd x) (snd y); *)
       top_prec, concat ["(pair ";paren_left list_prec x;" ";paren_left list_prec y;")"]
-  | APPLY(h,args) ->
+  | BASIC(h,args) ->
       let h = top_prec, lf_head_to_string_with_subs subs h in
-      application_to_lf_string (lf_expr_to_string_with_subs subs) h args
+      application_to_lf_string (expr_to_string_with_subs subs) h args
 
 and dependent_sub subs prefix infix infix_prec (v,t,u) =
   let used = not enable_variable_prettification || rel_occurs_in_type 0 u in
@@ -277,11 +277,11 @@ and lf_type_to_string_with_subs subs (_,t) : smart_string = match t with
   | F_Pi   (v,t,u) -> dependent_sub subs "∏ " " ⟶ " arrow_prec (v,t,u)
   | F_Sigma(v,t,u) -> dependent_sub subs "Σ " " × " times_prec (v,t,u)
   | F_Singleton(x,t) ->
-      let x = lf_expr_to_string_with_subs subs x in
+      let x = expr_to_string_with_subs subs x in
       let t = lf_type_to_string_with_subs subs t in
       top_prec, concat ["Singleton(";paren_left colon_prec x;" : ";paren_right colon_prec t;")"]
   | F_Apply(hd,args) ->
-      list_application_to_string (mark_top <<- lf_type_head_to_string) (lf_expr_to_string_with_subs subs) (hd,args)
+      list_application_to_string (mark_top <<- lf_type_head_to_string) (expr_to_string_with_subs subs) (hd,args)
 
 let rec lf_kind_to_string_with_subs subs = function
   | ( K_ulevel | K_expression | K_judgment | K_primitive_judgment | K_witnessed_judgment | K_judged_expression ) as k -> top_prec, List.assoc k lf_kind_constant_table
@@ -298,18 +298,18 @@ let rec lf_kind_to_string_with_subs subs = function
       else
         infix_prec, concat [paren_left infix_prec t; infix; paren_right infix_prec k]
 
-let spine_to_string args = paren_left bottom_prec (
+let expr_list_to_string args = paren_left bottom_prec (
   args_fold
-    (fun accu arg -> spine_prec, paren_left spine_prec accu ^ ";" ^ paren_right spine_prec (lf_expr_to_string_with_subs [] arg))
-    (fun accu -> spine_prec, paren_left spine_prec accu ^ ";CAR")
-    (fun accu -> spine_prec, paren_left spine_prec accu ^ ";CDR")
+    (fun accu arg -> expr_list_prec, paren_left expr_list_prec accu ^ ";" ^ paren_right expr_list_prec (expr_to_string_with_subs [] arg))
+    (fun accu -> expr_list_prec, paren_left expr_list_prec accu ^ ";CAR")
+    (fun accu -> expr_list_prec, paren_left expr_list_prec accu ^ ";CDR")
     (top_prec,"") args)
 
 let env_to_subs env = (* concatenation of the two contexts might not be appropriate later on *)
   List.map fst env.local_lf_context
     @ List.flatten ( List.map ( fun (name,t) -> [ id name; idw name ] ) env.local_tts_context)
 
-let lf_expr_to_string env e = paren_right bottom_prec (lf_expr_to_string_with_subs (env_to_subs env) e)
+let expr_to_string env e = paren_right bottom_prec (expr_to_string_with_subs (env_to_subs env) e)
 
 let lf_type_to_string env t = paren_right bottom_prec (lf_type_to_string_with_subs (env_to_subs env) t)
 
@@ -317,7 +317,7 @@ let lf_kind_to_string env k = paren_right bottom_prec (lf_kind_to_string_with_su
 
 (** Printing of TS terms in TS format. *)
 
-let lf_expr_p e = raise NotImplemented
+let expr_p e = raise NotImplemented
 
 let locate f x =                        (* find the index of the element of the list x for which f is true *)
   let rec repeat i x =
@@ -358,19 +358,19 @@ and lf_atomic_p subs h args = application_to_ts_string subs (lf_head_to_string_w
 
 and ts_expr_to_string subs e : smart_string =
   match unmark e with
-  | CONS(x,y) ->
+  | PAIR(x,y) ->
       let x = ts_expr_to_string subs x in
       let y = ts_expr_to_string subs y in
       top_prec, concat ["(pair ";paren_left list_prec x;" ";paren_left list_prec y;")"] (* does not correspond to our parser *)
-  | LAMBDA(v,body) -> 
+  | TEMPLATE(v,body) -> 
       let v,subs = var_chooser_2 v subs (rel_occurs_in_expr 0 body) occurs_in_expr body in
       arrow_prec, v ^ " ⟾ " ^ paren_right arrow_prec (ts_expr_to_string subs body)
-  | APPLY(h,END) -> top_prec, lf_head_to_string_with_subs subs h
-  | APPLY(h,args) ->
+  | BASIC(h,END) -> top_prec, lf_head_to_string_with_subs subs h
+  | BASIC(h,args) ->
       match h with
       | T T_Pi -> (
           match args with
-          | ARG(t1,ARG((_,LAMBDA(x, t2)),END)) ->
+          | ARG(t1,ARG((_,TEMPLATE(x, t2)),END)) ->
 	      let x,subs' = var_chooser_2 x subs (rel_occurs_in_expr 0 t2) occurs_in_expr t2 in
               if false
               then arrow_prec, concat [paren_left arrow_prec (ts_expr_to_string subs t1);" ⟶ ";paren_right arrow_prec (ts_expr_to_string subs' t2)]
@@ -379,14 +379,14 @@ and ts_expr_to_string subs e : smart_string =
 				     paren_right comma_prec (ts_expr_to_string subs t2);"]"]
           | _ -> lf_atomic_p subs h args)
       | T T_Sigma -> (
-          match args with ARG(t1,ARG((_,LAMBDA(x, t2)),END)) ->
+          match args with ARG(t1,ARG((_,TEMPLATE(x, t2)),END)) ->
 	    let x,subs' = var_chooser_2 x subs (rel_occurs_in_expr 0 t2) occurs_in_expr t2 in
             top_prec, "@[" ^ expr_head_to_string h ^ ";" ^ x ^ "]" ^
             "(" ^ paren_left comma_prec (ts_expr_to_string subs t1) ^ "," ^ paren_right comma_prec (ts_expr_to_string subs' t2) ^ ")"
           | _ -> lf_atomic_p subs h args)
       | O O_ev -> (
           match args with
-          | ARG(f,ARG(o,ARG((_,LAMBDA(x, t)),END))) ->
+          | ARG(f,ARG(o,ARG((_,TEMPLATE(x, t)),END))) ->
 	      let x,subs' = var_chooser_2 x subs (rel_occurs_in_expr 0 t) occurs_in_expr t in
               top_prec, "[ev;" ^ x ^ "][" ^
 	      paren_left comma_prec (ts_expr_to_string subs  f) ^ "," ^
@@ -395,7 +395,7 @@ and ts_expr_to_string subs e : smart_string =
           | _ -> lf_atomic_p subs h args)
       | O O_lambda -> (
           match args with
-          | ARG(t,ARG((_,LAMBDA(x,o)),END)) ->
+          | ARG(t,ARG((_,TEMPLATE(x,o)),END)) ->
 	      let x,subs' = var_chooser_2 x subs (rel_occurs_in_expr 0 o) occurs_in_expr o in
               top_prec, "[λ;" (* lambda *) ^ x ^ "][" ^
 	      paren_left comma_prec (ts_expr_to_string subs  t) ^ "," ^
@@ -403,7 +403,7 @@ and ts_expr_to_string subs e : smart_string =
           | _ -> lf_atomic_p subs h args)
       | O O_forall -> (
           match args with
-          | ARG(u,ARG(u',ARG(o,ARG((_,LAMBDA(x,o')),END)))) ->
+          | ARG(u,ARG(u',ARG(o,ARG((_,TEMPLATE(x,o')),END)))) ->
 	      let x,subs' = var_chooser_2 x subs (rel_occurs_in_expr 0 o') occurs_in_expr o' in
               top_prec, "[forall;" ^ x ^ "][" ^
               paren_left comma_prec (ts_expr_to_string subs  u ) ^ "," ^
@@ -418,7 +418,7 @@ and ts_expr_to_string subs e : smart_string =
 (** Printing functions for definitions, provisional. *)
 
 let parmstostring subs = function
-  | ((UContext(uexp_parms,ueqns):uContext),(texp_parms:var list),(oexp_parms:(var * lf_expr) list))
+  | ((UContext(uexp_parms,ueqns):uContext),(texp_parms:var list),(oexp_parms:(var * expr) list))
     -> concatl [
       if List.length uexp_parms > 0
       then ["(";
@@ -498,9 +498,9 @@ let _ts file (env,x) = output_string file (ts_expr_to_string env x)
 
 let _tac file tac = output_string file (tactic_to_string tac)
 
-let _s file x = output_string file (spine_to_string x)
+let _s file x = output_string file (expr_list_to_string x)
 
-let _e file (env,x) = output_string file (lf_expr_to_string env x)
+let _e file (env,x) = output_string file (expr_to_string env x)
 
 let _el file (env,x) = List.iter (fun x -> printf " "; _e file (env,x)) x
 
@@ -535,7 +535,7 @@ let print_signature env file =
   fprintf file "  Object constants:\n";
   List.iter (fun h ->
     fprintf file "     %a : %a\n" _h h  _t (env,head_to_type env (Error.no_pos 23) h)
-           ) lf_expr_heads;
+           ) expr_heads;
   flush file
 
 (** Print the context. *)
@@ -588,10 +588,10 @@ let print_surroundings (surr:surrounding) =
   let show_surr (env,i,e,t) =
     (match i with
     | S_projection i -> printf "     projection pi_%d\n" i
-    | S_spine i -> printf "     argument %d\n" i
-    | S_spine'(i,h,args_passed,args_coming) -> 
+    | S_expr_list i -> printf "     argument %d\n" i
+    | S_expr_list'(i,h,args_passed,args_coming) -> 
 	printf "     argument %d\n        with head %a\n        and with arguments passed: %a\n        and with arguments coming: %a\n" 
-	  i _h h _s (reverse_spine args_passed) _s (args_coming)
+	  i _h h _s (reverse_expr_list args_passed) _s (args_coming)
     | S_type_args(i,args_passed) -> 
 	printf "     type argument %d\n        with arguments passed: %a\n" i _tl (env,args_passed)
     | S_type_family_args(i,args_passed) ->

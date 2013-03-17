@@ -12,7 +12,7 @@ open Error
 exception WitnessNotFound
 
 let abstract env x =
-  nowhere 202 (LAMBDA(first_var env, nowhere 203 (LAMBDA(first_w_var env, x))))
+  nowhere 202 (TEMPLATE(first_var env, nowhere 203 (TEMPLATE(first_w_var env, x))))
 
 let open_context t1 (env,o,t2) =
   let env = local_tts_declare_object env "x" t1 in
@@ -35,23 +35,23 @@ let rec this_head_reduces env o =   (* returns (p,o'), where p : o == o' : _ *)
   with
     FalseWitness -> raise Not_found
 
-and find_w_hastype env o t : lf_expr = (
+and find_w_hastype env o t : expr = (
   if tactic_tracing then printf "tactic: find_w_hastype: t=%a; o=%a\n%!" _e (env,t) _e (env,o);
   let r = 
   match unmark o with
-  | APPLY(V v, END) ->
+  | BASIC(V v, END) ->
       let t' = tts_fetch_type env v in
       if term_equiv t t'
       then var_to_expr (get_pos o) (witness_var v)
       else raise WitnessNotFound
-  | APPLY(O O_ev',args) ->
+  | BASIC(O O_ev',args) ->
       let (f,o,t1,t2) = args4 args in
       let tf = nowhere 206 (make_T_Pi' t1 t2) in
       let pf = find_w_hastype env f tf in
       let po = find_w_hastype env o t1 in
       let w = make_W_wev pf po in
       nowhere 201 w
-  | APPLY(O O_lambda',args) ->
+  | BASIC(O O_lambda',args) ->
       let (t1',o) = args2 args in
       let (t1,t2) = unpack_Pi' t in
       let (env,o,t2) = open_context t1 (env,o,t2) in
@@ -71,7 +71,7 @@ let rec find_w_type_equality env t t' =
     nowhere 206 make_W_Wrefl)
   else (
     match unmark t, unmark t' with
-    | APPLY(T T_El', args), APPLY(T T_El', args') -> (
+    | BASIC(T T_El', args), BASIC(T T_El', args') -> (
 	let o,p = args2 args in
 	let o',p' = args2 args' in
 	let peq = find_w_object_equality env o o' uuu in
@@ -97,7 +97,7 @@ and find_w_object_equality env o o' t =
       )
    )
 
-let witness (surr:surrounding) (env:environment) (pos:position) (t:lf_type) (args:spine) : tactic_return =
+let witness (surr:surrounding) (env:environment) (pos:position) (t:lf_type) (args:expr_list) : tactic_return =
   try
     match surr with
     | (env,S_type_family_args(3,[o;t]), None, Some (_,F_Apply(F_witnessed_hastype,_))) :: _ ->
@@ -106,7 +106,7 @@ let witness (surr:surrounding) (env:environment) (pos:position) (t:lf_type) (arg
 	TacticSuccess (find_w_object_equality env o o' t)
     | (env,S_type_family_args(3,[t';t]), None, Some (pos,F_Apply(F_witnessed_type_equality,_))) :: _ ->
 	TacticSuccess (find_w_type_equality env t t')
-    | (env,S_spine'(1,T T_El',ARG(o,_),_), _, _) :: _ -> TacticSuccess (find_w_hastype env o uuu)
+    | (env,S_expr_list'(1,T T_El',ARG(o,_),_), _, _) :: _ -> TacticSuccess (find_w_hastype env o uuu)
     | _ -> 
 	printf "witness: unfamiliar surrounding\n%!";
 	print_surroundings surr;

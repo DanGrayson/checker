@@ -6,15 +6,15 @@ open Typesystem
 
 type command' =
   | Axiom of (int list) option * identifier * lf_type
-  | CheckLF of lf_expr
+  | CheckLF of expr
   | CheckWitness of lf_type
   | CheckLFtype of lf_type
-  | CheckTS of lf_expr
-  | UVariable of (string marked) list * (lf_expr * lf_expr) list
+  | CheckTS of expr
+  | UVariable of (string marked) list * (expr * expr) list
   | TVariable of (string marked) list
-  | OVariable of (string marked) list * lf_expr
-  | Alpha of lf_expr * lf_expr
-  | Theorem of (position * string * lf_expr * lf_type)
+  | OVariable of (string marked) list * expr
+  | Alpha of expr * expr
+  | Theorem of (position * string * expr * lf_type)
   | CheckUniverses
   | Show of int option
   | Back of int

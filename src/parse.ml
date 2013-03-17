@@ -9,7 +9,7 @@ open Names
 open Helpers
 
 let lookup_label pos name =
-  try list_assoc2 name (lf_expr_head_table())
+  try list_assoc2 name (expr_head_table())
   with Not_found as e -> fprintf stderr "%a: unknown expression label: @[%s]\n%!" _pos pos name; raise e
 
 let lookup_type_constant pos name =
@@ -19,10 +19,10 @@ let lookup_type_constant pos name =
 type binder_judgment =
   | ULEV
   | IST
-  | HAST of lf_expr
-  | W_HAST of identifier marked * lf_expr
-  | W_TEQ of lf_expr * lf_expr
-  | W_OEQ of lf_expr * lf_expr * lf_expr
+  | HAST of expr
+  | W_HAST of identifier marked * expr
+  | W_TEQ of expr * expr
+  | W_OEQ of expr * expr * expr
 
 let app (hd,reversed_args) arg = (hd, ARG(arg,reversed_args))
 
@@ -62,7 +62,7 @@ let rec bind_pi_list_rev binders b =
 
 let apply_vars f binders =
   let i = ref 0 in
-  APPLY(V f, 
+  BASIC(V f, 
 	List.fold_right 
 	  (fun (pos,v,a) args -> 
 	    let r = ARG(var_to_expr pos (VarRel !i),args) in
@@ -161,7 +161,7 @@ let pi1_implication ((vpos,v),t) u =
       r
   | None -> raise NotImplemented
 
-let apply_binder pos (c:(identifier marked * lf_expr) list) (v : identifier marked) (t1 : lf_type) (u : lf_type) (t2 : position -> identifier -> lf_type) =
+let apply_binder pos (c:(identifier marked * expr) list) (v : identifier marked) (t1 : lf_type) (u : lf_type) (t2 : position -> identifier -> lf_type) =
   (* syntax is { v_1 : T_1 , ... , v_n : T_n |- v Type } u  or  { v_1 : T_1 , ... , v_n : T_n |- v:T } u *)
   (* t1 is texp or oexp; t2 is (fun t -> istype t) or (fun o -> hastype o t) *)
   let (vpos,v) = v in

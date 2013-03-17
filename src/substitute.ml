@@ -26,8 +26,8 @@ let rec subst_expr shift subs e =
   if debug_subst then printf "subst_expr shift=%d subs=%a e=%a\n%!" shift _a (empty_environment,subs) _e (empty_environment,e);
   let pos = get_pos e in
   match unmark e with
-  | APPLY(h,args) -> (
-      let args' = map_spine (subst_expr shift subs) args in
+  | BASIC(h,args) -> (
+      let args' = map_expr_list (subst_expr shift subs) args in
       match h with
       | V (VarRel j) ->
 	  if j < shift then e 
@@ -35,17 +35,17 @@ let rec subst_expr shift subs e =
 	    let i = j-shift in
 	    if i < Array.length subs 
 	    then apply_args (rel_shift_expr shift subs.(i)) args'
-	    else pos, APPLY(V (VarRel (j - Array.length subs)),args')
+	    else pos, BASIC(V (VarRel (j - Array.length subs)),args')
       | _ -> 
-	  if args' == args then e else pos, APPLY(h,args'))
-  | CONS(x,y) -> 
+	  if args' == args then e else pos, BASIC(h,args'))
+  | PAIR(x,y) -> 
       let x' = subst_expr shift subs x
       and y' = subst_expr shift subs y in
-      if x' == x && y' == y then e else pos, CONS(x',y')
-  | LAMBDA(v, body) ->
+      if x' == x && y' == y then e else pos, PAIR(x',y')
+  | TEMPLATE(v, body) ->
       let shift = shift + 1 in
       let body' = subst_expr shift subs body in
-      if body' == body then e else pos, LAMBDA(v, body')
+      if body' == body then e else pos, TEMPLATE(v, body')
 
 and apply_args e args =
   let c = apply_args_counter() in
@@ -53,14 +53,14 @@ and apply_args e args =
   let r =
   let pos = get_pos e in
   match unmark e with
-  | APPLY(h,brgs) -> (pos, APPLY(h, join_args brgs args))
-  | CONS(x,y) -> (
+  | BASIC(h,brgs) -> (pos, BASIC(h, join_args brgs args))
+  | PAIR(x,y) -> (
       match args with
       | ARG _ -> raise (GeneralError "application of a pair to an argument")
       | CAR args -> apply_args x args
       | CDR args -> apply_args y args
       | END -> e)
-  | LAMBDA(_,body) -> (
+  | TEMPLATE(_,body) -> (
       match args with
       | ARG(x,args) -> 
 	  apply_args (subst_expr 0 [|x|] body) args
