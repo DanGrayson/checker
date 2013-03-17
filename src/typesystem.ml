@@ -603,12 +603,12 @@ type surrounding_component =
   | S_spine of int			 (* argument position, starting with 1 *)
   | S_spine' of int			 (* argument position, starting with 1 *)
 	* lf_expr_head			 (* head *)
-	* spine				 (* arguments passed, in reverse order *)
+	* spine				 (* arguments passed, in reverse order, possibly updated by tactics *)
 	* spine				 (* arguments coming *)
   | S_type_args of int                   (* argument position, starting with 1 *)
 	* lf_type list			 (* arguments passed, possibly updated by tactics *)
   | S_type_family_args of int            (* argument position, starting with 1 *)
-	* lf_expr list			 (* arguments passed, possibly updated by tactics *)
+	* lf_expr list			 (* arguments passed, in reverse order, possibly updated by tactics *)
   | S_projection of int
   | S_body
 

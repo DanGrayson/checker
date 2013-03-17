@@ -1,15 +1,5 @@
 (** Top level code. *)
 
-let debug = false
-
-let show_rules = false
-
-let show_definitions = true
-
-let try_normalization = true
-
-let env_limit = Some 20
-
 open Error
 open Variables
 open Typesystem
@@ -29,7 +19,7 @@ exception FileFinished
 exception StopParsingFile
 exception WithPosition of position * exn
 
-let raise_switch ex1 ex2 = raise (if debug then ex1 else ex2)
+let raise_switch ex1 ex2 = raise (if !debug_mode then ex1 else ex2)
 
 let error_summary pos =
   let n = !error_count in

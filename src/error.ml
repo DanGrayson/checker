@@ -1,5 +1,15 @@
 (** Exceptions, experiments, error message handling, and source code positions. *)
 
+let show_rules = false
+
+let show_definitions = true
+
+let try_normalization = true
+
+let env_limit = Some 20
+
+let tactic_tracing = false
+
 let lesser_debug_mode = true
 
 let debug_mode = ref false
@@ -10,13 +20,13 @@ let internal_location_trap = 0
 
 let new_counter () = let n = ref 0 in fun () -> incr n; !n
 
+let proof_general_mode = ref false
+
 let trap () = ()			(* set a break point here *)
 
 let notail x = x			(* insert into code to termporarily prevent tail recursion *)
 
 let error_count = ref 0
-
-let proof_general_mode = ref false
 
 exception DebugMe
 exception GeneralError of string

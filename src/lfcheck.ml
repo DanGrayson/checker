@@ -13,8 +13,6 @@
 
 *)
 
-let tactic_tracing = true
-
 open Error
 open Errorcheck
 open Variables
@@ -678,7 +676,7 @@ let type_validity (surr:surrounding) (env:environment) (t:lf_type) : lf_type =
             | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), x :: args 
 	      -> err env pos "at least one argument too many";
             | K_Pi(v,a,kind'), x :: args ->
-                let x' = type_check ((env,S_spine i,None,Some t0) :: surr) env x a in
+                let x' = type_check ((env,S_type_family_args(i,args_passed),None,Some t0) :: surr) env x a in
                 repeat (i+1) env (subst_kind x' kind') (x' :: args_passed) args
             | K_Pi(_,a,_), [] -> errmissingarg env pos a
           in

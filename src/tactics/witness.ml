@@ -100,11 +100,11 @@ and find_w_object_equality env o o' t =
 let witness (surr:surrounding) (env:environment) (pos:position) (t:lf_type) (args:spine) : tactic_return =
   try
     match surr with
-    | (env,S_spine 3, None, Some (pos,F_Apply(F_witnessed_hastype,[t;o;_]))) :: _ ->
+    | (env,S_type_family_args(3,[o;t]), None, Some (_,F_Apply(F_witnessed_hastype,_))) :: _ ->
 	TacticSuccess (find_w_hastype env o t)
-    | (env,S_spine 4, None, Some (pos,F_Apply(F_witnessed_object_equality,[t;o;o';_]))) :: _ ->
+    | (env,S_type_family_args(4,[o';o;t]), None, Some (_,F_Apply(F_witnessed_object_equality,_))) :: _ ->
 	TacticSuccess (find_w_object_equality env o o' t)
-    | (env,S_spine 3, None, Some (pos,F_Apply(F_witnessed_type_equality,[t;t';_]))) :: _ ->
+    | (env,S_type_family_args(3,[t';t]), None, Some (pos,F_Apply(F_witnessed_type_equality,_))) :: _ ->
 	TacticSuccess (find_w_type_equality env t t')
     | (env,S_spine'(1,T T_El',ARG(o,_),_), _, _) :: _ -> TacticSuccess (find_w_hastype env o uuu)
     | _ -> 
