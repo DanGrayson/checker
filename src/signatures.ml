@@ -145,10 +145,10 @@ let head_to_vardist = function (* optimize later by precomputing the constant re
 let ( @@-> ) a b = K_Pi(arrow_good_var_name a, a, b)
 
 let istype_kind = texp @@-> K_primitive_judgment
-let hastype_kind = oexp @@-> texp @@-> K_judgment
-let type_equality_kind = texp @@-> texp @@-> K_judgment
-let object_equality_kind = oexp @@-> oexp @@-> texp @@-> K_judgment
-let ulevel_equality_kind = uexp @@-> uexp @@-> K_judgment
+let hastype_kind = oexp @@-> texp @@-> K_derivation_tree_judgment
+let type_equality_kind = texp @@-> texp @@-> K_derivation_tree_judgment
+let object_equality_kind = oexp @@-> oexp @@-> texp @@-> K_derivation_tree_judgment
+let ulevel_equality_kind = uexp @@-> uexp @@-> K_derivation_tree_judgment
 let type_uequality_kind = texp @@-> texp @@-> K_primitive_judgment
 let object_uequality_kind = oexp @@-> oexp @@-> texp @@-> K_primitive_judgment
 let istype_witnessed_internally_kind = texp @@-> K_witnessed_judgment
@@ -158,7 +158,7 @@ let witnessed_object_equality_kind = texp @@-> oexp @@-> oexp @@-> wexp @@-> K_w
 
 let jhead_to_kind = function
   | J_uexp -> K_ulevel
-  | J_wexp | J_texp | J_oexp -> K_expression
+  | J_wexp | J_texp | J_oexp -> K_term
   | J_istype -> istype_kind
   | J_hastype -> hastype_kind
   | J_ulevel_equality -> ulevel_equality_kind

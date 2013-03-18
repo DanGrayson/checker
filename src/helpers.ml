@@ -194,7 +194,7 @@ and id_subst_type shift subl t =
 
 let rec id_subst_kind shift subl k =
    match k with
-   | K_primitive_judgment | K_ulevel | K_expression | K_judgment | K_witnessed_judgment -> k
+   | K_primitive_judgment | K_ulevel | K_term | K_derivation_tree_judgment | K_witnessed_judgment -> k
    | K_Pi(v,a,b) ->
        let a' = id_subst_type shift subl a in
        let shift = shift + 1 in

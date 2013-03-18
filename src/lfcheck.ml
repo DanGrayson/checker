@@ -460,7 +460,7 @@ and type_equivalence (env:environment) (t:judgment) (u:judgment) : unit =
           | K_Pi(v,t,k), x :: args, x' :: args' ->
               term_equivalence env x x' t;
               repeat (subst_kind x k) args args'
-          | ( K_expression | K_judgment | K_primitive_judgment ), [], [] -> ()
+          | ( K_term | K_derivation_tree_judgment | K_primitive_judgment ), [], [] -> ()
           | _ -> (trap(); raise Internal)
         in repeat k args args'
     | _ -> raise TypeEquivalenceFailure
@@ -663,9 +663,9 @@ let type_validity (surr:surrounding) (env:environment) (t:judgment) : judgment =
           let kind = jhead_to_kind head in
           let rec repeat i env kind args_passed (args:expr list) =
             match kind, args with
-            | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment ), [] 
+            | ( K_ulevel | K_primitive_judgment | K_term | K_derivation_tree_judgment | K_witnessed_judgment ), [] 
 	      -> List.rev args_passed
-            | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment ), x :: args 
+            | ( K_ulevel | K_primitive_judgment | K_term | K_derivation_tree_judgment | K_witnessed_judgment ), x :: args 
 	      -> err env pos "at least one argument too many";
             | K_Pi(v,a,kind'), x :: args ->
                 let x' = type_check ((env,S_type_family_args(i,args_passed),None,Some t0) :: surr) env x a in
@@ -795,8 +795,8 @@ let rec type_normalization (env:environment) (t:judgment) : judgment =
       let args =
         let rec repeat env kind (args:expr list) =
           match kind, args with
-          | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment ), [] -> []
-          | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment ), x :: args -> err env pos "too many arguments"
+          | ( K_ulevel | K_primitive_judgment | K_term | K_derivation_tree_judgment | K_witnessed_judgment ), [] -> []
+          | ( K_ulevel | K_primitive_judgment | K_term | K_derivation_tree_judgment | K_witnessed_judgment ), x :: args -> err env pos "too many arguments"
           | K_Pi(v,a,kind'), x :: args ->
               term_normalization env x a ::
               repeat env (subst_kind x kind') args

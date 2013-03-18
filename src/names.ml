@@ -74,10 +74,10 @@ let judgment_constant_table = [
 
 let kind_constant_table = [
   K_ulevel, "ulevel";
-  K_expression, "expression";
-  K_judgment, "judgment";
+  K_term, "term";
+  K_witnessed_judgment, "witnessed_judgment";
+  K_derivation_tree_judgment, "derivation_tree_judgment";
   K_primitive_judgment, "primitive_judgment";
-  K_witnessed_judgment, "witnessed_judgment"
 ]
 
 let judgment_head_to_string h = List.assoc h judgment_constant_table
