@@ -16,6 +16,7 @@
 open Error
 open Errorcheck
 open Typesystem
+open Subordination
 open Names
 open Printer
 open Substitute
