@@ -325,7 +325,7 @@ let unused env =
   let env = !env in
   protect
     (fun () ->
-      let x = expr_from_string env "@[Pt][]" in
+      let x = expr_from_string env "@Pt[]" in
       checkLFCommand env (no_pos 124) x)
     (fun () -> no_pos 125)
 

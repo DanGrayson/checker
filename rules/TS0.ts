@@ -65,21 +65,21 @@ Axiom 3.4.24.2 λ_equality2 { ⊢ T Type } { x : T ⊢ U U' Type, o o' : U[x] }
 
 Axiom 3.4.25 ev_hastype { ⊢ T Type } { t : T ⊢ U Type } { ⊢ f : ∏ t:T, U[t], o : T }
 
-       ⊢ @[ev][f,o,T,t.U[t]] : U[o].
+       ⊢ @ev[f,o,T,t.U[t]] : U[o].
 
 Axiom 3.4.26 ev_eq { ⊢ T Type, o o' : T } { t : T ⊢ U U' Type } { ⊢ f f' : ∏ t:T, U[t] }
 
 	      [ f ≡ f' : ∏ t:T, U[t] ] ⇒ [ o ≡ o' : T ] ⇒ ( { ⊢ x : T } [ U[x] ≡ U'[x] ] ) ⇒
 
-	      [ @[ev][f,o,T,U] ≡ @[ev][f',o',T,U'] : U[o] ].
+	      [ @ev[f,o,T,U] ≡ @ev[f',o',T,U'] : U[o] ].
 
 Axiom 3.4.27 beta_reduction { ⊢ T Type, o1 : T } { x : T ⊢ U Type, o2 : U[x] }
 
-      [ @[ev][(λ t:T, o2[t]), o1, T, t.U[t]] ≡ o2[o1] : U[o1] ].
+      [ @ev[(λ t:T, o2[t]), o1, T, t.U[t]] ≡ o2[o1] : U[o1] ].
 
 Axiom 3.4.28 eta_reduction { ⊢ T Type } { t : T ⊢ U Type } { ⊢ f : ∏ t:T, U[t] }
 
-      [ λ x:T, @[ev][f,x,T,t.U[t]] ≡ f : ∏ t:T, U[t] ].
+      [ λ x:T, @ev[f,x,T,t.U[t]] ≡ f : ∏ t:T, U[t] ].
 
 Axiom 3.4.29 jj_hastype { ⊢ M1 M2 Ulevel } [ umax[M1,M2] ~ M2 Ulevel ]
 
@@ -87,15 +87,15 @@ Axiom 3.4.29 jj_hastype { ⊢ M1 M2 Ulevel } [ umax[M1,M2] ~ M2 Ulevel ]
 
 Axiom 3.4.30 El_j_reduction { ⊢ M1 M2 Ulevel, o : UU[M1] }
 
-  	[ umax[M1,M2] ~ M2 Ulevel ] ⇒ [ *@[ev][jj[M1,M2],o,UU[M1],_.UU[M2]] ≡ *o ].
+  	[ umax[M1,M2] ~ M2 Ulevel ] ⇒ [ *@ev[jj[M1,M2],o,UU[M1],_.UU[M2]] ≡ *o ].
 
 Axiom 3.4.31 forall_hastype { ⊢ M1 M2 Ulevel, o1 : UU[M1] } { x : *o1 ⊢ o2 : UU[M2] }
 
-        ⊢ @[forall][M1,M2,o1,t.o2[t]] : UU[umax[M1,M2]].
+        ⊢ @forall[M1,M2,o1,t.o2[t]] : UU[umax[M1,M2]].
 
 Axiom 3.4.32 El_forall_reduction { ⊢ M1 M2 Ulevel, o1 : UU[M1] } { x : *o1 ⊢ o2 : UU[M2] }
 
-        [ (*@[forall][M1,M2,o1,x.o2[x]]) ≡ ∏ x:*o1, *o2[x] ].
+        [ (*@forall[M1,M2,o1,x.o2[x]]) ≡ ∏ x:*o1, *o2[x] ].
 
 #   Local Variables:
 #   compile-command: "make -C .. rules0 "

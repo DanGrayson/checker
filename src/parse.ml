@@ -9,7 +9,7 @@ open Error
 
 let lookup_label pos name =
   try list_assoc2 name (expr_head_table())
-  with Not_found as e -> fprintf stderr "%a: unknown expression label: @[%s]\n%!" _pos pos name; raise e
+  with Not_found as e -> fprintf stderr "%a: unknown expression label: @%s\n%!" _pos pos name; raise e
 
 let lookup_judgment_constant pos name = list_assoc2 name judgment_constant_table
 

@@ -1,7 +1,7 @@
 open Errorcheck open Tau open Substitute open Typesystem open Lfcheck 
 open Names open Printer open Printf open Helpers
 
-(** fill in argument 3 of @[ev][f,x,T,_] using tau *)
+(** fill in argument 3 of @ev[f,x,T,_] using tau *)
 let ev3 (surr:surrounding) env pos t args =
   match surr with 
   | (_,S_body,_,_) :: (_,S_body,_,_) :: (env,S_expr_list'(3,O O_ev, ARG(t,ARG(x,ARG(f,END))),_), _, _) :: _ ->

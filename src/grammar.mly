@@ -49,7 +49,7 @@ open Error
 
 %nonassoc
 
-  Star					(* *x denotes @[El][x] *)
+  Star					(* *x denotes @El[x] *)
 
 %nonassoc
 

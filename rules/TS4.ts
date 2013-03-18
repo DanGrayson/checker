@@ -2,7 +2,7 @@
 
 Include "rules/TS3.ts".
 
-# @[empty], @[empty_r], @[Empty]
+# @empty, @empty_r, @Empty
 
 Axiom 100 teq_empty_eta { ⊢ a : Empty, T T' Type } [ T ≡ T'].
 

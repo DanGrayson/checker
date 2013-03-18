@@ -4,15 +4,15 @@ Include "rules/TS2.ts".
 
 # derive versions of some inference rules with simple types
 
-Definition pi1 { ⊢ T U Type } ⊢ @[∏][T,_.U] Type ::=
+Definition pi1 { ⊢ T U Type } ⊢ @∏[T,_.U] Type ::=
 
    T ⟼ U ⟼ (_, T' ⟼ U' ⟼ (∏_istype T (_ ⟼ U) SND T' (_ ⟼ _ ⟼ U'))).
 
-Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ @[λ][T,o] : @[∏][T,_.U] ::=
+Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ @λ[T,o] : @∏[T,_.U] ::=
 
-   T ⟼ U ⟼ o ⟼ ((@[λ] T o), T' ⟼ U' ⟼ (λ_hastype T (_ ⟼ U) o SND T' (_ ⟼ _ ⟼ U'))).
+   T ⟼ U ⟼ o ⟼ ((@λ T o), T' ⟼ U' ⟼ (λ_hastype T (_ ⟼ U) o SND T' (_ ⟼ _ ⟼ U'))).
 
-Definition ev1 { ⊢ T U Type, f : @[∏][T,_.U], o : T } ⊢ @[ev][f,o,T,_.U] : U ::=
+Definition ev1 { ⊢ T U Type, f : @∏[T,_.U], o : T } ⊢ @ev[f,o,T,_.U] : U ::=
 
    T ⟼ U ⟼ f ⟼ o ⟼
    ((ev_hastype T (_ ⟼ U) f o FST), T' ⟼ U' ⟼ (ev_hastype T (_ ⟼ U) f o SND T' (_ ⟼ _ ⟼ U'))).
@@ -66,7 +66,7 @@ Theorem compose { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
 Theorem compose' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
     # this time with micro-tactics (which don't help in pairs mode!)
     T ⟼ U ⟼ V ⟼
-    ((@[λ] (@[∏] T (_ ⟼ U)) (f ⟼ (@[λ] (@[∏] U (_ ⟼ V)) (g ⟼ (@[λ] T (t ⟼ (@[ev] g (@[ev] f t T (_ ⟼ U)) U (_ ⟼ V))))))))
+    ((@λ (@∏ T (_ ⟼ U)) (f ⟼ (@λ (@∏ U (_ ⟼ V)) (g ⟼ (@λ T (t ⟼ (@ev g (@ev f t T (_ ⟼ U)) U (_ ⟼ V))))))))
      # (lambda1 (pi1 T U FST) (pi1 (pi1 U V FST) (pi1 T V FST) FST)
      # 	          (f ⟼ (lambda1 (pi1 U V FST) (pi1 T V FST)
      # 			   (g ⟼ (lambda1 T V
@@ -96,10 +96,10 @@ Theorem compose' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
   #       (U:texp) ⟶
   #       (f:oexp) ⟶
   #       (o:oexp) ⟶
-  #       (x:Singleton((@[ev] f o (_ ⟼ U)) : oexp)) ×
+  #       (x:Singleton((@ev f o (_ ⟼ U)) : oexp)) ×
   #         istype T ⟶
   #         istype U ⟶
-  #         hastype f (@[∏] T (_ ⟼ U)) ⟶
+  #         hastype f (@∏ T (_ ⟼ U)) ⟶
   #         hastype o T ⟶
   #         hastype x U
 
@@ -110,7 +110,7 @@ Definition barbara { |- T U V Type } ⊢ (T->U) -> (U->V) -> (T->V) Type ::=
 
 # Theorem compose'' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
 #     T ⟼ U ⟼ V ⟼ (
-#      (@[λ] (@[∏] T (_ ⟼ U)) (f ⟼ (@[λ] (@[∏] U (_ ⟼ V)) (g ⟼ (@[λ] T (t ⟼ (@[ev] g (@[ev] f t T (_ ⟼ U)) U (_ ⟼ V)))))))),
+#      (@λ (@∏ T (_ ⟼ U)) (f ⟼ (@λ (@∏ U (_ ⟼ V)) (g ⟼ (@λ T (t ⟼ (@ev g (@ev f t T (_ ⟼ U)) U (_ ⟼ V)))))))),
 #      _ ⟼ _ ⟼ _ ⟼ $tscheck
 #      ).
 

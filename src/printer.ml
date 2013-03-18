@@ -230,7 +230,7 @@ let rec lf_head_to_string_with_subs subs h : string =
   match h with
   | V (Rel i as v) -> if enable_variable_prettification then rel_to_string subs i else vartostring v
   | V (Var id) -> idtostring id
-  | W _ | U _ | T _ | O _ -> "@[" ^ expr_head_to_string h ^ "]"
+  | W _ | U _ | T _ | O _ -> "@" ^ expr_head_to_string h
   | TACTIC tac -> tactic_to_string tac
 
 and expr_to_string_with_subs subs e : smart_string =

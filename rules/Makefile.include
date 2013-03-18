@@ -27,6 +27,7 @@ rules4: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS4.ts $(SHOWFILE)
 rules5: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS5.ts $(SHOWFILE)
 rules6: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS6.ts $(SHOWFILE)
 rules7: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS7.ts $(SHOWFILE)
+others: src/$(CHECKER_EXE) ; $(CHECKER) rules/others.ts $(SHOWFILE)
 TTS: src/$(CHECKER_EXE) ; $(CHECKER) rules/TTS.ts $(SHOWFILE)
 all: rules7 TTS
 

@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 
-Axiom 200 jMM_reduction { ⊢ M1 M2 Ulevel } [ M1 ~ M2 Ulevel ] ⇒ [ jj[M1,M2] ≡ @[λ;x][UU[M1],x] : UU[M1] -> UU[M2] ].
+Include "rules/abbreviations.ts".
+
+Axiom 200 jMM_reduction { ⊢ M1 M2 Ulevel } [ M1 ~ M2 Ulevel ] ⇒ [ jj[M1,M2] ≡ @λ[UU[M1],x.x] : UU[M1] -> UU[M2] ].
+
+End.					       # tau not implemented yet for @j
 
 Axiom 201 jj_reduction { ⊢ M1 M2 M2' M3 Ulevel, o : UU[M1] }
 
-		[ M2 ~ M2' Ulevel ] ⇒ [  [@ev;_][ jj[M2',M3], @[ev;_][ jj[M1,M2], o, UU[M2]], UU[M3]] ≡  jj[M1,M3] o : UU[M1] -> UU[M3] ].
+		[ M2 ~ M2' Ulevel ] ⇒ [  @ev[ jj[M2',M3], @ev[ jj[M1,M2], o, _.UU[M2]], _.UU[M3]] ≡  jj[M1,M3] o : UU[M1] -> UU[M3] ].
 
 #   Local Variables:
-#   compile-command: "make -C .. rules7 "
+#   compile-command: "make -C .. others "
 #   End:
