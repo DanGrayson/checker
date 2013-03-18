@@ -1,4 +1,4 @@
-(** source file positions *)
+(** Source file positions *)
 
 type position =
   | Position of Lexing.position * Lexing.position (** start, end *)

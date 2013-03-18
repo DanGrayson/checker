@@ -1,4 +1,6 @@
-(** Subordination: see section 2.4 of Mechanizing Meta-theory by Harper and Licata *)
+(** Subordination *)
+
+(** see section 2.4 of Mechanizing Meta-theory by Harper and Licata *)
 
 open Kinds
 

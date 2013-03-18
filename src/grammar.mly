@@ -17,7 +17,7 @@ open Error
 
 %token <int> NUMBER
 
-%token <string> CONSTANT CONSTANT_SEMI STRING NAME NAME_W
+%token <string> CONSTANT STRING NAME NAME_W
 
 %token
   LeftParen RightParen RightBracket LeftBracket Comma Period Colon Star Arrow
@@ -26,7 +26,7 @@ open Error
   Universes Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_FST K_SND Times
   Turnstile DoubleArrow DoubleArrowFromBar ColonColonEqual ColonEqual Theorem
   LeftBrace RightBrace TurnstileDouble ColonColon Include Clear EqualEqual
-  TTS Back BackTo Mode
+  TTS Back BackTo Mode PeriodAndSpace
 
 (* precedences, lowest first *)
 
@@ -41,8 +41,8 @@ open Error
 
 %right
 
-  DoubleArrowFromBar			(* TS notation for LF lambda *)
-  ArrowFromBar				(* TS notation for TS lambda *)
+  Period DoubleArrowFromBar		(* TS notation for template expression *)
+  ArrowFromBar				(* TS notation for lambda *)
   DoubleArrow				(* function type *)
   Arrow					(* function type *)
   Times					(* product type *)
@@ -64,7 +64,7 @@ open Error
   (* These are the tokens that can begin a TS-expression, and
      thus might be involved in the decision about reducing an application: *)
 
-  Underscore LeftParen Kumax CONSTANT_SEMI CONSTANT Lambda Sigma Pi Dollar NAME
+  Underscore LeftParen Kumax CONSTANT Lambda Sigma Pi Dollar NAME
   NAME_W
 
 %nonassoc
@@ -223,8 +223,6 @@ command:
 	{ Position($startpos, $endpos), c }
 
     | error				(* instant error return for the sake of Proof General *)
-    (* | error Period *)
-    (* | error EOF *)
 	{ let pos = Position($startpos, $endpos) in
 	  fprintf stderr "%a: syntax error\n%!" _pos pos;
 	  bump_error_count pos;
@@ -234,69 +232,69 @@ command:
 
 unmarked_command:
 
-    | Variable vars= marked_name+ Colon t= ts_expr Period
+    | Variable vars= marked_name+ Colon t= ts_expr PeriodAndSpace
 	{ Toplevel.OVariable (vars,t) }
 
-    | Variable vars= marked_name+ Type Period
+    | Variable vars= marked_name+ Type PeriodAndSpace
 	{ Toplevel.TVariable vars }
 
-    | Variable vars= marked_name+ Ulevel eqns= preceded(Semicolon,uEquation)* Period
+    | Variable vars= marked_name+ Ulevel eqns= preceded(Semicolon,uEquation)* PeriodAndSpace
 	{ Toplevel.UVariable (vars,eqns) }
 
-    | Axiom num= dotted_number? name= NAME t= ts_judgment Period
+    | Axiom num= dotted_number? name= NAME t= ts_judgment PeriodAndSpace
 	{ Toplevel.Axiom (num,id name,t) }
 
-    | Axiom LF num= dotted_number? name= identifier Colon t= judgment Period
+    | Axiom LF num= dotted_number? name= identifier Colon t= judgment PeriodAndSpace
 	{ Toplevel.Axiom (num,name,t) }
 
-    | Check TS? o= ts_expr Period
+    | Check TS? o= ts_expr PeriodAndSpace
 	{ Toplevel.CheckTS o }
 
-    | Check LF e= expr Period
+    | Check LF e= expr PeriodAndSpace
 	{ Toplevel.CheckLF e }
 
-    | Check TS? Colon t= ts_judgment Period
-    | Check LF Colon t= judgment Period
+    | Check TS? Colon t= ts_judgment PeriodAndSpace
+    | Check LF Colon t= judgment PeriodAndSpace
 	{ Toplevel.CheckLFtype t }
 
-    | Check TTS Colon t= ts_judgment Period
+    | Check TTS Colon t= ts_judgment PeriodAndSpace
 	{ Toplevel.CheckWitness t }
 
-    | Check Universes Period
+    | Check Universes PeriodAndSpace
 	{ Toplevel.CheckUniverses }
 
-    | Alpha e1= ts_expr EqualEqual e2= ts_expr Period
+    | Alpha e1= ts_expr EqualEqual e2= ts_expr PeriodAndSpace
 	{ Toplevel.Alpha (e1, e2) }
 
-    | Theorem LF name= NAME Colon thm= judgment ColonEqual deriv= expr Period
-    | Theorem name= NAME thm= ts_judgment ColonColonEqual deriv= expr Period
-    | Theorem name= NAME thm= ts_judgment ColonEqual deriv= ts_expr Period
+    | Theorem LF name= NAME Colon thm= judgment ColonEqual deriv= expr PeriodAndSpace
+    | Theorem name= NAME thm= ts_judgment ColonColonEqual deriv= expr PeriodAndSpace
+    | Theorem name= NAME thm= ts_judgment ColonEqual deriv= ts_expr PeriodAndSpace
 	{
 	  let pos = Position($startpos, $endpos) in
 	  Toplevel.Theorem (pos, name, deriv, thm) }
 
-    | Include filename= STRING Period
+    | Include filename= STRING PeriodAndSpace
 	{ Toplevel.Include filename }
 
-    | Clear Period
+    | Clear PeriodAndSpace
 	{ Toplevel.Clear }
 
-    | Show n= NUMBER? Period
+    | Show n= NUMBER? PeriodAndSpace
 	{ Toplevel.Show n }
 
-    | Back n= NUMBER? Period
+    | Back n= NUMBER? PeriodAndSpace
 	{ let n = match n with Some n -> n | None -> 1 in Toplevel.Back n }
 
-    | BackTo n= NUMBER Period
+    | BackTo n= NUMBER PeriodAndSpace
 	{ Toplevel.BackTo n }
 
-    | Mode TTS Period
+    | Mode TTS PeriodAndSpace
 	{ Toplevel.Mode "TTS" }
 
-    | Mode TS Period
+    | Mode TS PeriodAndSpace
 	{ Toplevel.Mode "TS" }
 
-    | End Period
+    | End PeriodAndSpace
 	{ Toplevel.End }
 
 marked_identifier:
@@ -483,11 +481,6 @@ tsterm_head:
     | name= CONSTANT
 	{ let pos = Position($startpos, $endpos) in try lookup_label pos name with Not_found -> $syntaxerror }
 
-argumentlist:
-
-    | LeftBracket a= separated_list(Comma,ts_expr) RightBracket
-	{a}
-
 empty_hole: Underscore { default_tactic }
 
 unused_identifier: Underscore { id "_" }
@@ -523,7 +516,13 @@ ts_expr_list_member:
 unmarked_ts_expr:
 
     | v= marked_identifier_or_unused DoubleArrowFromBar body= ts_expr
-	{ unmark (lambda1 (unmark v) body) }
+    | v= marked_identifier_or_unused Period body= ts_expr
+	{ 
+	  let v = unmark v in
+	  if !ts_mode
+	  then unmark (lambda1 v body)
+	  else unmark (lambda2 v (witness_id v) body)
+	}
 
     | e= ts_expr K_1
     	{ unmark ( Substitute.apply_args e (FST END) ) }
@@ -588,46 +587,6 @@ unmarked_ts_expr:
 
     | LeftParen a= ts_expr Comma b= ts_expr RightParen
 	{ PAIR(a,b) }
-
-    | name= CONSTANT_SEMI vars= separated_list(Comma,marked_identifier_or_unused) RightBracket args= argumentlist
-	{
-	 let label =
-	   let pos = Position($startpos, $endpos) in
-	   try lookup_label pos name with Not_found -> $syntaxerror
-	 in
-	 match head_to_vardist label with
-	 | None -> raise (MarkedError (Position($startpos, $endpos), "expected no variables"))
-	 | Some (nvars,varindices) ->
-	     if nvars != List.length vars then
-	       raise (MarkedError
-			( Position($startpos, $endpos),
-			  "expected " ^ string_of_int nvars ^ " variable" ^ if nvars != 1 then "s" else ""));
-	     let nargs = List.length varindices
-	     in
-	     if List.length args != nargs then
-	       raise (MarkedError
-			( Position($startpos, $endpos),
-			  "expected " ^ string_of_int nargs ^ " argument" ^ if nargs != 1 then "s" else ""));
-	     let args = List.map2 (
-	       fun indices arg ->
-		 (* examples:
-		    1: if indices = [ SingleVariable 0; SingleVariable 1], change arg to (TEMPLATE v0 , (TEMPLATE v1, arg))
-		    2: if indices = [ WitnessPair 0                     ], change arg to (TEMPLATE v0$, (TEMPLATE v0, arg))
-		  *)
-		 List.fold_right (
-		 fun wrapped_index arg -> with_pos (get_pos arg) (
-		   match wrapped_index with
-		   | SingleVariable index -> unmark (lambda1 (unmark (List.nth vars index)) arg)
-                   | WitnessPair index ->
-                       let (pos,v) = List.nth vars index in
-                       let p = witness_id v in
-		       unmark (lambda2 v p arg)
-		  )
-		) indices arg
-	      ) varindices args
-	     in
-	     BASIC(label,list_to_expr_list args)
-       }
 
 (*
   Local Variables:

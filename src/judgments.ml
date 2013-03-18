@@ -1,5 +1,7 @@
 (* -*- coding: utf-8 -*- *)
 
+(** Judgments *)
+
 include Expressions
 
 type judgment_head =

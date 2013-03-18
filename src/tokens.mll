@@ -97,6 +97,10 @@ rule expr_tokens = parse
   | '_' { Underscore }
   | '<' { Less }
   | '.'  { Period }
+  | ". "  { PeriodAndSpace }
+  | ".\r"  { PeriodAndSpace }
+  | ".\t"  { tab lexbuf; PeriodAndSpace }
+  | ".\n"  { Lexing.new_line lexbuf; PeriodAndSpace }
   | '('  { LeftParen }
   | ')'  { RightParen }
   | ']'  { RightBracket }
@@ -125,7 +129,6 @@ rule expr_tokens = parse
 (* variable names, keywords, and commands *)
 
   | "@[" (ident as id) "]" { utf8_fix lexbuf id; CONSTANT id }
-  | "@[" (ident as id) ";" { utf8_fix lexbuf id; CONSTANT_SEMI id }
   | ident as id { utf8_fix lexbuf id; try Hashtbl.find commands id with Not_found -> NAME id }
   | (ident as id) '$' { utf8_fix lexbuf id; NAME_W id }
 

@@ -12,7 +12,7 @@ Check LF : (T:texp) -> ( x::T |- pi Type ).
 
 Check LF : T Type |- ( x::T |- U Type) |- pi Type.
 
-Check TS : { ⊢ T Type } { t : T ⊢ U Type } ⊢ @[∏;t][T,U[t]] Type.
+Check TS : { ⊢ T Type } { t : T ⊢ U Type } ⊢ @[∏][T,t.U[t]] Type.
 
 Check LF : T Type |- ( x::T |- y::T |- U Type) |- pi Type.
 

@@ -25,45 +25,45 @@ Axiom LF x$ : wexp.
 
 Check TTS : [ _ : f : T -> @[U] ].
 Check TTS : [ _ : x : T ].
-Check TTS : [ _ : @[ev;_][f,x,T,@[U]] : @[U] ].
-Check TTS : [ _ : @[ev;_][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,T,@[U]]: @[U]].
+Check TTS : [ _ : @[ev][f,x,T,_.@[U]] : @[U] ].
+Check TTS : [ _ : @[ev][@[λ][T,y.@[ev][f,y,T,_.@[U]]],x,T,_.@[U]]: @[U]].
 
 # Lemma a1 [ : f : T->@[U] ] ::= f$ .
 # Lemma a2 [ : f : T->@[U] ] ::= _ .
 
-Check TTS : [ @[El][@[ev;_][f,x,T,@[U]],@[wev][f$,x$]] Type ].
-# Check TTS : [ @[El][@[ev;_][f,x,T,@[U]],@[wev][a1,x$]] Type ].
-Check TTS : [ @[El][@[ev;_][f,x,T,@[U]],_] Type ].
-Check TTS : [ *@[ev;_][f,x,T,@[U]] Type ].		    # * is notation for El
+Check TTS : [ @[El][@[ev][f,x,T,_.@[U]],@[wev][f$,x$]] Type ].
+# Check TTS : [ @[El][@[ev][f,x,T,_.@[U]],@[wev][a1,x$]] Type ].
+Check TTS : [ @[El][@[ev][f,x,T,_.@[U]],_] Type ].
+Check TTS : [ *@[ev][f,x,T,_.@[U]] Type ].		    # * is notation for El
 
 Check TTS : [ @[Proof][
-    @[wev][@[wlam;o][@[wev][f$,o$]],x$],
-    @[ev;_][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,T,@[U]],
+    @[wev][@[wlam][o.@[wev][f$,o$]],x$],
+    @[ev][@[λ][T,y.@[ev][f,y,T,_.@[U]]],x,T,_.@[U]],
     @[U]]
   Type ].
 
 Variable A : @[Proof][
-    @[wev][@[wlam;o][@[wev][f$,o$]],x$],
-    @[ev;_][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,T,@[U]],
+    @[wev][@[wlam][o.@[wev][f$,o$]],x$],
+    @[ev][@[λ][T,y.@[ev][f,y,T,_.@[U]]],x,T,_.@[U]],
     @[U]].
 
-Check TTS : [ *@[ev;_][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,T,@[U]] Type ].
+Check TTS : [ *@[ev][@[λ][T,y.@[ev][f,y,T,_.@[U]]],x,T,_.@[U]] Type ].
 
 Check TTS : [
-    _ : @[ev;_][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,T,@[U]]
-      ≡ @[ev;_][@[λ;z][T,@[ev;_][f,z,T,@[U]]],x,T,@[U]]
+    _ : @[ev][@[λ][T,y.@[ev][f,y,T,_.@[U]]],x,T,_.@[U]]
+      ≡ @[ev][@[λ][T,z.@[ev][f,z,T,_.@[U]]],x,T,_.@[U]]
       : @[U]
       ].
 
 Check TTS : [
-    _ : @[ev;_][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,T,@[U]]
-      ≡ @[ev;_][f,x,T,@[U]]
+    _ : @[ev][@[λ][T,y.@[ev][f,y,T,_.@[U]]],x,T,_.@[U]]
+      ≡ @[ev][f,x,T,_.@[U]]
       : @[U]
       ].
 
 Check TTS : [ 
-    _ : @[ev;_][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,T,@[U]]
-      ≡ @[ev;_][f,x,T,@[U]]
+    _ : @[ev][@[λ][T,y.@[ev][f,y,T,_.@[U]]],x,T,_.@[U]]
+      ≡ @[ev][f,x,T,_.@[U]]
       : @[U]
       ].
 
@@ -76,29 +76,12 @@ Check TTS : [
 #       ].
 
 Check TTS : [
-    _ : * @[ev;_][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,T,@[U]]
-      ≡ * @[ev;_][f,x,T,@[U]]
+    _ : * @[ev][@[λ][T,y.@[ev][f,y,T,_.@[U]]],x,T,_.@[U]]
+      ≡ * @[ev][f,x,T,_.@[U]]
       ].
 
 Check TTS : [
-    _ : * @[ev;_][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,T,@[U]]
-      ≡ * @[ev;_][f,x,T,@[U]]
-      ].
-
-# Check TTS : [ a2 : f : T->@[U] ] .
-
-Check TTS : [
-    _ : * @[ev][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,_,_]
-      ≡ * @[ev;_][f,x,T,@[U]]
-      ].
-
-Check TTS : [
-    _ : * @[ev;a][@[λ;y][T,@[ev;_][f,y,T,@[U]]],x,_,_]
-      ≡ * @[ev;_][f,x,T,@[U]]
-      ].
-
-Check TTS : [
-    _ : * @[λ;y][T,f y] x
+    _ : * @[λ][T,y.f y] x
       ≡ * f x
       ].
 

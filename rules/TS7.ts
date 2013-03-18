@@ -13,7 +13,7 @@ Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ λ t:T, o[t] : T⟶U
 
    := T ⟾ U ⟾ o ⟾ (_, _ ⟾ _ ⟾ λ_hastype[T, _ ⟾ U, o, SND, _, _]).
 
-Definition ev1 { ⊢ T U Type, f:T⟶U, o:T } ⊢ @[ev;_][f,o,T,U] : U
+Definition ev1 { ⊢ T U Type, f:T⟶U, o:T } ⊢ @[ev][f,o,T,_.U] : U
 
    := T ⟾ U ⟾ f ⟾ o ⟾ (_, _ ⟾ _ ⟾ ev_hastype[T, _ ⟾ U, f, o, SND, _, _]).
 
@@ -26,12 +26,12 @@ Definition Iscontr { ⊢ X Type } ⊢ Σ x:X, ∏ y:X, Id[X,y,x]  Type
 				X, y ⟾ Id[X,y,x], SND,
 				_, y ⟾ _ ⟾ Id_istype[X,y,x,SND,_,_,_]]]).
 
-Definition Hfiber { ⊢ X Y Type, f:X⟶Y, y:Y } ⊢ Σ x:X, Id[Y,@[ev;_][f,x,X,Y],y]  Type
+Definition Hfiber { ⊢ X Y Type, f:X⟶Y, y:Y } ⊢ Σ x:X, Id[Y,@[ev][f,x,X,_.Y],y]  Type
 
   := X ⟾ Y ⟾ f ⟾ y ⟾ (_,
       _ ⟾ _ ⟾ _ ⟾ _ ⟾
       Σ_istype[
-        X, x ⟾ Id[Y, @[ev;_][f,x,X,Y], y], SND,
+        X, x ⟾ Id[Y, @[ev][f,x,X,_.Y], y], SND,
 	_, x ⟾ _ ⟾ Id_istype[
 			Y, ev1[X,Y,f,x,FST], y, SND,
 			_, ev1[X,Y,f,x,SND,_,_,_,_],_]]).

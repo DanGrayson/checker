@@ -3,7 +3,7 @@
 Include "rules/TS5.ts".
 
 Definition plus_one { ⊢ n : Nat } : Nat :=
-	   n ⟾ ( @[ev;_][S,n,Nat,Nat], n' ⟾ ev_hastype[Nat,_⟾Nat,S,n,SND,_,_,_,_] ) .
+	   n ⟾ ( @[ev][S,n,Nat,_.Nat], n' ⟾ ev_hastype[Nat,_⟾Nat,S,n,SND,_,_,_,_] ) .
 
 Definition LF plus_one' : oexp -> oexp := n |-> (@[ev] S n Nat (_ |-> Nat)).
 
@@ -21,18 +21,18 @@ Definition two : Nat := (plus_one[one[FST],FST],plus_one[one[FST],SND,one[SND]])
 
 Definition plus : Nat -> Nat -> Nat :=
  (
-    lambda m:Nat, lambda n:Nat, @[nat_r;_][ m, (lambda i:Nat, S), n, Nat ],
+    lambda m:Nat, lambda n:Nat, @[nat_r][ m, (lambda i:Nat, S), n, _.Nat ],
     λ_hastype[
        Nat,
        _ ⟾ Nat -> Nat,
-       m ⟾ lambda n:Nat, @[nat_r;_][ m, (lambda i:Nat, S), n, Nat ],
+       m ⟾ lambda n:Nat, @[nat_r][ m, (lambda i:Nat, S), n, _.Nat ],
        SND,
        _,
        _ ⟾ _ ⟾ ∏_istype[Nat, _ ⟾ Nat, SND, _, _],
        m ⟾ m' ⟾ λ_hastype[
        	  Nat,
 	  _ ⟾ Nat,
-	  n ⟾ @[nat_r;_][ m, (lambda i:Nat, S), n, Nat ],
+	  n ⟾ @[nat_r][ m, (lambda i:Nat, S), n, _.Nat ],
 	  SND,
 	  _,
 	  _,

@@ -31,13 +31,13 @@ Check TS UU[u1].
 Check TS jj[u1, u2].
 Check TS *uu[u1].
 Check TS max (next[u1], u0).
-Check TS @[Σ;x][T,T'].
+Check TS @[Σ][T,x.T'].
 Check TS Σ x:T, Σ y:U, V⟶X .
 Check TS @[∐][T,T'].
 Check TS @[Empty][].
 Check TS Empty.
 Check TS λ x:T, λ y:T, λ t:@[Id][T,x,y], t.
-Check TS λ o:T, λ o':T, @[forall;x][u1,u2,o,o'].
+Check TS λ o:T, λ o':T, @[forall][u1,u2,o,x.o'].
 Check TS ∏ x : T, UU[next[u0]].
 Check TS ∏ x : T, UU[u0].
 Check TS u1.
@@ -59,19 +59,19 @@ Check TS T⟶U⟶X⟶Y.
 
 Check TS uu[u1].
 Check TS jj[u1,u2].
-# Check TS @[ev;x][f,t0,T].
-Check TS @[λ;x][T,x].
-# Check TS @[forall;x][u1,u2,x0,x0].
+# Check TS @[ev;[f,t0,x.T].
+Check TS @[λ][T,x.x].
+# Check TS @[forall][u1,u2,x0,x.x0].
 
-Check TS λ f:T⟶U, λ o:T, @[ev;_][f,o,T,U].
+Check TS λ f:T⟶U, λ o:T, @[ev][f,o,T,_.U].
 # Check TS λ f:T⟶U, λ o:T, f o.
 # Check TS λ k:U, λ g:T⟶*k, λ f:∏ t:T, *g t, λ o:T, f o.
 # Check TS λ r:U, λ f:T⟶U, λ o:T, λ x : *r, f o.
-Check TS λ f:X⟶T, λ y:X, @[ev;_][f,y,X,T].
+Check TS λ f:X⟶T, λ y:X, @[ev][f,y,X,_.T].
 # Check TS λ f:X⟶T, λ y:X, f y.
 
 Check TS U_istype.
-Check TS @[Pi;x][T,T].
+Check TS @[Pi][T,x.T].
 
 Check LF : ∏ x:oexp, ∏ y:oexp, ∏ T:texp, ∏ U:texp, [ x ≡ y : T ]⟶[ T ≡ U ]⟶[ x ≡ y : U ].
 Check LF (U_istype u1).
