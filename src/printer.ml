@@ -529,7 +529,7 @@ let print_signature env file =
            ) kind_constant_table;
   fprintf file "  Type constants:\n";
   List.iter (fun h ->
-    fprintf file "     %a : %a\n" _th h  _k (env,tfhead_to_kind h)
+    fprintf file "     %a : %a\n" _th h  _k (env,jhead_to_kind h)
            ) judgment_heads;
   fprintf file "  Object constants:\n";
   List.iter (fun h ->

@@ -354,14 +354,14 @@ let rec min_type_kind t =
   match unmark t with
   | J_Singleton(x,t) -> min_type_kind t
   | J_Pi(v,t,u) -> min_type_kind u
-  | J_Basic(h,args) -> ultimate_kind (tfhead_to_kind h)
+  | J_Basic(h,args) -> ultimate_kind (jhead_to_kind h)
   | J_Sigma(v,t,u) -> min_kind (min_type_kind t) (min_type_kind u)
 
 let rec min_target_kind t =
   match unmark t with
   | J_Singleton (e,t) -> min_target_kind t
   | J_Pi(v,t,u) -> min_target_kind u
-  | J_Basic(h,args) -> Some (ultimate_kind (tfhead_to_kind h))
+  | J_Basic(h,args) -> Some (ultimate_kind (jhead_to_kind h))
   | J_Sigma(v,t,u) -> min_kind_option (min_target_kind t) (min_target_kind u)
 
 (** Type checking and term_equiv routines. *)
@@ -453,7 +453,7 @@ and type_equivalence (env:environment) (t:judgment) (u:judgment) : unit =
     | J_Basic(h,args), J_Basic(h',args') ->
         (* Here we augment the algorithm in the paper to handle the type families of LF. *)
         if not (h = h') then raise TypeEquivalenceFailure;
-        let k = tfhead_to_kind h in
+        let k = jhead_to_kind h in
         let rec repeat (k:kind) args args' : unit =
           match k,args,args' with
           | K_Pi(v,t,k), x :: args, x' :: args' ->
@@ -619,7 +619,7 @@ let rec check_less_equal t u =
 	| J_Singleton(e,t) -> repeat t
 	| J_Pi(v,t,u) -> repeat t ; repeat u
 	| J_Basic(h,args) ->
-	    let k = ultimate_kind (tfhead_to_kind h) in
+	    let k = ultimate_kind (jhead_to_kind h) in
 	    (
 	     match compare_kinds k l with
 	     | K_incomparable | K_greater -> raise (InsubordinateKinds(k,l))
@@ -659,7 +659,7 @@ let type_validity (surr:surrounding) (env:environment) (t:judgment) : judgment =
           let u = type_validity ((env,S_type_args(2,[t]),None,Some t0) :: surr) (local_lf_bind env v t) u in
           J_Sigma(v,t,u)
       | J_Basic(head,args) ->
-          let kind = tfhead_to_kind head in
+          let kind = jhead_to_kind head in
           let rec repeat i env kind args_passed (args:expr list) =
             match kind, args with
             | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment ), [] 
@@ -790,7 +790,7 @@ let rec type_normalization (env:environment) (t:judgment) : judgment =
       let b' = type_normalization (local_lf_bind env v a) b in
       J_Sigma(v,a',b')
   | J_Basic(head,args) ->
-      let kind = tfhead_to_kind head in
+      let kind = jhead_to_kind head in
       let args =
         let rec repeat env kind (args:expr list) =
           match kind, args with

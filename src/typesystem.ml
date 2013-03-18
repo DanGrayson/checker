@@ -54,44 +54,6 @@ let head_to_vardist = function (* optimize later by precomputing the constant re
   | O O_nat_r -> Some(1, [] :: [] :: [] :: [SingleVariable 0] :: [])
   | _ -> None
 
-let ( @@-> ) a b = K_Pi(arrow_good_var_name a, a, b)
-
-let istype_kind = texp @@-> K_primitive_judgment
-
-let hastype_kind = oexp @@-> texp @@-> K_judgment
-
-let type_equality_kind = texp @@-> texp @@-> K_judgment
-
-let object_equality_kind = oexp @@-> oexp @@-> texp @@-> K_judgment
-
-let ulevel_equality_kind = uexp @@-> uexp @@-> K_judgment
-
-let type_uequality_kind = texp @@-> texp @@-> K_primitive_judgment
-
-let object_uequality_kind = oexp @@-> oexp @@-> texp @@-> K_primitive_judgment
-
-let istype_witnessed_internally_kind = texp @@-> K_witnessed_judgment
-let witnessed_hastype_kind = texp @@-> oexp @@-> wexp @@-> K_witnessed_judgment
-let witnessed_type_equality_kind = texp @@-> texp @@-> wexp @@-> K_witnessed_judgment
-let witnessed_object_equality_kind = texp @@-> oexp @@-> oexp @@-> wexp @@-> K_witnessed_judgment
-
-let tfhead_to_kind = function
-  | J_uexp -> K_ulevel
-  | J_wexp | J_texp | J_oexp -> K_expression
-  | J_istype -> istype_kind
-  | J_hastype -> hastype_kind
-  | J_ulevel_equality -> ulevel_equality_kind
-  | J_type_equality -> type_equality_kind
-  | J_object_equality -> object_equality_kind
-  | J_type_uequality -> type_uequality_kind
-  | J_object_uequality -> object_uequality_kind
-
-  | J_istype_witnessed_inside -> istype_witnessed_internally_kind
-
-  | J_witnessed_hastype -> witnessed_hastype_kind
-  | J_witnessed_type_equality -> witnessed_type_equality_kind
-  | J_witnessed_object_equality -> witnessed_object_equality_kind
-
 (** Subordination: see section 2.4 of Mechanizing Meta-theory by Harper and Licata *)
 type kind_comparison = K_equal | K_less | K_greater | K_incomparable
 
