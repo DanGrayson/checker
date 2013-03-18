@@ -336,7 +336,7 @@ let check (env:environment) (t:judgment) =
 
 (** Subordination *)
 
-exception IncomparableKinds of lf_kind * lf_kind
+exception IncomparableKinds of kind * kind
 
 let min_kind k l =
   match compare_kinds k l with
@@ -455,7 +455,7 @@ and type_equivalence (env:environment) (t:judgment) (u:judgment) : unit =
         (* Here we augment the algorithm in the paper to handle the type families of LF. *)
         if not (h = h') then raise TypeEquivalenceFailure;
         let k = tfhead_to_kind h in
-        let rec repeat (k:lf_kind) args args' : unit =
+        let rec repeat (k:kind) args args' : unit =
           match k,args,args' with
           | K_Pi(v,t,k), x :: args, x' :: args' ->
               term_equivalence env x x' t;
@@ -609,7 +609,7 @@ and type_synthesis (surr:surrounding) (env:environment) (m:expr) : expr * judgme
       let t = with_pos_of t (J_Singleton(e,t)) in (* this isn't quite like the algorithm in the paper, but it seems to work *)
       e,t
 
-exception InsubordinateKinds of lf_kind * lf_kind
+exception InsubordinateKinds of kind * kind
 
 let rec check_less_equal t u =
   match min_target_kind u with
@@ -649,9 +649,9 @@ let type_validity (surr:surrounding) (env:environment) (t:judgment) : judgment =
           | InsubordinateKinds(k,l) | IncomparableKinds(k,l) ->
 	      raise (TypeCheckingFailure
 		       (env, [], [
-			get_pos t, "expected type of kind involving \"" ^ lf_kind_to_string env k ^ "\"";
+			get_pos t, "expected type of kind involving \"" ^ kind_to_string env k ^ "\"";
 			get_pos t, "arising from type \"" ^ judgment_to_string env t ^ "\"";
-			get_pos u, "to be subordinate to type of kind involving \"" ^ lf_kind_to_string env l ^ "\"";
+			get_pos u, "to be subordinate to type of kind involving \"" ^ kind_to_string env l ^ "\"";
 			get_pos u, "arising from type \"" ^ judgment_to_string env u ^ "\"";
 		      ])));
           J_Pi(v,t,u)

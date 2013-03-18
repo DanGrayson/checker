@@ -1,7 +1,7 @@
 (* -*- coding: utf-8 -*- *)
 
-open Variables
-open Positions
+include Positions
+include Variables
 
 type uHead = | U_next | U_max
 type tHead = | T_El | T_El' | T_U | T_U' | T_Pi | T_Pi' | T_Sigma | T_Pt

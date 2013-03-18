@@ -1,8 +1,6 @@
-1(* -*- coding: utf-8 -*- *)
+(* -*- coding: utf-8 -*- *)
 
-open Positions
-open Variables
-open Expressions
+include Expressions
 
 type judgment_head =
   (* syntactic judgments: *)

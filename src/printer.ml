@@ -283,15 +283,15 @@ and judgment_to_string_with_subs subs (_,t) : smart_string = match t with
   | J_Basic(hd,args) ->
       list_application_to_string (mark_top <<- judgment_head_to_string) (expr_to_string_with_subs subs) (hd,args)
 
-let rec lf_kind_to_string_with_subs subs = function
-  | ( K_ulevel | K_expression | K_judgment | K_primitive_judgment | K_witnessed_judgment ) as k -> top_prec, List.assoc k lf_kind_constant_table
+let rec kind_to_string_with_subs subs = function
+  | ( K_ulevel | K_expression | K_judgment | K_primitive_judgment | K_witnessed_judgment ) as k -> top_prec, List.assoc k kind_constant_table
   | K_Pi(v,t,k) ->
       let used = rel_occurs_in_kind 0 k in
       let t = judgment_to_string_with_subs subs t in
       let subs = var_chooser v subs (rel_occurs_in_kind 0 k) occurs_in_kind k in
       let infix = " ⟶ " in
       let infix_prec = arrow_prec in
-      let k = lf_kind_to_string_with_subs subs k in
+      let k = kind_to_string_with_subs subs k in
       let v = if enable_variable_prettification then rel_to_string subs 0 else id_to_name v in
       if used then
         binder_prec, concat ["(";v; ":"; paren_right colon_prec t; ")";infix; paren_right binder_prec k]
@@ -313,7 +313,7 @@ let expr_to_string env e = paren_right bottom_prec (expr_to_string_with_subs (en
 
 let judgment_to_string env t = paren_right bottom_prec (judgment_to_string_with_subs (env_to_subs env) t)
 
-let lf_kind_to_string env k = paren_right bottom_prec (lf_kind_to_string_with_subs (env_to_subs env) k)
+let kind_to_string env k = paren_right bottom_prec (kind_to_string_with_subs (env_to_subs env) k)
 
 (** Printing of TS terms in TS format. *)
 
@@ -514,7 +514,7 @@ let _tl file (env,x) = List.iter (fun t -> printf " "; _t file (env,t)) x
 
 let _tn file (env,x) = output_string file (judgment_to_string env (no_pos 123,x))
 
-let _k file (env,x) = output_string file (lf_kind_to_string env x)
+let _k file (env,x) = output_string file (kind_to_string env x)
 
 let _th file x = output_string file (judgment_head_to_string x)
 
@@ -527,7 +527,7 @@ let print_signature env file =
   fprintf file "  Kind constants:\n";
   List.iter (fun (kind,name) ->
     fprintf file "     %s : kind\n" name
-           ) lf_kind_constant_table;
+           ) kind_constant_table;
   fprintf file "  Type constants:\n";
   List.iter (fun h ->
     fprintf file "     %a : %a\n" _th h  _k (env,tfhead_to_kind h)

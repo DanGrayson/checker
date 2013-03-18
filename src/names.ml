@@ -74,7 +74,7 @@ let judgment_constant_table = [
   J_witnessed_object_equality, "witnessed_object_equality";
 ]
 
-let lf_kind_constant_table = [
+let kind_constant_table = [
   K_ulevel, "ulevel";
   K_expression, "expression";
   K_judgment, "judgment";

@@ -1,9 +1,6 @@
 (* -*- coding: utf-8 -*- *)
 
-include Positions
-include Variables
-include Expressions
-include Judgments
+include Kinds
 
 let ( @@ ) f x : judgment = nowhere 3 (J_Basic(f,x))
 
@@ -164,19 +161,6 @@ let head_to_vardist = function (* optimize later by precomputing the constant re
   | O O_J -> Some (2, [] :: [] :: [] :: [] :: [] :: [ SingleVariable 0; SingleVariable 1] :: [])
   | O O_nat_r -> Some(1, [] :: [] :: [] :: [SingleVariable 0] :: [])
   | _ -> None
-
-(** The "kinds" of LF.
-
-    Objects are classified by their type, and (parametrized) types are classified by their kind.
-
-    Notation: constructors starting with "K_" refer to kinds of LF. *)
-type lf_kind =
-  | K_ulevel
-  | K_expression
-  | K_primitive_judgment
-  | K_judgment
-  | K_witnessed_judgment
-  | K_Pi of identifier * judgment * lf_kind
 
 let ( @@-> ) a b = K_Pi(arrow_good_var_name a, a, b)
 
