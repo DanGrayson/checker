@@ -15,7 +15,7 @@ let assumption surr env pos t args =
   let rec repeat i = function
     | (v,u) :: envp -> (
 	if Lfcheck.is_subtype env (rel_shift_type (i+1) u) t
-	then TacticSuccess(var_to_lf_bare (VarRel i))
+	then TacticSuccess(var_to_lf_bare (Rel i))
         else repeat (i+1) envp)
     | [] -> (
         try

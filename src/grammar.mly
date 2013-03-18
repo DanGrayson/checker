@@ -24,7 +24,7 @@ open Printer
   LeftParen RightParen RightBracket LeftBracket Comma Period Colon Star Arrow
   ArrowFromBar Equal Underscore Axiom GreaterEqual Greater LessEqual Less
   Semicolon Ulevel Kumax Type Pi Lambda Sigma Check Show End Variable Alpha EOF
-  Universes Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_CAR K_CDR Times
+  Universes Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_FST K_SND Times
   Turnstile DoubleArrow DoubleArrowFromBar ColonColonEqual ColonEqual Theorem
   LeftBrace RightBrace TurnstileDouble ColonColon Include Clear EqualEqual
   TTS Back BackTo Mode
@@ -93,7 +93,7 @@ judgment:
 unmarked_judgment:
 
     | f= judgment_constant args= expr*
-	{ F_Apply(f,args) }
+	{ J_Basic(f,args) }
 
     | Pi v= identifier Colon a= judgment Comma b= judgment
 	%prec Reduce_binder
@@ -114,7 +114,7 @@ unmarked_judgment:
        { unmark (a @-> b) }
 
     | Singleton LeftParen x= expr Colon t= judgment RightParen
-	{ F_Singleton(x,t) }
+	{ J_Singleton(x,t) }
 
     | LeftBracket t= expr Type RightBracket
 	{ unmark (if !ts_mode then istype t else istype_embedded_witnesses t) }
@@ -146,12 +146,13 @@ unmarked_judgment:
 	{ let (pos,v) = v in make_F_Sigma oexp (v,hastype (id_to_expr pos v) t) }
 
     | v= marked_identifier ColonColonEqual e= expr ColonColon t= expr
-	{ let (pos,v) = v in make_F_Sigma (with_pos_of e (F_Singleton(e,oexp))) (v,hastype (id_to_expr pos v) t) }
+	{ let (pos,v) = v in make_F_Sigma (with_pos_of e (J_Singleton(e,oexp))) (v,hastype (id_to_expr pos v) t) }
 
 judgment_constant:
 
     | l= NAME
-	{ let pos = Position($startpos, $endpos) in lookup_type_constant pos l }
+	{ let pos = Position($startpos, $endpos) in 
+	  try lookup_judgment_constant pos l with Not_found -> $syntaxerror }
 
 expr:
 
@@ -183,12 +184,12 @@ expr_head_and_reversed_expr_list:
     | head_and_args= short_head_and_reversed_expr_list arg= expr
 	{ app head_and_args arg }
 
-    | head_and_args= expr_head_and_reversed_expr_list K_CAR
-    | head_and_args= short_head_and_reversed_expr_list K_CAR
+    | head_and_args= expr_head_and_reversed_expr_list K_FST
+    | head_and_args= short_head_and_reversed_expr_list K_FST
 	{ car head_and_args }
 
-    | head_and_args= expr_head_and_reversed_expr_list K_CDR
-    | head_and_args= short_head_and_reversed_expr_list K_CDR
+    | head_and_args= expr_head_and_reversed_expr_list K_SND
+    | head_and_args= short_head_and_reversed_expr_list K_SND
 	{ cdr head_and_args }
 
 short_head_and_reversed_expr_list:
@@ -337,7 +338,7 @@ ts_judgment:
 unmarked_ts_judgment:
 
     | f= judgment_constant
-	{ F_Apply(f,[]) }
+	{ J_Basic(f,[]) }
 
     | LeftParen v= identifier Colon a= ts_judgment RightParen DoubleArrow b= ts_judgment
 	{ make_F_Pi a (v,b) }
@@ -366,7 +367,7 @@ unmarked_ts_judgment:
     | Colon t= ts_expr
 	{ let v = id "o" in
 	  let pos = get_pos t in
-	  make_F_Sigma oexp (v,with_pos pos (F_Apply(F_hastype, [id_to_expr pos v; t]))) }
+	  make_F_Sigma oexp (v,with_pos pos (J_Basic(J_hastype, [id_to_expr pos v; t]))) }
 
     | Turnstile x= ts_expr Colon t= ts_expr
 	{ unmark (this_object_of_type (get_pos x) x t) }
@@ -374,7 +375,7 @@ unmarked_ts_judgment:
     | Turnstile a= ts_expr Type
         { let v = id "t" in
           let pos = get_pos a in
-          let a = with_pos pos (F_Singleton(a,texp)) in
+          let a = with_pos pos (J_Singleton(a,texp)) in
           let b = if !ts_mode then istype_v pos v else istype_embedded_witnesses_v pos v in
           make_F_Sigma a (v,b)
         }
@@ -514,10 +515,10 @@ ts_expr_list_member:
     | x= ts_expr
 	{ Spine_arg x }
 
-    | K_CAR
+    | K_FST
 	{ Spine_car }
 
-    | K_CDR
+    | K_SND
 	{ Spine_cdr }
 
 unmarked_ts_expr:
@@ -526,10 +527,10 @@ unmarked_ts_expr:
 	{ unmark (lambda1 (unmark v) body) }
 
     | e= ts_expr K_1
-    	{ unmark ( Substitute.apply_args e (CAR END) ) }
+    	{ unmark ( Substitute.apply_args e (FST END) ) }
 
     | e= ts_expr K_2
-    	{ unmark ( Substitute.apply_args e (CDR END) ) }
+    	{ unmark ( Substitute.apply_args e (SND END) ) }
 
     | tac= closed_tactic_expr
 	{ cite_tactic tac END }

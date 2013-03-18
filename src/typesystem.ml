@@ -8,78 +8,51 @@
 
 open Error
 open Variables
-
-type uHead = | U_next | U_max
-type tHead = | T_El | T_El' | T_U | T_U' | T_Pi | T_Pi' | T_Sigma | T_Pt
-             | T_Coprod | T_Coprod2 | T_Empty | T_IP | T_Id | T_Proof
-type oHead = | O_u | O_j | O_ev | O_ev' | O_lambda | O_lambda' | O_forall | O_pair | O_pr1
-	     | O_pr2 | O_total | O_pt | O_pt_r | O_tt | O_coprod | O_ii1 | O_ii2 | O_sum
-	     | O_empty | O_empty_r | O_c | O_ip_r | O_ip | O_paths | O_refl | O_J | O_rr0
-	     | O_rr1 | O_nat | O_nat_r | O_O | O_S
-type wHead = | W_Wrefl | W_Wsymm | W_Wtrans | W_wrefl | W_wsymm | W_wtrans | W_wconv
-	     | W_wconveq | W_weleq | W_wpi1 | W_wpi2 | W_wlam | W_wl1 | W_wl2 | W_wev
-	     | W_wevt1 | W_wevt2 | W_wevf | W_wevo | W_wbeta | W_weta
-type expr_head =
-  | U of uHead | T of tHead | O of oHead | W of wHead
-  | V of var
-  | TACTIC of string
-type expr = unmarked_expr marked
-and unmarked_expr =
-  | BASIC of expr_head * expr_list
-  | TEMPLATE of identifier * expr
-  | PAIR of expr * expr
-and expr_list =
-  | ARG of expr * expr_list
-  | END
-  | CAR of expr_list | CDR of expr_list
+include Expressions
 
 type judgment_head =
   (* syntactic judgments: *)
-  | F_uexp | F_texp | F_oexp | F_wexp
-  (* type-theoretic judgments: *)
-  | F_istype_witnessed_inside
-  | F_witnessed_hastype
-  | F_witnessed_type_equality
-  | F_witnessed_object_equality
-  (* obsolete: *)
-  | F_istype
-  | F_hastype
-  | F_type_equality
-  | F_object_equality
-  | F_ulevel_equality
-  | F_type_uequality			(* written with ~ *)
-  | F_object_uequality			(* written with ~ *)
-  | F_a_type
-  | F_obj_of_type
-  | F_judged_type_equal
-  | F_judged_obj_equal
-  | F_obj_of_type_with_witness
-  | F_undeclared_type_constant of position * string
+  | J_uexp | J_texp | J_oexp | J_wexp
+  (* witnessed judgments of TTS: *)
+  | J_istype_witnessed_inside
+  | J_witnessed_hastype
+  | J_witnessed_type_equality
+  | J_witnessed_object_equality
+  (* derivation tree judgments of TS: *)
+  | J_istype
+  | J_hastype
+  | J_type_equality
+  | J_object_equality
+  (* u-level comparison judgment, relative to current constraints *)
+  | J_ulevel_equality
+  (* expression comparison judgment, ignoring inessential subterms, written with ~ *)
+  | J_type_uequality
+  | J_object_uequality
 
 type judgment = bare_judgment marked
 and bare_judgment =
-  | F_Pi of identifier * judgment * judgment
-  | F_Sigma of identifier * judgment * judgment
-  | F_Apply of judgment_head * expr list
-  | F_Singleton of (expr * judgment)
+  | J_Basic of judgment_head * expr list
+  | J_Pi of identifier * judgment * judgment
+  | J_Singleton of (expr * judgment)
+  | J_Sigma of identifier * judgment * judgment
 
-let ( @@ ) f x : judgment = nowhere 3 (F_Apply(f,x))
+let ( @@ ) f x : judgment = nowhere 3 (J_Basic(f,x))
 
-let uexp = F_uexp @@ []
-let wexp = F_wexp @@ []
-let texp = F_texp @@ []
-let oexp = F_oexp @@ []
+let uexp = J_uexp @@ []
+let wexp = J_wexp @@ []
+let texp = J_texp @@ []
+let oexp = J_oexp @@ []
 
 let rec arrow_good_var_name t =
   match unmark t with 
-  | F_Apply(F_istype,_) -> id "i"
-  | F_Apply(F_hastype,_) -> id "h"
-  | F_Apply(F_type_equality,_) -> id "teq"
-  | F_Apply(F_object_equality,_) -> id "oeq"
-  | F_Pi(_,_,u) -> arrow_good_var_name u
+  | J_Basic(J_istype,_) -> id "i"
+  | J_Basic(J_hastype,_) -> id "h"
+  | J_Basic(J_type_equality,_) -> id "teq"
+  | J_Basic(J_object_equality,_) -> id "oeq"
+  | J_Pi(_,_,u) -> arrow_good_var_name u
   | _ -> id "x"
 
-let arrow a b = nowhere 4 (F_Pi(arrow_good_var_name a, a, b))
+let arrow a b = nowhere 4 (J_Pi(arrow_good_var_name a, a, b))
 let ( @-> ) = arrow
 
 let var_to_lf_bare v = nowhere 1    (BASIC(V v,END))
@@ -88,30 +61,23 @@ let var_to_expr pos v = with_pos pos (BASIC(V v,END))
 let id_to_expr_bare v = var_to_lf_bare (Var v)
 let id_to_expr pos v = var_to_expr pos (Var v)
 
-let istype t = F_istype @@ [t]				       (* t Type *)
+let istype t = J_istype @@ [t]				       (* t Type *)
 let istype_v pos t = let t = id_to_expr pos t in istype t
-let hastype o t = F_hastype @@ [o;t]			       (* o : t *)
+let hastype o t = J_hastype @@ [o;t]			       (* o : t *)
 let hastype_v t pos o = let o = id_to_expr pos o in hastype o t
-let ulevel_equality u u' = F_ulevel_equality @@ [u;u']	       (* u ~ u' *)
-let type_uequality t t' = F_type_uequality @@ [t;t']	       (* t ~ t' *)
-let type_equality t t' = F_type_equality @@ [t;t']	       (* t = t' *)
-let object_uequality o o' t = F_object_uequality @@ [o;o';t]   (* o ~ o' : t *)
-let object_equality o o' t = F_object_equality @@ [o;o';t]     (* o = o' : t *)
+let ulevel_equality u u' = J_ulevel_equality @@ [u;u']	       (* u ~ u' *)
+let type_uequality t t' = J_type_uequality @@ [t;t']	       (* t ~ t' *)
+let type_equality t t' = J_type_equality @@ [t;t']	       (* t = t' *)
+let object_uequality o o' t = J_object_uequality @@ [o;o';t]   (* o ~ o' : t *)
+let object_equality o o' t = J_object_equality @@ [o;o';t]     (* o = o' : t *)
 
-let a_type = F_a_type @@ []				       (* |- T Type *)
-let obj_of_type t = F_obj_of_type @@ [t]		       (* |- x : T *)
-let judged_type_equal t u = F_judged_type_equal @@ [t;u]       (* |- T = U *)
-let judged_obj_equal t x y = F_judged_obj_equal @@ [t;x;y]     (* |- x = y : T *)
-
-let obj_of_type_witness t = F_obj_of_type_with_witness @@ [t]  (* |- p : o : T *)
-
-let istype_embedded_witnesses t = F_istype_witnessed_inside @@ [t] (* t Type *)
+let istype_embedded_witnesses t = J_istype_witnessed_inside @@ [t] (* t Type *)
 let istype_embedded_witnesses_v pos t = let t = id_to_expr pos t in istype_embedded_witnesses t
-let witnessed_hastype t o p = F_witnessed_hastype @@ [t;o;p]   (* p : o : t *)
+let witnessed_hastype t o p = J_witnessed_hastype @@ [t;o;p]   (* p : o : t *)
 let witnessed_hastype_v t o pos p = let p = id_to_expr pos p in witnessed_hastype t o p
-let witnessed_type_equality t t' p = F_witnessed_type_equality @@ [t;t';p] (* p : t = t' *)
+let witnessed_type_equality t t' p = J_witnessed_type_equality @@ [t;t';p] (* p : t = t' *)
 let witnessed_type_equality_v t t' pos p = let p = id_to_expr pos p in witnessed_type_equality t t' p
-let witnessed_object_equality t o o' p = F_witnessed_object_equality @@ [t;o;o';p] (* p : o = o' : t *)
+let witnessed_object_equality t o o' p = J_witnessed_object_equality @@ [t;o;o';p] (* p : o = o' : t *)
 let witnessed_object_equality_v t o o' pos p = let p = id_to_expr pos p in witnessed_object_equality t o o' p
 
 let texp1 = oexp @-> texp
@@ -240,7 +206,6 @@ type lf_kind =
   | K_expression
   | K_primitive_judgment
   | K_judgment
-  | K_judged_expression
   | K_witnessed_judgment
   | K_Pi of identifier * judgment * lf_kind
 
@@ -260,50 +225,27 @@ let type_uequality_kind = texp @@-> texp @@-> K_primitive_judgment
 
 let object_uequality_kind = oexp @@-> oexp @@-> texp @@-> K_primitive_judgment
 
-let a_type_kind = K_judged_expression
-
-let obj_of_type_kind = a_type @@-> K_judged_expression
-
-let judged_kind_equal_kind = a_type @@-> a_type @@-> K_judged_expression
-
-let obj_of_type_with_witness_kind = texp @@-> K_witnessed_judgment
-
 let istype_witnessed_internally_kind = texp @@-> K_witnessed_judgment
 let witnessed_hastype_kind = texp @@-> oexp @@-> wexp @@-> K_witnessed_judgment
 let witnessed_type_equality_kind = texp @@-> texp @@-> wexp @@-> K_witnessed_judgment
 let witnessed_object_equality_kind = texp @@-> oexp @@-> oexp @@-> wexp @@-> K_witnessed_judgment
 
-let judged_obj_equal_kind =
-  K_Pi(id "T",
-       a_type,
-       obj_of_type (var_to_lf_bare (VarRel 0))
-       @@-> obj_of_type (var_to_lf_bare (VarRel 1))
-	 @@-> K_judged_expression)
-
 let tfhead_to_kind = function
-  | F_uexp -> K_ulevel
-  | F_wexp | F_texp | F_oexp -> K_expression
-  | F_istype -> istype_kind
-  | F_hastype -> hastype_kind
-  | F_ulevel_equality -> ulevel_equality_kind
-  | F_type_equality -> type_equality_kind
-  | F_object_equality -> object_equality_kind
-  | F_type_uequality -> type_uequality_kind
-  | F_object_uequality -> object_uequality_kind
-  | F_a_type -> a_type_kind
-  | F_obj_of_type -> obj_of_type_kind
-  | F_judged_type_equal -> judged_kind_equal_kind
-  | F_judged_obj_equal -> judged_obj_equal_kind
+  | J_uexp -> K_ulevel
+  | J_wexp | J_texp | J_oexp -> K_expression
+  | J_istype -> istype_kind
+  | J_hastype -> hastype_kind
+  | J_ulevel_equality -> ulevel_equality_kind
+  | J_type_equality -> type_equality_kind
+  | J_object_equality -> object_equality_kind
+  | J_type_uequality -> type_uequality_kind
+  | J_object_uequality -> object_uequality_kind
 
-  | F_istype_witnessed_inside -> istype_witnessed_internally_kind
+  | J_istype_witnessed_inside -> istype_witnessed_internally_kind
 
-  | F_witnessed_hastype -> witnessed_hastype_kind
-  | F_witnessed_type_equality -> witnessed_type_equality_kind
-  | F_witnessed_object_equality -> witnessed_object_equality_kind
-
-  | F_obj_of_type_with_witness -> obj_of_type_with_witness_kind
-
-  | F_undeclared_type_constant(pos,name) -> raise (UndeclaredTypeConstant(pos,name))
+  | J_witnessed_hastype -> witnessed_hastype_kind
+  | J_witnessed_type_equality -> witnessed_type_equality_kind
+  | J_witnessed_object_equality -> witnessed_object_equality_kind
 
 (** Subordination: see section 2.4 of Mechanizing Meta-theory by Harper and Licata *)
 type kind_comparison = K_equal | K_less | K_greater | K_incomparable
@@ -313,8 +255,7 @@ let rec ultimate_kind = function
   | K_expression
   | K_judgment
   | K_witnessed_judgment
-  | K_primitive_judgment
-  | K_judged_expression as k -> k
+  | K_primitive_judgment as k -> k
   | K_Pi (v,t,k) -> ultimate_kind k
 
 let rec compare_kinds k l =
@@ -343,8 +284,8 @@ let rec compare_kinds k l =
 
 let rec map_expr_list f s = match s with
   | ARG(x,a) -> let x' = f x in let a' = map_expr_list f a in if x' == x && a' == a then s else ARG(x',a')
-  | CAR a -> let a' = map_expr_list f a in if a' == a then s else CAR(a')
-  | CDR a -> let a' = map_expr_list f a in if a' == a then s else CDR(a')
+  | FST a -> let a' = map_expr_list f a in if a' == a then s else FST(a')
+  | SND a -> let a' = map_expr_list f a in if a' == a then s else SND(a')
   | END -> s
 
 (** relative indices *)
@@ -366,28 +307,28 @@ let rec rel_shift_expr limit shift e =
 
 and rel_shift_head limit shift h = 
   match h with
-  | V (VarRel i) when i >= limit -> V (VarRel (shift+i))
+  | V (Rel i) when i >= limit -> V (Rel (shift+i))
   | _ -> h
 
 and rel_shift_type limit shift t =
   match unmark t with
-  | F_Pi(v,a,b) ->
+  | J_Pi(v,a,b) ->
       let a' = rel_shift_type limit shift a in
       let limit = limit + 1 in
       let b' = rel_shift_type limit shift b in
-      if a' == a && b' == b then t else get_pos t, F_Pi(v,a',b')
-  | F_Sigma(v,a,b) ->
+      if a' == a && b' == b then t else get_pos t, J_Pi(v,a',b')
+  | J_Sigma(v,a,b) ->
       let a' = rel_shift_type limit shift a in
       let limit = limit + 1 in
       let b' = rel_shift_type limit shift b in
-      if a' == a && b' == b then t else get_pos t, F_Sigma(v,a',b')
-  | F_Apply(label,args) ->
+      if a' == a && b' == b then t else get_pos t, J_Sigma(v,a',b')
+  | J_Basic(label,args) ->
       let args' = List.map (rel_shift_expr limit shift) args in
-      if args' == args then t else get_pos t, F_Apply(label, args')
-  | F_Singleton(e,u) ->
+      if args' == args then t else get_pos t, J_Basic(label, args')
+  | J_Singleton(e,u) ->
       let e' = rel_shift_expr limit shift e in
       let u' = rel_shift_type limit shift u in
-      if e' == e && u' == u then t else get_pos t, F_Singleton(e',u')
+      if e' == e && u' == u then t else get_pos t, J_Singleton(e',u')
 
 let rel_shift_expr shift e = if shift = 0 then e else rel_shift_expr 0 shift e
 
@@ -427,7 +368,7 @@ let incr_state env =
 
 let local_lf_bind env v t = { env with local_lf_context = (v,t) :: env.local_lf_context }
 
-let local_lf_fetch env i = 			(* (VarRel i) *)
+let local_lf_fetch env i = 			(* (Rel i) *)
   try rel_shift_type (i+1) (snd (List.nth env.local_lf_context i))
   with Failure "nth" -> raise Not_found
 
@@ -439,7 +380,7 @@ let global_lf_fetch env name = MapIdentifier.find name env.global_lf_context
 
 let lf_fetch env = function
   | Var name -> global_lf_fetch env name
-  | VarRel i -> local_lf_fetch env i
+  | Rel i -> local_lf_fetch env i
 
 let local_tts_declare_type   env name   = { env with local_tts_context = (name,TTS_istype   ) :: env.local_tts_context }
 
@@ -456,7 +397,7 @@ let global_tts_declare_object env pos name t =
 let ts_bind env v t = 
   if isid v then local_tts_declare_object env (id_to_name v) t else raise Internal
 
-let local_tts_fetch env i =			(* (VarRel i) *)
+let local_tts_fetch env i =			(* (Rel i) *)
   (* note: each TTS_hastype consumes two relative indices, whereas each TTS_istype consumes only one; that should change *)
   let rec repeat shift i context =
     match context with
@@ -486,7 +427,7 @@ let is_tts_type_variable env name =
 
 let tts_fetch env = function
   | Var id -> global_tts_fetch env (id_to_name id)
-  | VarRel i -> local_tts_fetch env i
+  | Rel i -> local_tts_fetch env i
 
 let tts_fetch_type env name =
   match tts_fetch env name with

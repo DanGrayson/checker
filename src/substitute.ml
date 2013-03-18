@@ -12,7 +12,7 @@ open Printf
     expressions.
 
     In these routines, [subs] is an array of expressions, whose i-th element is
-    to replace [VarRel (i + shift)] in [e], with its variables' relative
+    to replace [Rel (i + shift)] in [e], with its variables' relative
     indices increased by [shift].  Variables with relative indices too large to
     be covered have their indices decreased by the length of [subs].
 
@@ -29,13 +29,13 @@ let rec subst_expr shift subs e =
   | BASIC(h,args) -> (
       let args' = map_expr_list (subst_expr shift subs) args in
       match h with
-      | V (VarRel j) ->
+      | V (Rel j) ->
 	  if j < shift then e 
 	  else
 	    let i = j-shift in
 	    if i < Array.length subs 
 	    then apply_args (rel_shift_expr shift subs.(i)) args'
-	    else pos, BASIC(V (VarRel (j - Array.length subs)),args')
+	    else pos, BASIC(V (Rel (j - Array.length subs)),args')
       | _ -> 
 	  if args' == args then e else pos, BASIC(h,args'))
   | PAIR(x,y) -> 
@@ -57,15 +57,15 @@ and apply_args e args =
   | PAIR(x,y) -> (
       match args with
       | ARG _ -> raise (GeneralError "application of a pair to an argument")
-      | CAR args -> apply_args x args
-      | CDR args -> apply_args y args
+      | FST args -> apply_args x args
+      | SND args -> apply_args y args
       | END -> e)
   | TEMPLATE(_,body) -> (
       match args with
       | ARG(x,args) -> 
 	  apply_args (subst_expr 0 [|x|] body) args
-      | CAR args -> raise (GeneralError "pi1 expected a pair but got a function")
-      | CDR args -> raise (GeneralError "pi2 expected a pair but got a function")
+      | FST args -> raise (GeneralError "pi1 expected a pair but got a function")
+      | SND args -> raise (GeneralError "pi2 expected a pair but got a function")
       | END -> e)
   in
   if debug_subst then printf "leaving apply_args(%d): r = %a\n%!" c _e (empty_environment,r);
@@ -74,27 +74,27 @@ and apply_args e args =
 and subst_type shift subs t =
   if debug_subst then printf "subst_type shift=%d subs=%a t=%a\n%!" shift _a (empty_environment,subs) _t (empty_environment,t);
   match unmark t with
-  | F_Pi(v,a,b) ->
+  | J_Pi(v,a,b) ->
       let a' = subst_type shift subs a in
       let shift = shift + 1 in
       let b' = subst_type shift subs b in
-      if a' == a && b' == b then t else get_pos t, F_Pi(v,a',b')
-  | F_Sigma(v,a,b) ->
+      if a' == a && b' == b then t else get_pos t, J_Pi(v,a',b')
+  | J_Sigma(v,a,b) ->
       let a' = subst_type shift subs a in
       let shift = shift + 1 in
       let b' = subst_type shift subs b in
-      if a' == a && b' == b then t else get_pos t, F_Sigma(v,a',b')
-  | F_Singleton(e,u) ->
+      if a' == a && b' == b then t else get_pos t, J_Sigma(v,a',b')
+  | J_Singleton(e,u) ->
       let e' = subst_expr shift subs e in
       let u' = subst_type shift subs u in
-      if e' == e && u' == u then t else get_pos t, F_Singleton(e',u')
-  | F_Apply(label,args) -> 
+      if e' == e && u' == u then t else get_pos t, J_Singleton(e',u')
+  | J_Basic(label,args) -> 
       let args' = map_list (subst_expr shift subs) args in
-      if args' == args then t else get_pos t, F_Apply(label, args')
+      if args' == args then t else get_pos t, J_Basic(label, args')
 
 let rec subst_kind shift subs k =
    match k with
-   | K_primitive_judgment | K_ulevel | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression -> k
+   | K_primitive_judgment | K_ulevel | K_expression | K_judgment | K_witnessed_judgment -> k
    | K_Pi(v,a,b) ->
        let a' = subst_type shift subs a in
        let shift = shift + 1 in

@@ -42,14 +42,14 @@ let default_tactic = cite_tactic "default" END
 
 let ( ** ) x s = ARG(x,s)		(* right associative *)
 
-let var_0 = var_to_lf_bare (VarRel 0) ** END
+let var_0 = var_to_lf_bare (Rel 0) ** END
 
-let var_1_0 = var_to_lf_bare (VarRel 1) ** var_to_lf_bare (VarRel 0) ** END
+let var_1_0 = var_to_lf_bare (Rel 1) ** var_to_lf_bare (Rel 0) ** END
 
 let rec nth_arg n args =
   match n,args with
   | 0, ARG(x,_) -> x
-  | n, CAR args | n, CDR args -> nth_arg n args
+  | n, FST args | n, SND args -> nth_arg n args
   | _, END -> raise Not_found
   | n, ARG(_,args) -> nth_arg (n-1) args
 
@@ -57,15 +57,15 @@ let rec join_args a b =
   if b = END then a else
   match a with
   | ARG(x,a) -> ARG(x,join_args a b)
-  | CAR a -> CAR(join_args a b)
-  | CDR a -> CDR(join_args a b)
+  | FST a -> FST(join_args a b)
+  | SND a -> SND(join_args a b)
   | END -> b
 
 let rec join_args_rev a b =
   match a with
   | ARG(x,a) -> join_args_rev a (ARG(x,b))
-  | CAR a -> join_args_rev a (CAR b)
-  | CDR a -> join_args_rev a (CDR b)
+  | FST a -> join_args_rev a (FST b)
+  | SND a -> join_args_rev a (SND b)
   | END -> b
 
 let reverse_expr_list a = join_args_rev a END
@@ -73,8 +73,8 @@ let reverse_expr_list a = join_args_rev a END
 let rec args_compare expr_compare a b =
   match (a,b) with
   | ARG(x,a), ARG(y,b) -> expr_compare x y && args_compare expr_compare a b
-  | CAR a, CAR b -> args_compare expr_compare a b
-  | CDR a, CDR b -> args_compare expr_compare a b
+  | FST a, FST b -> args_compare expr_compare a b
+  | SND a, SND b -> args_compare expr_compare a b
   | END, END -> true
   | _ -> false
 
@@ -93,41 +93,41 @@ type expr_list_member =
 
 let rec expr_list_member_list_to_expr_list = function
   | Spine_arg x :: a -> ARG(x,expr_list_member_list_to_expr_list a)
-  | Spine_car :: a -> CAR(expr_list_member_list_to_expr_list a)
-  | Spine_cdr :: a -> CDR(expr_list_member_list_to_expr_list a)
+  | Spine_car :: a -> FST(expr_list_member_list_to_expr_list a)
+  | Spine_cdr :: a -> SND(expr_list_member_list_to_expr_list a)
   | [] -> END
 
 let rec exists_in_expr_list p args =
   match args with
   | ARG(x,a) -> p x || exists_in_expr_list p a
-  | CAR a | CDR a -> exists_in_expr_list p a
+  | FST a | SND a -> exists_in_expr_list p a
   | END -> false
 
 let rec args_length = function
-  | CAR a | CDR a | ARG(_,a) -> 1 + args_length a
+  | FST a | SND a | ARG(_,a) -> 1 + args_length a
   | END -> 0
 
 let rec args_fold f pi1 pi2 accu args = (* it's fold_left, which is the only direction that makes sense *)
   match args with
   | ARG(a,args) -> args_fold f pi1 pi2 (f accu a) args
-  | CAR args -> args_fold f pi1 pi2 (pi1 accu) args
-  | CDR args -> args_fold f pi1 pi2 (pi2 accu) args
+  | FST args -> args_fold f pi1 pi2 (pi1 accu) args
+  | SND args -> args_fold f pi1 pi2 (pi2 accu) args
   | END -> accu
 
 let rec args_iter f pi1 pi2 args =
   match args with
   | ARG(a,args) -> f a; args_iter f pi1 pi2 args
-  | CAR args -> pi1 (); args_iter f pi1 pi2 args
-  | CDR args -> pi2 (); args_iter f pi1 pi2 args
+  | FST args -> pi1 (); args_iter f pi1 pi2 args
+  | SND args -> pi2 (); args_iter f pi1 pi2 args
   | END -> ()
 
 let pi1 = function
-  | pos, BASIC(h,args) -> (pos,BASIC(h,join_args args (CAR END)))
+  | pos, BASIC(h,args) -> (pos,BASIC(h,join_args args (FST END)))
   | pos, PAIR(x,_) -> x
   | _ -> (trap(); raise Internal)
 
 let pi2 = function
-  | pos, BASIC(h,args) -> (pos,BASIC(h,join_args args (CDR END)))
+  | pos, BASIC(h,args) -> (pos,BASIC(h,join_args args (SND END)))
   | pos, PAIR(_,y) -> y
   | _ -> (trap(); raise Internal)
 
@@ -142,7 +142,7 @@ let head_to_type env pos = function
   | U h -> uhead_to_judgment h
   | T h -> thead_to_judgment h
   | O h -> ohead_to_judgment h
-  | V (VarRel name) -> local_lf_fetch env name
+  | V (Rel name) -> local_lf_fetch env name
   | V (Var name) -> (
       try global_lf_fetch env name
       with Not_found ->
@@ -160,7 +160,7 @@ let rec id_subst_expr shift subl e =
       match h with
       | V (Var v) -> (
 	  try
-	    get_pos e, BASIC(V (VarRel (locate v subl + shift)),args')
+	    get_pos e, BASIC(V (Rel (locate v subl + shift)),args')
 	  with Not_found ->
 	    if args == args' then e else get_pos e, BASIC(h,args'))
       | W _ | V _ | U _ | T _ | O _ | TACTIC _ ->
@@ -176,27 +176,27 @@ let rec id_subst_expr shift subl e =
 
 and id_subst_type shift subl t =
   match unmark t with
-  | F_Pi(v,a,b) ->
+  | J_Pi(v,a,b) ->
       let a' = id_subst_type shift subl a in
       let shift = shift + 1 in
       let b' = id_subst_type shift subl b in
-      if a' == a && b' == b then t else get_pos t, F_Pi(v,a',b')
-  | F_Sigma(v,a,b) ->
+      if a' == a && b' == b then t else get_pos t, J_Pi(v,a',b')
+  | J_Sigma(v,a,b) ->
       let a' = id_subst_type shift subl a in
       let shift = shift + 1 in
       let b' = id_subst_type shift subl b in
-      if a' == a && b' == b then t else get_pos t, F_Sigma(v,a',b')
-  | F_Apply(label,args) ->
+      if a' == a && b' == b then t else get_pos t, J_Sigma(v,a',b')
+  | J_Basic(label,args) ->
       let args' = List.map (id_subst_expr shift subl) args in
-      if args' == args then t else get_pos t, F_Apply(label, args')
-  | F_Singleton(e,u) ->
+      if args' == args then t else get_pos t, J_Basic(label, args')
+  | J_Singleton(e,u) ->
       let e' = id_subst_expr shift subl e in
       let u' = id_subst_type shift subl u in
-      if e' == e && u' == u then t else get_pos t, F_Singleton(e',u')
+      if e' == e && u' == u then t else get_pos t, J_Singleton(e',u')
 
 let rec id_subst_kind shift subl k =
    match k with
-   | K_primitive_judgment | K_ulevel | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression -> k
+   | K_primitive_judgment | K_ulevel | K_expression | K_judgment | K_witnessed_judgment -> k
    | K_Pi(v,a,b) ->
        let a' = id_subst_type shift subl a in
        let shift = shift + 1 in
@@ -248,12 +248,12 @@ let lambda3 v0 v1 v2 x =
 
 let make_Var c = Var c
 
-let make_F_Pi t (v,u) = F_Pi(v, t, rel1_type v u)
-let make_F_Pi_simple t u = F_Pi(arrow_good_var_name t, t, u)
-let make_F_Pi_reassemble t (v,u) = F_Pi(v, t, u)
-let make_F_Sigma t (v,u) = F_Sigma(v, t, rel1_type v u)
-let make_F_Sigma_simple t u = F_Sigma(arrow_good_var_name t, t, u)
-let make_F_Sigma_reassemble t (v,u) = F_Sigma(v, t, u)
+let make_F_Pi t (v,u) = J_Pi(v, t, rel1_type v u)
+let make_F_Pi_simple t u = J_Pi(arrow_good_var_name t, t, u)
+let make_F_Pi_reassemble t (v,u) = J_Pi(v, t, u)
+let make_F_Sigma t (v,u) = J_Sigma(v, t, rel1_type v u)
+let make_F_Sigma_simple t u = J_Sigma(arrow_good_var_name t, t, u)
+let make_F_Sigma_reassemble t (v,u) = J_Sigma(v, t, u)
 
 let make_U h a = BASIC(U h, a)
 let make_T h a = BASIC(T h, a)
@@ -318,7 +318,7 @@ let make_W_Wrefl = make_W W_wrefl END
 let this_object_of_type pos o t =
   let id = id "x" in
   let v = Var id in
-  let a = with_pos pos (F_Singleton(o,oexp)) in
+  let a = with_pos pos (J_Singleton(o,oexp)) in
   let b = hastype (nowhere 126 (BASIC(V v,END))) t in
   with_pos pos (make_F_Sigma a (id,b))
 

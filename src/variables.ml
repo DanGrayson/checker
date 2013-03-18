@@ -44,36 +44,36 @@ let is_witness_pair i j = isid i && isidw j && id_to_name i = id_to_name j
 
 type var =
   | Var of identifier
-  | VarRel of int			(* deBruijn index, starting with 0 *)
+  | Rel of int			(* deBruijn index, starting with 0 *)
 
 let var_to_name = function
   | Var i -> id_to_name i
-  | VarRel _ -> raise Internal
+  | Rel _ -> raise Internal
 
 let vartostring = function
   | Var x -> idtostring x
-  | VarRel i -> string_of_int i ^ "^"	(* raw form *)
+  | Rel i -> string_of_int i ^ "^"	(* raw form *)
 
 let is_base_var = function
   | Var x -> isid x
-  | VarRel i -> i mod 2 = 1
+  | Rel i -> i mod 2 = 1
 
 let is_witness_var = function
   | Var x -> isidw x
-  | VarRel i -> i mod 2 = 0
+  | Rel i -> i mod 2 = 0
 
 let base_var = function			(* deprecated *)
   | Var x -> Var (base_id x)
-  | VarRel i -> if i mod 2 = 0 then VarRel (i+1) else raise Internal
+  | Rel i -> if i mod 2 = 0 then Rel (i+1) else raise Internal
 
 let witness_var = function		(* deprecated *)
   | Var x -> Var (witness_id x)
-  | VarRel i -> if i mod 2 = 1 then VarRel (i-1) else raise Internal
+  | Rel i -> if i mod 2 = 1 then Rel (i-1) else raise Internal
 
 let isunused v = 			(* deprecated *)
   match v with
   | Var x -> id_to_name x = "_"
-  | VarRel _ -> raise Internal
+  | Rel _ -> raise Internal
 
 (*
   Local Variables:

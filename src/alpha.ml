@@ -25,7 +25,7 @@ module Make(Ueq: Universe.Equivalence) : S = struct
       | BASIC(h,args), BASIC(h',args') -> (
 	  match (h,h') with
 	  | U _, U _ -> uequiv uc x x'
-	  | V (VarRel i), V (VarRel j) -> shift + i = j
+	  | V (Rel i), V (Rel j) -> shift + i = j
 	  | _ -> 
 	      h = h' && 
 	      args_compare (term_equiv uc shift) args args')
@@ -36,16 +36,16 @@ module Make(Ueq: Universe.Equivalence) : S = struct
 
   let rec type_equiv uc shift x x' =
       match (unmark x, unmark x') with
-      | F_Singleton (x,t) , F_Singleton (x',t') -> 
+      | J_Singleton (x,t) , J_Singleton (x',t') -> 
 	  term_equiv uc shift x x' && 
 	  type_equiv uc shift t t'
-      | F_Pi(_,t,u), F_Pi(_,t',u') -> 
+      | J_Pi(_,t,u), J_Pi(_,t',u') -> 
 	  type_equiv uc shift t t' && 
 	  type_equiv uc shift u u'
-      | F_Sigma(_,t,u), F_Sigma(_,t',u') -> 
+      | J_Sigma(_,t,u), J_Sigma(_,t',u') -> 
 	  type_equiv uc shift t t' && 
 	  type_equiv uc shift u u'
-      | F_Apply(h,args), F_Apply(h',args') -> 
+      | J_Basic(h,args), J_Basic(h',args') -> 
 	  h = h' && 
 	  List.for_all2 (term_equiv uc shift) args args'
       | _ -> false

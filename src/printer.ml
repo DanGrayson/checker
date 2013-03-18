@@ -24,10 +24,10 @@ let rec names_in_list p_arg args = List.flatten (List.map p_arg args)
 let rec names_in_expr_list args =
   match args with
   | ARG(x,args) -> names_in_expr x @ names_in_expr_list args
-  | CAR args | CDR args -> names_in_expr_list args
+  | FST args | SND args -> names_in_expr_list args
   | END -> []
 
-and names_in_head = function V (Var v) -> [id_to_name v] | V (VarRel _) | U _ | T _ | W _ | O _ | TACTIC _ -> []
+and names_in_head = function V (Var v) -> [id_to_name v] | V (Rel _) | U _ | T _ | W _ | O _ | TACTIC _ -> []
 
 and names_in_expr (pos,e) = match e with
   | TEMPLATE(x,body) -> names_in_expr body
@@ -35,19 +35,19 @@ and names_in_expr (pos,e) = match e with
   | BASIC(h,args) -> names_in_head h @ names_in_expr_list args
 
 and names_in_type (pos,t) = match t with
-  | F_Pi(v,t,u) | F_Sigma(v,t,u) -> names_in_type t @ names_in_type u
-  | F_Singleton(x,t) -> names_in_expr x @ names_in_type t
-  | F_Apply(hd,args) -> names_in_list names_in_expr args
+  | J_Pi(v,t,u) | J_Sigma(v,t,u) -> names_in_type t @ names_in_type u
+  | J_Singleton(x,t) -> names_in_expr x @ names_in_type t
+  | J_Basic(hd,args) -> names_in_list names_in_expr args
 
 let rec names_in_kind = function
-  | K_primitive_judgment | K_ulevel | K_expression | K_witnessed_judgment | K_judgment | K_judged_expression -> []
+  | K_primitive_judgment | K_ulevel | K_expression | K_witnessed_judgment | K_judgment -> []
   | K_Pi(v,t,k) -> names_in_type t @ names_in_kind k
 
-(** Whether [VarRel 0] occurs as a bound variable in an expression. *)
+(** Whether [Rel 0] occurs as a bound variable in an expression. *)
 
 let rec rel_occurs_in_head shift h =
   match h with
-  | V (VarRel i) -> i = shift
+  | V (Rel i) -> i = shift
   | V (Var _) | W _ | U _ | T _ | O _ | TACTIC _ -> false
 
 and rel_occurs_in_expr shift e =
@@ -57,20 +57,20 @@ and rel_occurs_in_expr shift e =
   | BASIC(h,args) -> rel_occurs_in_head shift h || exists_in_expr_list (rel_occurs_in_expr shift) args
 
 let rec rel_occurs_in_type shift (pos,t) = match t with
-  | F_Pi(v,t,u) | F_Sigma(v,t,u) -> rel_occurs_in_type shift t || rel_occurs_in_type (shift+1) u
-  | F_Singleton(e,t) -> rel_occurs_in_expr shift e || rel_occurs_in_type shift t
-  | F_Apply(h,args) -> List.exists (rel_occurs_in_expr shift) args
+  | J_Pi(v,t,u) | J_Sigma(v,t,u) -> rel_occurs_in_type shift t || rel_occurs_in_type (shift+1) u
+  | J_Singleton(e,t) -> rel_occurs_in_expr shift e || rel_occurs_in_type shift t
+  | J_Basic(h,args) -> List.exists (rel_occurs_in_expr shift) args
 
 let rec rel_occurs_in_kind shift = function
   | K_Pi(v,t,k) -> rel_occurs_in_type shift t || rel_occurs_in_kind (shift+1) k
-  | K_primitive_judgment | K_ulevel | K_expression | K_witnessed_judgment | K_judgment | K_judged_expression -> false
+  | K_primitive_judgment | K_ulevel | K_expression | K_witnessed_judgment | K_judgment -> false
 
 (** Whether [x] occurs as a name of a free variable in an expression.  Bound variables will get renamed, if in use. *)
 
 let rec occurs_in_head w h =
   match h with
   | V (Var id) -> id_to_name id = w
-  | V (VarRel _) | W _ | U _ | T _ | O _ | TACTIC _ -> false
+  | V (Rel _) | W _ | U _ | T _ | O _ | TACTIC _ -> false
 
 and occurs_in_expr w e =
   match unmark e with
@@ -79,13 +79,13 @@ and occurs_in_expr w e =
   | BASIC(h,args) -> occurs_in_head w h || exists_in_expr_list (occurs_in_expr w) args
 
 let rec occurs_in_type w (pos,t) = match t with
-  | F_Pi(v,t,u) | F_Sigma(v,t,u) -> occurs_in_type w t || occurs_in_type w u
-  | F_Singleton(e,t) -> occurs_in_expr w e || occurs_in_type w t
-  | F_Apply(h,args) -> List.exists (occurs_in_expr w) args
+  | J_Pi(v,t,u) | J_Sigma(v,t,u) -> occurs_in_type w t || occurs_in_type w u
+  | J_Singleton(e,t) -> occurs_in_expr w e || occurs_in_type w t
+  | J_Basic(h,args) -> List.exists (occurs_in_expr w) args
 
 let rec occurs_in_kind w = function
   | K_Pi(v,t,k) -> occurs_in_type w t || occurs_in_kind w k
-  | K_primitive_judgment | K_ulevel | K_expression | K_witnessed_judgment | K_judgment | K_judged_expression -> false
+  | K_primitive_judgment | K_ulevel | K_expression | K_witnessed_judgment | K_judgment -> false
 
 (** Printing of LF and TS expressions. *)
 
@@ -111,7 +111,7 @@ let rec occurs_in_kind w = function
 
  *)
 
-let rel_to_string subs i = try idtostring (List.nth subs i) with Failure "nth" -> vartostring (VarRel i)
+let rel_to_string subs i = try idtostring (List.nth subs i) with Failure "nth" -> vartostring (Rel i)
 
 let var_tester w subs occurs_in e = not ( List.exists (fun x -> id_to_name x == w ) subs ) && not ( occurs_in w e )
 
@@ -229,7 +229,7 @@ let application_to_lf_string p_arg head args : smart_string =
 
 let rec lf_head_to_string_with_subs subs h : string =
   match h with
-  | V (VarRel i as v) -> if enable_variable_prettification then rel_to_string subs i else vartostring v
+  | V (Rel i as v) -> if enable_variable_prettification then rel_to_string subs i else vartostring v
   | V (Var id) -> idtostring id
   | W _ | U _ | T _ | O _ -> "@[" ^ expr_head_to_string h ^ "]"
   | TACTIC tac -> tactic_to_string tac
@@ -274,17 +274,17 @@ and dependent_sub subs prefix infix infix_prec (v,t,u) =
   ^ paren_right infix_prec u
 
 and judgment_to_string_with_subs subs (_,t) : smart_string = match t with
-  | F_Pi   (v,t,u) -> dependent_sub subs "∏ " " ⟶ " arrow_prec (v,t,u)
-  | F_Sigma(v,t,u) -> dependent_sub subs "Σ " " × " times_prec (v,t,u)
-  | F_Singleton(x,t) ->
+  | J_Pi   (v,t,u) -> dependent_sub subs "∏ " " ⟶ " arrow_prec (v,t,u)
+  | J_Sigma(v,t,u) -> dependent_sub subs "Σ " " × " times_prec (v,t,u)
+  | J_Singleton(x,t) ->
       let x = expr_to_string_with_subs subs x in
       let t = judgment_to_string_with_subs subs t in
       top_prec, concat ["Singleton(";paren_left colon_prec x;" : ";paren_right colon_prec t;")"]
-  | F_Apply(hd,args) ->
+  | J_Basic(hd,args) ->
       list_application_to_string (mark_top <<- judgment_head_to_string) (expr_to_string_with_subs subs) (hd,args)
 
 let rec lf_kind_to_string_with_subs subs = function
-  | ( K_ulevel | K_expression | K_judgment | K_primitive_judgment | K_witnessed_judgment | K_judged_expression ) as k -> top_prec, List.assoc k lf_kind_constant_table
+  | ( K_ulevel | K_expression | K_judgment | K_primitive_judgment | K_witnessed_judgment ) as k -> top_prec, List.assoc k lf_kind_constant_table
   | K_Pi(v,t,k) ->
       let used = rel_occurs_in_kind 0 k in
       let t = judgment_to_string_with_subs subs t in
@@ -301,8 +301,8 @@ let rec lf_kind_to_string_with_subs subs = function
 let expr_list_to_string args = paren_left bottom_prec (
   args_fold
     (fun accu arg -> expr_list_prec, paren_left expr_list_prec accu ^ ";" ^ paren_right expr_list_prec (expr_to_string_with_subs [] arg))
-    (fun accu -> expr_list_prec, paren_left expr_list_prec accu ^ ";CAR")
-    (fun accu -> expr_list_prec, paren_left expr_list_prec accu ^ ";CDR")
+    (fun accu -> expr_list_prec, paren_left expr_list_prec accu ^ ";FST")
+    (fun accu -> expr_list_prec, paren_left expr_list_prec accu ^ ";SND")
     (top_prec,"") args)
 
 let env_to_subs env = (* concatenation of the two contexts might not be appropriate later on *)
@@ -349,8 +349,8 @@ let rec application_to_ts_string subs hd args = top_prec, (
   args_fold
     (fun accu arg ->
     possible_comma accu ^ paren_right comma_prec (ts_expr_to_string subs arg))
-    (fun accu -> possible_comma accu ^ "CAR")	(*not right*)
-    (fun accu -> possible_comma accu ^ "CDR")
+    (fun accu -> possible_comma accu ^ "FST")	(*not right*)
+    (fun accu -> possible_comma accu ^ "SND")
     (hd ^ "[")
     args) ^ "]"
 
@@ -545,7 +545,7 @@ let print_global_lf_context file env =
   MapIdentifier.iter
     (fun name t -> (
       match unmark t with
-      | F_Singleton(e,t) ->
+      | J_Singleton(e,t) ->
           fprintf file "     %a := %a\n"   _i name _e (env,e);
           fprintf file "     %a :  %a\n%!" _i_phantom name _t (env,t)
       | _ ->
@@ -561,7 +561,7 @@ let print_context n file env =
       (fun i (v,t) ->
         if i = n then raise Limit;
         match unmark t with
-        | F_Singleton(e,t) ->
+        | J_Singleton(e,t) ->
             fprintf file " %d %a := %a\n"   (cl-i-1) _i v          _e (env,e);
             fprintf file " %d %a  : %a\n%!" (cl-i-1) _i_phantom v  _t (env,t)
         | _ ->

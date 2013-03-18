@@ -44,7 +44,6 @@ type position =
   | Position of Lexing.position * Lexing.position (** start, end *)
   | Nowhere of int * int
 
-exception UndeclaredTypeConstant of position * string
 exception MarkedError of position * string
 
 let lexbuf_position lexbuf =

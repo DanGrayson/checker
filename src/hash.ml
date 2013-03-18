@@ -65,6 +65,6 @@ and type_hash t = raise Error.NotImplemented
 
 and expr_list_hash = function
   | END -> 1
-  | CAR r -> 123 + expr_list_hash r
-  | CDR r -> 13 + expr_list_hash r
+  | FST r -> 123 + expr_list_hash r
+  | SND r -> 13 + expr_list_hash r
   | ARG(c,r) -> expr_hash c + 2345 * (expr_list_hash r)

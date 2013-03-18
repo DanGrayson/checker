@@ -54,7 +54,7 @@ let get_uvars env =
 
 let get_ueqns env =
   let rec get_ueqns accu = function
-  | (_, (pos,F_Apply(F_ulevel_equality,[u; u']))) :: rest -> get_ueqns ((u,u') :: accu) rest
+  | (_, (pos,J_Basic(J_ulevel_equality,[u; u']))) :: rest -> get_ueqns ((u,u') :: accu) rest
   | _ :: rest -> get_ueqns accu rest
   | [] -> List.rev accu
   in get_ueqns [] env.local_lf_context

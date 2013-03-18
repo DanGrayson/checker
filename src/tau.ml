@@ -9,14 +9,14 @@ open Helpers
 let rec tau (env:environment) e : expr =
   let pos = get_pos e in
   match unmark e with
-  | BASIC(V (Var v),CAR END) -> (		(* pi1 v *)
+  | BASIC(V (Var v),FST END) -> (		(* pi1 v *)
       if !debug_mode then printf " v = %a\n%!" _i v;
       if !debug_mode then print_context (Some 4) stderr env;
       let t =
 	try List.assoc v env.local_lf_context
 	with Not_found -> raise (TypeCheckingFailure(env, [], [pos, "variable not in LF context: " ^ idtostring v])) in
       match unmark t with
-      | F_Sigma(_,_,(_,F_Apply(F_hastype,[(_,BASIC(V v',END)); t]))) -> t
+      | J_Sigma(_,_,(_,J_Basic(J_hastype,[(_,BASIC(V v',END)); t]))) -> t
       | _ -> (trap(); raise Internal))
   | BASIC(h,args) -> (
       match h with

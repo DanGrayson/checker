@@ -70,12 +70,12 @@ let apply_ts_binder env i e =
 let try_alpha = true
 
 let rec strip_singleton ((_,(_,t)) as u) = match t with
-| F_Singleton a -> strip_singleton a
+| J_Singleton a -> strip_singleton a
 | _ -> u
 
 let rec un_singleton t =
   match unmark t with
-  | F_Singleton xt -> let (x,t) = strip_singleton xt in t
+  | J_Singleton xt -> let (x,t) = strip_singleton xt in t
   | _ -> t
 
 (* background assumption: all types in the environment have been verified *)
@@ -107,20 +107,20 @@ let rec natural_type (env:environment) (x:expr) : judgment =
 	let t = un_singleton t 		(* even this is probably not enough to ensure that a function type t looks like one *)
 	in
         match args, unmark t with
-        | ARG(x,args), F_Pi(v,a,b) -> repeat (i+1) args (subst_type x b)
+        | ARG(x,args), J_Pi(v,a,b) -> repeat (i+1) args (subst_type x b)
         | ARG(x,args), _ -> 
 	    printf " t=%a\n x=%a\n%!" _t (env,t) _e (env,x);
 	    err env pos "at least one argument too many"
-        | CAR args, F_Sigma(v,a,b) -> repeat (i+1) args a
-        | CAR _, _ -> err env pos "pi1 expected a pair (2)"
-        | CDR args, F_Sigma(v,a,b) -> repeat (i+1) args b
-        | CDR _, _ -> err env pos "pi2 expected a pair (2)"
+        | FST args, J_Sigma(v,a,b) -> repeat (i+1) args a
+        | FST _, _ -> err env pos "pi1 expected a pair (2)"
+        | SND args, J_Sigma(v,a,b) -> repeat (i+1) args b
+        | SND _, _ -> err env pos "pi2 expected a pair (2)"
         | END, t -> t
       in nowhere 5 (repeat 0 args t)
   | TEMPLATE _ -> err env pos "LF lambda expression found, has no natural type"
   | PAIR _ -> err env pos "LF pair found, has no natural type"
 
-let car_passed_term pos head args_passed = with_pos pos (BASIC(head,reverse_expr_list (CAR args_passed)))
+let car_passed_term pos head args_passed = with_pos pos (BASIC(head,reverse_expr_list (FST args_passed)))
 
 let subst_car_passed_term pos head args_passed b = 
   if !debug_mode then printf "subst_car_passed_term head %a args_passed %a b %a\n%!" _h head _s args_passed _t (empty_environment,b);
@@ -152,10 +152,10 @@ let rec head_reduction (env:environment) (x:expr) : expr =
 	  let args_passed = END in
 	  let rec repeat t args_passed args =
 	    match unmark t, args with
-	    | F_Singleton s, args -> let (x,t) = strip_singleton s in apply_args x args (* here we unfold a definition *)
-	    | F_Pi(v,a,b), ARG(x,args) -> repeat (subst_type x b) (ARG(x,args_passed)) args
-	    | F_Sigma(v,a,b), CAR args -> repeat a (CAR args_passed) args
-	    | F_Sigma(v,a,b), CDR args -> repeat (subst_car_passed_term pos head args_passed b) (CDR args_passed) args
+	    | J_Singleton s, args -> let (x,t) = strip_singleton s in apply_args x args (* here we unfold a definition *)
+	    | J_Pi(v,a,b), ARG(x,args) -> repeat (subst_type x b) (ARG(x,args_passed)) args
+	    | J_Sigma(v,a,b), FST args -> repeat a (FST args_passed) args
+	    | J_Sigma(v,a,b), SND args -> repeat (subst_car_passed_term pos head args_passed b) (SND args_passed) args
 	    | _, END -> raise Not_found
 	    | _ -> 
 		printf "%a: x = %a\n%a: t = %a, args_passed = %a, args = %a\n%!" _pos pos _e (env,x) _pos (get_pos t) _t (env,t) _s args_passed _s args;
@@ -188,8 +188,8 @@ let compare_var_to_expr v e =
 
 let open_context t1 (env,p,o,t2) =
   let env = local_tts_declare_object env "x" t1 in
-  let v = VarRel 1 in
-  let v' = VarRel 0 in
+  let v = Rel 1 in
+  let v' = Rel 0 in
   let e = var_to_lf_bare v ** var_to_lf_bare v' ** END in
   let p = Substitute.apply_args (rel_shift_expr 1 p) e in
   let o = Substitute.apply_args (rel_shift_expr 1 o) e in
@@ -227,8 +227,8 @@ let rec check_istype env t =
 	  let t1,t2 = args2 args in
 	  check_istype env t1;
 	  let env = local_tts_declare_object env "o" t1 in
-	  let o = var_to_lf_bare (VarRel 1) in
-	  let p = var_to_lf_bare (VarRel 0) in
+	  let o = var_to_lf_bare (Rel 1) in
+	  let p = var_to_lf_bare (Rel 0) in
 	  let t2 = Substitute.apply_args (rel_shift_expr 1 t2) (o ** p ** END) in
 	  check_istype env t2
       | T_U' -> ()
@@ -326,10 +326,10 @@ and check_witnessed_object_equality env t o o' p =
 let check (env:environment) (t:judgment) =
   try
     match unmark t with
-    | F_Apply(F_istype_witnessed_inside,[t]) -> check_istype env t
-    | F_Apply(F_witnessed_hastype,[t;o;w]) -> check_hastype env t o w
-    | F_Apply(F_witnessed_type_equality,[t;t';w]) -> check_type_equality env t t' w
-    | F_Apply(F_witnessed_object_equality,[t;o;o';w]) -> check_witnessed_object_equality env t o o' w
+    | J_Basic(J_istype_witnessed_inside,[t]) -> check_istype env t
+    | J_Basic(J_witnessed_hastype,[t;o;w]) -> check_hastype env t o w
+    | J_Basic(J_witnessed_type_equality,[t;t';w]) -> check_type_equality env t t' w
+    | J_Basic(J_witnessed_object_equality,[t;o;o';w]) -> check_witnessed_object_equality env t o o' w
     | _ -> err env (get_pos t) "expected a witnessed judgment"
   with
     FalseWitness -> err env (get_pos t) "incorrect witness"
@@ -353,17 +353,17 @@ let min_kind_option k l =
 
 let rec min_type_kind t =
   match unmark t with
-  | F_Singleton(x,t) -> min_type_kind t
-  | F_Pi(v,t,u) -> min_type_kind u
-  | F_Apply(h,args) -> ultimate_kind (tfhead_to_kind h)
-  | F_Sigma(v,t,u) -> min_kind (min_type_kind t) (min_type_kind u)
+  | J_Singleton(x,t) -> min_type_kind t
+  | J_Pi(v,t,u) -> min_type_kind u
+  | J_Basic(h,args) -> ultimate_kind (tfhead_to_kind h)
+  | J_Sigma(v,t,u) -> min_kind (min_type_kind t) (min_type_kind u)
 
 let rec min_target_kind t =
   match unmark t with
-  | F_Singleton (e,t) -> min_target_kind t
-  | F_Pi(v,t,u) -> min_target_kind u
-  | F_Apply(h,args) -> Some (ultimate_kind (tfhead_to_kind h))
-  | F_Sigma(v,t,u) -> min_kind_option (min_target_kind t) (min_target_kind u)
+  | J_Singleton (e,t) -> min_target_kind t
+  | J_Pi(v,t,u) -> min_target_kind u
+  | J_Basic(h,args) -> Some (ultimate_kind (tfhead_to_kind h))
+  | J_Sigma(v,t,u) -> min_kind_option (min_target_kind t) (min_target_kind u)
 
 (** Type checking and term_equiv routines. *)
 
@@ -373,18 +373,18 @@ let rec term_equivalence (env:environment) (x:expr) (y:expr) (t:judgment) : unit
   if !debug_mode then printf " term_equiv\n\t x=%a\n\t y=%a\n\t t=%a\n%!" _e (env,x) _e (env,y) _t (env,t);
   (if try_alpha && term_equiv x y then () else
   match unmark t with
-  | F_Singleton _ -> ()
-  | F_Sigma (v,a,b) ->
+  | J_Singleton _ -> ()
+  | J_Sigma (v,a,b) ->
       term_equivalence env (pi1 x) (pi1 y) a;
       term_equivalence env (pi2 x) (pi2 y) (subst_type (pi1 x) b)
-  | F_Pi (v,a,b) ->
+  | J_Pi (v,a,b) ->
       let env = local_lf_bind env v a in
-      let v = var_to_lf_bare (VarRel 0) in
+      let v = var_to_lf_bare (Rel 0) in
       let xres = apply_args (rel_shift_expr 1 x) (ARG(v,END)) in
       let yres = apply_args (rel_shift_expr 1 y) (ARG(v,END)) in
       term_equivalence env xres yres b
-  | F_Apply(j,args) ->
-      if j == F_uexp then (
+  | J_Basic(j,args) ->
+      if j == J_uexp then (
 	if !debug_mode then printf "warning: ulevel comparison judged true: %a = %a\n%!" _e (env,x) _e (env,y);
        )
       else (
@@ -410,16 +410,16 @@ and path_equivalence (env:environment) (x:expr) (y:expr) : judgment =
       let rec repeat t args_passed args args' =
 	if !debug_mode then printf " path_equivalence repeat, head type = %a, args_passed = %a\n\targs = %a\n\targs' = %a\n%!" _t (env,t) _s args_passed _s args _s args';
         match t,args,args' with
-        | (pos,F_Pi(v,a,b)), ARG(x,args), ARG(y,args') ->
+        | (pos,J_Pi(v,a,b)), ARG(x,args), ARG(y,args') ->
             term_equivalence env x y a;
 	    let b' = subst_type x b in
             repeat b' (ARG(x,args_passed)) args args'
-        | (pos,F_Sigma(v,a,b)), CAR args, CAR args' ->
-	    let args_passed' = CAR args_passed in
+        | (pos,J_Sigma(v,a,b)), FST args, FST args' ->
+	    let args_passed' = FST args_passed in
 	    repeat a args_passed' args args'
-        | (pos,F_Sigma(v,a,b)), CDR args, CDR args' ->
+        | (pos,J_Sigma(v,a,b)), SND args, SND args' ->
 	    let b' = subst_car_passed_term pos head args_passed b in
-	    let args_passed' = CDR args_passed in
+	    let args_passed' = SND args_passed in
 	    repeat b' args_passed' args args'
         | t, END, END -> t
         | _ ->
@@ -441,17 +441,17 @@ and type_equivalence (env:environment) (t:judgment) (u:judgment) : unit =
   let (upos,u0) = u in
   try
     match t0, u0 with
-    | F_Singleton a, F_Singleton b ->
+    | J_Singleton a, J_Singleton b ->
         let (x,t) = strip_singleton a in
         let (y,u) = strip_singleton b in
         type_equivalence env t u;
         term_equivalence env x y t
-    | F_Sigma(v,a,b), F_Sigma(w,c,d)
-    | F_Pi(v,a,b), F_Pi(w,c,d) ->
+    | J_Sigma(v,a,b), J_Sigma(w,c,d)
+    | J_Pi(v,a,b), J_Pi(w,c,d) ->
         type_equivalence env a c;
         let env = local_lf_bind env v a in
         type_equivalence env b d
-    | F_Apply(h,args), F_Apply(h',args') ->
+    | J_Basic(h,args), J_Basic(h',args') ->
         (* Here we augment the algorithm in the paper to handle the type families of LF. *)
         if not (h = h') then raise TypeEquivalenceFailure;
         let k = tfhead_to_kind h in
@@ -460,7 +460,7 @@ and type_equivalence (env:environment) (t:judgment) (u:judgment) : unit =
           | K_Pi(v,t,k), x :: args, x' :: args' ->
               term_equivalence env x x' t;
               repeat (subst_kind x k) args args'
-          | ( K_expression | K_judgment | K_primitive_judgment | K_judged_expression ), [], [] -> ()
+          | ( K_expression | K_judgment | K_primitive_judgment ), [], [] -> ()
           | _ -> (trap(); raise Internal)
         in repeat k args args'
     | _ -> raise TypeEquivalenceFailure
@@ -475,19 +475,19 @@ and subtype (env:environment) (t:judgment) (u:judgment) : unit =
   let (upos,u0) = u in
   try
     match t0, u0 with
-    | F_Singleton a, F_Singleton b ->
+    | J_Singleton a, J_Singleton b ->
         let (x,t) = strip_singleton a in
         let (y,u) = strip_singleton b in
         type_equivalence env t u;
         term_equivalence env x y t
-    | _, F_Singleton _ -> raise SubtypeFailure
-    | F_Singleton a, _ ->
+    | _, J_Singleton _ -> raise SubtypeFailure
+    | J_Singleton a, _ ->
         let (x,t) = strip_singleton a in
         subtype env t u
-    | F_Pi(x,a,b) , F_Pi(y,c,d) ->
+    | J_Pi(x,a,b) , J_Pi(y,c,d) ->
         subtype env c a;                        (* contravariant *)
         subtype (local_lf_bind env x c) b d
-    | F_Sigma(x,a,b) , F_Sigma(y,c,d) ->
+    | J_Sigma(x,a,b) , J_Sigma(y,c,d) ->
         subtype env a c;                        (* covariant *)
         subtype (local_lf_bind env x a) b d
     | _ -> type_equivalence env (tpos,t0) (upos,u0)
@@ -499,9 +499,9 @@ let is_subtype (env:environment) (t:judgment) (u:judgment) : bool =
 
 let rec is_product_type env t =
   match unmark t with
-  | F_Pi _ -> true
-  | F_Singleton(_,t) -> is_product_type env t
-  | F_Sigma _ | F_Apply _ -> false
+  | J_Pi _ -> true
+  | J_Singleton(_,t) -> is_product_type env t
+  | J_Sigma _ | J_Basic _ -> false
 
 (** Type checking routines *)
 
@@ -520,13 +520,13 @@ let rec type_check (surr:surrounding) (env:environment) (e0:expr) (t:judgment) :
                                pos, "tactic failed: "^ expr_to_string env e0;
                                pos, "in hole of type\n\t"^judgment_to_string env t])))
 
-  | TEMPLATE(v,body), F_Pi(w,a,b) -> (* the published algorithm is not applicable here, since
+  | TEMPLATE(v,body), J_Pi(w,a,b) -> (* the published algorithm is not applicable here, since
                                    our lambda doesn't contain type information for the variable,
                                    and theirs does *)
       let surr = (env,S_body,Some e0,Some t) :: surr in
       let body = type_check surr (local_lf_bind env v a) body b in
       pos, TEMPLATE(v,body)
-  | TEMPLATE _, F_Sigma _ ->
+  | TEMPLATE _, J_Sigma _ ->
       raise (TypeCheckingFailure (env, surr, [
 				  get_pos e0, "error: expected a pair but got a function:\n\t" ^ expr_to_string env e0]))
   | TEMPLATE _, _ ->
@@ -534,7 +534,7 @@ let rec type_check (surr:surrounding) (env:environment) (e0:expr) (t:judgment) :
       raise (TypeCheckingFailure (env, surr, [
 				  get_pos t, "error: expected something of type\n\t" ^ judgment_to_string env t;
 				  get_pos e0, "but got a function\n\t" ^ expr_to_string env e0]))
-  | _, F_Sigma(w,a,b) -> (* The published algorithm omits this, correctly, but we want to
+  | _, J_Sigma(w,a,b) -> (* The published algorithm omits this, correctly, but we want to
                             give advice to tactics for filling holes in [p], so we try type-directed
                             type checking as long as possible. *)
       let (x,y) = (pi1 e0,pi2 e0) in
@@ -562,7 +562,7 @@ and type_synthesis (surr:surrounding) (env:environment) (m:expr) : expr * judgme
   | TEMPLATE _ -> err env pos ("function has no type: " ^ expr_to_string env m)
   | PAIR(x,y) ->
       let x',t = type_synthesis surr env x in
-      let y',u = type_synthesis surr env y in (pos,PAIR(x',y')), (pos,F_Sigma(id "_",t,u))
+      let y',u = type_synthesis surr env y in (pos,PAIR(x',y')), (pos,J_Sigma(id "_",t,u))
   | BASIC(head,args) ->
       match head with
       | TACTIC _ -> err env pos "tactic found in context where no type advice is available"
@@ -578,7 +578,7 @@ and type_synthesis (surr:surrounding) (env:environment) (m:expr) : expr * judgme
       let args_passed = END in            (* we retain the arguments we've passed as a expr_list in reverse order *)
       let rec repeat i env head_type args_passed args = (
         match unmark head_type, args with
-        | F_Pi(v,a',a''), ARG(m',args') ->
+        | J_Pi(v,a',a''), ARG(m',args') ->
             let surr = (env,S_expr_list'(i,head,args_passed,args'),Some m,None) :: surr in
             let env = apply_ts_binder env i m in
             let m' = type_check surr env m' a' in
@@ -588,25 +588,25 @@ and type_synthesis (surr:surrounding) (env:environment) (m:expr) : expr * judgme
 	     );
             let (args'',u) = repeat (i+1) env (subst_type m' a'') (ARG(m',args_passed)) args' in
             ARG(m',args''), u
-        | F_Singleton(e,t), args -> repeat i env t args_passed args
-        | F_Sigma(v,a,b), CAR args ->
-            let (args',t) = repeat (i+1) env a (CAR args_passed) args in
-            (CAR args', t)
-        | F_Sigma(v,a,b), CDR args ->
+        | J_Singleton(e,t), args -> repeat i env t args_passed args
+        | J_Sigma(v,a,b), FST args ->
+            let (args',t) = repeat (i+1) env a (FST args_passed) args in
+            (FST args', t)
+        | J_Sigma(v,a,b), SND args ->
             let b' = subst_car_passed_term pos head args_passed b in
-            let (args',t) = repeat (i+1) env b' (CDR args_passed) args in
-            (CDR args', t)
+            let (args',t) = repeat (i+1) env b' (SND args_passed) args in
+            (SND args', t)
         | t, END -> END, (pos,t)
         | _, ARG(arg,_) ->
 	    printf "%a: head= %a, args_passed= %a, args= %a\n%!" _pos pos _h head _s args_passed _s args;
 	    err env (get_pos arg) "extra argument"
-        | _, CAR _ -> err env pos ("pi1 expected a pair (3) but got " ^ expr_to_string env (with_pos pos (BASIC(head,reverse_expr_list args_passed))))
-        | _, CDR _ -> err env pos "pi2 expected a pair (3)"
+        | _, FST _ -> err env pos ("pi1 expected a pair (3) but got " ^ expr_to_string env (with_pos pos (BASIC(head,reverse_expr_list args_passed))))
+        | _, SND _ -> err env pos "pi2 expected a pair (3)"
        )
       in
       let (args',t) = repeat 0 env head_type args_passed args in
       let e = pos, BASIC(head,args') in
-      let t = with_pos_of t (F_Singleton(e,t)) in (* this isn't quite like the algorithm in the paper, but it seems to work *)
+      let t = with_pos_of t (J_Singleton(e,t)) in (* this isn't quite like the algorithm in the paper, but it seems to work *)
       e,t
 
 exception InsubordinateKinds of lf_kind * lf_kind
@@ -617,15 +617,15 @@ let rec check_less_equal t u =
   | Some l ->
       let rec repeat t =
 	match unmark t with
-	| F_Singleton(e,t) -> repeat t
-	| F_Pi(v,t,u) -> repeat t ; repeat u
-	| F_Apply(h,args) ->
+	| J_Singleton(e,t) -> repeat t
+	| J_Pi(v,t,u) -> repeat t ; repeat u
+	| J_Basic(h,args) ->
 	    let k = ultimate_kind (tfhead_to_kind h) in
 	    (
 	     match compare_kinds k l with
 	     | K_incomparable | K_greater -> raise (InsubordinateKinds(k,l))
 	     | K_equal | K_less -> ())
-	| F_Sigma(v,t1,t2) -> check_less_equal t1 u; check_less_equal t2 u
+	| J_Sigma(v,t1,t2) -> check_less_equal t1 u; check_less_equal t2 u
       in
       repeat t
 
@@ -640,7 +640,7 @@ let type_validity (surr:surrounding) (env:environment) (t:judgment) : judgment =
     in
     ( pos,
       match t with
-      | F_Pi(v,t,u) ->
+      | J_Pi(v,t,u) ->
           let t = type_validity ((env,S_type_args(1,[ ]),None,Some t0) :: surr) env t in
           let u = type_validity ((env,S_type_args(2,[t]),None,Some t0) :: surr) (local_lf_bind env v t) u in (
           try
@@ -654,21 +654,18 @@ let type_validity (surr:surrounding) (env:environment) (t:judgment) : judgment =
 			get_pos u, "to be subordinate to type of kind involving \"" ^ lf_kind_to_string env l ^ "\"";
 			get_pos u, "arising from type \"" ^ judgment_to_string env u ^ "\"";
 		      ])));
-          F_Pi(v,t,u)
-      | F_Sigma(v,t,u) ->
+          J_Pi(v,t,u)
+      | J_Sigma(v,t,u) ->
           let t = type_validity ((env,S_type_args(1,[ ]),None,Some t0) :: surr) env t in
           let u = type_validity ((env,S_type_args(2,[t]),None,Some t0) :: surr) (local_lf_bind env v t) u in
-          F_Sigma(v,t,u)
-      | F_Apply(head,args) ->
-          let kind =
-	    try tfhead_to_kind head
-	    with UndeclaredTypeConstant(pos,name) -> err env pos ("undeclared type constant: " ^ name)
-	  in
+          J_Sigma(v,t,u)
+      | J_Basic(head,args) ->
+          let kind = tfhead_to_kind head in
           let rec repeat i env kind args_passed (args:expr list) =
             match kind, args with
-            | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), [] 
+            | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment ), [] 
 	      -> List.rev args_passed
-            | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), x :: args 
+            | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment ), x :: args 
 	      -> err env pos "at least one argument too many";
             | K_Pi(v,a,kind'), x :: args ->
                 let x' = type_check ((env,S_type_family_args(i,args_passed),None,Some t0) :: surr) env x a in
@@ -676,11 +673,11 @@ let type_validity (surr:surrounding) (env:environment) (t:judgment) : judgment =
             | K_Pi(_,a,_), [] -> errmissingarg env pos a
           in
           let args' = repeat 1 env kind [] args in
-          F_Apply(head,args')
-      | F_Singleton(x,t) ->
+          J_Basic(head,args')
+      | J_Singleton(x,t) ->
           let t = type_validity ((env,S_expr_list 2,None,Some t0) :: surr) env t in
           let x = type_check ((env,S_expr_list 1,None,Some t0) :: surr) env x t in                (* rule 46 *)
-          F_Singleton(x,t)
+          J_Singleton(x,t)
      ) in
   type_validity surr env t
 
@@ -691,7 +688,7 @@ let type_synthesis = type_synthesis []
 (* We may wish to put the normalization routines in another file. *)
 
 let rec num_args t = match unmark t with
-  | F_Pi(_,_,b) -> 1 + num_args b
+  | J_Pi(_,_,b) -> 1 + num_args b
   | _ -> 0
 
 let term_normalization_ctr = new_counter()
@@ -700,19 +697,19 @@ let rec term_normalization (env:environment) (x:expr) (t:judgment) : expr =
   (* see figure 9 page 696 [EEST] *)
   let (pos,t0) = t in
   match t0 with
-  | F_Pi(v,a,b) ->
+  | J_Pi(v,a,b) ->
       let c = term_normalization_ctr() in
       let env = local_lf_bind env v a in
       if !debug_mode then printf "term_normalization(%d) x = %a\n%!" c _e (env,x);
       let result =
 	match unmark x with
 	| TEMPLATE(_,body) -> body	(* this is just an optimization *)
-	| _ -> apply_args (rel_shift_expr 1 x) (ARG(var_to_lf_bare (VarRel 0),END)) in
+	| _ -> apply_args (rel_shift_expr 1 x) (ARG(var_to_lf_bare (Rel 0),END)) in
       let body = term_normalization env result b in
       let r = pos, TEMPLATE(v,body) in
       if !debug_mode then printf "term_normalization(%d) r = %a\n%!" c _e (env,result);
       r
-  | F_Sigma(v,a,b) ->
+  | J_Sigma(v,a,b) ->
       let pos = get_pos x in
       let p = x in
       let x = pi1 p in
@@ -721,11 +718,11 @@ let rec term_normalization (env:environment) (x:expr) (t:judgment) : expr =
       let b = subst_type x b in
       let y = term_normalization env y b in
       pos, PAIR(x,y)
-  | F_Apply _ ->
+  | J_Basic _ ->
       let x = head_normalization env x in
       let (x,t) = path_normalization env x in
       x
-  | F_Singleton(x',t) -> term_normalization env x t
+  | J_Singleton(x',t) -> term_normalization env x t
 
 and path_normalization (env:environment) (x:expr) : expr * judgment =
   (* returns the normalized term x and the inferred type of x *)
@@ -744,38 +741,38 @@ and path_normalization (env:environment) (x:expr) : expr * judgment =
         let rec repeat t args_passed args : judgment * expr_list = (
 	  if !debug_mode then printf " path_normalization repeat\n\tt=%a\n\targs_passed=%a\n\targs=%a\n%!" _e (env,x) _s args_passed _s args;
           match unmark t with
-          | F_Pi(v,a,b) -> (
+          | J_Pi(v,a,b) -> (
               match args with
               | END -> raise (TypeCheckingFailure (env, [], [
                                                     pos , "expected "^string_of_int (num_args t)^" more argument"^if num_args t > 1 then "s" else "";
                                                     (get_pos t0), (" using:\n\t"^lf_head_to_string head^" : "^judgment_to_string env t0)]))
-              | CAR args -> err env pos "pi1 expected a pair (4)"
-              | CDR args -> err env pos "pi2 expected a pair (4)"
+              | FST args -> err env pos "pi1 expected a pair (4)"
+              | SND args -> err env pos "pi2 expected a pair (4)"
               | ARG(x, args) ->
                   let b = subst_type x b in
                   let x = term_normalization env x a in
                   let (c,args) = repeat b (ARG(x,args_passed)) args in
                   (c, ARG(x,args)))
-          | F_Singleton _ ->
+          | J_Singleton _ ->
 	      if !debug_mode then printf "\tbad type t = %a\n%!" _t (env,t);
 	      print_context (Some 5) stdout env;
 	      (trap(); raise Internal) (* x was head normalized, so any definition of head should have been unfolded *)
-          | F_Sigma(v,a,b) -> (
+          | J_Sigma(v,a,b) -> (
               match args with
               | END -> (t,END)
-              | CAR args ->
-                  let (c,args) = repeat a (CAR args_passed) args in
-                  (c, CAR args)
-              | CDR args ->
+              | FST args ->
+                  let (c,args) = repeat a (FST args_passed) args in
+                  (c, FST args)
+              | SND args ->
                   let b = subst_car_passed_term pos head args_passed b in
-                  let (c,args) = repeat b (CDR args_passed) args in
-                  (c, CDR args)
+                  let (c,args) = repeat b (SND args_passed) args in
+                  (c, SND args)
               | ARG(x,_) -> err env (get_pos x) "unexpected argument")
-          | F_Apply _ -> (
+          | J_Basic _ -> (
               match args with
               | END -> (t,END)
-              | CAR args -> err env pos "pi1 expected a pair (5)"
-              | CDR args -> err env pos "pi2 expected a pair (5)"
+              | FST args -> err env pos "pi1 expected a pair (5)"
+              | SND args -> err env pos "pi2 expected a pair (5)"
               | ARG(x,args) -> err env (get_pos x) "unexpected argument")
 	 ) in
 	repeat t0 args_passed args in
@@ -785,29 +782,29 @@ let rec type_normalization (env:environment) (t:judgment) : judgment =
   (* see figure 9 page 696 [EEST] *)
   let (pos,t0) = t in
   let t = match t0 with
-  | F_Pi(v,a,b) ->
+  | J_Pi(v,a,b) ->
       let a' = type_normalization env a in
       let b' = type_normalization (local_lf_bind env v a) b in
-      F_Pi(v,a',b')
-  | F_Sigma(v,a,b) ->
+      J_Pi(v,a',b')
+  | J_Sigma(v,a,b) ->
       let a' = type_normalization env a in
       let b' = type_normalization (local_lf_bind env v a) b in
-      F_Sigma(v,a',b')
-  | F_Apply(head,args) ->
+      J_Sigma(v,a',b')
+  | J_Basic(head,args) ->
       let kind = tfhead_to_kind head in
       let args =
         let rec repeat env kind (args:expr list) =
           match kind, args with
-          | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), [] -> []
-          | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment | K_judged_expression ), x :: args -> err env pos "too many arguments"
+          | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment ), [] -> []
+          | ( K_ulevel | K_primitive_judgment | K_expression | K_judgment | K_witnessed_judgment ), x :: args -> err env pos "too many arguments"
           | K_Pi(v,a,kind'), x :: args ->
               term_normalization env x a ::
               repeat env (subst_kind x kind') args
           | K_Pi(_,a,_), [] -> errmissingarg env pos a
         in repeat env kind args
-      in F_Apply(head,args)
-  | F_Singleton(x,t) ->
-      F_Singleton( term_normalization env x t, type_normalization env t )
+      in J_Basic(head,args)
+  | J_Singleton(x,t) ->
+      J_Singleton( term_normalization env x t, type_normalization env t )
   in (pos,t)
 
 (*

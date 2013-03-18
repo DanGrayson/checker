@@ -3,6 +3,7 @@ include src/tactics/Makefile.include
 SRCFILES =					\
 	src/error.ml				\
 	src/variables.ml			\
+	src/expressions.ml			\
 	src/typesystem.ml			\
 	src/names.ml				\
 	src/helpers.ml				\

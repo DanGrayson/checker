@@ -89,17 +89,17 @@ let self = nowhere 1234 (cite_tactic "tscheck" END)
 let rec tscheck surr env pos tp args =
   if tactic_tracing then printf "tactic: tscheck: tp = %a\n%!" _t (env,tp);
   match unmark tp with
-  | F_Apply(F_istype,[t]) -> (
+  | J_Basic(J_istype,[t]) -> (
       if tactic_tracing then see env "t" t;
       match unmark t with
       | BASIC(T T_Pi,args) -> (
           let (a,b) = args2 args in
           if tactic_tracing then (see env "a" a; see env "b" b);
-          TacticSuccess ( with_pos_of t (BASIC(V (Var (id "∏_istype")), a ** b ** CDR(self ** self ** END))) )
+          TacticSuccess ( with_pos_of t (BASIC(V (Var (id "∏_istype")), a ** b ** SND(self ** self ** END))) )
          )
       | _ -> Default.default surr env pos tp args
       )
-  | F_Apply(F_hastype,[x;t]) -> (
+  | J_Basic(J_hastype,[x;t]) -> (
       if tactic_tracing then printf "tactic: tscheck\n\t  x = %a\n\t  t = %a\n%!" _e (env,x) _e (env,t);
       try
         let dt = type_validity env t in (* we should be able to get this from the context *)
@@ -107,7 +107,7 @@ let rec tscheck surr env pos tp args =
       with
 	NotImplemented|Args_match_failure -> TacticFailure
      )
-  | F_Pi(v,a,b) -> (
+  | J_Pi(v,a,b) -> (
       match tscheck surr (local_lf_bind env v a) (get_pos tp) b args with
       | TacticSuccess e -> TacticSuccess (with_pos pos (TEMPLATE(v,e)))
       | TacticFailure as r -> r)

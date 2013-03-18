@@ -16,7 +16,7 @@ let abstract env x =
 
 let open_context t1 (env,o,t2) =
   let env = local_tts_declare_object env "x" t1 in
-  let e = var_to_lf_bare (VarRel 1) ** var_to_lf_bare (VarRel 0) ** END in
+  let e = var_to_lf_bare (Rel 1) ** var_to_lf_bare (Rel 0) ** END in
   let o = Substitute.apply_args (rel_shift_expr 1 o) e in
   let t2 = Substitute.apply_args (rel_shift_expr 1 t2) e in
   (env,o,t2)
@@ -100,11 +100,11 @@ and find_w_object_equality env o o' t =
 let witness (surr:surrounding) (env:environment) (pos:position) (t:judgment) (args:expr_list) : tactic_return =
   try
     match surr with
-    | (env,S_type_family_args(3,[o;t]), None, Some (_,F_Apply(F_witnessed_hastype,_))) :: _ ->
+    | (env,S_type_family_args(3,[o;t]), None, Some (_,J_Basic(J_witnessed_hastype,_))) :: _ ->
 	TacticSuccess (find_w_hastype env o t)
-    | (env,S_type_family_args(4,[o';o;t]), None, Some (_,F_Apply(F_witnessed_object_equality,_))) :: _ ->
+    | (env,S_type_family_args(4,[o';o;t]), None, Some (_,J_Basic(J_witnessed_object_equality,_))) :: _ ->
 	TacticSuccess (find_w_object_equality env o o' t)
-    | (env,S_type_family_args(3,[t';t]), None, Some (pos,F_Apply(F_witnessed_type_equality,_))) :: _ ->
+    | (env,S_type_family_args(3,[t';t]), None, Some (pos,J_Basic(J_witnessed_type_equality,_))) :: _ ->
 	TacticSuccess (find_w_type_equality env t t')
     | (env,S_expr_list'(1,T T_El',ARG(o,_),_), _, _) :: _ -> TacticSuccess (find_w_hastype env o uuu)
     | _ -> 

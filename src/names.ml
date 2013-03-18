@@ -56,28 +56,22 @@ let rec tactic_to_string = function
   | n -> if n = "default" then "_" else "$" ^ n
 
 let judgment_constant_table = [
-  F_uexp, "uexp" ;
-  F_texp, "texp" ;
-  F_oexp, "oexp" ;
-  F_istype, "istype" ;
-  F_hastype, "hastype" ;
-  F_ulevel_equality, "uequal" ;
-  F_type_equality, "tequal" ;
-  F_object_equality, "oequal" ;
-  F_type_uequality, "tuequal" ;
-  F_object_uequality, "ouequal";
-  F_a_type, "Texp";
-  F_obj_of_type, "Oexp";
-  F_judged_type_equal, "Tequal";
-  F_judged_obj_equal, "Oequal";
-  F_wexp, "wexp";
+  J_uexp, "uexp" ;
+  J_texp, "texp" ;
+  J_oexp, "oexp" ;
+  J_istype, "istype" ;
+  J_hastype, "hastype" ;
+  J_ulevel_equality, "uequal" ;
+  J_type_equality, "tequal" ;
+  J_object_equality, "oequal" ;
+  J_type_uequality, "tuequal" ;
+  J_object_uequality, "ouequal";
+  J_wexp, "wexp";
 
-  F_obj_of_type_with_witness, "obj_of_type_with_witness";
-
-  F_istype_witnessed_inside, "istype_witnessed_inside";
-  F_witnessed_hastype, "witnessed_hastype";
-  F_witnessed_type_equality, "witnessed_type_equality";
-  F_witnessed_object_equality, "witnessed_object_equality";
+  J_istype_witnessed_inside, "istype_witnessed_inside";
+  J_witnessed_hastype, "witnessed_hastype";
+  J_witnessed_type_equality, "witnessed_type_equality";
+  J_witnessed_object_equality, "witnessed_object_equality";
 ]
 
 let lf_kind_constant_table = [
@@ -85,7 +79,6 @@ let lf_kind_constant_table = [
   K_expression, "expression";
   K_judgment, "judgment";
   K_primitive_judgment, "primitive_judgment";
-  K_judged_expression, "judged_expression";
   K_witnessed_judgment, "witnessed_judgment"
 ]
 
@@ -103,7 +96,7 @@ let axiom_bind name pos t env =
   global_lf_bind env pos name t
 
 let def_bind name (pos:position) o t env =
-  axiom_bind name pos (with_pos pos (F_Singleton(o,t))) env
+  axiom_bind name pos (with_pos pos (J_Singleton(o,t))) env
 
 (*
   Local Variables:

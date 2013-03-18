@@ -12,9 +12,7 @@ let lookup_label pos name =
   try list_assoc2 name (expr_head_table())
   with Not_found as e -> fprintf stderr "%a: unknown expression label: @[%s]\n%!" _pos pos name; raise e
 
-let lookup_type_constant pos name =
-  try list_assoc2 name judgment_constant_table
-  with Not_found -> F_undeclared_type_constant(pos,name)
+let lookup_judgment_constant pos name = list_assoc2 name judgment_constant_table
 
 type binder_judgment =
   | ULEV
@@ -26,9 +24,9 @@ type binder_judgment =
 
 let app (hd,reversed_args) arg = (hd, ARG(arg,reversed_args))
 
-let car (hd,reversed_args) = (hd, CAR reversed_args)
+let car (hd,reversed_args) = (hd, FST reversed_args)
 
-let cdr (hd,reversed_args) = (hd, CDR reversed_args)
+let cdr (hd,reversed_args) = (hd, SND reversed_args)
 
 type binder = position * identifier * judgment
 
@@ -65,7 +63,7 @@ let apply_vars f binders =
   BASIC(V f, 
 	List.fold_right 
 	  (fun (pos,v,a) args -> 
-	    let r = ARG(var_to_expr pos (VarRel !i),args) in
+	    let r = ARG(var_to_expr pos (Rel !i),args) in
 	    incr i;
 	    r) 
 	  binders
@@ -74,7 +72,7 @@ let apply_vars f binders =
  (** for a type p of the form (e:E) ** J we return (e,E),J *)
 let unbind_pair p : binder option * judgment =
   match unmark p with
-  | F_Sigma(v,a,b) -> Some (get_pos p,v,a), b
+  | J_Sigma(v,a,b) -> Some (get_pos p,v,a), b
   | _ -> None, p
 
 let good_var_name p v =
@@ -90,8 +88,8 @@ let unbind_relative p : binder list * binder option * judgment =
   try
     let rec repeat binders p =
       match unmark p with
-      | F_Pi(v,a,b) -> repeat ((get_pos p,v,a) :: binders) b
-      | F_Sigma(v,a,b) -> binders, Some (get_pos p,v,a), b
+      | J_Pi(v,a,b) -> repeat ((get_pos p,v,a) :: binders) b
+      | J_Sigma(v,a,b) -> binders, Some (get_pos p,v,a), b
       | _ -> raise Not_found
     in
     repeat [] p
@@ -144,7 +142,7 @@ let pi1_implication ((vpos,v),t) u =
   if pi1_debug then printf " k = %a\n%!" _t (empty_environment,k);
   match e with
   | Some (pos,e,ee) ->
-      let j = Substitute.subst_type (with_pos pos (apply_vars (VarRel (m+n)) (List.rev p))) j in
+      let j = Substitute.subst_type (with_pos pos (apply_vars (Rel (m+n)) (List.rev p))) j in
       if pi1_debug then printf " j = substituted = %a\n%!" _t (empty_environment,j);
       let ee = bind_pi_list_rev p ee in
       if pi1_debug then printf " ee = bind_pi_list_rev p ee = %a\n%!" _t (empty_environment,ee);
@@ -178,7 +176,7 @@ let apply_simple_binder pos (j:judgment) (u:judgment) =
   if pi1_debug then show_binders "q" q "f" f;
   if pi1_debug then printf " k = %a\n%!" _t (empty_environment,k);
   let n = List.length q + match f with Some _ -> 1 | None -> 0 in
-  let j = Substitute.subst_type (var_to_expr pos (VarRel n)) j in
+  let j = Substitute.subst_type (var_to_expr pos (Rel n)) j in
   if pi1_debug then printf " j = substituted = %a\n%!" _t (empty_environment,j);
   let k = rel_shift_type 1 k in
   if pi1_debug then printf " k = rel_shift_type 1 k = %a\n%!" _t (empty_environment,k);

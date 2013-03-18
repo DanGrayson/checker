@@ -26,15 +26,15 @@ let try_other_tactics surr env pos t args =
 let rec default surr env pos t args =
   if tactic_tracing then printf "tactic: default: t = %a\n%!" _t (env,t);
   match unmark t with
-  | F_Singleton(e,_) -> TacticSuccess e
-  | F_Pi(v,a,b) -> (
+  | J_Singleton(e,_) -> TacticSuccess e
+  | J_Pi(v,a,b) -> (
       let e0 = pos, TEMPLATE(v,(pos,default_tactic)) in
       let surr = (env,S_body,Some e0,Some t) :: surr in
       match default surr (local_lf_bind env v a) (get_pos t) b args with
       | TacticSuccess e -> TacticSuccess (with_pos pos (TEMPLATE(v,e)))
       | TacticFailure as r -> r)
-  | F_Apply((F_hastype|F_istype),_) -> Assumption.assumption surr env pos t args
-  | F_Apply(F_wexp,[]) -> 
+  | J_Basic((J_hastype|J_istype),_) -> Assumption.assumption surr env pos t args
+  | J_Basic(J_wexp,[]) -> 
       if tactic_tracing then printf "tactic: witness: t = %a\n%!" _t (env,t);
       Witness.witness surr env pos t args
   | _ -> try_other_tactics surr env pos t args
