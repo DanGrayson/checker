@@ -5,6 +5,13 @@ SRCFILES =					\
 	src/error.ml				\
 	src/variables.ml			\
 	src/expressions.ml			\
+	src/judgments.ml \
+	src/kinds.ml \
+	src/signatures.ml \
+	src/subordination.ml \
+	src/relative.ml \
+	src/contexts.ml \
+	src/tactics.ml \
 	src/typesystem.ml			\
 	src/names.ml				\
 	src/helpers.ml				\

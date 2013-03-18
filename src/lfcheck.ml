@@ -190,7 +190,7 @@ let open_context t1 (env,p,o,t2) =
   let env = local_tts_declare_object env "x" t1 in
   let v = Rel 1 in
   let v' = Rel 0 in
-  let e = var_to_lf_bare v ** var_to_lf_bare v' ** END in
+  let e = var_to_expr_bare v ** var_to_expr_bare v' ** END in
   let p = Substitute.apply_args (rel_shift_expr 1 p) e in
   let o = Substitute.apply_args (rel_shift_expr 1 o) e in
   let t2 = Substitute.apply_args (rel_shift_expr 1 t2) e in
@@ -227,8 +227,8 @@ let rec check_istype env t =
 	  let t1,t2 = args2 args in
 	  check_istype env t1;
 	  let env = local_tts_declare_object env "o" t1 in
-	  let o = var_to_lf_bare (Rel 1) in
-	  let p = var_to_lf_bare (Rel 0) in
+	  let o = var_to_expr_bare (Rel 1) in
+	  let p = var_to_expr_bare (Rel 0) in
 	  let t2 = Substitute.apply_args (rel_shift_expr 1 t2) (o ** p ** END) in
 	  check_istype env t2
       | T_U' -> ()
@@ -379,7 +379,7 @@ let rec term_equivalence (env:environment) (x:expr) (y:expr) (t:judgment) : unit
       term_equivalence env (pi2 x) (pi2 y) (subst_type (pi1 x) b)
   | J_Pi (v,a,b) ->
       let env = local_lf_bind env v a in
-      let v = var_to_lf_bare (Rel 0) in
+      let v = var_to_expr_bare (Rel 0) in
       let xres = apply_args (rel_shift_expr 1 x) (ARG(v,END)) in
       let yres = apply_args (rel_shift_expr 1 y) (ARG(v,END)) in
       term_equivalence env xres yres b
@@ -704,7 +704,7 @@ let rec term_normalization (env:environment) (x:expr) (t:judgment) : expr =
       let result =
 	match unmark x with
 	| TEMPLATE(_,body) -> body	(* this is just an optimization *)
-	| _ -> apply_args (rel_shift_expr 1 x) (ARG(var_to_lf_bare (Rel 0),END)) in
+	| _ -> apply_args (rel_shift_expr 1 x) (ARG(var_to_expr_bare (Rel 0),END)) in
       let body = term_normalization env result b in
       let r = pos, TEMPLATE(v,body) in
       if !debug_mode then printf "term_normalization(%d) r = %a\n%!" c _e (env,result);

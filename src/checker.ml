@@ -10,7 +10,7 @@ open Printer
 open Lfcheck
 
 module Load = struct
-  open Tactics
+  open Tacticlist
 end
 
 exception Error_Handled
@@ -77,7 +77,7 @@ let add_tVars env tvars =
     (fun env (pos,t) ->
       let env = global_tts_declare_type env pos t in
       let env = global_lf_bind env pos (id t) texp in
-      let env = global_lf_bind env pos (id (t ^ "$istype")) (istype (var_to_lf_bare (Var (id t)))) in
+      let env = global_lf_bind env pos (id (t ^ "$istype")) (istype (var_to_expr_bare (Var (id t)))) in
       env 
     ) env tvars
 
@@ -86,7 +86,7 @@ let add_oVars env ovars t =
     (fun env (pos,o) -> 
       let env = global_tts_declare_object env pos o t in
       let env = global_lf_bind env pos (id o) oexp in
-      let env = global_lf_bind env pos (id (o ^ "$hastype")) (hastype (var_to_lf_bare (Var (id o))) t) in
+      let env = global_lf_bind env pos (id (o ^ "$hastype")) (hastype (var_to_expr_bare (Var (id o))) t) in
       env 
     ) env ovars
 

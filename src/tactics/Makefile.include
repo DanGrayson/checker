@@ -1,4 +1,4 @@
-TACTIC_FILENAMES = tactics ev2 ev3 tn witness default assumption fail admit shuffle tscheck apply check
+TACTIC_FILENAMES = tacticlist ev2 ev3 tn witness default assumption fail admit shuffle tscheck apply check
 TACTIC_FILES = $(patsubst %, src/tactics/%.ml, $(TACTIC_FILENAMES))
 
 # Local Variables:

@@ -29,6 +29,14 @@ and expr_list =
   | END
   | FST of expr_list | SND of expr_list
 
+(** Functions *)
+
+let var_to_expr_bare v = nowhere 1    (BASIC(V v,END))
+let var_to_expr pos v = with_pos pos (BASIC(V v,END))
+
+let id_to_expr_bare v = var_to_expr_bare (Var v)
+let id_to_expr pos v = var_to_expr pos (Var v)
+
 (*
   Local Variables:
   compile-command: "make -C .. src/expressions.cmo "

@@ -40,9 +40,9 @@ let default_tactic = cite_tactic "default" END
 
 let ( ** ) x s = ARG(x,s)		(* right associative *)
 
-let var_0 = var_to_lf_bare (Rel 0) ** END
+let var_0 = var_to_expr_bare (Rel 0) ** END
 
-let var_1_0 = var_to_lf_bare (Rel 1) ** var_to_lf_bare (Rel 0) ** END
+let var_1_0 = var_to_expr_bare (Rel 1) ** var_to_expr_bare (Rel 0) ** END
 
 let rec nth_arg n args =
   match n,args with

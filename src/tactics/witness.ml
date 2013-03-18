@@ -15,7 +15,7 @@ let abstract env x =
 
 let open_context t1 (env,o,t2) =
   let env = local_tts_declare_object env "x" t1 in
-  let e = var_to_lf_bare (Rel 1) ** var_to_lf_bare (Rel 0) ** END in
+  let e = var_to_expr_bare (Rel 1) ** var_to_expr_bare (Rel 0) ** END in
   let o = Substitute.apply_args (rel_shift_expr 1 o) e in
   let t2 = Substitute.apply_args (rel_shift_expr 1 t2) e in
   (env,o,t2)

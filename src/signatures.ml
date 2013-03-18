@@ -4,8 +4,6 @@ include Kinds
 
 (** Signatures for expressions *)
 
-let ( @@ ) f x : judgment = nowhere 3 (J_Basic(f,x))
-
 let uexp = J_uexp @@ []
 let wexp = J_wexp @@ []
 let texp = J_texp @@ []
