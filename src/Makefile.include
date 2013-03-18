@@ -1,6 +1,7 @@
 include src/tactics/Makefile.include
 
 SRCFILES =					\
+	src/positions.ml			\
 	src/error.ml				\
 	src/variables.ml			\
 	src/expressions.ml			\

@@ -25,4 +25,4 @@ type command' =
   | Mode of string
   | End
 
-type command = Error.position * command'
+type command = position * command'

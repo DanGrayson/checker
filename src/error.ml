@@ -1,5 +1,7 @@
 (** Exceptions, experiments, error message handling, and source code positions. *)
 
+open Positions
+
 let show_rules = false
 
 let show_definitions = true
@@ -40,10 +42,6 @@ exception FalseWitness
 exception GoBack of int
 exception GoBackTo of int
 
-type position =
-  | Position of Lexing.position * Lexing.position (** start, end *)
-  | Nowhere of int * int
-
 exception MarkedError of position * string
 
 let lexbuf_position lexbuf =
@@ -69,8 +67,6 @@ let bump_error_count pos =
     Printf.fprintf stderr "%s: too many errors, exiting.\n%!" (errfmt pos);
     raise (Failure "exiting"));
   flush stderr; flush stdout		(*just in case*)
-
-type 'a marked = position * 'a
 
 let min_pos p q =
   if p.Lexing.pos_fname != q.Lexing.pos_fname then (trap(); raise Internal);
