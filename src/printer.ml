@@ -3,7 +3,6 @@
 let enable_variable_prettification = true
 
 open Error
-open Variables
 open Helpers
 open Typesystem
 open Names

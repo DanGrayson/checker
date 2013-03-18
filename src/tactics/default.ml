@@ -1,5 +1,5 @@
-open Helpers
 open Error
+open Helpers
 open Typesystem
 open Lfcheck
 open Printer

@@ -13,8 +13,6 @@
 
 *)
 
-open Error
-open Variables
 open Typesystem
 open Printf
 open Printer

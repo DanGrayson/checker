@@ -1,6 +1,5 @@
 (** apply an inference rule *)
 
-open Error
 open Typesystem
 open Lfcheck
 open Names

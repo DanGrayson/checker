@@ -1,7 +1,6 @@
 (** Top level code. *)
 
 open Error
-open Variables
 open Typesystem
 open Names
 open Universe

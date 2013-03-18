@@ -3,10 +3,9 @@
 open Printf
 open Printer
 open Typesystem
-open Error
-open Variables
 open Names
 open Helpers
+open Error
 
 let lookup_label pos name =
   try list_assoc2 name (expr_head_table())

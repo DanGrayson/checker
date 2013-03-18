@@ -1,12 +1,11 @@
 (** Substitution. *)
 
-open Error
-open Variables
 open Typesystem
 open Helpers
 open Names
 open Printer
 open Printf
+open Error
 
 (** Routines for replacing relative variables (deBruijn index variables) by
     expressions.
@@ -20,7 +19,7 @@ open Printf
 
  *)
 
-let apply_args_counter = new_counter()
+let apply_args_counter = Error.new_counter()
 
 let rec subst_expr shift subs e =
   if debug_subst then printf "subst_expr shift=%d subs=%a e=%a\n%!" shift _a (empty_environment,subs) _e (empty_environment,e);

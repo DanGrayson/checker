@@ -6,7 +6,6 @@
 
 *)
 
-open Variables
 open Printf
 open Printer
 open Typesystem

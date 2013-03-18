@@ -3,7 +3,7 @@
 include Expressions
 
 type judgment_head =
-  (* syntactic judgments: *)
+  (* syntactic signatures: *)
   | J_uexp | J_texp | J_oexp | J_wexp
   (* witnessed judgments of TTS: *)
   | J_istype_witnessed_inside

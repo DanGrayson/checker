@@ -1,6 +1,6 @@
+open Error
 open Typesystem
 open Lfcheck
-open Error
 
 let shuffle surr env pos t args =
   raise NotImplemented

@@ -1,6 +1,5 @@
 (** Structural comparison of expressions, modulo alpha equivalence and source code positions. *)
 
-open Variables
 open Typesystem
 
 module type S =

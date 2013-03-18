@@ -1,7 +1,5 @@
 (** Helper functions for dealing with expressions. *)
 
-open Error
-open Variables
 open Typesystem
 open Names
 
@@ -138,10 +136,10 @@ let locate x l =
     in repeat 0 l
 
 let head_to_type env pos = function
-  | W h -> whead_to_judgment h
-  | U h -> uhead_to_judgment h
-  | T h -> thead_to_judgment h
-  | O h -> ohead_to_judgment h
+  | W h -> whead_to_signature h
+  | U h -> uhead_to_signature h
+  | T h -> thead_to_signature h
+  | O h -> ohead_to_signature h
   | V (Rel name) -> local_lf_fetch env name
   | V (Var name) -> (
       try global_lf_fetch env name

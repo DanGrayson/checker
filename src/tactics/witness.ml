@@ -1,13 +1,12 @@
 (** This tactic attempts to fill an empty hole of type [wexp] with an appropriate witness to the proof. *)
 
+open Error
 open Helpers
 open Names
-open Variables
 open Printer
 open Printf
 open Typesystem
 open Lfcheck
-open Error
 
 exception WitnessNotFound
 

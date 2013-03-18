@@ -1,12 +1,11 @@
 %{
-open Error
-open Variables
 open Typesystem
 open Names
 open Helpers
 open Parse
 open Printf
 open Printer
+open Error
 %}
 %start command ts_exprEof
 %type <Toplevel.command> command

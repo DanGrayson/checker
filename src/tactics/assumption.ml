@@ -2,7 +2,6 @@ open Typesystem
 open Printer
 open Printf
 open Errorcheck
-open Variables
 open Helpers
 
 exception FoundOne of identifier

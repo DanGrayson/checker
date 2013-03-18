@@ -1,5 +1,5 @@
 open Errorcheck open Tau open Substitute open Typesystem open Lfcheck 
-open Names open Error open Printer open Printf open Variables open Helpers
+open Names open Printer open Printf open Helpers
 
 (** fill in argument 3 of @[ev][f,x,T,_] using tau *)
 let ev3 (surr:surrounding) env pos t args =

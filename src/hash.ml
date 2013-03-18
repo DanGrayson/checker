@@ -1,6 +1,5 @@
 (** Hash codes, independent of variable names. *)
 
-open Variables
 open Typesystem
 
 (* provisional and unused *)

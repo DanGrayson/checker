@@ -5,7 +5,6 @@
 {
  open Error
  open Grammar
- open Variables
  open Typesystem
  open Parse
  open Printf

@@ -1,7 +1,5 @@
 (** Names of constants, basic dictionary access, and some error handling routines. *)
 
-open Error
-open Variables
 open Typesystem
 
 exception Internal_expr of expr

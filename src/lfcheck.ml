@@ -15,7 +15,6 @@
 
 open Error
 open Errorcheck
-open Variables
 open Typesystem
 open Names
 open Printer

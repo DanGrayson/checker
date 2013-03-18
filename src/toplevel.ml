@@ -1,7 +1,5 @@
 (** Declaration of toplevel commands. *)
 
-open Error
-open Variables
 open Typesystem
 
 type command' =

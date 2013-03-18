@@ -1,7 +1,6 @@
 open Printf
 open Printer
 open Error
-open Variables
 open Typesystem
 open Names
 open Helpers

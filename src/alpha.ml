@@ -2,8 +2,6 @@
 
 (* We still have to implement the relation called ~ in the paper, which ignores inessential subterms. *)
 
-open Error
-open Variables
 open Typesystem
 open Helpers
 
