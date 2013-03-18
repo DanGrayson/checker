@@ -27,33 +27,6 @@ let witnessed_type_equality_v t t' pos p = let p = id_to_expr pos p in witnessed
 let witnessed_object_equality t o o' p = J_witnessed_object_equality @@ [t;o;o';p] (* p : o = o' : t *)
 let witnessed_object_equality_v t o o' pos p = let p = id_to_expr pos p in witnessed_object_equality t o o' p
 
-type vartype =
-  | SingleVariable of int
-  | WitnessPair of int
-
-type vardist = int list list
-let head_to_vardist = function (* optimize later by precomputing the constant return values *)
-  | W W_wpi2 -> Some (1, [ WitnessPair 0] :: [])
-  | W W_wlam -> Some (1, [ WitnessPair 0] :: [])
-  | W W_wbeta -> Some (1, [] :: [ WitnessPair 0 ] :: [])
-  | T T_Coprod2 -> Some (2, [] :: [] :: [ SingleVariable 0] :: [ SingleVariable 1] :: [])
-  | O O_ip_r -> Some (5, [] :: [] :: [ SingleVariable 0] :: [ SingleVariable 0; SingleVariable 1] :: [ SingleVariable 0; SingleVariable 1; SingleVariable 2] :: [] :: [ SingleVariable 3; SingleVariable 4] :: [] :: [])
-  | T T_IP -> Some (3, [] :: [] :: [ SingleVariable 0] :: [ SingleVariable 0; SingleVariable 1] :: [ SingleVariable 0; SingleVariable 1; SingleVariable 2] :: [])
-  | O O_ev -> Some (1, [] :: [] :: [] :: [ SingleVariable 0] :: [])
-  | O O_ev' -> Some (1, [] :: [] :: [] :: [ WitnessPair 0 ] :: [])
-  | T T_Pi | T T_Sigma | O O_lambda -> Some (1, [] :: [ SingleVariable 0] :: [])
-  | T T_Pi' | O O_lambda' -> Some (1, [] :: [ WitnessPair 0] :: [])
-  | O O_forall -> Some (1, [] :: [] :: [] :: [ SingleVariable 0] :: [])
-  | O O_pair -> Some (1, [] :: [] :: [ SingleVariable 0] :: [])
-  | O O_pr1 | O O_pr2 -> Some (1, [] :: [ SingleVariable 0] :: [] :: [])
-  | O O_total -> Some (1, [] :: [] :: [] :: [ SingleVariable 0] :: [])
-  | O O_pt_r -> Some (1, [] :: [ SingleVariable 0] :: [])
-  | O O_c -> Some (3, [] :: [] :: [ SingleVariable 0] :: [ SingleVariable 0; SingleVariable 1] :: [ SingleVariable 0; SingleVariable 1; SingleVariable 2] :: [] :: [] :: [])
-  | O O_ip -> Some (3, [] :: [] :: [ SingleVariable 0] :: [ SingleVariable 0; SingleVariable 1] :: [ SingleVariable 0; SingleVariable 1; SingleVariable 2] :: [])
-  | O O_J -> Some (2, [] :: [] :: [] :: [] :: [] :: [ SingleVariable 0; SingleVariable 1] :: [])
-  | O O_nat_r -> Some(1, [] :: [] :: [] :: [SingleVariable 0] :: [])
-  | _ -> None
-
 (** Subordination: see section 2.4 of Mechanizing Meta-theory by Harper and Licata *)
 type kind_comparison = K_equal | K_less | K_greater | K_incomparable
 
