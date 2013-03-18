@@ -1,12 +1,5 @@
 (* -*- coding: utf-8 -*- *)
 
-(** Voevodsky's type systems TS, TTS, HTS.
-
-@author Dan Grayson
-
-    *)
-
-include Error
 include Positions
 include Variables
 include Expressions
