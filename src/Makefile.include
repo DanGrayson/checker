@@ -88,7 +88,7 @@ always:
 clean: clean_src
 clean_src:; ocamlbuild -clean
 
-all: doc
+# all: doc
 doc: checker.odocl $(SRCFILES)
 	ocamlbuild $(BFLAGS) $(CHECKER_EXE) checker.docdir/index.html
 checker.odocl: Makefile
