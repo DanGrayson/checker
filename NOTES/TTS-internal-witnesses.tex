@@ -1,0 +1,292 @@
+\documentclass[11pt]{article}
+\usepackage{graphicx}
+\usepackage{amscd, amssymb}
+\usepackage{enumerate}
+\usepackage{mathtools}          %to get \vcentcolon
+
+\textwidth = 6.5 in
+\textheight = 9 in
+\oddsidemargin = 0.0 in
+\evensidemargin = 0.0 in
+\topmargin = 0.0 in
+\headheight = 0.0 in
+\headsep = 0.0 in
+\parindent = 0.0in
+
+\renewcommand{\thesubsection}{\arabic{subsection}}
+
+
+\newenvironment{eq}{\begin{equation}}{\end{equation}}
+
+\newenvironment{proof}{{\bf Proof}:}{\vskip 5mm }
+\newenvironment{rem}{{\bf Remark}:}{\vskip 5mm }
+\newenvironment{remarks}{{\bf Remarks}:\begin{enumerate}}{\end{enumerate}}
+\newenvironment{examples}{{\bf Examples}:\begin{enumerate}}{\end{enumerate}}  
+
+\newtheorem{proposition}{Proposition}[subsection]
+\newtheorem{lemma}[proposition]{Lemma}
+\newtheorem{definition}[proposition]{Definition}
+\newtheorem{theorem}[proposition]{Theorem}
+\newtheorem{cor}[proposition]{Corollary}
+\newtheorem{conjecture}{Conjecture}
+\newtheorem{pretheorem}[proposition]{Pretheorem}
+\newtheorem{hypothesis}[proposition]{Hypothesis}
+\newtheorem{example}[proposition]{Example}
+\newtheorem{remark}[proposition]{Remark}
+\newtheorem{ex}[proposition]{Exercise}
+\newtheorem{cond}[proposition]{Conditions}
+\newtheorem{cons}[proposition]{Construction}
+
+
+%\newcommand{\C}[4]{\left[\begin{array}{rcl}&#1\\#3&\dw\dw&#4\\&#2\end{array}\right]}
+\newcommand{\llabel}[1]{\label{#1}[{\bf #1}]}
+%\newcommand{\llabel}[1]{\label{#1}}
+\newcommand{\comment}[1]{}
+\newcommand{\sr}{\rightarrow}
+\newcommand{\lr}{\longrightarrow}
+\newcommand{\xr}{\xrightarrow}
+\newcommand{\dw}{\downarrow}
+\newcommand{\bdl}{\bar{\Delta}}
+\newcommand{\zz}{{\bf Z\rm}}
+\newcommand{\zq}{{\bf Z}_{qfh}}
+\newcommand{\nn}{{\bf N\rm}}
+\newcommand{\qq}{{\bf Q\rm}}
+\newcommand{\nq}{{\bf N}_{qfh}}
+\newcommand{\oo}{\otimes}
+\newcommand{\uu}{\underline}
+\newcommand{\ih}{\uu{Hom}}
+\newcommand{\af}{{\bf A}^1}
+\newcommand{\wt}{\widetilde}
+\newcommand{\gm}{{\bf G}_m}
+\newcommand{\dsr}{\stackrel{\sr}{\scriptstyle\sr}}
+%\newcommand{\PP}{$P_{\infty}$}
+\newcommand{\tp}{\tilde{D}}
+\newcommand{\HH}{$H_{\infty}$}
+\newcommand{\ii}{\stackrel{\scriptstyle\sim}{\sr}}
+\newcommand{\BB}{_{\bullet}}
+\newcommand{\D}{\Delta}
+\newcommand{\colim}{{\rm co}\hspace{-1mm}\lim}
+\newcommand{\cf}{{\it cf} }
+\newcommand{\msf}{\mathsf }
+\newcommand{\mcal}{\mathcal }
+\newcommand{\ep}{\epsilon}
+\newcommand{\tl}{\widetilde}
+\newcommand{\ub}{\mbox{\rotatebox{90}{$\in$}}}
+\newcommand{\ssp}{\,\,\,\,\,\,\,\,}
+\newcommand{\red}{\twoheadrightarrow}
+\newcommand{\eqg}{\stackrel{\Gamma}{\approx}}
+\newcommand{\alphaeq}{\stackrel{\alpha}{\sim}}
+\newcommand{\rtr}{\triangleright}
+
+\newcommand{\piece}{\vskip 3mm\noindent\refstepcounter{proposition}{\bf
+\theproposition}\hspace{2mm}}
+\newcommand{\subpiece}{\vskip 3mm\noindent\refstepcounter{equation}{\bf\theequation}
+\hspace{2mm}}{\vskip
+3mm}
+
+\newcommand{\ev}{{\bf ev}}
+\newcommand{\TT}{{\bf Type0}}
+\newcommand{\PP}{{\bf Prop}}
+\newcommand{\cc}{{\bf c}}
+\newcommand{\rect}{{\bf rect}}
+\newcommand{\eqd}{\stackrel{d}{=}}
+
+
+
+\newcommand{\cu}{{u}}
+\newcommand{\Eu}{{\cal U}}
+\newcommand{\JJ}[2]{{J(#1,#2)\,}}
+\newcommand{\J}[1]{{J(#1)\,}}
+\newcommand{\jj}[3]{{j(#1,#2,#3)\,}}
+\newcommand{\jr}[2]{{jr(#1, #2)\,}}
+\newcommand{\jl}[2]{{jl(#1, #2)\,}}
+\newcommand{\UU}[1]{{UU(#1)}}
+\newcommand{\rd}{\succ}
+\newcommand{\rde}{\succeq}
+\newcommand{\rdA}{\rd_{\AA}}
+\newcommand{\brd}{\equiv}
+\newcommand{\ind}{Ind\,\,}
+\newcommand{\erd}[1]{\equiv_{{\AA},#1}}
+\newcommand{\spc}{{\,\,\,\,\,\,\,}}
+\renewcommand{\AA}{{\cal A}}
+
+
+\newcommand{\synth}{\vcentcolon\Rightarrow}
+\newcommand{\force}{\Leftarrow\vcentcolon} 
+
+\begin{document}
+
+\parskip = 2mm
+\begin{center}
+{\bf\Large A test type system}
+
+{\bf Vladimir Voevodsky}
+
+{Started January 25, 2013}  
+
+{This version modified by Dan Grayson}  
+\end{center}
+
+\tableofcontents
+
+This note gives some ideas about the test type system TTS with secondary
+witnessed which Dan Grayson and I have been working on implementing. While TTS
+by itself has (most likely) decidable definitional equality and typing making
+secondary witnesses to be formally speaking unnecessary, they become essential
+for the implementation of more complex systems with undecidable typing such as
+HTS.
+
+We are aiming at a type system where every derivable extended sentence can be
+obtained by a unique inference rules such that one gets a bijection between
+inference trees and $\alpha$-equivalence classes of derivable extended
+sentences.
+
+\subsection{Rules}
+
+Sequences of expression of the form
+
+$$x_1:T_1,\dots,x_n:T_n\rhd$$
+$$x_1:T_1,\dots,x_n:T_n\vdash o \synth T$$
+$$x_1:T_1,\dots,x_n:T_n\vdash o \force T$$
+$$x_1:T_1,\dots,x_n:T_n\vdash p : T \eqd T'$$ 
+$$x_1:T_1,\dots,x_n:T_n\vdash p : o \eqd o' : T$$
+
+where $x_1,\dots,x_n$ are names of variables, $T_i$ is an expression with free
+variables from $\{x_1,\dots,x_{i-1}\}$ and $o$, $o'$, $T$, $T'$ are expressions
+with free variables from the set $\{x_1,\dots,x_n\}$ are called {\em sentences}
+of the type system.  The terms $p$ will serve as witnesses to equalities.
+
+Here
+
+$$x_1:T_1,\dots,x_n:T_n\vdash o \synth T$$
+$$x_1:T_1,\dots,x_n:T_n\vdash o \force T$$
+
+are directional versions of the traditional sentence
+
+$$x_1:T_1,\dots,x_n:T_n\vdash o : T$$
+
+The difference between the two is that 
+
+$$x_1:T_1,\dots,x_n:T_n\vdash o \synth T$$
+
+the type $T$ is produced from the rest of the information in the sentence by
+the algorithms, whereas in 
+
+$$x_1:T_1,\dots,x_n:T_n\vdash o \force T$$
+
+the type $T$ is known and the task is to check that $o$ is of type $T$.  In the
+former case, one says that $o$ synthesizes its type, and in the latter case,
+that the type of $o$ is to be checked.  We introduce a bidirectional version of
+the target type theory HTS for ease of thinking about the correctness,
+description, and implementation of the algorithms.  The algorithms will
+necessarily be directional, in that some parts of them will be asked to check
+that an object has a given type, and other parts of which will be asked to
+manipulate objects whose type has already been determined.  The final
+implementation of the algorithms may amount to making the two equality
+judgments bidirectional, too.
+
+Thanks to Dan Licata for suggestions and advice.
+
+\paragraph{General inference rules} 
+
+\begin{enumerate}
+\item 
+$$\frac{}{\rhd}$$
+\item For each $X\in FV$
+$$\frac{\Gamma\rhd}{\Gamma, x:X\rhd}$$
+
+\item If $x$ does not appear $\Gamma'$,
+$$\frac{\Gamma, x:T, \Gamma'\rhd}{\Gamma, x:T, \Gamma'\vdash x \synth T}$$
+
+\item 
+$$\frac{\Gamma, x:T\rhd\spc \Gamma, x:T'\rhd\spc T\sim T'}{\Gamma\vdash [Wrefl]: T\eqd T'}$$
+Note: if $T'$ is obtained from $T$ by removing conversions, it may not be possible to apply
+this rule because $T'$ be validatable.  Similarly for objects.
+\item 
+$$\frac{\Gamma\vdash p:T_1\eqd T_2}{\Gamma\vdash [Wsymm](p):T_2\eqd T_1}$$
+\item 
+$$\frac{\Gamma\vdash p12:T_1\eqd T_2\spc\Gamma\vdash p23:T_2\eqd T_3}{\Gamma\vdash [Wtrans](p12,p23,T_2): T_1\eqd T_3}$$
+\item 
+$$\frac{\Gamma\vdash o \force T\spc\Gamma\vdash o' \force T \spc o \sim o'}{\Gamma\vdash [wrefl]:o\eqd o':T}$$
+\item 
+$$\frac{\Gamma\vdash p:o_1\eqd o_2:T}{\Gamma\vdash [wsymm](p):o_2\eqd o_1:T}$$
+\item 
+$$\frac{\Gamma\vdash p12:o_1\eqd o_2:T\spc\Gamma\vdash p23:o_2\eqd o_3:T}{\Gamma\vdash [wtrans](p12,p23,o_2):o_1\eqd o_3:T}$$
+\item 
+$$\frac{\Gamma\vdash o \synth T\spc \Gamma\vdash q : T\eqd T'}{\Gamma\vdash [conv](o,q) \force T'}$$
+Note: In the comparisons $T\sim T'$ and $o\sim o':T$, the term $[conv](o,T,q)$ is regarded as equivalent to $o$.
+\item 
+$$\frac{\Gamma\vdash o \force T}{\Gamma\vdash [annot](o,T) \synth T}$$
+Note: In the comparisons $T\sim T'$ and $o\sim o':T$, the term $[annot](o,T)$ is regarded as equivalent to $o$.
+
+\end{enumerate}
+
+
+
+\paragraph{Universe}
+
+\begin{enumerate}
+\item for $x$ not in $v(\Gamma)$
+
+$$\frac{\Gamma\rhd}{\Gamma,x:\Eu\rhd}$$
+
+\item for $x$ not in $v(\Gamma)$
+
+$$\frac{\Gamma\vdash o \synth \Eu}{\Gamma, x:[El](o)\rhd}$$
+Note: later on, there will a universe level, and it will be computable from the
+term $o$, hence the choice of direction in this rule.
+
+\item 
+
+$$\frac{\Gamma\vdash p : o \eqd o' : \Eu}{\Gamma\vdash [weleq](p) : [El](o) \eqd [El](o')}$$
+
+\end{enumerate}
+
+
+
+
+
+
+
+\paragraph{Dependent products}
+
+\begin{enumerate}
+\item 
+$$\frac{\Gamma, x:T_1, y:T_2\rhd}{\Gamma, y:[\prod](T_1,x.T_2)\rhd}$$
+\item 
+$$\frac{\Gamma, x:T_1,y: T_2\rhd\spc \Gamma\vdash p:T_1\eqd T_1'}{\Gamma\vdash [wpi1](p):[\prod](T_1,x.T_2)\eqd [\prod](T_1',x.T_2)}$$
+
+\item 
+$$\frac{\Gamma, x:T_1\vdash p:T_2\eqd T_2'}{\Gamma\vdash [wpi2](p):[\prod;x](T_1,x.T_2)\eqd [\prod](T_1,x.T_2')}$$
+
+\item 
+$$\frac{\Gamma, x : T_1\vdash o \force T_2}{\Gamma\vdash [\lambda](x.o) \force [\prod](T_1,x.T_2)}$$
+Note: some space is saved by not annotating $[\lambda](x.o)$ with $T_1$ and $x.T_2$, due to bidirectionality.
+
+\item 
+$$\frac{\Gamma, x:T_1\vdash p : o\eqd o' : T_2}{\Gamma\vdash [wl](p) : [\lambda](x.o)\eqd [\lambda](x.o') : [\prod](T_1,x.T_2)}$$
+\item 
+$$\frac{\Gamma\vdash f \synth [\prod](T_1,x.T_2)\spc \Gamma\vdash o \force T_1}{\Gamma\vdash [ev](f,o) \synth T_2[o/x]}$$
+Note: some space is saved by not annotating $[ev](f,o)$ with $T_1$ and $x.T_2$, due to bidirectionality.  The same applies to such expressions
+as $x.y.z.f\, x\, y\, z$, where $f$ synthesizes its type.
+\item 
+$$\frac{\Gamma\vdash f \synth [\prod](T_1,x.T_2) \spc \Gamma\vdash p : f \eqd f' : [\prod](T_1,x.T_2)\spc \Gamma\vdash q : o \eqd o' : T_1}{\Gamma\vdash [wev](p,q) : [ev](f,o) \eqd [ev](f',o') : T_2[o/x]}$$
+\item 
+% beta
+$$\frac{ \Gamma\vdash o_1 \force T_1\spc \Gamma, x:T_1\vdash o_2 \force T_2}{\Gamma\vdash [wbeta](T_1,x.T_2) : [ev]([\lambda](x.o_2),o_1) \eqd o_2[o_1/x] : T_2[o_1/x]}$$
+Note: Replacing $[\lambda](x.o_2)$ by $[annot]([\lambda](x.o_2),[\prod](T_1,x.T_2))$ would be an alternative to putting $T_1$ and $x.T_2$ in the witness.
+Comparison of two terms of the same type by normalization need not involve
+computation of the types of partially applied results, so a version of this
+rule free of type annotations is needed.
+% eta
+\item 
+$$\frac{\Gamma\vdash f \force [\prod](T_1,x.T_2)}{\Gamma\vdash [weta] : f \eqd [\lambda](x.[ev](f,x)) : [\prod](T_1,x.T_2)}$$ 
+
+\end{enumerate}
+
+\bibliography{alggeom}
+\bibliographystyle{plain}
+\end{document}
+  %% Local Variables:
+  %% compile-command: "pdflatex TTS-internal-witnesses.tex "
+  %% End:
