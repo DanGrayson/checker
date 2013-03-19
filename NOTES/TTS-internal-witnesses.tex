@@ -254,7 +254,9 @@ $$\frac{\Gamma\vdash p : o \eqd o' : \Eu}{\Gamma\vdash [weleq](p) : [El](o) \eqd
 \item 
 $$\frac{\Gamma, x:T_1, y:T_2\rhd}{\Gamma, y:[\prod](T_1,x.T_2)\rhd}$$
 \item 
-$$\frac{\Gamma, x:T_1,y: T_2\rhd\spc \Gamma\vdash p:T_1\eqd T_1'}{\Gamma\vdash [wpi1](p):[\prod](T_1,x.T_2)\eqd [\prod](T_1',x.T_2)}$$
+$$\frac{ \Gamma\vdash p:T_1\eqd T_1' \spc \Gamma, x':T'_1,y: T_2\rhd}
+       {\Gamma\vdash [wpi1](p):[\prod](T_1,x.p_* T_2)\eqd [\prod](T_1',x'.T_2)}$$
+Note: here $p_*T_2$ is notation for $T_2[[annot]([conv](x,p),T'_1)/x']$.
 
 \item 
 $$\frac{\Gamma, x:T_1\vdash p:T_2\eqd T_2'}{\Gamma\vdash [wpi2](p):[\prod;x](T_1,x.T_2)\eqd [\prod](T_1,x.T_2')}$$
