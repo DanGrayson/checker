@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-Include "rules/TS2.ts"..
+Include "rules/TS2.ts";;
 
 # [∐], [coprod], [ii1], [ii2], [sum;x], [∐;x1,x2]
 

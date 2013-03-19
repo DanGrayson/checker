@@ -1,21 +1,21 @@
 # -*- coding: utf-8 -*-
 
-Include "rules/TS2.ts"..
+Include "rules/TS2.ts";;
 
 # derive versions of some inference rules with simple types
 
 Definition pi1 { ⊢ T U Type } ⊢ @∏[T,_.U] Type ::=
 
-   T ⟼ U ⟼ (_, T' ⟼ U' ⟼ (∏_istype T (_ ⟼ U) SND T' (_ ⟼ _ ⟼ U')))..
+   T ⟼ U ⟼ (_, T' ⟼ U' ⟼ (∏_istype T (_ ⟼ U) SND T' (_ ⟼ _ ⟼ U')));;
 
 Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ @λ[T,o] : @∏[T,_.U] ::=
 
-   T ⟼ U ⟼ o ⟼ ((@λ T o), T' ⟼ U' ⟼ (λ_hastype T (_ ⟼ U) o SND T' (_ ⟼ _ ⟼ U')))..
+   T ⟼ U ⟼ o ⟼ ((@λ T o), T' ⟼ U' ⟼ (λ_hastype T (_ ⟼ U) o SND T' (_ ⟼ _ ⟼ U')));;
 
 Definition ev1 { ⊢ T U Type, f : @∏[T,_.U], o : T } ⊢ @ev[f,o,T,_.U] : U ::=
 
    T ⟼ U ⟼ f ⟼ o ⟼
-   ((ev_hastype T (_ ⟼ U) f o FST), T' ⟼ U' ⟼ (ev_hastype T (_ ⟼ U) f o SND T' (_ ⟼ _ ⟼ U')))..
+   ((ev_hastype T (_ ⟼ U) f o FST), T' ⟼ U' ⟼ (ev_hastype T (_ ⟼ U) f o SND T' (_ ⟼ _ ⟼ U')));;
 
 Theorem compose { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
    T ⟼ U ⟼ V ⟼
@@ -43,11 +43,11 @@ Theorem compose { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
 				  (t ⟼ dt ⟼ (ev1 U V g
 						 (ev1 T U f t FST) SND
 						 dU dV dg
-						 (ev1 T U f t SND dT dU df dt)))))))))..
+						 (ev1 T U f t SND dT dU df dt)))))))));;
 
    # Here's what the proof above looks like if we delete all the expression parts, keeping
    # only the judgment parts, from which the expression parts can be deduced.  Then it looks
-   # as linear as in the intrinsic encoding..
+   # as linear as in the intrinsic encoding;;
 
    # T ⟼ U ⟼ V ⟼
    # (_,
@@ -61,7 +61,7 @@ Theorem compose { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
    # 		   (g ⟼ dg ⟼ (lambda1 _ _ _ SND dT dV
    # 				  (t ⟼ dt ⟼ (ev1 _ _ g _ SND
    # 						 dU dV dg
-   # 						 (ev1 _ _ f t SND dT dU df dt)))))))))..
+   # 						 (ev1 _ _ f t SND dT dU df dt)))))))));;
 
 Theorem compose' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
     # this time with micro-tactics (which don't help in pairs mode!)
@@ -90,7 +90,7 @@ Theorem compose' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
 	       (g ⟼ _ ⟼ (λ_hastype T (_ ⟼ V)
 			      (t ⟼ (ev1 U V g (ev1 T U f t FST) FST)) SND _ _
 			       (t ⟼ _ ⟼ (ev1 U V g (ev1 T U f t FST) SND
-					      _ _ _ (ev1 T U f t SND _ _ _ _)))))))))..
+					      _ _ _ (ev1 T U f t SND _ _ _ _)))))))));;
 
   # ev1 : (T:texp) ⟶
   #       (U:texp) ⟶
@@ -104,7 +104,7 @@ Theorem compose' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
   #         hastype x U
 
 Definition barbara { |- T U V Type } ⊢ (T->U) -> (U->V) -> (T->V) Type ::=
-    T ⟼ U ⟼ V ⟼ (_, $tscheck )..
+    T ⟼ U ⟼ V ⟼ (_, $tscheck );;
 
     # working on $tscheck
 
@@ -112,7 +112,7 @@ Definition barbara { |- T U V Type } ⊢ (T->U) -> (U->V) -> (T->V) Type ::=
 #     T ⟼ U ⟼ V ⟼ (
 #      (@λ (@∏ T (_ ⟼ U)) (f ⟼ (@λ (@∏ U (_ ⟼ V)) (g ⟼ (@λ T (t ⟼ (@ev g (@ev f t T (_ ⟼ U)) U (_ ⟼ V)))))))),
 #      _ ⟼ _ ⟼ _ ⟼ $tscheck
-#      )..
+#      );;
 
 #   Local Variables:
 #   compile-command: "make -C .. interpretations DEBUG=no"

@@ -20,13 +20,13 @@ open Error
 %token <string> CONSTANT STRING NAME NAME_W
 
 %token
-  LeftParen RightParen RightBracket LeftBracket Comma PeriodPeriod Colon Star Arrow
+  LeftParen RightParen RightBracket LeftBracket Comma Colon Star Arrow
   ArrowFromBar Equal Underscore Axiom GreaterEqual Greater LessEqual Less
   Semicolon Ulevel Kumax Type Pi Lambda Sigma Check Show End Variable Alpha EOF
   Universes Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_FST K_SND Times
-  Turnstile DoubleArrow DoubleArrowFromBar ColonColonEqual ColonEqual Theorem
+  Turnstile DoubleArrow ColonColonEqual ColonEqual Theorem
   LeftBrace RightBrace TurnstileDouble ColonColon Include Clear EqualEqual
-  TTS Back BackTo Mode Period
+  TTS Back BackTo Mode Period EndOfProofStepMarker
 
 (* precedences, lowest first *)
 
@@ -41,11 +41,10 @@ open Error
 
 %right
 
-  Period DoubleArrowFromBar		(* TS notation for template expression *)
-  ArrowFromBar				(* TS notation for lambda *)
-  DoubleArrow				(* function type *)
-  Arrow					(* function type *)
-  Times					(* product type *)
+  ArrowFromBar			      (* TS notation for lambda *)
+  DoubleArrow			      (* function type *)
+  Arrow				      (* function type *)
+  Times				      (* product type *)
 
 %nonassoc
 
@@ -230,73 +229,71 @@ command:
 
     | EOF { raise Eof }
 
-end_of_command: PeriodPeriod {$1}
-
 unmarked_command:
 
-    | Variable vars= marked_name+ Colon t= ts_expr end_of_command
+    | Variable vars= marked_name+ Colon t= ts_expr EndOfProofStepMarker
 	{ Toplevel.OVariable (vars,t) }
 
-    | Variable vars= marked_name+ Type end_of_command
+    | Variable vars= marked_name+ Type EndOfProofStepMarker
 	{ Toplevel.TVariable vars }
 
-    | Variable vars= marked_name+ Ulevel eqns= preceded(Semicolon,uEquation)* end_of_command
+    | Variable vars= marked_name+ Ulevel eqns= preceded(Semicolon,uEquation)* EndOfProofStepMarker
 	{ Toplevel.UVariable (vars,eqns) }
 
-    | Axiom num= dotted_number? name= NAME t= ts_judgment end_of_command
+    | Axiom num= dotted_number? name= NAME t= ts_judgment EndOfProofStepMarker
 	{ Toplevel.Axiom (num,id name,t) }
 
-    | Axiom LF num= dotted_number? name= identifier Colon t= judgment end_of_command
+    | Axiom LF num= dotted_number? name= identifier Colon t= judgment EndOfProofStepMarker
 	{ Toplevel.Axiom (num,name,t) }
 
-    | Check TS? o= ts_expr end_of_command
+    | Check TS? o= ts_expr EndOfProofStepMarker
 	{ Toplevel.CheckTS o }
 
-    | Check LF e= expr end_of_command
+    | Check LF e= expr EndOfProofStepMarker
 	{ Toplevel.CheckLF e }
 
-    | Check TS? Colon t= ts_judgment end_of_command
-    | Check LF Colon t= judgment end_of_command
+    | Check TS? Colon t= ts_judgment EndOfProofStepMarker
+    | Check LF Colon t= judgment EndOfProofStepMarker
 	{ Toplevel.CheckLFtype t }
 
-    | Check TTS Colon t= ts_judgment end_of_command
+    | Check TTS Colon t= ts_judgment EndOfProofStepMarker
 	{ Toplevel.CheckWitness t }
 
-    | Check Universes end_of_command
+    | Check Universes EndOfProofStepMarker
 	{ Toplevel.CheckUniverses }
 
-    | Alpha e1= ts_expr EqualEqual e2= ts_expr end_of_command
+    | Alpha e1= ts_expr EqualEqual e2= ts_expr EndOfProofStepMarker
 	{ Toplevel.Alpha (e1, e2) }
 
-    | Theorem LF name= NAME Colon thm= judgment ColonEqual deriv= expr end_of_command
-    | Theorem name= NAME thm= ts_judgment ColonColonEqual deriv= expr end_of_command
-    | Theorem name= NAME thm= ts_judgment ColonEqual deriv= ts_expr end_of_command
+    | Theorem LF name= NAME Colon thm= judgment ColonEqual deriv= expr EndOfProofStepMarker
+    | Theorem name= NAME thm= ts_judgment ColonColonEqual deriv= expr EndOfProofStepMarker
+    | Theorem name= NAME thm= ts_judgment ColonEqual deriv= template_ts_expr EndOfProofStepMarker
 	{
 	  let pos = Position($startpos, $endpos) in
 	  Toplevel.Theorem (pos, name, deriv, thm) }
 
-    | Include filename= STRING end_of_command
+    | Include filename= STRING EndOfProofStepMarker
 	{ Toplevel.Include filename }
 
-    | Clear end_of_command
+    | Clear EndOfProofStepMarker
 	{ Toplevel.Clear }
 
-    | Show n= NUMBER? end_of_command
+    | Show n= NUMBER? EndOfProofStepMarker
 	{ Toplevel.Show n }
 
-    | Back n= NUMBER? end_of_command
+    | Back n= NUMBER? EndOfProofStepMarker
 	{ let n = match n with Some n -> n | None -> 1 in Toplevel.Back n }
 
-    | BackTo n= NUMBER end_of_command
+    | BackTo n= NUMBER EndOfProofStepMarker
 	{ Toplevel.BackTo n }
 
-    | Mode TTS end_of_command
+    | Mode TTS EndOfProofStepMarker
 	{ Toplevel.Mode "TTS" }
 
-    | Mode TS end_of_command
+    | Mode TS EndOfProofStepMarker
 	{ Toplevel.Mode "TS" }
 
-    | End end_of_command
+    | End EndOfProofStepMarker
 	{ Toplevel.End }
 
 marked_identifier:
@@ -506,7 +503,7 @@ ts_expr:
 
 ts_expr_list_member:
 
-    | x= ts_expr
+    | x= template_ts_expr
 	{ Spine_arg x }
 
     | K_FST
@@ -515,16 +512,20 @@ ts_expr_list_member:
     | K_SND
 	{ Spine_cdr }
 
-unmarked_ts_expr:
+template_ts_expr:
 
-    | v= marked_identifier_or_unused DoubleArrowFromBar body= ts_expr
-    | v= marked_identifier_or_unused Period body= ts_expr
+    | ts_expr { $1 }
+
+    | v= option(marked_identifier_or_unused) Period body= template_ts_expr
 	{ 
-	  let v = unmark v in
+	  Position($startpos, $endpos),
+	  let v = match v with Some v -> unmark v | None -> id "_" in
 	  if !ts_mode
 	  then unmark (lambda1 v body)
 	  else unmark (lambda2 v (witness_id v) body)
 	}
+
+unmarked_ts_expr:
 
     | e= ts_expr K_1
     	{ unmark ( Substitute.apply_args e (FST END) ) }
@@ -587,7 +588,7 @@ unmarked_ts_expr:
     | label= tsterm_head
 	{ BASIC(label, END ) }
 
-    | LeftParen a= ts_expr Comma b= ts_expr RightParen
+    | LeftParen a= template_ts_expr Comma b= template_ts_expr RightParen
 	{ PAIR(a,b) }
 
 (*

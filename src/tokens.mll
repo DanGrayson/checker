@@ -96,7 +96,7 @@ rule expr_tokens = parse
   | "<="  { LessEqual }
   | '_' { Underscore }
   | '<' { Less }
-  | ".."  { PeriodPeriod }
+  | ";;" { EndOfProofStepMarker }
   | "."  { Period }
   | '('  { LeftParen }
   | ')'  { RightParen }
@@ -118,7 +118,6 @@ rule expr_tokens = parse
   | ( "->" | "⟶" ) as symb { utf8_fix lexbuf symb; Arrow }
   | ( "=>" | "⇒" ) as symb { utf8_fix lexbuf symb; DoubleArrow }
   | ( "|->" | "⟼" ) as symb { utf8_fix lexbuf symb; ArrowFromBar }
-  | ( "|=>" | "⟾" ) as symb { utf8_fix lexbuf symb; DoubleArrowFromBar }
   | ( "|-" | "⊢" ) as symb { utf8_fix lexbuf symb; Turnstile }
   | ( "|=" | "⊨" ) as symb { utf8_fix lexbuf symb; TurnstileDouble }
   | ( "==" | "≡" ) as symb { utf8_fix lexbuf symb; EqualEqual }
