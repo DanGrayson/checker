@@ -114,6 +114,8 @@
 \newcommand{\synth}{\vcentcolon\Rightarrow}
 \newcommand{\force}{\Leftarrow\vcentcolon} 
 
+\newcommand{\Type}{\mathop{{\, \rm type}}}
+
 \begin{document}
 
 \parskip = 2mm
@@ -193,13 +195,17 @@ Thanks to Dan Licata for suggestions and advice.
 \item 
 $$\frac{}{\rhd}$$
 \item For each $X\in FV$
-$$\frac{\Gamma\rhd}{\Gamma, x:X\rhd}$$
+$$\frac{\Gamma\rhd}{\Gamma\vdash X \Type}$$
 
-\item If $x$ does not appear $\Gamma'$,
-$$\frac{\Gamma, x:T, \Gamma'\rhd}{\Gamma, x:T, \Gamma'\vdash x \synth T}$$
+Note: here $\Gamma\vdash X \Type$ is an abbreviation for $\Gamma, x:X\rhd$
+(with a fresh variable $x$).
 
 \item 
-$$\frac{\Gamma, x:T\rhd\spc \Gamma, x:T'\rhd\spc T\sim T'}{\Gamma\vdash [Wrefl]: T\eqd T'}$$
+$$\frac{\Gamma, x:T, \Gamma'\rhd}{\Gamma, x:T, \Gamma'\vdash x \synth T}$$
+Note: variables in the context are considered to be nameless.
+
+\item 
+$$\frac{\Gamma \vdash T \Type\spc \Gamma \vdash T'\Type \spc T\sim T'}{\Gamma\vdash [Wrefl]: T\eqd T'}$$
 Note: if $T'$ is obtained from $T$ by removing conversions, it may not be possible to apply
 this rule because $T'$ may not be validatable.  Similarly for objects.
 \item 
@@ -228,11 +234,11 @@ Note: In the comparisons $T\sim T'$ and $o\sim o':T$, the term $[annot](o,T)$ is
 \begin{enumerate}
 \item for $x$ not in $v(\Gamma)$
 
-$$\frac{\Gamma\rhd}{\Gamma,x:\Eu\rhd}$$
+$$\frac{\Gamma\rhd}{\Gamma \vdash \Eu\Type}$$
 
 \item for $x$ not in $v(\Gamma)$
 
-$$\frac{\Gamma\vdash o \synth \Eu}{\Gamma, x:[El](o)\rhd}$$
+$$\frac{\Gamma\vdash o \synth \Eu}{\Gamma \vdash [El](o)\Type}$$
 Note: later on, there will a universe level, and it will be computable from the
 term $o$, hence the choice of direction in this rule.
 
@@ -252,14 +258,18 @@ $$\frac{\Gamma\vdash p : o \eqd o' : \Eu}{\Gamma\vdash [weleq](p) : [El](o) \eqd
 
 \begin{enumerate}
 \item 
-$$\frac{\Gamma, x:T_1, y:T_2\rhd}{\Gamma, y:[\prod](T_1,x.T_2)\rhd}$$
+$$\frac{\Gamma, x:T_1\vdash T_2\Type}{\Gamma\vdash [\prod](T_1,x.T_2)\Type}$$
+Note: here $x.T_2$ is notation for binding the variable $x$ to the scope of the expression $T_2$.
 \item 
-$$\frac{ \Gamma\vdash p:T_1\eqd T_1' \spc \Gamma, x':T'_1,y: T_2\rhd}
-       {\Gamma\vdash [wpi1](p):[\prod](T_1,x.p_* T_2)\eqd [\prod](T_1',x'.T_2)}$$
-Note: here $p_*T_2$ is notation for $T_2[[annot]([conv](x,p),T'_1)/x']$.
+Note: here ${p_1}^*T'_2$ is notation for $T'_2[[annot]([conv](x,p_1),T'_1)/x']$.
 
-\item 
-$$\frac{\Gamma, x:T_1\vdash p:T_2\eqd T_2'}{\Gamma\vdash [wpi2](p):[\prod;x](T_1,x.T_2)\eqd [\prod](T_1,x.T_2')}$$
+$$ \frac{ 
+  \Gamma, x':T'_1 \vdash T'_2\Type \spc 
+  \Gamma\vdash p_1:T_1\eqd T_1' \spc
+  \Gamma, x:T_1 \vdash p_2:T_2\eqd {p_1}^*T_2'
+  } {
+  \Gamma\vdash [wpi](p_1,p_2):[\prod](T_1,x.T_2)\eqd [\prod](T_1',x'.T'_2)
+}$$
 
 \item 
 $$\frac{\Gamma, x : T_1\vdash o \force T_2}{\Gamma\vdash [\lambda](x.o) \force [\prod](T_1,x.T_2)}$$
