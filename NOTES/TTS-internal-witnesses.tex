@@ -201,7 +201,7 @@ $$\frac{\Gamma, x:T, \Gamma'\rhd}{\Gamma, x:T, \Gamma'\vdash x \synth T}$$
 \item 
 $$\frac{\Gamma, x:T\rhd\spc \Gamma, x:T'\rhd\spc T\sim T'}{\Gamma\vdash [Wrefl]: T\eqd T'}$$
 Note: if $T'$ is obtained from $T$ by removing conversions, it may not be possible to apply
-this rule because $T'$ be validatable.  Similarly for objects.
+this rule because $T'$ may not be validatable.  Similarly for objects.
 \item 
 $$\frac{\Gamma\vdash p:T_1\eqd T_2}{\Gamma\vdash [Wsymm](p):T_2\eqd T_1}$$
 \item 
