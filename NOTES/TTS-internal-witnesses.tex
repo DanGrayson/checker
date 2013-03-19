@@ -82,7 +82,7 @@
 \hspace{2mm}}{\vskip
 3mm}
 
-\newcommand{\ev}{{\bf ev}}
+%% \newcommand{\ev}{{\bf ev}}
 \newcommand{\TT}{{\bf Type0}}
 \newcommand{\PP}{{\bf Prop}}
 \newcommand{\cc}{{\bf c}}
@@ -110,6 +110,23 @@
 \newcommand{\force}{\Leftarrow\vcentcolon} 
 
 \newcommand{\Type}{\mathop{{\, \rm type}}}
+\newcommand{\ha}[2]{#1[#2]}
+\newcommand{\Wrefl}{{\sf Wrefl}}
+\newcommand{\weta}{{\sf weta}}
+\newcommand{\Wtrans}{{\sf Wtrans}}
+\newcommand{\Wsymm}{{\sf Wsymm}}
+\newcommand{\wrefl}{{\sf wrefl}}
+\newcommand{\El}{{\sf El}}
+\newcommand{\annot}{{\sf annot}}
+\newcommand{\conv}{{\sf conv}}
+\newcommand{\ev}{{\sf ev}}
+\newcommand{\wbeta}{{\sf wbeta}}
+\newcommand{\weleq}{{\sf weleq}}
+\newcommand{\wev}{{\sf wev}}
+\newcommand{\wl}{{\sf wl}}
+\newcommand{\wpi}{{\sf wpi}}
+\newcommand{\wsymm}{{\sf wsymm}}
+\newcommand{\wtrans}{{\sf wtrans}}
 
 \begin{document}
 
@@ -192,35 +209,35 @@ is an abbreviation for $\Gamma, x:X\rhd$ (with a fresh variable $x$).
 $$\frac{\Gamma, x:T, \Gamma'\rhd}{\Gamma, x:T, \Gamma'\vdash x \synth T}$$
 
 \item 
-$$\frac{\Gamma \vdash T \Type\spc \Gamma \vdash T'\Type \spc T\sim T'}{\Gamma\vdash [Wrefl]: T\eqd T'}$$
+$$\frac{\Gamma \vdash T \Type\spc \Gamma \vdash T'\Type \spc T\sim T'}{\Gamma\vdash \ha\Wrefl{}: T\eqd T'}$$
 
 If $T'$ is obtained from $T$ by removing conversions, it may not be possible to apply
 this rule because $T'$ may not be validatable.  Similarly for objects.
 
 \item 
-$$\frac{\Gamma\vdash p:T_1\eqd T_2}{\Gamma\vdash [Wsymm](p):T_2\eqd T_1}$$
+$$\frac{\Gamma\vdash p:T_1\eqd T_2}{\Gamma\vdash \ha\Wsymm{p}:T_2\eqd T_1}$$
 
 \item 
-$$\frac{\Gamma\vdash p12:T_1\eqd T_2\spc\Gamma\vdash p23:T_2\eqd T_3}{\Gamma\vdash [Wtrans](p12,p23,T_2): T_1\eqd T_3}$$
+$$\frac{\Gamma\vdash p12:T_1\eqd T_2\spc\Gamma\vdash p23:T_2\eqd T_3}{\Gamma\vdash \ha\Wtrans{p12,p23,T_2}: T_1\eqd T_3}$$
 
 \item 
-$$\frac{\Gamma\vdash o \force T\spc\Gamma\vdash o' \force T \spc o \sim o'}{\Gamma\vdash [wrefl]:o\eqd o':T}$$
+$$\frac{\Gamma\vdash o \force T\spc\Gamma\vdash o' \force T \spc o \sim o'}{\Gamma\vdash \ha\wrefl{}:o\eqd o':T}$$
 
 \item 
-$$\frac{\Gamma\vdash p:o_1\eqd o_2:T}{\Gamma\vdash [wsymm](p):o_2\eqd o_1:T}$$
+$$\frac{\Gamma\vdash p:o_1\eqd o_2:T}{\Gamma\vdash \ha\wsymm{p}:o_2\eqd o_1:T}$$
 
 \item 
-$$\frac{\Gamma\vdash p12:o_1\eqd o_2:T\spc\Gamma\vdash p23:o_2\eqd o_3:T}{\Gamma\vdash [wtrans](p12,p23,o_2):o_1\eqd o_3:T}$$
+$$\frac{\Gamma\vdash p12:o_1\eqd o_2:T\spc\Gamma\vdash p23:o_2\eqd o_3:T}{\Gamma\vdash \ha\wtrans{p12,p23,o_2}:o_1\eqd o_3:T}$$
 
 \item 
-$$\frac{\Gamma\vdash o \synth T\spc \Gamma\vdash q : T\eqd T'}{\Gamma\vdash [conv](o,q) \force T'}$$
+$$\frac{\Gamma\vdash o \synth T\spc \Gamma\vdash q : T\eqd T'}{\Gamma\vdash \ha\conv{o,q} \force T'}$$
 
-In the comparisons $T\sim T'$ and $o\sim o':T$, the term $[conv](o,T,q)$ is regarded as equivalent to $o$.
+In the comparisons $T\sim T'$ and $o\sim o':T$, the term $\ha\conv{o,T,q}$ is regarded as equivalent to $o$.
 
 \item 
-$$\frac{\Gamma\vdash o \force T}{\Gamma\vdash [annot](o,T) \synth T}$$
+$$\frac{\Gamma\vdash o \force T}{\Gamma\vdash \ha\annot{o,T} \synth T}$$
 
-In the comparisons $T\sim T'$ and $o\sim o':T$, the term $[annot](o,T)$ is regarded as equivalent to $o$.
+In the comparisons $T\sim T'$ and $o\sim o':T$, the term $\ha\annot{o,T}$ is regarded as equivalent to $o$.
 
 \end{enumerate}
 
@@ -234,14 +251,14 @@ $$\frac{\Gamma\rhd}{\Gamma \vdash \Eu\Type}$$
 
 \item for $x$ not in $v(\Gamma)$
 
-$$\frac{\Gamma\vdash o \synth \Eu}{\Gamma \vdash [El](o)\Type}$$
+$$\frac{\Gamma\vdash o \synth \Eu}{\Gamma \vdash \ha\El{o}\Type}$$
 
 Later on, there will a universe level, and it will be computable from the
 term $o$, hence the choice of direction in this rule.
 
 \item 
 
-$$\frac{\Gamma\vdash p : o \eqd o' : \Eu}{\Gamma\vdash [weleq](p) : [El](o) \eqd [El](o')}$$
+$$\frac{\Gamma\vdash p : o \eqd o' : \Eu}{\Gamma\vdash \ha\weleq{p} : \ha\El{o} \eqd \ha\El{o'}}$$
 
 \end{enumerate}
 
@@ -256,16 +273,16 @@ Here $.T_2$ is notation for binding a nameless variable to the scope of the expr
 
 \item 
 $$ \frac{ 
-  \Gamma, T'_1 \vdash T'_2\Type \spc 
-  \Gamma\vdash p_1:T_1\eqd T_1' \spc
-  \Gamma, T_1 \vdash p_2:T_2\eqd {p_1}^*T_2'
+  \Gamma, T' \vdash U'  \Type      \spc 
+  \Gamma     \vdash p:T \eqd T'    \spc
+  \Gamma, T  \vdash q:U \eqd p^*U'
   } {
-  \Gamma\vdash [wpi](p_1,p_2):[\prod](T_1,.T_2)\eqd [\prod](T_1',.T'_2)
+  \Gamma     \vdash \ha\wpi{p,q}:[\prod](T,.U)\eqd [\prod](T',.U')
 }$$
 
-Here ${p_1}^*T'_2$ is notation for $T'_2[[annot]([conv](x,p_1),T'_1)/x]$,
-where $T'_2[e/x]$ is notation for replacing the first unnamed variable in
-$T'_2$ by $e$ and any $x$ occuring in $e$ denotes the first unnamed variable in
+Here ${p}^*U'$ is notation for $U'[\ha\annot{\ha\conv{x,p},T'}/x]$,
+where $U'[e/x]$ is notation for replacing the first unnamed variable in
+$U'$ by $e$ and any $x$ occuring in $e$ denotes the first unnamed variable in
 the result.
 
 \item 
@@ -274,32 +291,32 @@ $$\frac{\Gamma, T_1\vdash o \force T_2}{\Gamma\vdash [\lambda](.o) \force [\prod
 Some space is saved by not annotating $[\lambda](.o)$ with $T_1$ and $.T_2$, due to bidirectionality.
 
 \item 
-$$\frac{\Gamma, T_1\vdash p : o\eqd o' : T_2}{\Gamma\vdash [wl](p) : [\lambda](.o)\eqd [\lambda](.o') : [\prod](T_1,.T_2)}$$
+$$\frac{\Gamma, T_1\vdash p : o\eqd o' : T_2}{\Gamma\vdash \ha\wl{p} : [\lambda](.o)\eqd [\lambda](.o') : [\prod](T_1,.T_2)}$$
 
 \item 
-$$\frac{\Gamma\vdash f \synth [\prod](T_1,.T_2)\spc \Gamma\vdash o \force T_1}{\Gamma\vdash [ev](f,o) \synth T_2[o]}$$
+$$\frac{\Gamma\vdash f \synth [\prod](T_1,.T_2)\spc \Gamma\vdash o \force T_1}{\Gamma\vdash \ha\ev{f,o} \synth T_2[o]}$$
 
 Here $T_2[o]$ is notation for replacing the first unnamed variable of
 $T_2$ by $o$, with the second unnamed variable of $T_2$ becoming the first, and
-so on.  Some space is saved by not annotating $[ev](f,o)$ with $T_1$ and
+so on.  Some space is saved by not annotating $\ha\ev{f,o}$ with $T_1$ and
 $.T_2$, due to bidirectionality.  The same applies to such expressions as
 $x.y.z.f\, x\, y\, z$, where $f$ synthesizes its type.
 
 \item 
-$$\frac{\Gamma\vdash f \synth [\prod](T_1,x.T_2) \spc \Gamma\vdash p : f \eqd f' : [\prod](T_1,x.T_2)\spc \Gamma\vdash q : o \eqd o' : T_1}{\Gamma\vdash [wev](p,q) : [ev](f,o) \eqd [ev](f',o') : T_2[o/x]}$$
+$$\frac{\Gamma\vdash f \synth [\prod](T_1,x.T_2) \spc \Gamma\vdash p : f \eqd f' : [\prod](T_1,x.T_2)\spc \Gamma\vdash q : o \eqd o' : T_1}{\Gamma\vdash \ha\wev{p,q} : \ha\ev{f,o} \eqd \ha\ev{f',o'} : T_2[o/x]}$$
 
 \item 
 % beta
-$$\frac{ \Gamma\vdash o_1 \force T_1\spc \Gamma, x:T_1\vdash o_2 \force T_2}{\Gamma\vdash [wbeta](T_1,x.T_2) : [ev]([\lambda](x.o_2),o_1) \eqd o_2[o_1/x] : T_2[o_1/x]}$$
+$$\frac{ \Gamma\vdash o_1 \force T_1\spc \Gamma, x:T_1\vdash o_2 \force T_2}{\Gamma\vdash \ha\wbeta{T_1,x.T_2} : \ha\ev{[\lambda](x.o_2},o_1) \eqd o_2[o_1/x] : T_2[o_1/x]}$$
 
-Replacing $[\lambda](x.o_2)$ by $[annot]([\lambda](x.o_2),[\prod](T_1,x.T_2))$ would be an alternative to putting $T_1$ and $x.T_2$ in the witness.
+Replacing $[\lambda](x.o_2)$ by $\ha\annot{[\lambda](x.o_2},[\prod](T_1,x.T_2))$ would be an alternative to putting $T_1$ and $x.T_2$ in the witness.
 Comparison of two terms of the same type by normalization need not involve
 computation of the types of partially applied results, so a version of this
 rule free of type annotations is needed.
 % eta
 
 \item 
-$$\frac{\Gamma\vdash f \force [\prod](T_1,x.T_2)}{\Gamma\vdash [weta] : f \eqd [\lambda](x.[ev](f,x)) : [\prod](T_1,x.T_2)}$$ 
+$$\frac{\Gamma\vdash f \force [\prod](T_1,x.T_2)}{\Gamma\vdash \ha\weta{} : f \eqd [\lambda](x.\ha\ev{f,x}) : [\prod](T_1,x.T_2)}$$ 
 
 \end{enumerate}
 
