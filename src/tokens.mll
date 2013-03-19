@@ -96,11 +96,8 @@ rule expr_tokens = parse
   | "<="  { LessEqual }
   | '_' { Underscore }
   | '<' { Less }
-  | '.'  { Period }
-  | ". "  { PeriodAndSpace }
-  | ".\r"  { PeriodAndSpace }
-  | ".\t"  { tab lexbuf; PeriodAndSpace }
-  | ".\n"  { Lexing.new_line lexbuf; PeriodAndSpace }
+  | ".."  { PeriodPeriod }
+  | "."  { Period }
   | '('  { LeftParen }
   | ')'  { RightParen }
   | ']'  { RightBracket }

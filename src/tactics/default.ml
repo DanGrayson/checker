@@ -1,3 +1,5 @@
+(** The default tactic, used for holes written with an underscore *)
+
 open Error
 open Helpers
 open Typesystem

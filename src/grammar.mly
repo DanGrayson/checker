@@ -20,13 +20,13 @@ open Error
 %token <string> CONSTANT STRING NAME NAME_W
 
 %token
-  LeftParen RightParen RightBracket LeftBracket Comma Period Colon Star Arrow
+  LeftParen RightParen RightBracket LeftBracket Comma PeriodPeriod Colon Star Arrow
   ArrowFromBar Equal Underscore Axiom GreaterEqual Greater LessEqual Less
   Semicolon Ulevel Kumax Type Pi Lambda Sigma Check Show End Variable Alpha EOF
   Universes Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_FST K_SND Times
   Turnstile DoubleArrow DoubleArrowFromBar ColonColonEqual ColonEqual Theorem
   LeftBrace RightBrace TurnstileDouble ColonColon Include Clear EqualEqual
-  TTS Back BackTo Mode PeriodAndSpace
+  TTS Back BackTo Mode Period
 
 (* precedences, lowest first *)
 
@@ -215,7 +215,7 @@ closed_tactic_expr:
     | Dollar name= NAME
 	{ name }
 
-dotted_number: n= separated_nonempty_list(Period,NUMBER) {n}
+dotted_number: n= separated_nonempty_list(Period,NUMBER) {n} (* should disallow interior spaces eventually *)
 
 command:
 
@@ -230,71 +230,73 @@ command:
 
     | EOF { raise Eof }
 
+end_of_command: PeriodPeriod {$1}
+
 unmarked_command:
 
-    | Variable vars= marked_name+ Colon t= ts_expr PeriodAndSpace
+    | Variable vars= marked_name+ Colon t= ts_expr end_of_command
 	{ Toplevel.OVariable (vars,t) }
 
-    | Variable vars= marked_name+ Type PeriodAndSpace
+    | Variable vars= marked_name+ Type end_of_command
 	{ Toplevel.TVariable vars }
 
-    | Variable vars= marked_name+ Ulevel eqns= preceded(Semicolon,uEquation)* PeriodAndSpace
+    | Variable vars= marked_name+ Ulevel eqns= preceded(Semicolon,uEquation)* end_of_command
 	{ Toplevel.UVariable (vars,eqns) }
 
-    | Axiom num= dotted_number? name= NAME t= ts_judgment PeriodAndSpace
+    | Axiom num= dotted_number? name= NAME t= ts_judgment end_of_command
 	{ Toplevel.Axiom (num,id name,t) }
 
-    | Axiom LF num= dotted_number? name= identifier Colon t= judgment PeriodAndSpace
+    | Axiom LF num= dotted_number? name= identifier Colon t= judgment end_of_command
 	{ Toplevel.Axiom (num,name,t) }
 
-    | Check TS? o= ts_expr PeriodAndSpace
+    | Check TS? o= ts_expr end_of_command
 	{ Toplevel.CheckTS o }
 
-    | Check LF e= expr PeriodAndSpace
+    | Check LF e= expr end_of_command
 	{ Toplevel.CheckLF e }
 
-    | Check TS? Colon t= ts_judgment PeriodAndSpace
-    | Check LF Colon t= judgment PeriodAndSpace
+    | Check TS? Colon t= ts_judgment end_of_command
+    | Check LF Colon t= judgment end_of_command
 	{ Toplevel.CheckLFtype t }
 
-    | Check TTS Colon t= ts_judgment PeriodAndSpace
+    | Check TTS Colon t= ts_judgment end_of_command
 	{ Toplevel.CheckWitness t }
 
-    | Check Universes PeriodAndSpace
+    | Check Universes end_of_command
 	{ Toplevel.CheckUniverses }
 
-    | Alpha e1= ts_expr EqualEqual e2= ts_expr PeriodAndSpace
+    | Alpha e1= ts_expr EqualEqual e2= ts_expr end_of_command
 	{ Toplevel.Alpha (e1, e2) }
 
-    | Theorem LF name= NAME Colon thm= judgment ColonEqual deriv= expr PeriodAndSpace
-    | Theorem name= NAME thm= ts_judgment ColonColonEqual deriv= expr PeriodAndSpace
-    | Theorem name= NAME thm= ts_judgment ColonEqual deriv= ts_expr PeriodAndSpace
+    | Theorem LF name= NAME Colon thm= judgment ColonEqual deriv= expr end_of_command
+    | Theorem name= NAME thm= ts_judgment ColonColonEqual deriv= expr end_of_command
+    | Theorem name= NAME thm= ts_judgment ColonEqual deriv= ts_expr end_of_command
 	{
 	  let pos = Position($startpos, $endpos) in
 	  Toplevel.Theorem (pos, name, deriv, thm) }
 
-    | Include filename= STRING PeriodAndSpace
+    | Include filename= STRING end_of_command
 	{ Toplevel.Include filename }
 
-    | Clear PeriodAndSpace
+    | Clear end_of_command
 	{ Toplevel.Clear }
 
-    | Show n= NUMBER? PeriodAndSpace
+    | Show n= NUMBER? end_of_command
 	{ Toplevel.Show n }
 
-    | Back n= NUMBER? PeriodAndSpace
+    | Back n= NUMBER? end_of_command
 	{ let n = match n with Some n -> n | None -> 1 in Toplevel.Back n }
 
-    | BackTo n= NUMBER PeriodAndSpace
+    | BackTo n= NUMBER end_of_command
 	{ Toplevel.BackTo n }
 
-    | Mode TTS PeriodAndSpace
+    | Mode TTS end_of_command
 	{ Toplevel.Mode "TTS" }
 
-    | Mode TS PeriodAndSpace
+    | Mode TS end_of_command
 	{ Toplevel.Mode "TS" }
 
-    | End PeriodAndSpace
+    | End end_of_command
 	{ Toplevel.End }
 
 marked_identifier:
