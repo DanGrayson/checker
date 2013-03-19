@@ -109,7 +109,7 @@
 \newcommand{\synth}{\vcentcolon\Rightarrow}
 \newcommand{\force}{\Leftarrow\vcentcolon} 
 
-\newcommand{\Type}{\mathop{{\, \rm type}}}
+\newcommand{\Type}{\mathop{{\, \sc type}}}
 \newcommand{\ha}[2]{#1[#2]}
 \newcommand{\Wrefl}{{\sf Wrefl}}
 \newcommand{\weta}{{\sf weta}}
@@ -122,7 +122,7 @@
 \newcommand{\ev}{{\sf ev}}
 \newcommand{\wbeta}{{\sf wbeta}}
 \newcommand{\weleq}{{\sf weleq}}
-\newcommand{\wev}{{\sf wev}}
+\newcommand{\weveq}{{\sf weveq}}
 \newcommand{\wl}{{\sf wl}}
 \newcommand{\wpi}{{\sf wpi}}
 \newcommand{\wsymm}{{\sf wsymm}}
@@ -190,6 +190,10 @@ of which will be asked to manipulate objects whose type has already been
 determined.  The final implementation of the algorithms may amount to making
 the two equality judgments bidirectional, too.
 
+{\bf Warning}: metatheoretical implications between judgments, such as $\Gamma
+\vdash p : o \eqd o' : T$ implying $\Gamma \vdash o : T$ and $\Gamma \vdash T
+\Type$, may not hold.
+
 Thanks to Dan Licata for suggestions and advice.
 
 \paragraph{General inference rules} 
@@ -237,6 +241,10 @@ In the comparisons $T\sim T'$ and $o\sim o':T$, the term $\ha\conv{o,T,q}$ is re
 \item 
 $$\frac{\Gamma\vdash o \force T}{\Gamma\vdash \ha\annot{o,T} \synth T}$$
 
+In the code, the term $\ha\annot{o,T}$ could be represented by a private data
+type, so that such terms can be created only by the kernel of the type checker,
+and so no tactic could forge such a certificate.
+
 In the comparisons $T\sim T'$ and $o\sim o':T$, the term $\ha\annot{o,T}$ is regarded as equivalent to $o$.
 
 \end{enumerate}
@@ -267,9 +275,9 @@ $$\frac{\Gamma\vdash p : o \eqd o' : \Eu}{\Gamma\vdash \ha\weleq{p} : \ha\El{o} 
 \begin{enumerate}
 
 \item 
-$$\frac{\Gamma, x:T_1\vdash T_2\Type}{\Gamma\vdash \ha\prod{T_1,.T_2}\Type}$$
+$$\frac{\Gamma, x:T\vdash U\Type}{\Gamma\vdash \ha\prod{T,.U}\Type}$$
 
-Here $.T_2$ is notation for binding a nameless variable to the scope of the expression $T_2$.
+Here $.U$ is notation for binding a nameless variable to the scope of the expression $U$.
 
 \item 
 $$ \frac{ 
@@ -282,42 +290,53 @@ $$ \frac{
 
 Here ${p}^*U'$ is notation for $U'[\ha\annot{\ha\conv{x,p},T'}/x]$,
 where $U'[e/x]$ is notation for replacing the first unnamed variable in
-$U'$ by $e$ and any $x$ occuring in $e$ denotes the first unnamed variable in
-the result.
+$U'$ by $e$, and where any $x$ occuring in $e$ denotes the first unnamed variable in
+the resulting term.
 
 \item 
-$$\frac{\Gamma, T_1\vdash o \force T_2}{\Gamma\vdash \ha\lambda{.o} \force \ha\prod{T_1,.T_2}}$$
+$$\frac{\Gamma, T\vdash o \force U}{\Gamma\vdash \ha\lambda{.o} \force \ha\prod{T,.U}}$$
 
-Some space is saved by not annotating $\ha\lambda{.o}$ with $T_1$ and $.T_2$, due to bidirectionality.
-
-\item 
-$$\frac{\Gamma, T_1\vdash p : o\eqd o' : T_2}{\Gamma\vdash \ha\wl{p} : \ha\lambda{.o}\eqd \ha\lambda{.o'} : \ha\prod{T_1,.T_2}}$$
+Some space is saved by not annotating $\ha\lambda{.o}$ with $T$ and $.U$, due to bidirectionality.
 
 \item 
-$$\frac{\Gamma\vdash f \synth \ha\prod{T_1,.T_2}\spc \Gamma\vdash o \force T_1}{\Gamma\vdash \ha\ev{f,o} \synth T_2[o]}$$
+$$\frac{\Gamma, T\vdash p : o\eqd o' : U}{\Gamma\vdash \ha\wl{p} : \ha\lambda{.o}\eqd \ha\lambda{.o'} : \ha\prod{T,.U}}$$
 
-Here $T_2[o]$ is notation for replacing the first unnamed variable of
-$T_2$ by $o$, with the second unnamed variable of $T_2$ becoming the first, and
-so on.  Some space is saved by not annotating $\ha\ev{f,o}$ with $T_1$ and
-$.T_2$, due to bidirectionality.  The same applies to such expressions as
+\item 
+$$\frac{\Gamma\vdash f \synth \ha\prod{T,.U}\spc \Gamma\vdash t \force T}{\Gamma\vdash \ha\ev{f,t} \synth U[\ha\annot{t,T}]}$$
+
+The annotation is present to ensure that the new type-expression
+$U[\ha\annot{t,T}]$ remains checkable.
+
+Here $U[o]$ is notation for replacing the first unnamed variable of
+$U$ by $o$, with the second unnamed variable of $U$ becoming the first, and
+so on.  Some space is saved by not annotating $\ha\ev{f,o}$ with $T$ and
+$.U$, due to bidirectionality.  The same applies to such expressions as
 $x.y.z.f\, x\, y\, z$, where $f$ synthesizes its type.
 
 \item 
-$$\frac{\Gamma\vdash f \synth \ha\prod{T_1,.T_2} \spc \Gamma\vdash p : f \eqd f' : \ha\prod{T_1,.T_2}\spc \Gamma\vdash q : o \eqd o' : T_1}{\Gamma\vdash \ha\wev{p,q} : \ha\ev{f,o} \eqd \ha\ev{f',o'} : T_2[o]}$$
+$$\frac{\Gamma\vdash f \synth \ha\prod{T,.U} \spc \Gamma\vdash p : f \eqd
+  f' : \ha\prod{T,.U}\spc \Gamma\vdash q : t \eqd t' : T}{\Gamma\vdash
+  \ha\weveq{p,q} : \ha\ev{f,t} \eqd \ha\ev{f',t'} : U[\ha\annot{t,T}]}$$
+
+For simplicity, assume that $f'$ is $f$, and observe that $\Gamma \vdash
+\ha\ev{f',t'} \force U[\ha\annot{t,T}]$ may not be valid, even though $\Gamma
+\vdash \ha\ev{f',t'} \force U[\ha\annot{t',T}]$ is.  Nevertheless, $\Gamma \vdash
+\ha\ev{f',t'} : U[\ha\annot{t,T}]$ is valid in the underlying type theory where
+the witnesses have been forgotten.
 
 \item 
 % beta
-$$\frac{ \Gamma\vdash o_1 \force T_1\spc \Gamma, T_1\vdash o_2 \force T_2}{\Gamma\vdash \ha\wbeta{T_1,.T_2} : \ha\ev{\ha\lambda{.o_2},o_1} \eqd o_2[o_1] : T_2[o_1]}$$
+$$\frac{ \Gamma\vdash t \force T\spc \Gamma, T\vdash u \force U}{\Gamma\vdash \ha\wbeta{T,.U} : \ha\ev{\ha\lambda{.u},t} \eqd u[\ha\annot{t,T}] : U[\ha\annot{t,T}]}$$
 
 Replacing $\ha\lambda{.o_2}$ by
-$\ha\annot{\ha\lambda{.o_2},\ha\prod{T_1,.T_2}}$ would be an alternative to
-putting $T_1$ and $.T_2$ in the witness.  Comparison of two terms of the same
+$\ha\annot{\ha\lambda{.o_2},\ha\prod{T,.U}}$ would be an alternative to
+putting $T$ and $.U$ in the witness.  Comparison of two terms of the same
 type by normalization need not involve computation of the types of partially
 applied results, so a version of this rule free of type annotations is needed.
 % eta
 
 \item 
-$$\frac{\Gamma\vdash f \force \ha\prod{T_1,.T_2}}{\Gamma\vdash \ha\weta{} : f \eqd \ha\lambda{x.\ha\ev{f,x}} : \ha\prod{T_1,.T_2}}$$ 
+$$\frac{\Gamma\vdash f \force \ha\prod{T,.U}}{\Gamma\vdash \ha\weta{} : f \eqd \ha\lambda{x.\ha\ev{f,x}} : \ha\prod{T,.U}}$$ 
 
 \end{enumerate}
 
