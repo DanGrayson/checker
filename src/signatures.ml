@@ -33,11 +33,11 @@ let wexp_w = oexp @-> wexp @-> wexp
 let texp_w = oexp @-> wexp @-> texp
 let oexp_w = oexp @-> wexp @-> oexp
 
-let uhead_to_signature = function	(* optimize later by precomputing the constant return values *)
+let uhead_to_signature = function
   | U_next -> uexp @-> uexp
   | U_max -> uexp @-> uexp @-> uexp
 
-let thead_to_signature = function	(* optimize later by precomputing the constant return values *)
+let thead_to_signature = function
   | T_El -> oexp @-> texp
   | T_El' -> oexp @-> wexp @-> texp
   | T_U -> uexp @-> texp
@@ -53,7 +53,7 @@ let thead_to_signature = function	(* optimize later by precomputing the constant
   | T_Id -> texp @-> oexp @-> oexp @-> texp
   | T_Proof -> wexp @-> oexp @-> texp @-> texp
 
-let ohead_to_signature = function	(* optimize later by precomputing the constant return values *)
+let ohead_to_signature = function
   | O_u -> uexp @-> oexp
   | O_j -> uexp @-> uexp @-> oexp
   | O_ev -> oexp @-> oexp @-> texp @-> texp1 @-> oexp
@@ -87,7 +87,7 @@ let ohead_to_signature = function	(* optimize later by precomputing the constant
   | O_S -> oexp
   | O_nat_r -> oexp @-> oexp @-> oexp @-> texp1 @-> oexp
 
-let whead_to_signature = function	(* optimize later by precomputing the constant return values *)
+let whead_to_signature = function
   | W_Wrefl -> wexp
   | W_Wsymm -> wexp @-> wexp
   | W_Wtrans -> wexp @-> wexp @-> texp @-> wexp
@@ -114,32 +114,20 @@ let whead_to_signature = function	(* optimize later by precomputing the constant
 
 let ( @@-> ) a b = K_Pi(arrow_good_var_name a, a, b)
 
-let istype_kind = texp @@-> K_primitive_judgment
-let hastype_kind = oexp @@-> texp @@-> K_derivation_tree_judgment
-let type_equality_kind = texp @@-> texp @@-> K_derivation_tree_judgment
-let object_equality_kind = oexp @@-> oexp @@-> texp @@-> K_derivation_tree_judgment
-let ulevel_equality_kind = uexp @@-> uexp @@-> K_derivation_tree_judgment
-let type_uequality_kind = texp @@-> texp @@-> K_primitive_judgment
-let object_uequality_kind = oexp @@-> oexp @@-> texp @@-> K_primitive_judgment
-let istype_witnessed_internally_kind = texp @@-> K_witnessed_judgment
-let witnessed_hastype_kind = texp @@-> oexp @@-> wexp @@-> K_witnessed_judgment
-let witnessed_type_equality_kind = texp @@-> texp @@-> wexp @@-> K_witnessed_judgment
-let witnessed_object_equality_kind = texp @@-> oexp @@-> oexp @@-> wexp @@-> K_witnessed_judgment
-
 let jhead_to_kind = function
   | J_uexp -> K_ulevel
   | J_wexp | J_texp | J_oexp -> K_term
-  | J_istype -> istype_kind
-  | J_hastype -> hastype_kind
-  | J_ulevel_equality -> ulevel_equality_kind
-  | J_type_equality -> type_equality_kind
-  | J_object_equality -> object_equality_kind
-  | J_type_uequality -> type_uequality_kind
-  | J_object_uequality -> object_uequality_kind
-  | J_istype_witnessed_inside -> istype_witnessed_internally_kind
-  | J_witnessed_hastype -> witnessed_hastype_kind
-  | J_witnessed_type_equality -> witnessed_type_equality_kind
-  | J_witnessed_object_equality -> witnessed_object_equality_kind
+  | J_istype -> texp @@-> K_primitive_judgment
+  | J_hastype -> oexp @@-> texp @@-> K_derivation_tree_judgment
+  | J_ulevel_equality -> uexp @@-> uexp @@-> K_derivation_tree_judgment
+  | J_type_equality -> texp @@-> texp @@-> K_derivation_tree_judgment
+  | J_object_equality -> oexp @@-> oexp @@-> texp @@-> K_derivation_tree_judgment
+  | J_type_uequality -> texp @@-> texp @@-> K_primitive_judgment
+  | J_object_uequality -> oexp @@-> oexp @@-> texp @@-> K_primitive_judgment
+  | J_istype_witnessed_inside -> texp @@-> K_witnessed_judgment
+  | J_witnessed_hastype -> texp @@-> oexp @@-> wexp @@-> K_witnessed_judgment
+  | J_witnessed_type_equality -> texp @@-> texp @@-> wexp @@-> K_witnessed_judgment
+  | J_witnessed_object_equality -> texp @@-> oexp @@-> oexp @@-> wexp @@-> K_witnessed_judgment
 
 (*
   Local Variables:
