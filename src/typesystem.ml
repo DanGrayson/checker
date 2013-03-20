@@ -1,4 +1,4 @@
-(* -*- coding: utf-8 -*- *)
+(* -*- coding: utf-8; compile-command: "make -C .. src/typesystem.cmo " -*- *)
 
 (** Typesystem *)
 
@@ -8,9 +8,3 @@ include Signatures
 include Relative
 include Contexts
 include Tactics
-
-(*
-  Local Variables:
-  compile-command: "make -C .. src/typesystem.cmo "
-  End:
- *)

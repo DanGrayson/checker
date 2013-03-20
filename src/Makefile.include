@@ -64,7 +64,7 @@ BFLAGS = -I src   -I src/tactics   -I +camlp5   -use-menhir   -menhir 'menhir --
 
 # BFLAGS += -verbose 0
 
-BASENAMES = $(shell for i in $(patsubst %.mli, %, $(patsubst %.mly, %, $(patsubst %.mll, %, $(patsubst %.ml, %, $(SRCFILES))))) ; do echo $$i ; done | uniq)
+BASENAMES = $(shell for i in $(patsubst %.mli, %, $(patsubst %.mly, %, $(patsubst %.mll, %, $(patsubst %.ml, %, $(MLSRCFILES))))) ; do echo $$i ; done | uniq)
 
 
 %.cmo: %.ml; ocamlbuild $(BFLAGS) $*.cmo
@@ -85,7 +85,7 @@ clean: clean_src
 clean_src:; ocamlbuild -clean
 
 # all: doc
-doc: checker.odocl $(SRCFILES)
+doc: checker.odocl $(MLSRCFILES)
 	ocamlbuild $(BFLAGS) $(CHECKER_EXE) checker.docdir/index.html
 checker.odocl: Makefile
 	for i in $(BASENAMES) ; do echo $$i ; done >$@
@@ -93,7 +93,7 @@ checker.odocl: Makefile
 clean: clean_doc
 clean_doc:; rm -f TAGS checker.odocl .DS_Store
 
-lc:; wc -l $(SRCFILES) $(RULES_FILES)
+lc:; </dev/null wc -l $(MLSRCFILES)
 
 debug:
 	ocamlbuild $(BFLAGS) checker.byte 

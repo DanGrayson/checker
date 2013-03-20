@@ -1,3 +1,5 @@
+(* -*- compile-command: "make -C .. src/positions.cmo " -*- *)
+
 (** Source file positions *)
 
 type position =
@@ -70,9 +72,3 @@ let nowhere i x = (no_pos i,x)
 let nopos i = errfmt (no_pos i)
 
 exception MarkedError of position * string
-
-(*
-  Local Variables:
-  compile-command: "make -C .. src/positions.cmo "
-  End:
- *)
