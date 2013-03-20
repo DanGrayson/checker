@@ -1,35 +1,15 @@
-RULES_FILES =					\
-	rules/abbreviations.ts			\
-	rules/TS.ts				\
-	rules/TS0.ts				\
-	rules/TS1.ts				\
-	rules/TS2.ts				\
-	rules/TS3.ts				\
-	rules/TS4.ts				\
-	rules/TS5.ts				\
-	rules/TS6.ts				\
-	rules/TS7.ts				\
-	rules/others.ts				\
-	rules/TTS.ts
+TS_RULES = abbreviations TS TS0 TS1 TS2 TS3 TS4 TS5 TS6 TS7 others
+HTS_RULES = TTS
 
-SHOW = no
-ifeq "$(SHOW)" "yes"
-SHOWFILE = test/show.ts
-endif
+define rules-m
+$(foreach x,$2, \
+	$(eval TAGS_FILES += rules/$x.ts) \
+	$(eval check tests $1: test-rules-$x.ts) \
+	$(eval $x test-rules-$x.ts: src/$(CHECKER_EXE) ; $(CHECKER) rules/$x.ts))
+endef
 
-abbreviations: src/$(CHECKER_EXE) ; $(CHECKER) rules/abbreviations.ts $(SHOWFILE)
-rules: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS.ts $(SHOWFILE)
-rules0: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS0.ts $(SHOWFILE)
-rules1: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS1.ts $(SHOWFILE)
-rules2: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS2.ts $(SHOWFILE)
-rules3: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS3.ts $(SHOWFILE)
-rules4: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS4.ts $(SHOWFILE)
-rules5: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS5.ts $(SHOWFILE)
-rules6: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS6.ts $(SHOWFILE)
-rules7: src/$(CHECKER_EXE) ; $(CHECKER) rules/TS7.ts $(SHOWFILE)
-others: src/$(CHECKER_EXE) ; $(CHECKER) rules/others.ts $(SHOWFILE)
-TTS: src/$(CHECKER_EXE) ; $(CHECKER) rules/TTS.ts $(SHOWFILE)
-all: rules7 TTS
+$(call rules-m,ts-rules,$(TS_RULES))
+$(call rules-m,hts-rules,$(HTS_RULES))
 
 #  Local Variables:
 #  compile-command: "make -C .. "

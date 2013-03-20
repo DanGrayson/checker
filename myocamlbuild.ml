@@ -1,10 +1,24 @@
 open Ocamlbuild_plugin;;
 
-let common_flags = [ A "-g"; A "-annot"; A "-w"; A "@8"; A "-I"; A "+camlp5" ]
-let native_flags = common_flags @ [A "-S"; A "pa_macro.cmx"]
-let byte_flags   = common_flags @ [        A "pa_macro.cmo"]
+(* see comments in ocaml-4.00.0/ocamlbuild/signatures.mli for some documentation *)
 
-;;flag ["ocaml"; "compile"; "byte"  ] (S byte_flags)
-;;flag ["ocaml"; "compile"; "native"] (S native_flags)
+(*
+  I don't know how to give these options to ocamlbuild here:
+  "-menhir"; "menhir --explain --error-recovery";
+  "-use-menhir";
+*)
 
- (* @8 above refers to Warning 8: this pattern-matching is not exhaustive. *)
+(* @8 above refers to Warning 8: this pattern-matching is not exhaustive. *)
+let cflags = [ "-g"; "-annot"; "-w"; "@8" ]
+let lflags = [ "-g" ]
+
+let atomize args = List.map (fun arg -> A arg) args
+let flag' flags args = flag flags (S (atomize args))
+
+let _ =
+  flag' ["ocaml"; "compile"; "native"] (cflags @ [ "-S" (* ;"pa_macro.cmx" *) ]);
+  flag' ["ocaml"; "compile"; "byte"  ] (cflags @ [      (*  "pa_macro.cmo" *) ]);
+  flag' ["ocaml"; "link"             ] (lflags @ [ "-g" ]);
+  flag' ["ocaml"; "yacc"             ] [ "-v" ];
+
+

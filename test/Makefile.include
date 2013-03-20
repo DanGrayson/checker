@@ -1,9 +1,15 @@
-TSNAMES = demo judgments miscellaneous foo interpretations theorem-binders ts-elf show plus witnessed-judgments 
-TSFILES = $(patsubst %,test/%.ts,$(TSNAMES))
+TS_TESTS = demo judgments miscellaneous foo interpretations theorem-binders ts-elf show plus
+HTS_TESTS = witnessed-judgments 
 
-all: tests
-tests : $(TSNAMES)
-$(TSNAMES): src/$(CHECKER_EXE) ; $(CHECKER) test/$@.ts
+define test-m
+$(foreach x,$2, \
+	$(eval TAGS_FILES += test/$x.ts) \
+	$(eval check tests $1: test-$x.ts) \
+	$(eval $x test-$x.ts: src/$(CHECKER_EXE) ; $(CHECKER) test/$x.ts))
+endef
+
+$(call test-m,ts-tests,$(TS_TESTS))
+$(call test-m,hts-tests,$(HTS_TESTS))
 
 #  Local Variables:
 #  compile-command: "make -C .. tests "

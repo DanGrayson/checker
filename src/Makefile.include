@@ -1,6 +1,6 @@
 include src/tactics/Makefile.include
 
-SRCFILES =					\
+MLSRCFILES =					\
 	src/positions.ml			\
 	src/error.ml				\
 	src/variables.ml			\
@@ -29,6 +29,8 @@ SRCFILES =					\
 	src/checker.ml				\
 	$(TACTIC_FILES)
 
+TAGS_FILES += $(MLSRCFILES)
+
 CODE = byte
 # A convenient way to select native code on the command line is:
 #    make CODE=native
@@ -53,8 +55,7 @@ endif
 
 CHECKER := $(CHECKER_ENV) time ./$(CHECKER_EXE) $(CHECKER_OPTIONS)
 
-COMMON_BFLAGS = -I src -I src/tactics -lflags -g -yaccflag -v -menhir 'menhir --explain --error-recovery' -use-menhir 
-BFLAGS        = $(COMMON_BFLAGS)
+BFLAGS = -I src   -I src/tactics   -I +camlp5   -use-menhir   -menhir 'menhir --explain --error-recovery'
 
 # this doesn't work because of a bug in ocamlbuild:
 
@@ -69,16 +70,15 @@ BASENAMES = $(shell for i in $(patsubst %.mli, %, $(patsubst %.mly, %, $(patsubs
 %.cmo: %.ml; ocamlbuild $(BFLAGS) $*.cmo
 %.cmo: %.mll; ocamlbuild $(BFLAGS) $*.cmo
 %.cmo: %.mly; ocamlbuild $(BFLAGS) $*.cmo
-%.cmx: %.ml; ocamlbuild $(BFLAGS_NATIVE) $*.cmx
-%.cmx: %.mll; ocamlbuild $(BFLAGS_NATIVE) $*.cmx
-%.cmx: %.mly; ocamlbuild $(BFLAGS_NATIVE) $*.cmx
+%.cmx: %.ml; ocamlbuild $(BFLAGS) $*.cmx
+%.cmx: %.mll; ocamlbuild $(BFLAGS) $*.cmx
+%.cmx: %.mly; ocamlbuild $(BFLAGS) $*.cmx
 
 all: build
 build: notify src/$(CHECKER_EXE)
 notify:; @ echo "make: building $(CODE) code"
 
 # note: building checker.native will build both *.cmo and *.cmx files (???)
-src/checker.native: BFLAGS = $(BFLAGS_NATIVE)
 src/checker.native src/checker.byte: always; ocamlbuild $(BFLAGS) $@
 always:
 clean: clean_src

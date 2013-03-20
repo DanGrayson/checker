@@ -363,25 +363,25 @@ and ts_expr_to_string subs e : smart_string =
       top_prec, concat ["(pair ";paren_left list_prec x;" ";paren_left list_prec y;")"] (* does not correspond to our parser *)
   | TEMPLATE(v,body) -> 
       let v,subs = var_chooser_2 v subs (rel_occurs_in_expr 0 body) occurs_in_expr body in
-      arrow_prec, v ^ " ⟾ " ^ paren_right arrow_prec (ts_expr_to_string subs body)
+      arrow_prec, (if v = "_" then "" else v) ^ "." ^ paren_right arrow_prec (ts_expr_to_string subs body)
   | BASIC(h,END) -> top_prec, lf_head_to_string_with_subs subs h
   | BASIC(h,args) ->
       match h with
       | T T_Pi -> (
           match args with
-          | ARG(t1,ARG((_,TEMPLATE(x, t2)),END)) ->
+          | ARG(t1,ARG((_,TEMPLATE(x,t2)),END)) ->
 	      let x,subs' = var_chooser_2 x subs (rel_occurs_in_expr 0 t2) occurs_in_expr t2 in
-              if false
-              then arrow_prec, concat [paren_left arrow_prec (ts_expr_to_string subs t1);" ⟶ ";paren_right arrow_prec (ts_expr_to_string subs' t2)]
-              else top_prec, concat ["@[" ^ expr_head_to_string h ^ ";";x;"][";
-				     paren_left comma_prec (ts_expr_to_string subs t1);",";
-				     paren_right comma_prec (ts_expr_to_string subs t2);"]"]
+              top_prec, concat ["@[";expr_head_to_string h;"][";
+				paren_left comma_prec (ts_expr_to_string subs t1);",";
+				(if x = "_" then "" else x);".";paren_right comma_prec (ts_expr_to_string subs' t2);"]"]
           | _ -> lf_atomic_p subs h args)
       | T T_Sigma -> (
           match args with ARG(t1,ARG((_,TEMPLATE(x, t2)),END)) ->
 	    let x,subs' = var_chooser_2 x subs (rel_occurs_in_expr 0 t2) occurs_in_expr t2 in
-            top_prec, "@[" ^ expr_head_to_string h ^ ";" ^ x ^ "]" ^
-            "(" ^ paren_left comma_prec (ts_expr_to_string subs t1) ^ "," ^ paren_right comma_prec (ts_expr_to_string subs' t2) ^ ")"
+            top_prec, concat["@[";expr_head_to_string h;"]";"(";
+			     paren_left comma_prec (ts_expr_to_string subs t1);",";
+			     (if x = "_" then "" else x);".";paren_right comma_prec (ts_expr_to_string subs' t2);
+			     ")"]
           | _ -> lf_atomic_p subs h args)
       | O O_ev -> (
           match args with

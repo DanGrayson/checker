@@ -9,6 +9,8 @@ open Printf
 open Printer
 open Lfcheck
 
+let _e = _ts
+
 module Load = struct
   open Tacticlist
 end
@@ -250,7 +252,7 @@ let rec process_command env lexbuf =
 	env
     | Toplevel.End ->
 	error_summary pos;
-	fprintf stderr "%a: End.\n%!" _pos pos;
+	fprintf stderr "%a: End\n%!" _pos pos;
 	raise StopParsingFile
 
 and read_eval_command env lexbuf =

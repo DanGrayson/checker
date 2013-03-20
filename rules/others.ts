@@ -4,7 +4,7 @@ Include "rules/abbreviations.ts";;
 
 Axiom 200 jMM_reduction { ⊢ M1 M2 Ulevel } [ M1 ~ M2 Ulevel ] ⇒ [ jj[M1,M2] ≡ @λ[UU[M1],x.x] : UU[M1] -> UU[M2] ];;
 
-End.					       # tau not implemented yet for @j
+End;;					       # tau not implemented yet for @j
 
 Axiom 201 jj_reduction { ⊢ M1 M2 M2' M3 Ulevel, o : UU[M1] }
 

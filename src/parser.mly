@@ -7,6 +7,7 @@ open Printf
 open Printer
 open Error
 %}
+  (* this comment is accepted by menhir but not ocamlyacc *)
 %start command ts_exprEof
 %type <Toplevel.command> command
 %type <Typesystem.judgment> judgment ts_judgment
@@ -252,11 +253,11 @@ unmarked_command:
     | Check LF e= expr EndOfProofStepMarker
 	{ Toplevel.CheckLF e }
 
-    | Check TS? Colon t= ts_judgment EndOfProofStepMarker
+    | Check TS Colon t= ts_judgment EndOfProofStepMarker
     | Check LF Colon t= judgment EndOfProofStepMarker
 	{ Toplevel.CheckLFtype t }
 
-    | Check TTS Colon t= ts_judgment EndOfProofStepMarker
+    | Check TTS? Colon t= ts_judgment EndOfProofStepMarker
 	{ Toplevel.CheckWitness t }
 
     | Check Universes EndOfProofStepMarker

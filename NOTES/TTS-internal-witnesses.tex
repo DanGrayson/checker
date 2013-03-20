@@ -190,9 +190,9 @@ of which will be asked to manipulate objects whose type has already been
 determined.  The final implementation of the algorithms may amount to making
 the two equality judgments bidirectional, too.
 
-{\bf Warning}: metatheoretical implications between judgments, such as $\Gamma
-\vdash p : o \eqd o' : T$ implying $\Gamma \vdash o : T$ and $\Gamma \vdash T
-\Type$, may not hold.
+{\bf Warning}: certain metatheoretical implications between judgments, such as
+$\Gamma \vdash p : o \eqd o' : T$ implying $\Gamma \vdash o : T$ and $\Gamma
+\vdash T \Type$, may not hold.
 
 Thanks to Dan Licata for suggestions and advice.
 
@@ -207,7 +207,7 @@ $$\frac{}{\rhd}$$
 $$\frac{\Gamma\rhd}{\Gamma\vdash X \Type}$$
 
 Here $FV$ is a fixed set of type variables.  Here $\Gamma\vdash X \Type$
-is an abbreviation for $\Gamma, x:X\rhd$ (with a fresh variable $x$).
+is a convenient synonym for $\Gamma, X\rhd$.
 
 \item 
 $$\frac{\Gamma, x:T, \Gamma'\rhd}{\Gamma, x:T, \Gamma'\vdash x \synth T}$$
@@ -275,9 +275,9 @@ $$\frac{\Gamma\vdash p : o \eqd o' : \Eu}{\Gamma\vdash \ha\weleq{p} : \ha\El{o} 
 \begin{enumerate}
 
 \item 
-$$\frac{\Gamma, x:T\vdash U\Type}{\Gamma\vdash \ha\prod{T,.U}\Type}$$
+$$\frac{\Gamma, T\vdash U\Type}{\Gamma\vdash \ha\prod{T,.U}\Type}$$
 
-Here $.U$ is notation for binding a nameless variable to the scope of the expression $U$.
+Here $.U$ is notation for abstraction: binding a variable to the scope of the expression $U$.
 
 \item 
 $$ \frac{ 
@@ -288,10 +288,10 @@ $$ \frac{
   \Gamma     \vdash \ha\wpi{p,q}:\ha\prod{T,.U}\eqd \ha\prod{T',.U'}
 }$$
 
-Here ${p}^*U'$ is notation for $U'[\ha\annot{\ha\conv{x,p},T'}/x]$,
-where $U'[e/x]$ is notation for replacing the first unnamed variable in
-$U'$ by $e$, and where any $x$ occuring in $e$ denotes the first unnamed variable in
-the resulting term.
+Here ${p}^*U'$ is notation for $U'[\ha\annot{\ha\conv{\#0,p},T'}/\#0]$, where
+$U'[e/\#0]$ is notation for replacing the first variable in $U'$ by $e$, and
+where any $\#0$ occuring in $e$ denotes the first variable in the resulting
+term.
 
 \item 
 $$\frac{\Gamma, T\vdash o \force U}{\Gamma\vdash \ha\lambda{.o} \force \ha\prod{T,.U}}$$
@@ -304,14 +304,16 @@ $$\frac{\Gamma, T\vdash p : o\eqd o' : U}{\Gamma\vdash \ha\wl{p} : \ha\lambda{.o
 \item 
 $$\frac{\Gamma\vdash f \synth \ha\prod{T,.U}\spc \Gamma\vdash t \force T}{\Gamma\vdash \ha\ev{f,t} \synth U[\ha\annot{t,T}]}$$
 
-The annotation is present to ensure that the new type-expression
-$U[\ha\annot{t,T}]$ remains checkable.
+Here $U[o]$ is notation for replacing the first variable of $U$ by $o$, with
+the second variable of $U$ becoming the first, and so on.  
 
-Here $U[o]$ is notation for replacing the first unnamed variable of
-$U$ by $o$, with the second unnamed variable of $U$ becoming the first, and
-so on.  Some space is saved by not annotating $\ha\ev{f,o}$ with $T$ and
-$.U$, due to bidirectionality.  The same applies to such expressions as
-$x.y.z.f\, x\, y\, z$, where $f$ synthesizes its type.
+The annotation is present to ensure that the new type $U[\ha\annot{t,T}]$
+remains checkable, i.e., that the sentence $\Gamma \vdash U[\ha\annot{t,T}]
+\Type$ is checkable.
+
+Some space is saved by not annotating $\ha\ev{f,o}$ with $T$ and $.U$, due to
+bidirectionality.  The same applies to such expressions as $x.y.z.f\, x\, y\,
+z$, where $f$ synthesizes its type.
 
 \item 
 $$\frac{\Gamma\vdash f \synth \ha\prod{T,.U} \spc \Gamma\vdash p : f \eqd
