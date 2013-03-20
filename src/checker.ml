@@ -50,7 +50,7 @@ let protect f posfun =
       fprintf stderr "%s: %s\n%!" (spos ()) s;
       bump_error_count (posfun ());
       raise_switch ex Error_Handled
-  | Grammar.Error | Parsing.Parse_error as ex ->
+  | Parser.Error | Parsing.Parse_error as ex ->
       fprintf stderr "%s: syntax error\n%!" (spos ());
       bump_error_count (posfun ());
       raise_switch ex Error_Handled
@@ -215,7 +215,7 @@ let rec process_command env lexbuf =
   if !interactive then prompt env;
   let c =
     (* try *)
-      Grammar.command Tokens.expr_tokens lexbuf
+      Parser.command Tokens.expr_tokens lexbuf
     (* with e -> raise (WithPosition(lexbuf_position lexbuf,e)) *)
   in
   match c with (pos,c) ->
@@ -286,14 +286,14 @@ let strname =
     p
 
 let read_expr env lexbuf =
-  protect (fun () -> Grammar.ts_exprEof Tokens.expr_tokens lexbuf) (fun () -> lexbuf_position lexbuf)
+  protect (fun () -> Parser.ts_exprEof Tokens.expr_tokens lexbuf) (fun () -> lexbuf_position lexbuf)
 
 let parse_string env grammar s =
     let lexbuf = Lexing.from_string s in
     lexbuf.Lexing.lex_curr_p <- {lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = strname()};
     read_expr env lexbuf
 
-let expr_from_string env s = parse_string env Grammar.ts_exprEof s
+let expr_from_string env s = parse_string env Parser.ts_exprEof s
 
 let toplevel() =
   let env = ref empty_environment in

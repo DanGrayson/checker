@@ -4,7 +4,7 @@
 
 {
  open Error
- open Grammar
+ open Parser
  open Typesystem
  open Parse
  open Printf

@@ -95,10 +95,7 @@ Check TTS : [
       ≡ * f x
       ] ;;
 
-Check TTS : [
-    _ : * ((y:T) ⟼ f y) x
-      ≡ * f x
-      ] ;;
+Check TTS : [ _ : * ((y:T) ⟼ f y) x ≡ * f x ] ;;
 
 End;; # working on simplifying the syntax for the user
 

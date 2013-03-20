@@ -24,7 +24,7 @@ SRCFILES =					\
 	src/errorcheck.ml			\
 	src/lfcheck.ml				\
 	src/toplevel.ml				\
-	src/parse.ml src/grammar.mly		\
+	src/parse.ml src/parser.mly		\
 	src/tokens.mll				\
 	src/checker.ml				\
 	$(TACTIC_FILES)
@@ -53,14 +53,10 @@ endif
 
 CHECKER := $(CHECKER_ENV) time ./$(CHECKER_EXE) $(CHECKER_OPTIONS)
 
-# 8 below refers to Warning 8: this pattern-matching is not exhaustive.
-OCFLAGS = -g,-annot,-w,@8
 COMMON_BFLAGS = -I src -I src/tactics -lflags -g -yaccflag -v -menhir 'menhir --explain --error-recovery' -use-menhir 
-BFLAGS        = $(COMMON_BFLAGS) -cflags $(OCFLAGS)
+BFLAGS        = $(COMMON_BFLAGS)
 
 # this doesn't work because of a bug in ocamlbuild:
-#BFLAGS_NATIVE = $(COMMON_BFLAGS) -cflags $(OCFLAGS),-S
-BFLAGS_NATIVE = $(COMMON_BFLAGS) -cflags $(OCFLAGS)
 
 # add -yaccflag --trace to ocamlbuild command line to get the menhir parser to display a trace
 # BFLAGS += -yaccflag --trace
