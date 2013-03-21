@@ -106,16 +106,16 @@
 \newcommand{\spc}{{\,\,\,\,\,\,\,}}
 \renewcommand{\AA}{{\cal A}}
 
-\newcommand{\synth}{\vcentcolon\Rightarrow}
-\newcommand{\force}{\Leftarrow\vcentcolon} 
+\newcommand{\synth}{\vcentcolon} % had \Rightarrow before
+\newcommand{\ccheck}{\Leftarrow\vcentcolon} 
 
 \newcommand{\Type}{\mathop{{\, \sc type}}}
+\newcommand{\Okay}{\mathop{{\, \sc okay}}}
 \newcommand{\ha}[2]{#1[#2]}
 \newcommand{\Wrefl}{{\sf Wrefl}}
 \newcommand{\weta}{{\sf weta}}
 \newcommand{\Wtrans}{{\sf Wtrans}}
 \newcommand{\Wsymm}{{\sf Wsymm}}
-\newcommand{\wrefl}{{\sf wrefl}}
 \newcommand{\El}{{\sf El}}
 \newcommand{\annot}{{\sf annot}}
 \newcommand{\conv}{{\sf conv}}
@@ -125,8 +125,12 @@
 \newcommand{\weveq}{{\sf weveq}}
 \newcommand{\wl}{{\sf wl}}
 \newcommand{\wpi}{{\sf wpi}}
-\newcommand{\wsymm}{{\sf wsymm}}
-\newcommand{\wtrans}{{\sf wtrans}}
+\newcommand{\wsrefl}{{\sf wsrefl}}
+\newcommand{\wcrefl}{{\sf wcrefl}}
+\newcommand{\wssymm}{{\sf wssymm}}
+\newcommand{\wcsymm}{{\sf wcsymm}}
+\newcommand{\wstrans}{{\sf wstrans}}
+\newcommand{\wctrans}{{\sf wctrans}}
 
 \begin{document}
 
@@ -159,40 +163,47 @@ sentences.
 
 Sequences of expression of the form
 
-$$x_1:T_1,\dots,x_n:T_n\rhd$$
+$$x_1:T_1,\dots,x_n:T_n\vdash \Okay$$
+$$x_1:T_1,\dots,x_n:T_n\vdash T \Type$$
 $$x_1:T_1,\dots,x_n:T_n\vdash o \synth T$$
-$$x_1:T_1,\dots,x_n:T_n\vdash o \force T$$
+$$x_1:T_1,\dots,x_n:T_n\vdash o \ccheck T$$
 $$x_1:T_1,\dots,x_n:T_n\vdash p : T \eqd T'$$ 
-$$x_1:T_1,\dots,x_n:T_n\vdash p : o \eqd o' : T$$
+$$x_1:T_1,\dots,x_n:T_n\vdash p : t \eqd t' \synth T$$
+$$x_1:T_1,\dots,x_n:T_n\vdash p : t \eqd t' \ccheck T$$
 
 where $x_1,\dots,x_n$ are names of variables, $T_i$ is an expression with free
-variables from $\{x_1,\dots,x_{i-1}\}$ and $o$, $o'$, $T$, $T'$ are expressions
+variables from $\{x_1,\dots,x_{i-1}\}$ and $p$, $o$, $t$, $t'$, $T$, $T'$ are expressions
 with free variables from the set $\{x_1,\dots,x_n\}$ are called {\em sentences}
 of the type system.  The terms $p$ will serve as witnesses to equalities.
 
 Variables in the context are considered to be nameless and distinct.  To
 emphasize that, we may sometimes omit the names and write just 
 
-$$T_1,\dots,T_n\rhd$$
+$$T_1,\dots,T_n\vdash \dots$$
 
-The sentences $\Gamma\vdash o \synth T$ and $\Gamma\vdash o \force T$ are
-directional versions of the traditional sentence $\Gamma\vdash o : T$.  The
-difference is that in $\Gamma\vdash o \synth T$ the type $T$ is produced from
-the rest of the information in the sentence by the algorithms, whereas in
-$\Gamma\vdash o \force T$ the type $T$ is known and the task is to check that
-$o$ is of type $T$.  In the former case, one says that $o$ synthesizes its
-type, and in the latter case, that the type of $o$ is to be checked.  We
-introduce a bidirectional version of the target type theory HTS for ease of
-thinking about the correctness, description, and implementation of the
-algorithms.  The algorithms will necessarily be directional, in that some parts
-of them will be asked to check that an object has a given type, and other parts
-of which will be asked to manipulate objects whose type has already been
-determined.  The final implementation of the algorithms may amount to making
-the two equality judgments bidirectional, too.
+Letting $\Gamma$ stand for $T_1,\dots,T_n$, we may write just
 
-{\bf Warning}: certain metatheoretical implications between judgments, such as
-$\Gamma \vdash p : o \eqd o' : T$ implying $\Gamma \vdash o : T$ and $\Gamma
-\vdash T \Type$, may not hold.
+$$\Gamma\vdash \dots$$
+
+The sentences involving the symbols $\synth$ and $\ccheck$ are directional
+versions of the traditional sentences where either symbol is replaced by a
+colon.  The difference is that in $\Gamma\vdash o \synth T$ the type $T$ is
+produced from the rest of the information in the sentence by the algorithms,
+whereas in $\Gamma\vdash o \ccheck T$ the type $T$ is known and the task is to
+check that $o$ is of type $T$.  In the former case, one says that $o$
+synthesizes its type, and in the latter case, that the type of $o$ is to be
+checked.  We introduce a bidirectional version of the target type theory HTS
+for ease of thinking about the correctness, description, and implementation of
+the algorithms.  The algorithms will necessarily be directional, in that some
+parts of them will be asked to check that an object has a given type, and other
+parts of which will be asked to manipulate objects whose type has already been
+determined.
+
+{\bf Warning}: We intend for certain metatheoretical implications between
+judgments, such as $\Gamma \vdash p : o \eqd o' \synth T$ implying $\Gamma
+\vdash o \synth T$, $\Gamma \vdash o' \synth T$, and $\Gamma \vdash T \Type$,
+to hold, in the sense that the algorithms described below succeed in checking
+the implied judgments.
 
 Thanks to Dan Licata for suggestions and advice.
 
@@ -200,20 +211,21 @@ Thanks to Dan Licata for suggestions and advice.
 
 \begin{enumerate}
 
-\item 
-$$\frac{}{\rhd}$$
+\item
+$$\frac{}{\vdash\Okay}$$
 
-\item For each $X\in FV$
-$$\frac{\Gamma\rhd}{\Gamma\vdash X \Type}$$
-
-Here $FV$ is a fixed set of type variables.  Here $\Gamma\vdash X \Type$
-is a convenient synonym for $\Gamma, X\rhd$.
+\item
+$$\frac{\Gamma\vdash X \Type}{\Gamma,X\vdash\Okay}$$
 
 \item 
-$$\frac{\Gamma, x:T, \Gamma'\rhd}{\Gamma, x:T, \Gamma'\vdash x \synth T}$$
+If $x:T$ occurs in $\Gamma$, then
+$$\frac{\Gamma\vdash\Okay}{\Gamma\vdash x \synth T}$$
 
 \item 
 $$\frac{\Gamma \vdash T \Type\spc \Gamma \vdash T'\Type \spc T\sim T'}{\Gamma\vdash \ha\Wrefl{}: T\eqd T'}$$
+
+Here $T\sim T'$ denotes a comparison operation on terms, which treats certain
+conversion and annotation operations specially, as mentioned below.
 
 If $T'$ is obtained from $T$ by removing conversions, it may not be possible to apply
 this rule because $T'$ may not be validatable.  Similarly for objects.
@@ -222,30 +234,39 @@ this rule because $T'$ may not be validatable.  Similarly for objects.
 $$\frac{\Gamma\vdash p:T_1\eqd T_2}{\Gamma\vdash \ha\Wsymm{p}:T_2\eqd T_1}$$
 
 \item 
-$$\frac{\Gamma\vdash p12:T_1\eqd T_2\spc\Gamma\vdash p23:T_2\eqd T_3}{\Gamma\vdash \ha\Wtrans{p12,p23,T_2}: T_1\eqd T_3}$$
+$$\frac{\Gamma\vdash p:T_1\eqd T_2\spc\Gamma\vdash q:T_2\eqd T_3}{\Gamma\vdash \ha\Wtrans{p,q,T_2}: T_1\eqd T_3}$$
 
 \item 
-$$\frac{\Gamma\vdash o \force T\spc\Gamma\vdash o' \force T \spc o \sim o'}{\Gamma\vdash \ha\wrefl{}:o\eqd o':T}$$
+$$\frac{\Gamma\vdash o \synth T\spc\Gamma\vdash o' \synth T \spc o \sim o'}{\Gamma\vdash \ha\wsrefl{}:o\eqd o' \synth T}$$
 
 \item 
-$$\frac{\Gamma\vdash p:o_1\eqd o_2:T}{\Gamma\vdash \ha\wsymm{p}:o_2\eqd o_1:T}$$
+$$\frac{\Gamma\vdash o \ccheck T\spc\Gamma\vdash o' \ccheck T \spc o \sim o'}{\Gamma\vdash \ha\wcrefl{}:o\eqd o' \ccheck T}$$
 
 \item 
-$$\frac{\Gamma\vdash p12:o_1\eqd o_2:T\spc\Gamma\vdash p23:o_2\eqd o_3:T}{\Gamma\vdash \ha\wtrans{p12,p23,o_2}:o_1\eqd o_3:T}$$
+$$\frac{\Gamma\vdash p:o_1\eqd o_2 \synth T}{\Gamma\vdash \ha\wssymm{p}:o_2\eqd o_1 \synth T}$$
 
 \item 
-$$\frac{\Gamma\vdash o \synth T\spc \Gamma\vdash q : T\eqd T'}{\Gamma\vdash \ha\conv{o,q} \force T'}$$
-
-In the comparisons $T\sim T'$ and $o\sim o':T$, the term $\ha\conv{o,T,q}$ is regarded as equivalent to $o$.
+$$\frac{\Gamma\vdash p:o_1\eqd o_2 \ccheck T}{\Gamma\vdash \ha\wcsymm{p}:o_2\eqd o_1 \ccheck T}$$
 
 \item 
-$$\frac{\Gamma\vdash o \force T}{\Gamma\vdash \ha\annot{o,T} \synth T}$$
+$$\frac{\Gamma\vdash p:o_1\eqd o_2 \synth T\spc\Gamma\vdash q:o_2\eqd o_3 \synth T}{\Gamma\vdash \ha\wstrans{p,q,o_2}:o_1\eqd o_3 \synth T}$$
+
+\item 
+$$\frac{\Gamma\vdash p:o_1\eqd o_2 \ccheck T\spc\Gamma\vdash q:o_2\eqd o_3 \ccheck T}{\Gamma\vdash \ha\wctrans{p,q,o_2}:o_1\eqd o_3 \ccheck T}$$
+
+\item 
+$$\frac{\Gamma\vdash o \synth T\spc \Gamma\vdash q : T \eqd T'}{\Gamma\vdash \ha\conv{o,q} \ccheck T'}$$
+
+In the comparisons $T\sim T'$ and $o\sim o'$, the term $\ha\conv{o,T,q}$ is regarded as equivalent to $o$.
+
+\item 
+$$\frac{\Gamma\vdash o \ccheck T}{\Gamma\vdash \ha\annot{o,T} \synth T}$$
+
+In the comparisons $T\sim T'$ and $o\sim o'$, the term $\ha\annot{o,T}$ is regarded as equivalent to $o$.
 
 In the code, the term $\ha\annot{o,T}$ could be represented by a private data
 type, so that such terms can be created only by the kernel of the type checker,
 and so no tactic could forge such a certificate.
-
-In the comparisons $T\sim T'$ and $o\sim o':T$, the term $\ha\annot{o,T}$ is regarded as equivalent to $o$.
 
 \end{enumerate}
 
@@ -255,7 +276,7 @@ In the comparisons $T\sim T'$ and $o\sim o':T$, the term $\ha\annot{o,T}$ is reg
 
 \item for $x$ not in $v(\Gamma)$
 
-$$\frac{\Gamma\rhd}{\Gamma \vdash \Eu\Type}$$
+$$\frac{\Gamma\vdash\Okay}{\Gamma \vdash \Eu\Type}$$
 
 \item for $x$ not in $v(\Gamma)$
 
@@ -266,7 +287,7 @@ term $o$, hence the choice of direction in this rule.
 
 \item 
 
-$$\frac{\Gamma\vdash p : o \eqd o' : \Eu}{\Gamma\vdash \ha\weleq{p} : \ha\El{o} \eqd \ha\El{o'}}$$
+$$\frac{\Gamma\vdash p : o \eqd o' \synth \Eu}{\Gamma\vdash \ha\weleq{p} : \ha\El{o} \eqd \ha\El{o'}}$$
 
 \end{enumerate}
 
@@ -294,51 +315,53 @@ where any $\#0$ occuring in $e$ denotes the first variable in the resulting
 term.
 
 \item 
-$$\frac{\Gamma, T\vdash o \force U}{\Gamma\vdash \ha\lambda{.o} \force \ha\prod{T,.U}}$$
+$$\frac{\Gamma, T\vdash o \ccheck U}{\Gamma\vdash \ha\lambda{.o} \ccheck \ha\prod{T,.U}}$$
 
 Some space is saved by not annotating $\ha\lambda{.o}$ with $T$ and $.U$, due to bidirectionality.
 
 \item 
-$$\frac{\Gamma, T\vdash p : o\eqd o' : U}{\Gamma\vdash \ha\wl{p} : \ha\lambda{.o}\eqd \ha\lambda{.o'} : \ha\prod{T,.U}}$$
+$$\frac{\Gamma, T\vdash p : o\eqd o' \ccheck U}{\Gamma\vdash \ha\wl{p} : \ha\lambda{.o}\eqd \ha\lambda{.o'} : \ha\prod{T,.U}}$$
 
 \item 
-$$\frac{\Gamma\vdash f \synth \ha\prod{T,.U}\spc \Gamma\vdash t \force T}{\Gamma\vdash \ha\ev{f,t} \synth U[\ha\annot{t,T}]}$$
+$$\frac{\Gamma\vdash f \synth \ha\prod{T,.U}\spc \Gamma\vdash t \ccheck T}{\Gamma\vdash \ha\ev{f,t} \synth U[\ha\annot{t,T}]}$$
 
 Here $U[o]$ is notation for replacing the first variable of $U$ by $o$, with
 the second variable of $U$ becoming the first, and so on.  
 
-The annotation is present to ensure that the new type $U[\ha\annot{t,T}]$
-remains checkable, i.e., that the sentence $\Gamma \vdash U[\ha\annot{t,T}]
-\Type$ is checkable.
+The annotation is present to ensure that the sentence $\Gamma \vdash
+U[\ha\annot{t,T}] \Type$ is checkable.
 
 Some space is saved by not annotating $\ha\ev{f,o}$ with $T$ and $.U$, due to
 bidirectionality.  The same applies to such expressions as $x.y.z.f\, x\, y\,
 z$, where $f$ synthesizes its type.
 
 \item 
-$$\frac{\Gamma\vdash f \synth \ha\prod{T,.U} \spc \Gamma\vdash p : f \eqd
-  f' : \ha\prod{T,.U}\spc \Gamma\vdash q : t \eqd t' : T}{\Gamma\vdash
-  \ha\weveq{p,q} : \ha\ev{f,t} \eqd \ha\ev{f',t'} : U[\ha\annot{t,T}]}$$
+$$\frac{
+   \Gamma\vdash p : f \eqd f' \synth \ha\prod{T,.U}\spc 
+   \Gamma\vdash q : t \eqd t' \ccheck T
+   }{
+   \Gamma\vdash \ha\weveq{p,q} : \ha\ev{f,t} \eqd \ha\ev{f',t'} \synth U[\ha\annot{t,T}]
+  }$$
 
 For simplicity, assume that $f'$ is $f$, and observe that $\Gamma \vdash
-\ha\ev{f',t'} \force U[\ha\annot{t,T}]$ may not be valid, even though $\Gamma
-\vdash \ha\ev{f',t'} \force U[\ha\annot{t',T}]$ is.  Nevertheless, $\Gamma \vdash
+\ha\ev{f',t'} \synth U[\ha\annot{t,T}]$ may not be valid, even though $\Gamma
+\vdash \ha\ev{f',t'} \synth U[\ha\annot{t',T}]$ is.  Nevertheless, $\Gamma \vdash
 \ha\ev{f',t'} : U[\ha\annot{t,T}]$ is valid in the underlying type theory where
 the witnesses have been forgotten.
 
 \item 
 % beta
-$$\frac{ \Gamma\vdash t \force T\spc \Gamma, T\vdash u \force U}{\Gamma\vdash \ha\wbeta{T,.U} : \ha\ev{\ha\lambda{.u},t} \eqd u[\ha\annot{t,T}] : U[\ha\annot{t,T}]}$$
+$$\frac{ \Gamma\vdash t \ccheck T\spc \Gamma, T\vdash u \ccheck U}{\Gamma\vdash \ha\wbeta{T,.U} : \ha\ev{\ha\lambda{.u},t} \eqd u[\ha\annot{t,T}] : U[\ha\annot{t,T}]}$$
 
-Replacing $\ha\lambda{.o_2}$ by
-$\ha\annot{\ha\lambda{.o_2},\ha\prod{T,.U}}$ would be an alternative to
-putting $T$ and $.U$ in the witness.  Comparison of two terms of the same
-type by normalization need not involve computation of the types of partially
-applied results, so a version of this rule free of type annotations is needed.
+Replacing $\ha\lambda{.u}$ by $\ha\annot{\ha\lambda{.u},\ha\prod{T,.U}}$ would
+be an alternative to putting $T$ and $.U$ in the witness.  Comparison of two
+terms of the same type by normalization need not involve computation of the
+types of partially applied results, so a version of this rule free of type
+annotations is needed.
 % eta
 
 \item 
-$$\frac{\Gamma\vdash f \force \ha\prod{T,.U}}{\Gamma\vdash \ha\weta{} : f \eqd \ha\lambda{x.\ha\ev{f,x}} : \ha\prod{T,.U}}$$ 
+$$\frac{\Gamma\vdash f \ccheck \ha\prod{T,.U}}{\Gamma\vdash \ha\weta{} : f \eqd \ha\lambda{x.\ha\ev{f,x}} : \ha\prod{T,.U}}$$ 
 
 \end{enumerate}
 
