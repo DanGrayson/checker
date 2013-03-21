@@ -12,5 +12,5 @@ interptmp2.ml: interptmp.ml
 	camlp5 pa_sml.cmo pr_o.cmo $< >$@
 interptmp2.cmo: interptmp2.ml
 	ocamlbuild $(FLAGS) $@
-
-always:
+interptmp.cmo: interptmp.ml
+	ocamlc -pp 'camlp5 pa_sml.cmo pr_dump.cmo' $<
