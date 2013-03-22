@@ -106,11 +106,11 @@
 \newcommand{\spc}{{\,\,\,\,\,\,\,}}
 \renewcommand{\AA}{{\cal A}}
 
-\newcommand{\synth}{\vcentcolon} % had \Rightarrow before
+\newcommand{\synth}{\vcentcolon\Rightarrow}
 \newcommand{\ccheck}{\Leftarrow\vcentcolon} 
 
-\newcommand{\Type}{\mathop{{\, \sc type}}}
-\newcommand{\Okay}{\mathop{{\, \sc okay}}}
+\newcommand{\Type}{\mathop{\text{ \sc type}}}
+\newcommand{\Okay}{\mathop{\text{ \sc okay}}}
 \newcommand{\ha}[2]{#1[#2]}
 \newcommand{\Wrefl}{{\sf Wrefl}}
 \newcommand{\weta}{{\sf weta}}
@@ -131,6 +131,7 @@
 \newcommand{\wcsymm}{{\sf wcsymm}}
 \newcommand{\wstrans}{{\sf wstrans}}
 \newcommand{\wctrans}{{\sf wctrans}}
+\newcommand{\var}{\char`_}
 
 \begin{document}
 
@@ -161,29 +162,48 @@ sentences.
 
 \subsection{Rules}
 
-Sequences of expression of the form
+A {\em sentence} has one of the following forms:
 
-$$x_1:T_1,\dots,x_n:T_n\vdash \Okay$$
-$$x_1:T_1,\dots,x_n:T_n\vdash T \Type$$
-$$x_1:T_1,\dots,x_n:T_n\vdash o \synth T$$
-$$x_1:T_1,\dots,x_n:T_n\vdash o \ccheck T$$
-$$x_1:T_1,\dots,x_n:T_n\vdash p : T \eqd T'$$ 
-$$x_1:T_1,\dots,x_n:T_n\vdash p : t \eqd t' \synth T$$
-$$x_1:T_1,\dots,x_n:T_n\vdash p : t \eqd t' \ccheck T$$
+$$\Gamma\vdash \Okay$$
+$$\Gamma\vdash T \Type$$
+$$\Gamma\vdash o \synth T$$
+$$\Gamma\vdash o \ccheck T$$
+$$\Gamma\vdash p : T \eqd T'$$
+$$\Gamma\vdash p : t \eqd t' \synth T$$
+$$\Gamma\vdash p : t \eqd t' \ccheck T$$
 
-where $x_1,\dots,x_n$ are names of variables, $T_i$ is an expression with free
-variables from $\{x_1,\dots,x_{i-1}\}$ and $p$, $o$, $t$, $t'$, $T$, $T'$ are expressions
-with free variables from the set $\{x_1,\dots,x_n\}$ are called {\em sentences}
-of the type system.  The terms $p$ will serve as witnesses to equalities.
+where $p$, $o$, $t$, $t'$, $T$, $T'$ are expressions with free variables {\em
+  introduced} by $\Gamma$.  Here $\Gamma$ is a {\em context}, a list of items,
+each of which has one of the following forms:
+
+$$\{ \Gamma'\vdash X \Type \}$$
+$$\{ \Gamma'\vdash x \synth T \}$$
+$$\{ \Gamma'\vdash x \ccheck T \}$$
+$$\{ \Gamma'\vdash w : T \eqd T'\}$$
+$$\{ \Gamma'\vdash w : t \eqd t' \synth T \}$$
+$$\{ \Gamma'\vdash w : t \eqd t' \ccheck T \}$$
+
+where $\Gamma'$ is a context, and where $T$, $T'$, $t$, and $t'$ are
+expressions with free variables introduced by $\Gamma'$ or by earlier entries
+in the list $\Gamma$, and where $X$, $x$, or $w$ is the (single) variable {\em
+  introduced} by the item.
+
+If $\Gamma'$ is empty, we may simplify notation and write
+$$ X \Type $$
+for
+$$\{ \Gamma'\vdash X \Type \}$$
+and
+$$x \synth T$$
+for
+$$\{ \Gamma'\vdash x \synth T \},$$
+etc., in $\Gamma$.
+
+Inference rules given later determine which sentences are well-formed and
+derivable.
 
 Variables in the context are considered to be nameless and distinct.  To
-emphasize that, we may sometimes omit the names and write just 
-
-$$T_1,\dots,T_n\vdash \dots$$
-
-Letting $\Gamma$ stand for $T_1,\dots,T_n$, we may write just
-
-$$\Gamma\vdash \dots$$
+emphasize that, we may write the names of all the variables as underscores, as
+in $\var:T_1,\dots,\var:T_n\vdash \Okay$.
 
 The sentences involving the symbols $\synth$ and $\ccheck$ are directional
 versions of the traditional sentences where either symbol is replaced by a
@@ -200,14 +220,14 @@ parts of which will be asked to manipulate objects whose type has already been
 determined.
 
 {\bf Warning}: We intend for certain metatheoretical implications between
-judgments, such as $\Gamma \vdash p : o \eqd o' \synth T$ implying $\Gamma
-\vdash o \synth T$, $\Gamma \vdash o' \synth T$, and $\Gamma \vdash T \Type$,
+judgments, such as $\Gamma \vdash p : t \eqd t' \synth T$ implying $\Gamma
+\vdash t \synth T$, $\Gamma \vdash t' \synth T$, and $\Gamma \vdash T \Type$,
 to hold, in the sense that the algorithms described below succeed in checking
 the implied judgments.
 
 Thanks to Dan Licata for suggestions and advice.
 
-\paragraph{General inference rules} 
+\paragraph{Inference rules} 
 
 \begin{enumerate}
 
@@ -215,7 +235,24 @@ Thanks to Dan Licata for suggestions and advice.
 $$\frac{}{\vdash\Okay}$$
 
 \item
-$$\frac{\Gamma\vdash X \Type}{\Gamma,X\vdash\Okay}$$
+$$\frac{\Gamma,\Gamma'\vdash \Okay}{\Gamma,\{\Gamma',\var \Type \} \vdash\Okay}$$
+
+\item
+$$\frac{\Gamma,\Gamma'\vdash T \Type}{\Gamma,\{\Gamma',\var \synth T \} \vdash\Okay}$$
+
+\item
+$$\frac{\Gamma,\Gamma'\vdash T \Type}{\Gamma,\{\Gamma',\var \ccheck T \} \vdash\Okay}$$
+
+\item
+$$\frac{\Gamma,\Gamma'\vdash T \Type \spc \Gamma,\Gamma'\vdash T' \Type}{\Gamma,\{\Gamma',\var : T \eqd T' \} \vdash\Okay}$$
+
+\item
+$$\frac{\Gamma,\Gamma'\vdash T \Type,~ t \synth T,~ t' \synth T}{\Gamma,\{\Gamma',\var : t \eqd t' \synth T \} \vdash\Okay}$$
+
+\item
+$$\frac{\Gamma,\Gamma'\vdash T \Type,~ t \ccheck T,~ t' \ccheck T}{\Gamma,\{\Gamma',\var : t \eqd t' \ccheck T \} \vdash\Okay}$$
+
+
 
 \item 
 If $x:T$ occurs in $\Gamma$, then
