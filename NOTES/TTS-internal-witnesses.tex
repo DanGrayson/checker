@@ -240,20 +240,66 @@ Thanks to Dan Licata for suggestions and advice.
 $$\frac{}{\vdash\Okay}$$
 
 \item
-$$\frac{\Gamma,\Gamma'\vdash \Okay}{\Gamma,\{\Gamma',\var \Type \} \vdash\Okay}$$
+$$\frac{\Gamma,\Gamma'\vdash \Okay}{\Gamma,\{\Gamma' \vdash X \Type \} \vdash\Okay}$$
+
+This item introduces a variable $X$ representing a family of types parametrized by
+the variables of $\Gamma'$.  It is intended only for temporary use.
 
 \item
-$$\frac{\Gamma,\Gamma'\vdash T \Type}{\Gamma,\{\Gamma',\var \ccolon{T} \} \vdash\Okay}$$
+$$\frac{\Gamma,\Gamma'\vdash T \Type }{\Gamma,\{\Gamma' \vdash X \defn T \Type \} \vdash\Okay}$$
+
+This item introduces a variable $X$ representing a family of types parametrized by
+the variables of $\Gamma'$, with value is given by the expression $T$.  This is
+intended to be the standard way that type families, such as $\mathop{isProp}$,
+are defined.
 
 \item
-$$\frac{\Gamma,\Gamma'\vdash T \Type \spc \Gamma,\Gamma'\vdash T' \Type}{\Gamma,\{\Gamma',\var : T \eqd T' \} \vdash\Okay}$$
+$$\frac{\Gamma,\Gamma'\vdash T \Type}{\Gamma,\{\Gamma' \vdash x \ccolon{T} \} \vdash\Okay}$$
+
+This item introduces a variable $x$ of type $T$.  Both are parametrized by the
+variables of $\Gamma'$.  This would be the standard way to introduce a type $T$
+as an axiom.
 
 \item
-$$\frac{\Gamma,\Gamma'\vdash T \Type,~ t \synth{T},~ t' \synth{T}}{\Gamma,\{\Gamma',\var : t \eqd t' \ccolon{T} \} \vdash\Okay}$$
+$$\frac{\Gamma,\Gamma'\vdash o \synth T}{\Gamma,\{\Gamma' \vdash x \defn o \ccolon{T} \} \vdash\Okay}$$
+
+This item introduces a variable $x$ with value $o$ of type $T$. This would be
+the standard way to record the proof $o$ of a theorem $T$ parametrized by
+$\Gamma'$ under the name $x$.
+
+\item
+$$\frac{\Gamma,\Gamma'\vdash T \Type \spc \Gamma,\Gamma'\vdash T' \Type}{\Gamma,\{\Gamma' \vdash w : T \eqd T' \} \vdash\Okay}$$
+
+This item introduces an axiom asserting equality of $T$ and $T'$ under the name $w$.
+
+\item
+$$\frac{\Gamma,\Gamma'\vdash p : T \eqd T' \Type}{\Gamma,\{\Gamma' \vdash w \defn p : T \eqd T' \} \vdash\Okay}$$
+
+This item records, under the name $w$, a proof $p$ for equality of $T$ and $T'$.
+
+\item
+$$\frac{\Gamma,\Gamma'\vdash T \Type,~ t \synth{T},~ t' \synth{T}}{\Gamma,\{\Gamma' \vdash w : t \eqd t' \ccolon{T} \} \vdash\Okay}$$
+
+This item introduces an axiom asserting equality of $t$ and $t'$ under the name $w$.
+
+\item
+$$\frac{\Gamma,\Gamma'\vdash p : t \eqd t' \synth{T} }{\Gamma,\{\Gamma' \vdash w \defn p : t \eqd t' \ccolon{T} \} \vdash\Okay}$$
+
+This item records, under the name $w$, a proof $p$ for equality of $t$ and $t'$ of type $T$, parametrized by $\Gamma'$.
 
 \item 
-If $x:T$ occurs in $\Gamma$, then
-$$\frac{\Gamma\vdash\Okay}{\Gamma\vdash x \synth{T}}$$
+If $\{ \Gamma' \vdash x : T \}$ occurs in $\Gamma$, then
+$$\frac{\Gamma\vdash u \ccheck \Gamma'}{\Gamma\vdash x[u] \synth{T[u]}}$$
+
+Here $u \ccheck \Gamma'$ indicates that $u$ is a sequence of terms in the
+context $\Gamma$ satisfiying the types in $\Gamma'$, and $x[u]$ denotes the
+result of substitution of $u$ for the parameters of $x$..  It remains to write
+rules clarifying the meaning of that.
+
+The implicit algorithm here fires when the code detects that the head of the
+expression is a variable.
+
+Similarly for the other types of sentence.
 
 \item 
 $$\frac{\Gamma \vdash T \Type\spc \Gamma \vdash T'\Type \spc T\sim T'}{\Gamma\vdash \ha\Wrefl{}: T\eqd T'}$$
