@@ -154,8 +154,8 @@ let checkLFCommand env pos x =
       if not (type_equiv t t') then
 	printf "           : %a [normalized]\n%!" _t (env,t')
 
-let checkLFtypeCommand env t =
-  printf "Check      : %a\n%!" _t (env,t);
+let verifyCommand env t =
+  printf "Verify     : %a\n%!" _t (env,t);
   let t' = Lfcheck.type_validity [] env t in
   if not (type_equiv t t') then
     printf "           : %a [after tactics]\n%!" _t (env,t');
@@ -230,7 +230,7 @@ let rec process_command env lexbuf =
     | Toplevel.OVariable (ovars,t) -> add_oVars env ovars t
     | Toplevel.Axiom (num,name,t) -> lf_axiomCommand env pos name t
     | Toplevel.CheckLF x -> checkLFCommand env pos x; env
-    | Toplevel.CheckLFtype x -> checkLFtypeCommand env x; env
+    | Toplevel.Verify x -> verifyCommand env x; env
     | Toplevel.CheckTS x -> checkTSCommand env x; env
     | Toplevel.Alpha (x,y) -> alphaCommand env (x,y); env
     | Toplevel.Theorem (pos,name,deriv,thm) -> defCommand env [ name, pos, deriv, thm ]

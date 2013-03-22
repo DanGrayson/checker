@@ -46,5 +46,5 @@ Verify  (T:texp) => (U:texp) => [ T ~ U Type ];;      # ulevel equivalence for t
 Verify  (u:uexp) => (v:uexp) => [ u ~ v Ulevel ];;    # ulevel equivalence for u-expressions
 
 #   Local Variables:
-#   compile-command: "make -C ;;;; judgments "
+#   compile-command: "make -C .. judgments "
 #   End:

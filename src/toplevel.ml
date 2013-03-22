@@ -4,8 +4,8 @@ open Typesystem
 
 type command' =
   | Axiom of (int list) option * identifier * judgment
+  | Verify of judgment
   | CheckLF of expr
-  | CheckLFtype of judgment
   | CheckTS of expr
   | UVariable of (string marked) list * (expr * expr) list
   | TVariable of (string marked) list

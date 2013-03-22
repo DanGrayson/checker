@@ -2,7 +2,7 @@
 
 include Positions
 
-let show_rules = true
+let show_rules = false
 
 let show_definitions = true
 

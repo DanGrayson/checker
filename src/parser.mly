@@ -256,7 +256,7 @@ unmarked_command:
 
     | Verify t= ts_judgment EndOfProofStepMarker
     | Verify LF t= judgment EndOfProofStepMarker
-	{ Toplevel.CheckLFtype t }
+	{ Toplevel.Verify t }
 
     | Check Universes EndOfProofStepMarker
 	{ Toplevel.CheckUniverses }

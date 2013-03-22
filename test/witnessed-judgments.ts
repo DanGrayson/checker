@@ -60,5 +60,5 @@ Verify [ _
       ];;
 
 #   Local Variables:
-#   compile-command: "make -C ;; witnessed-judgments "
+#   compile-command: "make -C .. witnessed-judgments "
 #   End:

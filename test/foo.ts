@@ -15,5 +15,5 @@ Include "rules/TS7.ts";;
 Check LF cast;;
 
 #   Local Variables:
-#   compile-command: "make -C ;; foo "
+#   compile-command: "make -C .. foo "
 #   End:
