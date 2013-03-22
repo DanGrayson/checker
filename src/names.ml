@@ -21,7 +21,6 @@ let expr_head_table = [
   U U_next, "next"; U U_max, "max"; T T_U, "U"; T T_U', "U'"; O O_u, "u"; O O_j, "j";
   O O_rr0, "rr0"; O O_rr1, "rr1";
   T T_Pi, "Pi"; T T_Sigma, "Sigma"; O O_lambda, "lambda";
-  T T_Proof, "Proof";
   T T_El', "El'"; T T_Pi', "Pi'"; T T_Pi', "∏'";
   O O_nat, "nat"; O O_nat_r, "nat_r"; O O_O, "O"; O O_S, "S";
   O O_lambda', "λ'"; O O_lambda', "lambda'"; O O_ev', "ev'";

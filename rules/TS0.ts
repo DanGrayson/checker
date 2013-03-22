@@ -98,5 +98,5 @@ Axiom 3.4.32 El_forall_reduction { ⊢ M1 M2 Ulevel, o1 : UU[M1] } { x : *o1 ⊢
         [ (*@forall[M1,M2,o1,x.o2[x]]) ≡ ∏ x:*o1, *o2[x] ];;
 
 #   Local Variables:
-#   compile-command: "make -C .. rules0 "
+#   compile-command: "make -C .. TS0 "
 #   End:

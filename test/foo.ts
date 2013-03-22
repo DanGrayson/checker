@@ -2,7 +2,7 @@
 
 
 # both of the following lines should give an erro
-# Check LF : (t:texp) -> istype t -> oexp.
+# Verify LF (t:texp) -> istype t -> oexp.
 # Axiom foo { ⊢ T U Type } [ T ≡ U ] ⇒ { ⊢ o : T } ⊢ o : U.
 
 Axiom foo1 { ⊢ T U Type } [ T ≡ U ] { ⊢ o : T } ⊢ o : U;;   # then fix cast this way

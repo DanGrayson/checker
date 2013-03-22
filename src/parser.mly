@@ -21,13 +21,14 @@ open Error
 %token <string> CONSTANT STRING NAME NAME_W
 
 %token
+
   LeftParen RightParen RightBracket LeftBracket Comma Colon Star Arrow
   ArrowFromBar Equal Underscore Axiom GreaterEqual Greater LessEqual Less
   Semicolon Ulevel Kumax Type Pi Lambda Sigma Check Show End Variable Alpha EOF
   Universes Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_FST K_SND Times
-  Turnstile DoubleArrow ColonColonEqual ColonEqual Theorem
-  LeftBrace RightBrace TurnstileDouble ColonColon Include Clear EqualEqual
-  TTS Back BackTo Mode Period EndOfProofStepMarker
+  Turnstile DoubleArrow ColonColonEqual ColonEqual Theorem LeftBrace RightBrace
+  TurnstileDouble ColonColon Include Clear EqualEqual TTS Back BackTo Mode
+  Period EndOfProofStepMarker Verify
 
 (* precedences, lowest first *)
 
@@ -253,12 +254,9 @@ unmarked_command:
     | Check LF e= expr EndOfProofStepMarker
 	{ Toplevel.CheckLF e }
 
-    | Check TS Colon t= ts_judgment EndOfProofStepMarker
-    | Check LF Colon t= judgment EndOfProofStepMarker
+    | Verify t= ts_judgment EndOfProofStepMarker
+    | Verify LF t= judgment EndOfProofStepMarker
 	{ Toplevel.CheckLFtype t }
-
-    | Check TTS? Colon t= ts_judgment EndOfProofStepMarker
-	{ Toplevel.CheckWitness t }
 
     | Check Universes EndOfProofStepMarker
 	{ Toplevel.CheckUniverses }
@@ -272,6 +270,11 @@ unmarked_command:
 	{
 	  let pos = Position($startpos, $endpos) in
 	  Toplevel.Theorem (pos, name, deriv, thm) }
+
+    | Theorem name= NAME thm= ts_judgment EndOfProofStepMarker
+	{
+	  let pos = Position($startpos, $endpos) in
+	  Toplevel.Theorem (pos, name, (pos,default_tactic), thm) }
 
     | Include filename= STRING EndOfProofStepMarker
 	{ Toplevel.Include filename }
@@ -594,7 +597,7 @@ unmarked_ts_expr:
 
 (*
   Local Variables:
-  compile-command: "make -C .. src/grammar.cmo "
+  compile-command: "make -C .. src/parser.cmo "
   End:
  *)
 

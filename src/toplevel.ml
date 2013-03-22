@@ -5,7 +5,6 @@ open Typesystem
 type command' =
   | Axiom of (int list) option * identifier * judgment
   | CheckLF of expr
-  | CheckWitness of judgment
   | CheckLFtype of judgment
   | CheckTS of expr
   | UVariable of (string marked) list * (expr * expr) list

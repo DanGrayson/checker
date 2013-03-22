@@ -218,6 +218,8 @@ let unpack_lambda' o =
 
 let apply_2 shift f x y = Substitute.apply_args (rel_shift_expr shift f) (x ** y ** END)
 
+let witnessToken = nowhere 3 (BASIC(V (Var (id "witness-token")),END))
+
 let rec check_istype env t =
   match unmark t with
   | BASIC(V (Var i), END) -> if not (isid i && is_tts_type_variable env (id_to_name i)) then err env (get_pos t) "variable not declared as a type"
@@ -235,9 +237,6 @@ let rec check_istype env t =
       | T_El' ->
 	  let o,p = args2 args in
 	  check_hastype env uuu o p
-      | T_Proof ->
-	  let p,o,t = args3 args in
-	  check_hastype env t o p
       | _ -> err env (get_pos t) "invalid type, or not implemented yet.")
   | _ -> err env (get_pos t) ("invalid type, or not implemented yet: " ^ ts_expr_to_string env t)
 
@@ -509,12 +508,15 @@ let rec type_check (surr:surrounding) (env:environment) (e0:expr) (t:judgment) :
   (* assume t has been verified to be a type *)
   (* see figure 13, page 716 [EEST] *)
   (* we modify the algorithm to return a possibly modified expression e, with holes filled in by tactics *)
+  if e0 == witnessToken then witnessToken else
   let pos = get_pos t in
   match unmark e0, unmark t with
   | BASIC(TACTIC tac,args), _ -> (
       let pos = get_pos e0 in
       match show_tactic_result env tac (apply_tactic surr env pos t args tac) with
-      | TacticSuccess suggestion -> type_check surr env suggestion t
+      | TacticSuccess suggestion -> 
+	  if suggestion == witnessToken then suggestion
+	  else type_check surr env suggestion t
       | TacticFailure -> (* we may want the tactic itself to raise the error message, when tactics are chained *)
           raise (TypeCheckingFailure (env, surr, [
                                pos, "tactic failed: "^ expr_to_string env e0;
@@ -695,6 +697,7 @@ let term_normalization_ctr = new_counter()
 
 let rec term_normalization (env:environment) (x:expr) (t:judgment) : expr =
   (* see figure 9 page 696 [EEST] *)
+  if x == witnessToken then x else
   let (pos,t0) = t in
   match t0 with
   | J_Pi(v,a,b) ->

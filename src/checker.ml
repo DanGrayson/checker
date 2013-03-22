@@ -87,8 +87,9 @@ let add_oVars env ovars t =
   List.fold_left
     (fun env (pos,o) -> 
       let env = global_tts_declare_object env pos o t in
-      let env = global_lf_bind env pos (id o) oexp in
-      let env = global_lf_bind env pos (id (o ^ "$hastype")) (hastype (var_to_expr_bare (Var (id o))) t) in
+      let env = global_lf_bind env pos (id  o) oexp in
+      let env = global_lf_bind env pos (idw o) wexp in
+      let env = global_lf_bind env pos (id  (o ^ "$hastype")) (hastype (var_to_expr_bare (Var (id o))) t) in
       env 
     ) env ovars
 
@@ -120,7 +121,17 @@ let defCommand env defs =
 	if show_definitions then printf "       %s : %a [normalized]\n%!" name  _t (env,tp'');
 	let _ = type_validity [] env tp'' in ();
        );
-      let env = def_bind (id name) pos tm' tp' env in
+      let env = (
+	if tm' == witnessToken then (
+	  match unmark tp' with
+	  | J_Basic(J_witnessed_hastype,[t;o;w]) -> (
+	      let env = def_bind (id  name) pos o oexp env in
+	      let env = def_bind (idw name) pos w wexp env in
+	      let env = global_tts_declare_object env pos name t in (* maybe add the value here, too ? *)
+	      env)
+	  | _ -> raise Internal
+	  )
+	else def_bind (id name) pos tm' tp' env) in
       if !proof_general_mode then printf "%s is defined\n%!" name;
       env
     )
@@ -156,14 +167,6 @@ let checkLFtypeCommand env t =
       printf "okay\n%!";
       )
    )
-
-let checkWitnessedJudgmentCommand env t =
-  printf "Check      : %a\n%!" _t (env,t);
-  let t' = Lfcheck.type_validity [] env t in
-  if not (type_equiv t t') then
-    printf "           : %a [after tactics]\n%!" _t (env,t');
-  Lfcheck.check env t';
-  printf "           : okay\n%!"
 
 let checkTSCommand env x =
   printf "Check      = %a\n%!" _ts (env,x);
@@ -228,7 +231,6 @@ let rec process_command env lexbuf =
     | Toplevel.Axiom (num,name,t) -> lf_axiomCommand env pos name t
     | Toplevel.CheckLF x -> checkLFCommand env pos x; env
     | Toplevel.CheckLFtype x -> checkLFtypeCommand env x; env
-    | Toplevel.CheckWitness x -> checkWitnessedJudgmentCommand env x; env
     | Toplevel.CheckTS x -> checkTSCommand env x; env
     | Toplevel.Alpha (x,y) -> alphaCommand env (x,y); env
     | Toplevel.Theorem (pos,name,deriv,thm) -> defCommand env [ name, pos, deriv, thm ]

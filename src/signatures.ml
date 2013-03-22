@@ -51,7 +51,6 @@ let thead_to_signature = function
   | T_Empty -> texp
   | T_IP -> texp @-> oexp @-> texp1 @-> texp2 @-> oexp3 @-> texp
   | T_Id -> texp @-> oexp @-> oexp @-> texp
-  | T_Proof -> wexp @-> oexp @-> texp @-> texp
 
 let ohead_to_signature = function
   | O_u -> uexp @-> oexp
