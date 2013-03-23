@@ -93,7 +93,7 @@ and subst_type shift subs t =
 
 let rec subst_kind shift subs k =
    match k with
-   | K_primitive_judgment | K_ulevel | K_term | K_derivation_tree_judgment | K_witnessed_judgment -> k
+   | K_basic_judgment | K_ulevel | K_syntactic_judgment | K_derived_judgment | K_witnessed_judgment -> k
    | K_Pi(v,a,b) ->
        let a' = subst_type shift subs a in
        let shift = shift + 1 in

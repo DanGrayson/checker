@@ -115,15 +115,19 @@ let ( @@-> ) a b = K_Pi(arrow_good_var_name a, a, b)
 
 let jhead_to_kind = function
   | J_uexp -> K_ulevel
-  | J_wexp | J_texp | J_oexp -> K_term
-  | J_istype -> texp @@-> K_primitive_judgment
-  | J_hastype -> oexp @@-> texp @@-> K_derivation_tree_judgment
-  | J_ulevel_equality -> uexp @@-> uexp @@-> K_derivation_tree_judgment
-  | J_type_equality -> texp @@-> texp @@-> K_derivation_tree_judgment
-  | J_object_equality -> oexp @@-> oexp @@-> texp @@-> K_derivation_tree_judgment
-  | J_type_uequality -> texp @@-> texp @@-> K_primitive_judgment
-  | J_object_uequality -> oexp @@-> oexp @@-> texp @@-> K_primitive_judgment
-  | J_istype_witnessed_inside -> texp @@-> K_witnessed_judgment
+  | J_ulevel_equality -> uexp @@-> uexp @@-> K_basic_judgment
+
+  | J_texp | J_oexp | J_wexp -> K_syntactic_judgment
+
+  | J_type_uequality -> texp @@-> texp @@-> K_basic_judgment
+  | J_object_uequality -> oexp @@-> oexp @@-> texp @@-> K_basic_judgment
+
+  | J_istype -> texp @@-> K_derived_judgment
+  | J_hastype -> oexp @@-> texp @@-> K_derived_judgment
+  | J_type_equality -> texp @@-> texp @@-> K_derived_judgment
+  | J_object_equality -> oexp @@-> oexp @@-> texp @@-> K_derived_judgment
+
+  | J_witnessed_istype -> texp @@-> K_witnessed_judgment
   | J_witnessed_hastype -> texp @@-> oexp @@-> wexp @@-> K_witnessed_judgment
   | J_witnessed_type_equality -> texp @@-> texp @@-> wexp @@-> K_witnessed_judgment
   | J_witnessed_object_equality -> texp @@-> oexp @@-> oexp @@-> wexp @@-> K_witnessed_judgment

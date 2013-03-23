@@ -326,7 +326,7 @@ and check_witnessed_object_equality env t o o' p =
 let check (env:environment) (t:judgment) =
   try
     match unmark t with
-    | J_Basic(J_istype_witnessed_inside,[t]) -> check_istype env t
+    | J_Basic(J_witnessed_istype,[t]) -> check_istype env t
     | J_Basic(J_witnessed_hastype,[t;o;w]) -> check_hastype env t o w
     | J_Basic(J_witnessed_type_equality,[t;t';w]) -> check_type_equality env t t' w
     | J_Basic(J_witnessed_object_equality,[t;o;o';w]) -> check_witnessed_object_equality env t o o' w
@@ -340,7 +340,7 @@ exception IncomparableKinds of kind * kind
 
 let min_kind k l =
   match compare_kinds k l with
-  | K_equal | K_less -> k
+  | K_less_equal -> k
   | K_greater -> l
   | K_incomparable -> raise (IncomparableKinds (k,l))
 
@@ -460,7 +460,7 @@ and type_equivalence (env:environment) (t:judgment) (u:judgment) : unit =
           | K_Pi(v,t,k), x :: args, x' :: args' ->
               term_equivalence env x x' t;
               repeat (subst_kind x k) args args'
-          | ( K_term | K_derivation_tree_judgment | K_primitive_judgment ), [], [] -> ()
+          | ( K_syntactic_judgment | K_derived_judgment | K_basic_judgment ), [], [] -> ()
           | _ -> (trap(); raise Internal)
         in repeat k args args'
     | _ -> raise TypeEquivalenceFailure
@@ -627,7 +627,7 @@ let rec check_less_equal t u =
 	    (
 	     match compare_kinds k l with
 	     | K_incomparable | K_greater -> raise (InsubordinateKinds(k,l))
-	     | K_equal | K_less -> ())
+	     | K_less_equal -> ())
 	| J_Sigma(v,t1,t2) -> check_less_equal t1 u; check_less_equal t2 u
       in
       repeat t
@@ -666,9 +666,9 @@ let type_validity (surr:surrounding) (env:environment) (t:judgment) : judgment =
           let kind = jhead_to_kind head in
           let rec repeat i env kind args_passed (args:expr list) =
             match kind, args with
-            | ( K_ulevel | K_primitive_judgment | K_term | K_derivation_tree_judgment | K_witnessed_judgment ), [] 
+            | ( K_ulevel | K_basic_judgment | K_syntactic_judgment | K_derived_judgment | K_witnessed_judgment ), [] 
 	      -> List.rev args_passed
-            | ( K_ulevel | K_primitive_judgment | K_term | K_derivation_tree_judgment | K_witnessed_judgment ), x :: args 
+            | ( K_ulevel | K_basic_judgment | K_syntactic_judgment | K_derived_judgment | K_witnessed_judgment ), x :: args 
 	      -> err env pos "at least one argument too many";
             | K_Pi(v,a,kind'), x :: args ->
                 let x' = type_check ((env,S_type_family_args(i,args_passed),None,Some t0) :: surr) env x a in
@@ -799,8 +799,8 @@ let rec type_normalization (env:environment) (t:judgment) : judgment =
       let args =
         let rec repeat env kind (args:expr list) =
           match kind, args with
-          | ( K_ulevel | K_primitive_judgment | K_term | K_derivation_tree_judgment | K_witnessed_judgment ), [] -> []
-          | ( K_ulevel | K_primitive_judgment | K_term | K_derivation_tree_judgment | K_witnessed_judgment ), x :: args -> err env pos "too many arguments"
+          | ( K_ulevel | K_basic_judgment | K_syntactic_judgment | K_derived_judgment | K_witnessed_judgment ), [] -> []
+          | ( K_ulevel | K_basic_judgment | K_syntactic_judgment | K_derived_judgment | K_witnessed_judgment ), x :: args -> err env pos "too many arguments"
           | K_Pi(v,a,kind'), x :: args ->
               term_normalization env x a ::
               repeat env (subst_kind x kind') args

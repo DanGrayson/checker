@@ -6,10 +6,10 @@ include Judgments
 
 type kind =
   | K_ulevel
-  | K_term
+  | K_syntactic_judgment
   | K_witnessed_judgment
-  | K_primitive_judgment
-  | K_derivation_tree_judgment
+  | K_basic_judgment
+  | K_derived_judgment
   | K_Pi of identifier * judgment * kind
 
 (*

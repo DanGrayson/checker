@@ -39,7 +39,7 @@ and names_in_type (pos,t) = match t with
   | J_Basic(hd,args) -> names_in_list names_in_expr args
 
 let rec names_in_kind = function
-  | K_primitive_judgment | K_ulevel | K_term | K_witnessed_judgment | K_derivation_tree_judgment -> []
+  | K_basic_judgment | K_ulevel | K_syntactic_judgment | K_witnessed_judgment | K_derived_judgment -> []
   | K_Pi(v,t,k) -> names_in_type t @ names_in_kind k
 
 (** Whether [Rel 0] occurs as a bound variable in an expression. *)
@@ -62,7 +62,7 @@ let rec rel_occurs_in_type shift (pos,t) = match t with
 
 let rec rel_occurs_in_kind shift = function
   | K_Pi(v,t,k) -> rel_occurs_in_type shift t || rel_occurs_in_kind (shift+1) k
-  | K_primitive_judgment | K_ulevel | K_term | K_witnessed_judgment | K_derivation_tree_judgment -> false
+  | K_basic_judgment | K_ulevel | K_syntactic_judgment | K_witnessed_judgment | K_derived_judgment -> false
 
 (** Whether [x] occurs as a name of a free variable in an expression.  Bound variables will get renamed, if in use. *)
 
@@ -84,7 +84,7 @@ let rec occurs_in_type w (pos,t) = match t with
 
 let rec occurs_in_kind w = function
   | K_Pi(v,t,k) -> occurs_in_type w t || occurs_in_kind w k
-  | K_primitive_judgment | K_ulevel | K_term | K_witnessed_judgment | K_derivation_tree_judgment -> false
+  | K_basic_judgment | K_ulevel | K_syntactic_judgment | K_witnessed_judgment | K_derived_judgment -> false
 
 (** Printing of LF and TS expressions. *)
 
@@ -283,7 +283,7 @@ and judgment_to_string_with_subs subs (_,t) : smart_string = match t with
       list_application_to_string (mark_top <<- judgment_head_to_string) (expr_to_string_with_subs subs) (hd,args)
 
 let rec kind_to_string_with_subs subs = function
-  | ( K_ulevel | K_term | K_derivation_tree_judgment | K_primitive_judgment | K_witnessed_judgment ) as k -> top_prec, List.assoc k kind_constant_table
+  | ( K_ulevel | K_syntactic_judgment | K_derived_judgment | K_basic_judgment | K_witnessed_judgment ) as k -> top_prec, List.assoc k kind_constant_table
   | K_Pi(v,t,k) ->
       let used = rel_occurs_in_kind 0 k in
       let t = judgment_to_string_with_subs subs t in

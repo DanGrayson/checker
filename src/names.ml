@@ -65,7 +65,7 @@ let judgment_constant_table = [
   J_object_uequality, "ouequal";
   J_wexp, "wexp";
 
-  J_istype_witnessed_inside, "istype_witnessed_inside";
+  J_witnessed_istype, "witnessed_istype";
   J_witnessed_hastype, "witnessed_hastype";
   J_witnessed_type_equality, "witnessed_type_equality";
   J_witnessed_object_equality, "witnessed_object_equality";
@@ -73,10 +73,10 @@ let judgment_constant_table = [
 
 let kind_constant_table = [
   K_ulevel, "ulevel";
-  K_term, "term";
+  K_syntactic_judgment, "term";
+  K_basic_judgment, "basic_judgment";
+  K_derived_judgment, "derived_judgment";
   K_witnessed_judgment, "witnessed_judgment";
-  K_derivation_tree_judgment, "derivation_tree_judgment";
-  K_primitive_judgment, "primitive_judgment";
 ]
 
 let judgment_head_to_string h = List.assoc h judgment_constant_table

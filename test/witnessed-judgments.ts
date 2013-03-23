@@ -8,9 +8,9 @@ Check Judgment [ T -> @U Type ];;
 
 Check Judgment { |- B Type } [ B -> @U Type ];;
 
-Check Judgment LF (B:texp) ⟶ istype_witnessed_inside B ⟶ istype_witnessed_inside (@Pi B (_ ⟼ _ ⟼ @U));;
+Check Judgment LF (B:texp) ⟶ witnessed_istype B ⟶ witnessed_istype (@Pi B (_ ⟼ _ ⟼ @U));;
 
-Check Judgment LF (B:texp) ⟶ istype_witnessed_inside (@Pi B (_ ⟼ _ ⟼ @U));; # this succeeds because it's valid as an LF type, and there are no holes
+Check Judgment LF (B:texp) ⟶ witnessed_istype (@Pi B (_ ⟼ _ ⟼ @U));; # this succeeds because it's valid as an LF type, and there are no holes
 
 Check Judgment [ _ : f : T -> @U ];;
 

@@ -8,7 +8,7 @@ type judgment_head =
   (* syntactic signatures: *)
   | J_uexp | J_texp | J_oexp | J_wexp
   (* witnessed judgments of TTS: *)
-  | J_istype_witnessed_inside
+  | J_witnessed_istype
   | J_witnessed_hastype
   | J_witnessed_type_equality
   | J_witnessed_object_equality
@@ -44,7 +44,7 @@ let type_equality t t' = J_type_equality @@ [t;t']	       (* t = t' *)
 let object_uequality o o' t = J_object_uequality @@ [o;o';t]   (* o ~ o' : t *)
 let object_equality o o' t = J_object_equality @@ [o;o';t]     (* o = o' : t *)
 
-let istype_embedded_witnesses t = J_istype_witnessed_inside @@ [t] (* t Type *)
+let istype_embedded_witnesses t = J_witnessed_istype @@ [t] (* t Type *)
 let istype_embedded_witnesses_v pos t = let t = id_to_expr pos t in istype_embedded_witnesses t
 let witnessed_hastype t o p = J_witnessed_hastype @@ [t;o;p]   (* p : o : t *)
 let witnessed_hastype_v t o pos p = let p = id_to_expr pos p in witnessed_hastype t o p
