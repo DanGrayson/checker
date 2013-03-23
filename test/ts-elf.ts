@@ -55,7 +55,7 @@ Theorem LF foo' : (T1:texp) ⟶ (T2:texp) ⟶ (T3:texp) ⟶ (F:oexp) ⟶ (O:oexp
       :=
       T1 ⟼ T2 ⟼ T3 ⟼ F ⟼ O ⟼ Bad ⟼ dT1 ⟼ dT2 ⟼ dO ⟼ dF ⟼ dBad ⟼
       (ev_hastype T2 (_ ⟼ T3) F O
-      	  _ (eq_hastype T2 T1 O (t_eq_empty_eta Bad T1 T2 _ _ _) _));;
+      	  ? (eq_hastype T2 T1 O (t_eq_empty_eta Bad T1 T2 ? ? ?) ?));;
 
 Definition LF arrow : (T1:texp) ⟶ (T2:texp) ⟶ texp := T1 ⟼ T2 ⟼ (@Pi T1 (_ ⟼ T2));;
 
@@ -104,8 +104,8 @@ Theorem LF compose :
 		      (t ⟼ (ev1 g (ev1 f t T U) U V))
 		      (t ⟼ dt ⟼ (ev_hastype1 U V g
 		      			(ev1 f t T U)
-					_
-					(ev_hastype1 T U f t _ _)))))))));;
+					?
+					(ev_hastype1 T U f t ? ?)))))))));;
 
 #   Local Variables:
 #   compile-command: "make -C .. ts-elf "

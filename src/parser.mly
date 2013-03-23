@@ -23,12 +23,12 @@ open Error
 %token
 
   LeftParen RightParen RightBracket LeftBracket Comma Colon Star Arrow
-  ArrowFromBar Equal Underscore Axiom GreaterEqual Greater LessEqual Less
+  ArrowFromBar Equal QuestionMark Axiom GreaterEqual Greater LessEqual Less
   Semicolon Ulevel Kumax Type Pi Lambda Sigma Check Show End Variable Alpha EOF
   Universes Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_FST K_SND Times
-  Turnstile DoubleArrow ColonColonEqual ColonEqual Theorem LeftBrace RightBrace
-  TurnstileDouble ColonColon Include Clear EqualEqual TTS Back BackTo Mode
-  Period EndOfProofStepMarker Judgment
+  Turnstile DoubleArrow ColonColonEqual ColonEqual Theorem Goal LeftBrace
+  RightBrace TurnstileDouble ColonColon Include Clear EqualEqual TTS Back
+  BackTo Mode Period EndOfProofStepMarker Judgment
 
 (* precedences, lowest first *)
 
@@ -65,8 +65,7 @@ open Error
   (* These are the tokens that can begin a TS-expression, and
      thus might be involved in the decision about reducing an application: *)
 
-  Underscore LeftParen Kumax CONSTANT Lambda Sigma Pi Dollar NAME
-  NAME_W
+  QuestionMark LeftParen Kumax CONSTANT Lambda Sigma Pi Dollar NAME NAME_W
 
 %nonassoc
 
@@ -167,8 +166,8 @@ unmarked_expr:
     | LeftParen a= expr Comma b= expr RightParen
 	{ PAIR(a, b) }
 
-    | Lambda v= marked_identifier_or_unused Comma body= expr
-    | v= marked_identifier_or_unused ArrowFromBar body= expr
+    | Lambda v= marked_identifier Comma body= expr
+    | v= marked_identifier ArrowFromBar body= expr
 	{ unmark (lambda1 (unmark v) body) }
 
     | empty_hole
@@ -269,12 +268,18 @@ unmarked_command:
     | Theorem name= NAME thm= ts_judgment ColonEqual deriv= template_ts_expr EndOfProofStepMarker
 	{
 	  let pos = Position($startpos, $endpos) in
-	  Toplevel.Theorem (pos, name, deriv, thm) }
+	  Toplevel.Theorem (pos, Some name, deriv, thm) }
+
+    | Goal LF thm= judgment EndOfProofStepMarker
+    | Goal thm= ts_judgment EndOfProofStepMarker
+	{
+	  let pos = Position($startpos, $endpos) in
+	  Toplevel.Theorem (pos, None, (pos,default_tactic), thm) }
 
     | Theorem name= NAME thm= ts_judgment EndOfProofStepMarker
 	{
 	  let pos = Position($startpos, $endpos) in
-	  Toplevel.Theorem (pos, name, (pos,default_tactic), thm) }
+	  Toplevel.Theorem (pos, Some name, (pos,default_tactic), thm) }
 
     | Include filename= STRING EndOfProofStepMarker
 	{ Toplevel.Include filename }
@@ -299,16 +304,6 @@ unmarked_command:
 
     | End EndOfProofStepMarker
 	{ Toplevel.End }
-
-marked_identifier:
-
-    | identifier
-	{ Position($startpos, $endpos), $1 }
-
-marked_name:
-
-    | NAME
-	{ Position($startpos, $endpos), $1 }
 
 uEquation:
 
@@ -474,7 +469,7 @@ context:
 
     | c= terminated( separated_list( Comma,
 			  separated_pair(
-			       marked_identifier_or_unused,
+			       marked_identifier,
 			       Colon, ts_expr)),
 		     Turnstile)
 	{c}
@@ -484,18 +479,22 @@ tsterm_head:
     | name= CONSTANT
 	{ let pos = Position($startpos, $endpos) in try lookup_label pos name with Not_found -> $syntaxerror }
 
-empty_hole: Underscore { default_tactic }
-
-unused_identifier: Underscore { id "_" }
+empty_hole: QuestionMark { default_tactic }
 
 identifier:
 
     | NAME { id $1 }
     | NAME_W { idw $1 }
 
-identifier_or_unused: identifier {$1} | unused_identifier {$1}
+marked_name:
 
-marked_identifier_or_unused: identifier_or_unused { Position($startpos, $endpos), $1 }
+    | NAME
+	{ Position($startpos, $endpos), $1 }
+
+marked_identifier: 
+
+    | identifier
+	{ Position($startpos, $endpos), $1 }
 
 ts_expr:
 
@@ -520,7 +519,7 @@ template_ts_expr:
 
     | ts_expr { $1 }
 
-    | v= option(marked_identifier_or_unused) Period body= template_ts_expr
+    | v= option(marked_identifier) Period body= template_ts_expr
 	{ 
 	  Position($startpos, $endpos),
 	  let v = match v with Some v -> unmark v | None -> id "_" in

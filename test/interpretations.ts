@@ -6,7 +6,7 @@ Include "rules/TS2.ts";;
 
 Definition pi1 { ⊢ T U Type } ⊢ @∏[T,_.U] Type ::=
 
-   T ⟼ U ⟼ (_, T' ⟼ U' ⟼ (∏_istype T (_ ⟼ U) SND T' (_ ⟼ _ ⟼ U')));;
+   T ⟼ U ⟼ (?, T' ⟼ U' ⟼ (∏_istype T (_ ⟼ U) SND T' (_ ⟼ _ ⟼ U')));;
 
 Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ @λ[T,o] : @∏[T,_.U] ::=
 
@@ -50,7 +50,7 @@ Theorem compose { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
    # as linear as in the intrinsic encoding;;
 
    # T ⟼ U ⟼ V ⟼
-   # (_,
+   # (?,
    # dT ⟼ dU ⟼ dV ⟼
    # (lambda1 _ _ _ SND
    # 	   (pi1 _ _ SND dT dU)
@@ -78,19 +78,19 @@ Theorem compose' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
 	 (f ⟼ (λ_hastype (pi1 U V FST) (_ ⟼ (pi1 T V FST))
 		   (g ⟼ (λ_hastype T (_ ⟼ V)
 			       (t ⟼ (ev1 U V g (ev1 T U f t FST) FST)) FST)) FST)) SND
-	(pi1 T U SND _ _)
-	(_ ⟼ _ ⟼ (pi1 (pi1 U V FST) (pi1 T V FST) SND (pi1 U V SND _ _) (pi1 T V SND _ _)))
+	(pi1 T U SND ? ?)
+	(_ ⟼ _ ⟼ (pi1 (pi1 U V FST) (pi1 T V FST) SND (pi1 U V SND ? ?) (pi1 T V SND ? ?)))
 	(f ⟼ _ ⟼ (λ_hastype
 	       (pi1 U V FST)
 	       (_ ⟼ (pi1 T V FST))
 	       (g ⟼ (λ_hastype T (_ ⟼ V)
 			   (t ⟼ (ev1 U V g (ev1 T U f t FST) FST)) FST)) SND
-				(pi1 U V SND _ _)
-				(_ ⟼ _ ⟼ (∏_istype T (_ ⟼ V) SND _ _))
+				(pi1 U V SND ? ?)
+				(_ ⟼ _ ⟼ (∏_istype T (_ ⟼ V) SND ? ?))
 	       (g ⟼ _ ⟼ (λ_hastype T (_ ⟼ V)
-			      (t ⟼ (ev1 U V g (ev1 T U f t FST) FST)) SND _ _
+			      (t ⟼ (ev1 U V g (ev1 T U f t FST) FST)) SND ? ?
 			       (t ⟼ _ ⟼ (ev1 U V g (ev1 T U f t FST) SND
-					      _ _ _ (ev1 T U f t SND _ _ _ _)))))))));;
+					      ? ? ? (ev1 T U f t SND ? ? ? ?)))))))));;
 
   # ev1 : (T:texp) ⟶
   #       (U:texp) ⟶
@@ -104,7 +104,7 @@ Theorem compose' { |- T U V Type } : (T->U) -> (U->V) -> (T->V) ::=
   #         hastype x U
 
 Definition barbara { |- T U V Type } ⊢ (T->U) -> (U->V) -> (T->V) Type ::=
-    T ⟼ U ⟼ V ⟼ (_, $tscheck );;
+    T ⟼ U ⟼ V ⟼ (?, $tscheck );;
 
     # working on $tscheck
 

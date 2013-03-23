@@ -17,7 +17,7 @@
    "pair", Kpair; "FST", K_FST; "SND", K_SND; "Clear", Clear; "Universes", Universes;
    "LF", LF; "TS", TS; "TTS", TTS; "Check", Check; "Axiom", Axiom; "Alpha", Alpha; "Mode", Mode;
    "Variable", Variable; "End", End; "Include", Include; "Clear", Clear; "Judgment", Judgment;
-   "Show", Show; "Theorem", Theorem; "Definition", Theorem; "Lemma", Theorem;
+   "Show", Show; "Theorem", Theorem; "Definition", Theorem; "Lemma", Theorem; "Goal", Goal;
    "Proposition", Theorem; "Corollary", Theorem; "Back", Back; "BackTo", BackTo
  ]
 
@@ -69,9 +69,10 @@ let utf8_4 = utf8_first_of_4 utf8_next utf8_next utf8_next
 let utf8_char_nonascii = utf8_2 | utf8_3 | utf8_4
 let utf8_char = utf8_1 | utf8_2 | utf8_3 | utf8_4
 let utf8_word = utf8_char +
-let first = [ 'A'-'Z' 'a'-'z' ] | utf8_char_nonascii
-let after = [ 'A'-'Z' 'a'-'z' '0'-'9' '\'' ] | utf8_char_nonascii
-let ident = first ( after | '_' first ) *
+let first = [ 'A'-'Z' 'a'-'z' '_' ] | utf8_char_nonascii
+let middle = [ 'A'-'Z' 'a'-'z' '_' '0'-'9' ] | utf8_char_nonascii
+let last = [ '\'' ]
+let ident = first middle* last*
 
 rule expr_tokens = parse
 
@@ -94,7 +95,7 @@ rule expr_tokens = parse
   | ">="  { GreaterEqual }
   | '>' { Greater }
   | "<="  { LessEqual }
-  | '_' { Underscore }
+  | '?' { QuestionMark }
   | '<' { Less }
   | ";;" { EndOfProofStepMarker }
   | "."  { Period }

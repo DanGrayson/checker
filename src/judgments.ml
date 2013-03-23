@@ -5,23 +5,28 @@
 include Expressions
 
 type judgment_head =
-  (* syntactic signatures: *)
+
+  (* syntactic judgments *)
   | J_uexp | J_texp | J_oexp | J_wexp
-  (* witnessed judgments of TTS: *)
-  | J_witnessed_istype
-  | J_witnessed_hastype
-  | J_witnessed_type_equality
-  | J_witnessed_object_equality
-  (* derivation tree judgments of TS: *)
+
+  (* u-level comparison judgment, relative to current constraints *)
+  | J_ulevel_equality
+
+  (* expression comparison judgment, ignoring inessential subterms (written with ~) *)
+  | J_type_uequality
+  | J_object_uequality
+
+  (* derivation tree judgments of TS *)
   | J_istype
   | J_hastype
   | J_type_equality
   | J_object_equality
-  (* u-level comparison judgment, relative to current constraints *)
-  | J_ulevel_equality
-  (* expression comparison judgment, ignoring inessential subterms, written with ~ *)
-  | J_type_uequality
-  | J_object_uequality
+
+  (* witnessed judgments of HTS (objects can't infer their type) *)
+  | J_witnessed_istype
+  | J_witnessed_hastype
+  | J_witnessed_type_equality
+  | J_witnessed_object_equality
 
 type judgment = bare_judgment marked
 and bare_judgment =

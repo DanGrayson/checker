@@ -103,6 +103,7 @@ let lf_axiomCommand env pos name t =
 let defCommand env defs =
   List.fold_left
     (fun env (name, pos, tm, tp) ->
+      let name = match name with None -> "" | Some name -> name in
       if show_definitions then printf "Define %s = %a\n%!" name  _e (env,tm) (* else printf "Define %a\n%!" name *);
       if show_definitions then printf "       %s : %a\n%!" name  _t (env,tp);
       let tp' = type_validity [] env tp in
@@ -121,17 +122,15 @@ let defCommand env defs =
 	if show_definitions then printf "       %s : %a [normalized]\n%!" name  _t (env,tp'');
 	let _ = type_validity [] env tp'' in ();
        );
-      let env = (
-	if tm' == witnessToken then (
-	  match unmark tp' with
-	  | J_Basic(J_witnessed_hastype,[t;o;w]) -> (
-	      let env = def_bind (id  name) pos o oexp env in
-	      let env = def_bind (idw name) pos w wexp env in
-	      let env = global_tts_declare_object env pos name t in (* maybe add the value here, too ? *)
-	      env)
-	  | _ -> raise Internal
-	  )
-	else def_bind (id name) pos tm' tp' env) in
+      let env =
+	if name = "" then env else
+	match unmark tp' with
+	| J_Basic(J_witnessed_hastype,[t;o;w]) ->
+	    let env = def_bind (id  name) pos o oexp env in
+	    let env = def_bind (idw name) pos w wexp env in
+	    let env = global_tts_declare_object env pos name t in
+	    env
+	| _ -> def_bind (id name) pos tm' tp' env in
       if !proof_general_mode then printf "%s is defined\n%!" name;
       env
     )

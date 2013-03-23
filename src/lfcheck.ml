@@ -218,8 +218,6 @@ let unpack_lambda' o =
 
 let apply_2 shift f x y = Substitute.apply_args (rel_shift_expr shift f) (x ** y ** END)
 
-let witnessToken = nowhere 3 (BASIC(V (Var (id "witness-token")),END))
-
 let rec check_istype env t =
   if !debug_mode then printf "check_istype\n t = %a\n%!" _e (env,t);
   match unmark t with
@@ -249,7 +247,7 @@ and check_hastype env t o p =
       let t' =
 	try tts_fetch_type env p'
 	with Not_found -> err env (get_pos p) "variable not in context" in
-      if not (compare_var_to_expr o' o) then err env (get_pos o) ("expected variable " ^ vartostring o');
+      if not (compare_var_to_expr o' o) then err env (get_pos p) ("variable " ^ vartostring p' ^ " does not serve as witness for " ^ expr_to_string env o);
       if not (term_equiv t t') then mismatch_term_tstype_tstype env o t' t)
   | BASIC(W wh, pargs) -> (
       match wh with
@@ -270,7 +268,7 @@ and check_hastype env t o p =
 	  check_hastype env t2 o p
       | W_wconv | W_wconveq | W_weleq | W_wpi1 | W_wpi2 | W_wl1 | W_wl2 | W_wevt1 | W_wevt2
       | W_wevf | W_wevo | W_wbeta | W_weta | W_Wsymm | W_Wtrans | W_wrefl | W_wsymm | W_wtrans
-      | W_Wrefl
+      | W_Wrefl | W_proof_token
 	-> raise FalseWitness
      )
   | _ ->
@@ -280,6 +278,7 @@ and check_hastype env t o p =
 	Not_found -> err env (get_pos p) ("expected a witness expression: " ^ expr_to_string env p)
 
 and check_type_equality env t t' p =
+  if !debug_mode then printf "check_type_equality\n t = %a\n t' = %a\n p = %a\n%!" _e (env,t) _e (env,t') _e (env,p);
   match unmark p with
   | BASIC(W wh, pargs) -> (
       match wh with
@@ -292,13 +291,14 @@ and check_type_equality env t t' p =
 	  check_hastype env uuu o' p'
       | W_wrefl | W_Wrefl | W_Wsymm | W_Wtrans | W_wsymm | W_wtrans | W_wconv
       | W_wconveq | W_wpi1 | W_wpi2 | W_wlam | W_wl1 | W_wl2 | W_wev
-      | W_wevt1 | W_wevt2 | W_wevf | W_wevo | W_wbeta | W_weta
+      | W_wevt1 | W_wevt2 | W_wevf | W_wevo | W_wbeta | W_weta | W_proof_token
 	-> raise FalseWitness
      )
   | _ -> err env (get_pos p) ("expected a witness expression :  " ^ expr_to_string env p)
 
 
 and check_witnessed_object_equality env t o o' p =
+  if !debug_mode then printf "check_witnessed_object_equality\n t = %a\n o = %a\n o' = %a\n p = %a\n%!" _e (env,t) _e (env,o) _e (env,o') _e (env,p);
   match unmark p with
   | BASIC(W wh, pargs) -> (
       match wh with
@@ -509,15 +509,13 @@ let rec type_check (surr:surrounding) (env:environment) (e0:expr) (t:judgment) :
   (* assume t has been verified to be a type *)
   (* see figure 13, page 716 [EEST] *)
   (* we modify the algorithm to return a possibly modified expression e, with holes filled in by tactics *)
-  if e0 == witnessToken then witnessToken else
   let pos = get_pos t in
   match unmark e0, unmark t with
   | BASIC(TACTIC tac,args), _ -> (
       let pos = get_pos e0 in
       match show_tactic_result env tac (apply_tactic surr env pos t args tac) with
       | TacticSuccess suggestion -> 
-	  if suggestion == witnessToken then suggestion
-	  else type_check surr env suggestion t
+	  type_check surr env suggestion t
       | TacticFailure -> (* we may want the tactic itself to raise the error message, when tactics are chained *)
           raise (TypeCheckingFailure (env, surr, [
                                pos, "tactic failed: "^ expr_to_string env e0;
@@ -545,7 +543,10 @@ let rec type_check (surr:surrounding) (env:environment) (e0:expr) (t:judgment) :
       let b = subst_type x b in
       let y = type_check ((env,S_projection 2,Some e0,Some t) :: surr) env y b in
       pos, PAIR(x,y)
-
+  | BASIC(W W_proof_token,_), J_Basic(J_witnessed_istype, [t]) -> check_istype env t; e0
+  | BASIC(W W_proof_token,_), J_Basic(J_witnessed_hastype, [t;o;p]) -> check_hastype env t o p; e0
+  | BASIC(W W_proof_token,_), J_Basic(J_witnessed_type_equality, [t;t';p]) -> check_type_equality env t t' p; e0
+  | BASIC(W W_proof_token,_), J_Basic(J_witnessed_object_equality, [t;o;o';p]) -> check_witnessed_object_equality env t o o' p; e0
   | _, _  ->
       let (e,s) = type_synthesis surr env e0 in
       if !debug_mode then printf " type_check\n\t e = %a\n\t s = %a\n\t t = %a\n%!" _e (env,e) _t (env,s) _t (env,t);
@@ -698,7 +699,6 @@ let term_normalization_ctr = new_counter()
 
 let rec term_normalization (env:environment) (x:expr) (t:judgment) : expr =
   (* see figure 9 page 696 [EEST] *)
-  if x == witnessToken then x else
   let (pos,t0) = t in
   match t0 with
   | J_Pi(v,a,b) ->

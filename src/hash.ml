@@ -22,27 +22,28 @@ let ohash = function
   | O_rr1 -> 97 | O_nat -> 971 | O_nat_r -> 972 | O_O -> 973 | O_S -> 974
 
 let whash = function
-  | W_Wrefl -> 12
-  | W_Wsymm -> 12
-  | W_Wtrans -> 12
-  | W_wrefl -> 12
-  | W_wsymm -> 12
-  | W_wtrans -> 12
-  | W_wconv -> 12
-  | W_wconveq -> 12
-  | W_weleq -> 12
-  | W_wpi1 -> 12
-  | W_wpi2 -> 12
-  | W_wlam -> 12
-  | W_wl1 -> 12
-  | W_wl2 -> 12
-  | W_wev -> 12
-  | W_wevt1 -> 12
-  | W_wevt2 -> 12
-  | W_wevf -> 12
-  | W_wevo -> 12
-  | W_wbeta -> 12
-  | W_weta -> 12
+  | W_Wrefl -> 1233
+  | W_Wsymm -> 1232
+  | W_Wtrans -> 1231
+  | W_wrefl -> 1230
+  | W_wsymm -> 1229
+  | W_wtrans -> 1228
+  | W_wconv -> 1227
+  | W_wconveq -> 1226
+  | W_weleq -> 1225
+  | W_wpi1 -> 1224
+  | W_wpi2 -> 1223
+  | W_wlam -> 1222
+  | W_wl1 -> 129
+  | W_wl2 -> 128
+  | W_wev -> 127
+  | W_wevt1 -> 126
+  | W_wevt2 -> 125
+  | W_wevf -> 124
+  | W_wevo -> 123
+  | W_wbeta -> 122
+  | W_weta -> 121
+  | W_proof_token -> 148
 
 let tachash = function
   | _ -> 1233

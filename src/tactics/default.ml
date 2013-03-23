@@ -39,7 +39,8 @@ let rec default surr env pos t args =
   | J_Basic(J_wexp,[]) -> 
       if tactic_tracing then printf "tactic: witness: t = %a\n%!" _t (env,t);
       Witness.witness surr env pos t args
-  | J_Basic(J_witnessed_hastype,_) -> TacticSuccess witnessToken
+  | J_Basic((J_witnessed_istype|J_witnessed_hastype|J_witnessed_type_equality|J_witnessed_object_equality),_) 
+    -> TacticSuccess (nowhere 333 (BASIC(W W_proof_token,END)))
   | _ -> try_other_tactics surr env pos t args
 
 (*

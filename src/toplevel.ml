@@ -11,7 +11,7 @@ type command' =
   | TVariable of (string marked) list
   | OVariable of (string marked) list * expr
   | Alpha of expr * expr
-  | Theorem of (position * string * expr * judgment)
+  | Theorem of (position * string option * expr * judgment)
   | CheckUniverses
   | Show of int option
   | Back of int
