@@ -108,7 +108,7 @@ let whead_to_signature = function
   | W_wevo -> wexp @-> wexp @-> wexp @-> wexp
   | W_wbeta -> wexp @-> wexp_w @-> wexp
   | W_weta -> wexp @-> wexp
-  | W_proof_token -> wexp		(* not really true *)
+  | W_QED -> wexp		(* not really true *)
 
 (** Signatures for judgments *)
 

@@ -20,7 +20,9 @@ Goal [ ? : @ev[f,x,T,.@U] : @U ];;
 
 Goal [ ? : @ev[@λ[T,y.@ev[f,y,T,.@U]],x,T,.@U]: @U];;
 
-Lemma a        [ ? : @ev[@λ[T,y.@ev[f,y,T,.@U]],x,T,.@U]: @U];;
+Lemma a [ ? : @ev[@λ[T,y.@ev[f,y,T,.@U]],x,T,.@U]: @U];;
+Check a;;
+Check a$;;
 
 Goal [ @El[@ev[f,x,T,.@U],@wev[f$,x$]] Type ];;
 
@@ -46,9 +48,10 @@ Goal [ ? : * ((y:T) |-> f y) x ≡ * f x ] ;;
 
 Goal [ ? : * ((y:T) ⟼ f y) x ≡ * f x ] ;;
 
+
 End;;
 
-Goal [ ? : x : _ ];;					    # here we could deduce the type, too
+Goal [ ? : x : ? ];;					    # here we could deduce the type, too
 
 Lemma a8 : * (λ y:T,f y) x ≡ * f x;;
 
@@ -57,7 +60,7 @@ Lemma a8 : * (λ y:T,f y) x ≡ * f x;;
 
 Goal [ _
       : @[ev][f,x,T,.@U]
-      ≡ @[ev.][@[λ;y][T,@[ev;_][f,y,T,@U]],x,T,.@U]
+      ≡ @[ev][@[λ;y][T,@[ev;_][f,y,T,@U]],x,T,.@U]
       : @U
       ];;
 

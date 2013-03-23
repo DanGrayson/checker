@@ -43,7 +43,7 @@ let whash = function
   | W_wevo -> 123
   | W_wbeta -> 122
   | W_weta -> 121
-  | W_proof_token -> 148
+  | W_QED -> 148
 
 let tachash = function
   | _ -> 1233

@@ -268,7 +268,7 @@ and check_hastype env t o p =
 	  check_hastype env t2 o p
       | W_wconv | W_wconveq | W_weleq | W_wpi1 | W_wpi2 | W_wl1 | W_wl2 | W_wevt1 | W_wevt2
       | W_wevf | W_wevo | W_wbeta | W_weta | W_Wsymm | W_Wtrans | W_wrefl | W_wsymm | W_wtrans
-      | W_Wrefl | W_proof_token
+      | W_Wrefl | W_QED
 	-> raise FalseWitness
      )
   | _ ->
@@ -291,7 +291,7 @@ and check_type_equality env t t' p =
 	  check_hastype env uuu o' p'
       | W_wrefl | W_Wrefl | W_Wsymm | W_Wtrans | W_wsymm | W_wtrans | W_wconv
       | W_wconveq | W_wpi1 | W_wpi2 | W_wlam | W_wl1 | W_wl2 | W_wev
-      | W_wevt1 | W_wevt2 | W_wevf | W_wevo | W_wbeta | W_weta | W_proof_token
+      | W_wevt1 | W_wevt2 | W_wevf | W_wevo | W_wbeta | W_weta | W_QED
 	-> raise FalseWitness
      )
   | _ -> err env (get_pos p) ("expected a witness expression :  " ^ expr_to_string env p)
@@ -543,10 +543,10 @@ let rec type_check (surr:surrounding) (env:environment) (e0:expr) (t:judgment) :
       let b = subst_type x b in
       let y = type_check ((env,S_projection 2,Some e0,Some t) :: surr) env y b in
       pos, PAIR(x,y)
-  | BASIC(W W_proof_token,_), J_Basic(J_witnessed_istype, [t]) -> check_istype env t; e0
-  | BASIC(W W_proof_token,_), J_Basic(J_witnessed_hastype, [t;o;p]) -> check_hastype env t o p; e0
-  | BASIC(W W_proof_token,_), J_Basic(J_witnessed_type_equality, [t;t';p]) -> check_type_equality env t t' p; e0
-  | BASIC(W W_proof_token,_), J_Basic(J_witnessed_object_equality, [t;o;o';p]) -> check_witnessed_object_equality env t o o' p; e0
+  | BASIC(W W_QED,_), J_Basic(J_witnessed_istype, [t]) -> check_istype env t; e0
+  | BASIC(W W_QED,_), J_Basic(J_witnessed_hastype, [t;o;p]) -> check_hastype env t o p; e0
+  | BASIC(W W_QED,_), J_Basic(J_witnessed_type_equality, [t;t';p]) -> check_type_equality env t t' p; e0
+  | BASIC(W W_QED,_), J_Basic(J_witnessed_object_equality, [t;o;o';p]) -> check_witnessed_object_equality env t o o' p; e0
   | _, _  ->
       let (e,s) = type_synthesis surr env e0 in
       if !debug_mode then printf " type_check\n\t e = %a\n\t s = %a\n\t t = %a\n%!" _e (env,e) _t (env,s) _t (env,t);

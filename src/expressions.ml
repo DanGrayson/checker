@@ -15,7 +15,7 @@ type oHead = | O_u | O_j | O_ev | O_ev' | O_lambda | O_lambda' | O_forall | O_pa
 type wHead = | W_Wrefl | W_Wsymm | W_Wtrans | W_wrefl | W_wsymm | W_wtrans | W_wconv
 	     | W_wconveq | W_weleq | W_wpi1 | W_wpi2 | W_wlam | W_wl1 | W_wl2 | W_wev
 	     | W_wevt1 | W_wevt2 | W_wevf | W_wevo | W_wbeta | W_weta
-	     | W_proof_token
+	     | W_QED
 
 type expr_head =
   | U of uHead | T of tHead | O of oHead | W of wHead

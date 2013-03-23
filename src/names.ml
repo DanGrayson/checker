@@ -29,7 +29,7 @@ let expr_head_table = [
   W W_wconveq, "wconveq"; W W_weleq, "weleq"; W W_wpi1, "wpi1"; W W_wpi2, "wpi2";
   W W_wlam, "wlam"; W W_wl1, "wl1"; W W_wl2, "wl2"; W W_wev, "wev";
   W W_wevt1, "wevt1"; W W_wevt2, "wevt2"; W W_wevf, "wevf"; W W_wevo, "wevo";
-  W W_wbeta, "wbeta"; W W_weta, "weta"; W W_proof_token, "proof_token";
+  W W_wbeta, "wbeta"; W W_weta, "weta"; W W_QED, "QED";
 ]
 
 let tts_mode_expr_head_table = List.flatten [
