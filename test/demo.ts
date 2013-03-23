@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-Verify LF oexp -> oexp;;
-Verify LF (t:texp) -> istype t;;
+Check Judgment LF oexp -> oexp;;
+Check Judgment LF (t:texp) -> istype t;;
 Include "rules/TS0.ts";;
 Check LF ∏_istype;;
 

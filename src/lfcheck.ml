@@ -221,6 +221,7 @@ let apply_2 shift f x y = Substitute.apply_args (rel_shift_expr shift f) (x ** y
 let witnessToken = nowhere 3 (BASIC(V (Var (id "witness-token")),END))
 
 let rec check_istype env t =
+  if !debug_mode then printf "check_istype\n t = %a\n%!" _e (env,t);
   match unmark t with
   | BASIC(V (Var i), END) -> if not (isid i && is_tts_type_variable env (id_to_name i)) then err env (get_pos t) "variable not declared as a type"
   | BASIC(T th, args) -> (

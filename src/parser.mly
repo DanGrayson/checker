@@ -28,7 +28,7 @@ open Error
   Universes Tilde Singleton Dollar LF TS Kpair K_1 K_2 K_FST K_SND Times
   Turnstile DoubleArrow ColonColonEqual ColonEqual Theorem LeftBrace RightBrace
   TurnstileDouble ColonColon Include Clear EqualEqual TTS Back BackTo Mode
-  Period EndOfProofStepMarker Verify
+  Period EndOfProofStepMarker Judgment
 
 (* precedences, lowest first *)
 
@@ -254,9 +254,9 @@ unmarked_command:
     | Check LF e= expr EndOfProofStepMarker
 	{ Toplevel.CheckLF e }
 
-    | Verify t= ts_judgment EndOfProofStepMarker
-    | Verify LF t= judgment EndOfProofStepMarker
-	{ Toplevel.Verify t }
+    | Check Judgment    t= ts_judgment EndOfProofStepMarker
+    | Check Judgment LF t=    judgment EndOfProofStepMarker
+	{ Toplevel.CheckType t }
 
     | Check Universes EndOfProofStepMarker
 	{ Toplevel.CheckUniverses }

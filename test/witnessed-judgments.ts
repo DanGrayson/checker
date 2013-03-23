@@ -4,56 +4,58 @@ Variable T Type;;
 Variable x : T;;
 Variable f : T -> @U;;
 
-Verify [ T -> @U Type ];;
+Check Judgment [ T -> @U Type ];;
 
-Verify [ _ : f : T -> @U ];;
+Check Judgment { |- B Type } [ B -> @U Type ];;
 
-Verify [ _ : x : T ];;
+Check Judgment LF (B:texp) ⟶ istype_witnessed_inside B ⟶ istype_witnessed_inside (@Pi B (_ ⟼ _ ⟼ @U));;
 
-Verify [ _ : @ev[f,x,T,.@U] : @U ];;
+Check Judgment LF (B:texp) ⟶ istype_witnessed_inside (@Pi B (_ ⟼ _ ⟼ @U));; # this succeeds because it's valid as an LF type, and there are no holes
 
-Verify [ _ : @ev[@λ[T,y.@ev[f,y,T,.@U]],x,T,.@U]: @U];;
+Check Judgment [ _ : f : T -> @U ];;
 
-Lemma a1 [ _ : f : T->@U ];;
+Check Judgment [ x$ : f : T -> @U ];;				    # this succeeds also, counterintuitively -- it's a type without an object
 
-Verify [ @El[@ev[f,x,T,.@U],@wev[f$,x$]] Type ];;
+Check Judgment [ _ : x : T ];;
 
-Verify [ @El[@ev[a1,x,T,.@U],@wev[a1$,x$]] Type ];;
+Check Judgment [ _ : @ev[f,x,T,.@U] : @U ];;
 
-# Verify [ @El[@ev[f,x,T,.@U],@wev[a1$,x$]] Type ];;
+Check Judgment [ _ : @ev[@λ[T,y.@ev[f,y,T,.@U]],x,T,.@U]: @U];;
 
-Verify [ @El[@ev[f,x,T,.@U],_] Type ];;
+Check Judgment [ @El[@ev[f,x,T,.@U],@wev[f$,x$]] Type ];;
 
-Verify [ *@ev[f,x,T,.@U] Type ];;		    # * is notation for El
+Check Judgment [ @El[@ev[f,x,T,.@U],_] Type ];;
 
-Verify [ *@ev[@λ[T,y.@ev[f,y,T,.@U]],x,T,.@U] Type ];;
+Check Judgment [ *@ev[f,x,T,.@U] Type ];;		    # * is notation for El
 
-Verify [ _ : @ev[@λ[T,y.@ev[f,y,T,.@U]],x,T,.@U] ≡ @ev[@λ[T,z.@ev[f,z,T,.@U]],x,T,.@U] : @U ];;
+Check Judgment [ *@ev[@λ[T,y.@ev[f,y,T,.@U]],x,T,.@U] Type ];;
 
-Verify [ _ : @ev[@λ[T,y.@ev[f,y,T,.@U]],x,T,.@U] ≡ @ev[f,x,T,.@U] : @U ];;
+Check Judgment [ _ : @ev[@λ[T,y.@ev[f,y,T,.@U]],x,T,.@U] ≡ @ev[@λ[T,z.@ev[f,z,T,.@U]],x,T,.@U] : @U ];;
 
-Verify [ _ : @ev[@λ[T,y.@ev[f,y,T,.@U]],x,T,.@U] ≡ @ev[f,x,T,.@U] : @U ];;
+Check Judgment [ _ : @ev[@λ[T,y.@ev[f,y,T,.@U]],x,T,.@U] ≡ @ev[f,x,T,.@U] : @U ];;
 
-Verify [ _ : * @ev[@λ[T,y.@ev[f,y,T,.@U]],x,T,.@U] ≡ * @ev[f,x,T,.@U] ];;
+Check Judgment [ _ : @ev[@λ[T,y.@ev[f,y,T,.@U]],x,T,.@U] ≡ @ev[f,x,T,.@U] : @U ];;
 
-Verify [ _ : * @λ[T,y.f y] x ≡ * f x ];;
+Check Judgment [ _ : * @ev[@λ[T,y.@ev[f,y,T,.@U]],x,T,.@U] ≡ * @ev[f,x,T,.@U] ];;
 
-Verify [ _ : * (λ y:T,f y) x ≡ * f x ];;
+Check Judgment [ _ : * @λ[T,y.f y] x ≡ * f x ];;
 
-Verify [ _ : * ((y:T) |-> f y) x ≡ * f x ] ;;
+Check Judgment [ _ : * (λ y:T,f y) x ≡ * f x ];;
 
-Verify [ _ : * ((y:T) ⟼ f y) x ≡ * f x ] ;;
+Check Judgment [ _ : * ((y:T) |-> f y) x ≡ * f x ] ;;
+
+Check Judgment [ _ : * ((y:T) ⟼ f y) x ≡ * f x ] ;;
 
 End;;
 
-Verify [ _ : x : _ ];;					    # here we could deduce the type, too
+Check Judgment [ _ : x : _ ];;					    # here we could deduce the type, too
 
 Lemma a8 : * (λ y:T,f y) x ≡ * f x;;
 
 # Make head reduction work;;
 # This one is the same as the one above, with objects reversed;;
 
-Verify [ _
+Check Judgment [ _
       : @[ev;_][f,x,T,@U]
       ≡ @[ev;_][@[λ;y][T,@[ev;_][f,y,T,@U]],x,T,@U]
       : @U
