@@ -2,11 +2,10 @@
 
 open Judgments
 open Relative
+open Error
 
 module MapString = Map.Make(String)
 module MapIdentifier = Map.Make(Identifier)
-
-type tts_judgment = TTS_istype | TTS_hastype of expr
 
 type environment = {
     state : int;
@@ -68,8 +67,10 @@ let local_tts_fetch env i =			(* (Rel i) *)
   (* note: each TTS_hastype consumes two relative indices, whereas each TTS_istype consumes only one; that should change *)
   let rec repeat shift i context =
     match context with
-    | (_,TTS_istype) :: context -> if i = 0 then TTS_istype else repeat (shift+1) (i-1) context
-    | (_,TTS_hastype t) :: context -> if i = 0 || i = 1 then TTS_hastype (rel_shift_expr shift t) else repeat (shift+2) (i-2) context
+    | (_, TTS_istype) :: context -> if i = 0 then TTS_istype else repeat (shift+1) (i-1) context
+    | (_, TTS_hastype t) :: context -> if i = 0 || i = 1 then TTS_hastype (rel_shift_expr shift t) else repeat (shift+2) (i-2) context
+    | (_, TTS_type_equality(t,t')) :: _ -> raise NotImplemented
+    | (_, TTS_object_equality(t,o,o')) :: _ -> raise NotImplemented
     | [] -> raise Not_found
   in repeat 2 i env.local_tts_context
 
@@ -79,8 +80,11 @@ let global_tts_fetch_type env name =
   match
     global_tts_fetch env name
   with
-  | TTS_istype -> raise Not_found
   | TTS_hastype t -> t
+  | TTS_istype 
+  | TTS_type_equality _
+  | TTS_object_equality _
+    -> raise Not_found
 
 let is_tts_type_variable env name =
   try
@@ -88,7 +92,9 @@ let is_tts_type_variable env name =
       global_tts_fetch env name
     with
     | TTS_istype -> true
-    | TTS_hastype _ -> false
+    | TTS_hastype _
+    | TTS_type_equality _
+    | TTS_object_equality _ -> false
   with
   | Not_found -> false
 
@@ -98,13 +104,19 @@ let tts_fetch env = function
 
 let tts_fetch_type env name =
   match tts_fetch env name with
-  | TTS_istype -> raise Not_found
   | TTS_hastype t -> t
+  | TTS_istype
+  | TTS_type_equality _
+  | TTS_object_equality _
+    -> raise Not_found
 
 let ts_fetch env v = 
   match tts_fetch env v with
   | TTS_hastype t -> t
-  | TTS_istype -> raise Internal
+  | TTS_istype
+  | TTS_type_equality _
+  | TTS_object_equality _
+    -> raise Internal
 
 let first_var env =
   match env.local_tts_context with

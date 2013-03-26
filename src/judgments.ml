@@ -35,6 +35,12 @@ and bare_judgment =
   | J_Singleton of (expr * judgment)
   | J_Sigma of identifier * judgment * judgment
 
+type tts_judgment = 
+  | TTS_istype
+  | TTS_hastype of expr
+  | TTS_type_equality of expr * expr
+  | TTS_object_equality of expr * expr * expr
+
 (** Functions *)
 
 let (@@) f x : judgment = nowhere 3 (J_Basic(f,x))

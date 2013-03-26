@@ -577,6 +577,8 @@ let print_context n file env =
 	match j with
 	| TTS_istype -> fprintf file "   %s Type\n%!" name
 	| TTS_hastype t -> fprintf file "   %s : %a\n%!" name _e (env,t)
+	| TTS_type_equality(t,t') -> fprintf file "   %s : %a == %a\n%!" name _e (env,t) _e (env,t')
+	| TTS_object_equality(t,o,o') -> fprintf file "   %s : %a == %a : %a\n%!" name _e (env,o) _e (env,o') _e (env,t)
       )
       lfc
   with Limit -> fprintf file "     ...\n");
