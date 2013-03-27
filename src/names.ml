@@ -21,23 +21,18 @@ let expr_head_table = [
   U U_next, "next"; U U_max, "max"; T T_U, "U"; T T_U', "U'"; O O_u, "u"; O O_j, "j";
   O O_rr0, "rr0"; O O_rr1, "rr1";
   T T_Pi, "Pi"; T T_Sigma, "Sigma"; O O_lambda, "lambda";
-  T T_El', "El'"; T T_Pi', "Pi'"; T T_Pi', "∏'";
   O O_nat, "nat"; O O_nat_r, "nat_r"; O O_O, "O"; O O_S, "S";
-  O O_lambda', "λ'"; O O_lambda', "lambda'"; O O_ev', "ev'";
   W W_Wrefl, "Wrefl"; W W_Wsymm, "Wsymm"; W W_Wtrans, "Wtrans";
   W W_wrefl, "wrefl"; W W_wsymm, "wsymm"; W W_wtrans, "wtrans"; W W_wconv, "wconv";
   W W_wconveq, "wconveq"; W W_weleq, "weleq"; W W_wpi1, "wpi1"; W W_wpi2, "wpi2";
   W W_wlam, "wlam"; W W_wl1, "wl1"; W W_wl2, "wl2"; W W_wev, "wev";
   W W_wevt1, "wevt1"; W W_wevt2, "wevt2"; W W_wevf, "wevf"; W W_wevo, "wevo";
-  W W_wbeta, "wbeta"; W W_weta, "weta"; W W_QED, "QED";
+  W W_wbeta, "wbeta"; W W_weta, "weta"
 ]
 
 let tts_mode_expr_head_table = List.flatten [
-  [ T T_U', "U";  T T_U, "U$";
-    T T_El', "El"; T T_El, "El$";
-    T T_Pi', "Pi"; T T_Pi, "Pi$";
-    T T_Pi', "∏"; O O_lambda', "λ"; O O_lambda, "lambda$";
-    O O_lambda', "lambda"; O O_ev', "ev" ; O O_ev, "ev$"
+  [ 
+    T T_U', "U";  T T_U, "U$"; 
   ]; 
   expr_head_table ]
 

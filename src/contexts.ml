@@ -123,11 +123,6 @@ let first_var env =
   | (name,_) :: _ -> id name
   | _ -> raise Internal
 
-let first_w_var env =
-  match env.local_tts_context with
-  | (name,_) :: _ -> idw name
-  | _ -> raise Internal
-
 type uContext = UContext of var marked list * (expr * expr) marked list
 
 let empty_uContext = UContext([],[])

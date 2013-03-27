@@ -17,7 +17,6 @@ type binder_judgment =
   | ULEV
   | IST
   | HAST of expr
-  | W_HAST of identifier marked * expr
   | W_TEQ of expr * expr
   | W_OEQ of expr * expr * expr
 

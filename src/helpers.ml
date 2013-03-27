@@ -42,8 +42,6 @@ let ( ** ) x s = ARG(x,s)		(* right associative *)
 
 let var_0 = var_to_expr_bare (Rel 0) ** END
 
-let var_1_0 = var_to_expr_bare (Rel 1) ** var_to_expr_bare (Rel 0) ** END
-
 let rec nth_arg n args =
   match n,args with
   | 0, ARG(x,_) -> x
@@ -264,10 +262,8 @@ let make_U_max x y = make_U U_max (x **  y ** END)
 let uuu = nowhere 187 (BASIC(T T_U', END))
 
 let make_T_El x = make_T T_El (x ** END)
-let make_T_El' x w = make_T T_El' (x ** w ** END)
 let make_T_U x = make_T T_U ( x ** END)
 let make_T_Pi    t1 (x,t2) = make_T T_Pi    (t1 ** lambda1 x t2 ** END)
-let make_T_Pi'   t1    t2  = make_T T_Pi'   (t1 ** t2 ** END)
 let make_T_Sigma t1 (x,t2) = make_T T_Sigma (t1 ** lambda1 x t2 ** END)
 let make_T_Pt = make_T T_Pt END
 let make_T_Coprod t t' = make_T T_Coprod (t ** t' ** END)
@@ -279,7 +275,6 @@ let make_O_u m = make_O O_u (m ** END)
 let make_O_j m n = make_O O_j (m ** n ** END)
 let make_O_ev f p (v,t) = make_O O_ev (f **p **lambda1 v t ** END)
 let make_O_lambda  t (v,p) = make_O O_lambda  (t ** lambda1 v p ** END)
-let make_O_lambda' t (v,p) = make_O O_lambda' (t ** lambda2 v (witness_id v) p ** END)
 let make_O_forall m m' n (v,o') = make_O O_forall (m **m'**n **lambda1 v (o') ** END)
 let make_O_pair a b (x,t) = make_O O_pair (a **b **lambda1 x t ** END)
 let make_O_pr1 t (x,t') o = make_O O_pr1 (t **lambda1 x (t')** o ** END)
@@ -307,9 +302,9 @@ let make_O_rr0 m2 m1 s t e = make_O O_rr0 (m2 ** m1 ** s ** t ** e ** END)
 let make_O_rr1 m a p = make_O O_rr1 (m ** a ** p ** END)
 
 let make_W_wev p q = make_W W_wev (p ** q ** END)
-let make_W_wbeta p q = make_W W_wbeta (p ** q ** END)
+let make_W_wbeta = make_W W_wbeta (END)
 let make_W_wlam p = make_W W_wlam (p ** END)
-let make_W_wrefl p p' = make_W W_wrefl (p ** p' ** END)
+let make_W_wrefl = make_W W_wrefl (END)
 let make_W_weleq peq = make_W W_weleq (peq ** END)
 let make_W_Wrefl = make_W W_wrefl END
 

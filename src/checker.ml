@@ -49,25 +49,25 @@ let protect f posfun =
   (*     fprintf stderr "%s: %s \n%!" (spos ()) s; *)
   (*     raise (Failure "exiting") *)
   | GeneralError s as ex ->
-      fprintf stderr "%s: %s\n%!" (spos ()) s;
+      fprintf stderr "%s: error: %s\n%!" (spos ()) s;
       bump_error_count (posfun ());
       raise_switch ex Error_Handled
   | Parser.Error | Parsing.Parse_error as ex ->
-      fprintf stderr "%s: syntax error\n%!" (spos ());
+      fprintf stderr "%s: error: syntax error\n%!" (spos ());
       bump_error_count (posfun ());
       raise_switch ex Error_Handled
   | TypeCheckingFailure (env,surr,ps) as ex ->
-      List.iter (fun (spos,s) -> fprintf stderr "%s: %s\n%!" (errfmt spos) s) ps;
+      List.iter (fun (spos,s) -> fprintf stderr "%s: error: %s\n%!" (errfmt spos) s) ps;
       print_surroundings surr;
       print_context env_limit stderr env;
       bump_error_count (posfun ());
       raise_switch ex Error_Handled
   | MarkedError (p,s) as ex ->
-      fprintf stderr "%s: %s\n%!" (errfmt p) s;
+      fprintf stderr "%s: error: %s\n%!" (errfmt p) s;
       bump_error_count (posfun ());
       raise_switch ex Error_Handled
   | Unimplemented s as ex ->
-      fprintf stderr "%s: feature not yet implemented: %s\n%!" (spos ()) s;
+      fprintf stderr "%s: error: feature not yet implemented: %s\n%!" (spos ()) s;
       bump_error_count (posfun ());
       raise_switch ex Error_Handled
   | Universe.Inconsistency (lhs,rhs) as ex ->
@@ -88,7 +88,6 @@ let add_oVars env ovars t =
     (fun env (pos,o) -> 
       let env = global_tts_declare_object env pos o t in
       let env = global_lf_bind env pos (id  o) oexp in
-      let env = global_lf_bind env pos (idw o) wexp in
       let env = global_lf_bind env pos (id  (o ^ "$hastype")) (hastype (var_to_expr_bare (Var (id o))) t) in
       env 
     ) env ovars
@@ -125,9 +124,8 @@ let defCommand env defs =
       let env =
 	if name = "" then env else
 	match unmark tp' with
-	| J_Basic(J_witnessed_hastype,[t;o;w]) ->
-	    let env = def_bind (id  name) pos o oexp env in
-	    let env = def_bind (idw name) pos w wexp env in
+	| J_Basic(J_witnessed_hastype,[t;o]) ->
+	    let env = def_bind (id name) pos o oexp env in
 	    let env = global_tts_declare_object env pos name t in
 	    env
 	| _ -> def_bind (id name) pos tm' tp' env in

@@ -48,7 +48,6 @@ Goal [ ? : * ((y:T) |-> f y) x ≡ * f x ] ;;
 
 Goal [ ? : * ((y:T) ⟼ f y) x ≡ * f x ] ;;
 
-
 End;;
 
 Goal [ ? : x : ? ];;					    # here we could deduce the type, too

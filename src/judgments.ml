@@ -22,7 +22,7 @@ type judgment_head =
   | J_type_equality
   | J_object_equality
 
-  (* witnessed judgments of HTS (objects can't infer their type) *)
+  (* witnessed judgments of HTS *)
   | J_witnessed_istype
   | J_witnessed_hastype
   | J_witnessed_type_equality
@@ -55,14 +55,18 @@ let type_equality t t' = J_type_equality @@ [t;t']	       (* t = t' *)
 let object_uequality o o' t = J_object_uequality @@ [o;o';t]   (* o ~ o' : t *)
 let object_equality o o' t = J_object_equality @@ [o;o';t]     (* o = o' : t *)
 
-let istype_embedded_witnesses t = J_witnessed_istype @@ [t] (* t Type *)
-let istype_embedded_witnesses_v pos t = let t = id_to_expr pos t in istype_embedded_witnesses t
-let witnessed_hastype t o p = J_witnessed_hastype @@ [t;o;p]   (* p : o : t *)
-let witnessed_hastype_v t o pos p = let p = id_to_expr pos p in witnessed_hastype t o p
-let witnessed_type_equality t t' p = J_witnessed_type_equality @@ [t;t';p] (* p : t = t' *)
-let witnessed_type_equality_v t t' pos p = let p = id_to_expr pos p in witnessed_type_equality t t' p
+let witnessed_istype t = J_witnessed_istype @@ [t]                                 (* t Type *)
+let witnessed_istype_v pos t = 
+  let t = id_to_expr pos t in witnessed_istype t
+let witnessed_hastype t o = J_witnessed_hastype @@ [t;o]                           (* o : t *)
+let witnessed_hastype_v t pos o = 
+  let o = id_to_expr pos o in witnessed_hastype t o
+let witnessed_type_equality t t' p = J_witnessed_type_equality @@ [t;t';p]         (* p : t = t' *)
+let witnessed_type_equality_v t t' pos p = 
+  let p = id_to_expr pos p in witnessed_type_equality t t' p
 let witnessed_object_equality t o o' p = J_witnessed_object_equality @@ [t;o;o';p] (* p : o = o' : t *)
-let witnessed_object_equality_v t o o' pos p = let p = id_to_expr pos p in witnessed_object_equality t o o' p
+let witnessed_object_equality_v t o o' pos p = 
+  let p = id_to_expr pos p in witnessed_object_equality t o o' p
 
 (*
   Local Variables:

@@ -23,15 +23,12 @@ let ( @-> ) = arrow
 
 let texp1 = oexp @-> texp
 let texp2 = oexp @-> oexp @-> texp
-let texp3 = oexp @-> oexp @-> oexp @-> texp
 
 let oexp1 = oexp @-> oexp
 let oexp2 = oexp @-> oexp @-> oexp
 let oexp3 = oexp @-> oexp @-> oexp @-> oexp
 
-let wexp_w = oexp @-> wexp @-> wexp
-let texp_w = oexp @-> wexp @-> texp
-let oexp_w = oexp @-> wexp @-> oexp
+let wexp1 = oexp @-> wexp
 
 let uhead_to_signature = function
   | U_next -> uexp @-> uexp
@@ -39,11 +36,9 @@ let uhead_to_signature = function
 
 let thead_to_signature = function
   | T_El -> oexp @-> texp
-  | T_El' -> oexp @-> wexp @-> texp
   | T_U -> uexp @-> texp
   | T_U' -> texp
   | T_Pi -> texp @-> texp1 @-> texp
-  | T_Pi' -> texp @-> texp_w @-> texp
   | T_Sigma -> texp @-> texp1 @-> texp
   | T_Pt -> texp
   | T_Coprod -> texp @-> texp @-> texp
@@ -56,9 +51,7 @@ let ohead_to_signature = function
   | O_u -> uexp @-> oexp
   | O_j -> uexp @-> uexp @-> oexp
   | O_ev -> oexp @-> oexp @-> texp @-> texp1 @-> oexp
-  | O_ev' -> oexp @-> oexp @-> texp @-> texp_w @-> oexp
   | O_lambda -> texp @-> oexp1 @-> oexp
-  | O_lambda' -> texp @-> oexp_w @-> oexp
   | O_forall -> uexp @-> uexp @-> oexp @-> oexp1 @-> oexp
   | O_pair -> oexp @-> oexp @-> texp1 @-> oexp
   | O_pr1 -> texp @-> texp1 @-> oexp @-> oexp
@@ -90,15 +83,15 @@ let whead_to_signature = function
   | W_Wrefl -> wexp
   | W_Wsymm -> wexp @-> wexp
   | W_Wtrans -> wexp @-> wexp @-> texp @-> wexp
-  | W_wrefl -> wexp @-> wexp @-> wexp
+  | W_wrefl -> wexp
   | W_wsymm -> wexp @-> wexp
   | W_wtrans -> wexp @-> wexp @-> oexp @-> wexp
   | W_wconv -> wexp @-> wexp @-> wexp
   | W_wconveq -> wexp @-> wexp @-> texp @-> wexp
   | W_weleq -> wexp @-> wexp
   | W_wpi1 -> wexp @-> wexp
-  | W_wpi2 -> wexp_w @-> wexp
-  | W_wlam -> wexp_w @-> wexp
+  | W_wpi2 -> wexp1 @-> wexp
+  | W_wlam -> wexp1 @-> wexp
   | W_wl1 -> wexp @-> wexp @-> wexp
   | W_wl2 -> wexp @-> wexp
   | W_wev -> wexp @-> wexp @-> wexp
@@ -106,7 +99,7 @@ let whead_to_signature = function
   | W_wevt2 -> wexp @-> wexp @-> wexp @-> wexp
   | W_wevf -> wexp @-> wexp @-> wexp
   | W_wevo -> wexp @-> wexp @-> wexp @-> wexp
-  | W_wbeta -> wexp @-> wexp_w @-> wexp
+  | W_wbeta -> wexp
   | W_weta -> wexp @-> wexp
   | W_QED -> wexp		(* not really true *)
 
@@ -129,7 +122,7 @@ let jhead_to_kind = function
   | J_object_equality -> oexp @@-> oexp @@-> texp @@-> K_derived_judgment
 
   | J_witnessed_istype -> texp @@-> K_witnessed_judgment
-  | J_witnessed_hastype -> texp @@-> oexp @@-> wexp @@-> K_witnessed_judgment
+  | J_witnessed_hastype -> texp @@-> oexp @@-> K_witnessed_judgment
   | J_witnessed_type_equality -> texp @@-> texp @@-> wexp @@-> K_witnessed_judgment
   | J_witnessed_object_equality -> texp @@-> oexp @@-> oexp @@-> wexp @@-> K_witnessed_judgment
 

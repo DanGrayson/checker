@@ -46,26 +46,10 @@ let rec tau (env:environment) e : expr =
                     (with_pos_of m1 (make_T_U m1))
                     (id "_", (with_pos_of m2 (make_T_U m2)))
               | _ -> raise (TypeCheckingFailure(env, [], [pos, "expected [j] to have two branches"])))
-          | O_ev' -> (
-              match args with
-              | ARG(f,ARG(o,ARG(t1,ARG((_,TEMPLATE(x,(pos,TEMPLATE(w,t2)))),END)))) ->
-		  let t2 = Substitute.subst_expr o t2 in
-		  let t2 = Substitute.subst_expr (pos,default_tactic (* ? *)) t2 in
-                  unmark t2
-              | _ -> raise Internal)
           | O_ev -> (
               match args with
               | ARG(f,ARG(o,ARG(t1,ARG((_,TEMPLATE(x,t2)),END)))) ->
                   unmark (Substitute.subst_expr o t2)
-              | _ -> raise Internal)
-          | O_lambda' -> (
-              match args with
-              | ARG(t,ARG(o,END)) ->
-		  let x = id "x" in
-		  let x' = id_to_expr_bare x in
-		  let w = idw "x" in
-		  let w' = id_to_expr_bare w in
-                  make_T_Pi' t (lambda2 x w (tau (ts_bind env x t) (Substitute.apply_args o (ARG(x',ARG(w',END))))))
               | _ -> raise Internal)
           | O_lambda -> (
               match args with

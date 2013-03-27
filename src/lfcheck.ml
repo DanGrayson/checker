@@ -51,7 +51,6 @@ let ts_binders = [
   ((T T_Sigma, 1), abstraction1);
   ((O O_forall, 3), abstraction2);
   ((O O_ev, 2), abstraction3);
-  ((O O_ev', 2), abstraction3)
 ]
 
 let enable_ts_binders = true
@@ -196,27 +195,27 @@ let open_context t1 (env,p,o,t2) =
   let t2 = Substitute.apply_args (rel_shift_expr 1 t2) e in
   (env,p,o,t2)
 
-let unpack_El' t =
+let unpack_El t =
   match unmark t with
-  | BASIC(T T_El',args) -> args2 args
+  | BASIC(T T_El,args) -> args1 args
   | _ -> raise FalseWitness
 
-let unpack_Pi' t =
+let unpack_Pi t =
   match unmark t with
-  | BASIC(T T_Pi',args) -> args2 args
+  | BASIC(T T_Pi,args) -> args2 args
   | _ -> raise FalseWitness
 
-let unpack_ev' o =
+let unpack_ev o =
   match unmark o with
-  | BASIC(O O_ev',args) -> args4 args
+  | BASIC(O O_ev,args) -> args4 args
   | _ -> raise FalseWitness
 
-let unpack_lambda' o =
+let unpack_lambda o =
   match unmark o with
-  | BASIC(O O_lambda',args) -> args2 args
+  | BASIC(O O_lambda,args) -> args2 args
   | _ -> raise FalseWitness
 
-let apply_2 shift f x y = Substitute.apply_args (rel_shift_expr shift f) (x ** y ** END)
+let apply_1 shift f x = Substitute.apply_args (rel_shift_expr shift f) (x ** END)
 
 let rec check_istype env t =
   if !debug_mode then printf "check_istype\n t = %a\n%!" _e (env,t);
@@ -224,58 +223,23 @@ let rec check_istype env t =
   | BASIC(V (Var i), END) -> if not (isid i && is_tts_type_variable env (id_to_name i)) then err env (get_pos t) "variable not declared as a type"
   | BASIC(T th, args) -> (
       match th with
-      | T_Pi' ->
+      | T_Pi ->
 	  let t1,t2 = args2 args in
 	  check_istype env t1;
 	  let env = local_tts_declare_object env "o" t1 in
-	  let o = var_to_expr_bare (Rel 1) in
-	  let p = var_to_expr_bare (Rel 0) in
-	  let t2 = Substitute.apply_args (rel_shift_expr 1 t2) (o ** p ** END) in
+	  let o = var_to_expr_bare (Rel 0) in
+	  let t2 = Substitute.apply_args t2 (o ** END) in
 	  check_istype env t2
       | T_U' -> ()
-      | T_El' ->
-	  let o,p = args2 args in
-	  check_hastype env uuu o p
+      | T_El ->				(* rewrite *)
+	  let o = args1 args in
+	  check_hastype env uuu o
       | _ -> err env (get_pos t) "invalid type, or not implemented yet.")
   | _ -> err env (get_pos t) ("invalid type, or not implemented yet: " ^ ts_expr_to_string env t)
 
-and check_hastype env t o p =
-  if !debug_mode then printf "check_hastype\n p = %a\n o = %a\n t = %a\n%!" _e (env,p) _e (env,o) _e (env,t);
-  match unmark p with
-  | BASIC(V p', END) when is_witness_var p' -> (
-      let o' = base_var p' in
-      let t' =
-	try tts_fetch_type env p'
-	with Not_found -> err env (get_pos p) "variable not in context" in
-      if not (compare_var_to_expr o' o) then err env (get_pos p) ("variable " ^ vartostring p' ^ " does not serve as witness for " ^ expr_to_string env o);
-      if not (term_equiv t t') then mismatch_term_tstype_tstype env o t' t)
-  | BASIC(W wh, pargs) -> (
-      match wh with
-      | W_wev ->
-	  let pf,po = args2 pargs in
-          let f,o,t1,t2 = unpack_ev' o in
-          check_hastype env t1 o po;
-          let u = nowhere 123 (BASIC(T T_Pi', t1 ** t2 ** END)) in
-          check_hastype env u f pf;
-          let t2' = Substitute.apply_args t2 (po ** o ** END) in
-          if not (term_equiv t2' t) then mismatch_term_tstype_tstype env o t t2'
-      | W_wlam ->
-	  let p = args1 pargs in
-	  let t1',o = unpack_lambda' o in
-	  let t1,t2 = unpack_Pi' t in
-	  if not (term_equiv t1' t1) then mismatch_term env (get_pos t) t (get_pos t1) t1;
-	  let env,p,o,t2 = open_context t1 (env,p,o,t2) in
-	  check_hastype env t2 o p
-      | W_wconv | W_wconveq | W_weleq | W_wpi1 | W_wpi2 | W_wl1 | W_wl2 | W_wevt1 | W_wevt2
-      | W_wevf | W_wevo | W_wbeta | W_weta | W_Wsymm | W_Wtrans | W_wrefl | W_wsymm | W_wtrans
-      | W_Wrefl | W_QED
-	-> raise FalseWitness
-     )
-  | _ ->
-      try
-	check_hastype env t o (head_reduction env p)
-      with
-	Not_found -> err env (get_pos p) ("expected a witness expression: " ^ expr_to_string env p)
+and check_hastype env t o =		(* needs to be rewritten *)
+  if !debug_mode then printf "check_hastype\n o = %a\n t = %a\n%!" _e (env,o) _e (env,t);
+  raise NotImplemented
 
 and check_type_equality env t t' p =
   if !debug_mode then printf "check_type_equality\n t = %a\n t' = %a\n p = %a\n%!" _e (env,t) _e (env,t') _e (env,p);
@@ -284,11 +248,11 @@ and check_type_equality env t t' p =
       match wh with
       | W_weleq ->
 	  let peq = args1 pargs in
-	  let o,p = unpack_El' t in
-	  let o',p' = unpack_El' t' in
+	  let o = unpack_El t in
+	  let o' = unpack_El t' in
 	  check_witnessed_object_equality env uuu o o' peq;
-	  check_hastype env uuu o p;
-	  check_hastype env uuu o' p'
+	  check_hastype env uuu o;
+	  check_hastype env uuu o'
       | W_wrefl | W_Wrefl | W_Wsymm | W_Wtrans | W_wsymm | W_wtrans | W_wconv
       | W_wconveq | W_wpi1 | W_wpi2 | W_wlam | W_wl1 | W_wl2 | W_wev
       | W_wevt1 | W_wevt2 | W_wevf | W_wevo | W_wbeta | W_weta | W_QED
@@ -304,20 +268,19 @@ and check_witnessed_object_equality env t o o' p =
       match wh with
       | W_wbeta ->
 	  let p1,p2 = args2 pargs in
-	  let f,o1,t1',t2 = unpack_ev' o in
-	  let t1,o2 = unpack_lambda' f in
+	  let f,o1,t1',t2 = unpack_ev o in
+	  let t1,o2 = unpack_lambda f in
 	  if not (term_equiv t1 t1') then mismatch_term env (get_pos t1) t1 (get_pos t1') t1';
-	  check_hastype env t1 o1 p1;
+	  check_hastype env t1 o1;
 	  let env,p2',o2',t2' = open_context t1 (env,p2,o2,t2) in
-	  check_hastype env t2' o2' p2';
-	  let t2'' = apply_2 1 t2 o1 p1 in
+	  check_hastype env t2' o2';
+	  let t2'' = apply_1 1 t2 o1 in
 	  if not (term_equiv t2'' t) then mismatch_term env (get_pos t2'') t2'' (get_pos t) t;
-	  let o2' = apply_2 1 o2 o1 p1 in
+	  let o2' = apply_1 1 o2 o1 in
 	  if not (term_equiv o2' o') then mismatch_term env (get_pos o2') o2' (get_pos o') o'
       | W_wrefl -> (
-	  let p,p' = args2 pargs in
-	  check_hastype env t o p;
-	  check_hastype env t o' p';
+	  check_hastype env t o;
+	  check_hastype env t o';
 	  if not (term_equiv o o') then mismatch_term env (get_pos o) o (get_pos o') o';
 	 )
       | _ -> raise FalseWitness)
@@ -327,7 +290,7 @@ let check (env:environment) (t:judgment) =
   try
     match unmark t with
     | J_Basic(J_witnessed_istype,[t]) -> check_istype env t
-    | J_Basic(J_witnessed_hastype,[t;o;w]) -> check_hastype env t o w
+    | J_Basic(J_witnessed_hastype,[t;o]) -> check_hastype env t o
     | J_Basic(J_witnessed_type_equality,[t;t';w]) -> check_type_equality env t t' w
     | J_Basic(J_witnessed_object_equality,[t;o;o';w]) -> check_witnessed_object_equality env t o o' w
     | _ -> err env (get_pos t) "expected a witnessed judgment"
@@ -543,10 +506,10 @@ let rec type_check (surr:surrounding) (env:environment) (e0:expr) (t:judgment) :
       let b = subst_type x b in
       let y = type_check ((env,S_projection 2,Some e0,Some t) :: surr) env y b in
       pos, PAIR(x,y)
-  | BASIC(W W_QED,_), J_Basic(J_witnessed_istype, [t]) -> check_istype env t; e0
-  | BASIC(W W_QED,_), J_Basic(J_witnessed_hastype, [t;o;p]) -> check_hastype env t o p; e0
-  | BASIC(W W_QED,_), J_Basic(J_witnessed_type_equality, [t;t';p]) -> check_type_equality env t t' p; e0
-  | BASIC(W W_QED,_), J_Basic(J_witnessed_object_equality, [t;o;o';p]) -> check_witnessed_object_equality env t o o' p; e0
+  | _, J_Basic(J_witnessed_istype, [t]) -> check_istype env t; e0 (* check e0 is W_QED, too *)
+  | _, J_Basic(J_witnessed_hastype, [t;o]) -> check_hastype env t o; e0 (* check e0 is W_QED, too *)
+  | _, J_Basic(J_witnessed_type_equality, [t;t']) -> check_type_equality env t t' e0; e0
+  | _, J_Basic(J_witnessed_object_equality, [t;o;o']) -> check_witnessed_object_equality env t o o' e0; e0
   | _, _  ->
       let (e,s) = type_synthesis surr env e0 in
       if !debug_mode then printf " type_check\n\t e = %a\n\t s = %a\n\t t = %a\n%!" _e (env,e) _t (env,s) _t (env,t);

@@ -114,14 +114,12 @@ let rel_to_string subs i = try idtostring (List.nth subs i) with Failure "nth" -
 
 let var_tester w subs occurs_in e = not ( List.exists (fun x -> id_to_name x == w ) subs ) && not ( occurs_in w e )
 
-let new_name_id name x = if isid x then id name else idw name
-
 let var_chooser x subs rel_occurs_in occurs_in e = 
   if not rel_occurs_in then id "_" :: subs else
   let name = id_to_name x in
   let rec repeat i =
     let name' = if i = -1 then name else name ^ string_of_int i in
-    if var_tester name' subs occurs_in e then new_name_id name' x :: subs
+    if var_tester name' subs occurs_in e then id name' :: subs
     else repeat (i+1)
   in repeat (-1)
 
@@ -235,13 +233,6 @@ let rec lf_head_to_string_with_subs subs h : string =
 
 and expr_to_string_with_subs subs e : smart_string =
   match unmark e with
-  | TEMPLATE(x,(pos,TEMPLATE(x',body))) when is_witness_pair x x' ->
-      let subs = var_chooser x subs (rel_occurs_in_expr 0 body || rel_occurs_in_expr 1 body) occurs_in_expr body in
-      let subs = (witness_id (List.nth subs 0)) :: subs in
-      let s = expr_to_string_with_subs subs body in
-      let x = if enable_variable_prettification then rel_to_string subs 1 else id_to_name x in
-      let x' = if enable_variable_prettification then rel_to_string subs 0 else id_to_name x' in
-      arrow_prec, concat [x;" ⟼ ";x';" ⟼ ";paren_right arrow_prec s]
   | TEMPLATE(x,body) ->
       let subs = var_chooser x subs (rel_occurs_in_expr 0 body) occurs_in_expr body in
       let s = expr_to_string_with_subs subs body in
@@ -306,7 +297,7 @@ let expr_list_to_string args = paren_left bottom_prec (
 
 let env_to_subs env = (* concatenation of the two contexts might not be appropriate later on *)
   List.map fst env.local_lf_context
-    @ List.flatten ( List.map ( fun (name,t) -> [ id name; idw name ] ) env.local_tts_context)
+    @  List.map ( fun (name,t) -> id name ) env.local_tts_context
 
 let expr_to_string env e = paren_right bottom_prec (expr_to_string_with_subs (env_to_subs env) e)
 

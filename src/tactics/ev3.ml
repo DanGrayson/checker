@@ -9,11 +9,6 @@ let ev3 (surr:surrounding) env pos t args =
 	match unmark tf with
 	| BASIC(T T_Pi, ARG(_,ARG(t,END))) -> TacticSuccess (apply_args t var_0)
 	| _ -> ts_function_expected env f tf)
-  | (_,S_body,_,_) :: (_,S_body,_,_) :: (env,S_expr_list'(3,O O_ev',ARG(t,ARG(x,ARG(f,END))),_), _, _) :: _ ->
-	let tf = tau env f in (
-	match unmark tf with
-	| BASIC(T T_Pi', ARG(_,ARG(t,END))) -> TacticSuccess (apply_args t var_1_0)
-	| _ -> ts_function_expected env f tf)
   | _ -> TacticFailure
 
 (*

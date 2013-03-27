@@ -6,12 +6,10 @@ module Identifier :
     sig
       type identifier
       val id : string -> identifier
-      val idw : string -> identifier
       val idtostring : identifier -> string
       type t = identifier
       val compare : t -> t -> int
       val isid : t -> bool
-      val isidw : t -> bool
       val id_to_name : t -> string
     end 
     =
@@ -24,23 +22,11 @@ module Identifier :
       | name, Object -> name
       | name, Witness -> name ^ "$"
     let id name = name, Object
-    let idw name = name, Witness
     let isid = function _,Object -> true | _,Witness -> false
-    let isidw = function _,Object -> false | _,Witness -> true
     let id_to_name = function name,_ -> name
   end
 
 include Identifier
-
-let base_id v = 
-  assert (isidw v);
-  id (id_to_name v)
-
-let witness_id v = 
-  assert (isid v);
-  idw (id_to_name v)
-
-let is_witness_pair i j = isid i && isidw j && id_to_name i = id_to_name j
 
 type var =
   | Var of identifier
@@ -53,22 +39,6 @@ let var_to_name = function
 let vartostring = function
   | Var x -> idtostring x
   | Rel i -> string_of_int i ^ "^"	(* raw form *)
-
-let is_base_var = function
-  | Var x -> isid x
-  | Rel i -> i mod 2 = 1
-
-let is_witness_var = function
-  | Var x -> isidw x
-  | Rel i -> i mod 2 = 0
-
-let base_var = function			(* deprecated *)
-  | Var x -> Var (base_id x)
-  | Rel i -> if i mod 2 = 0 then Rel (i+1) else raise Internal
-
-let witness_var = function		(* deprecated *)
-  | Var x -> Var (witness_id x)
-  | Rel i -> if i mod 2 = 1 then Rel (i-1) else raise Internal
 
 let isunused v = 			(* deprecated *)
   match v with

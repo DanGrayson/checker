@@ -18,7 +18,7 @@ open Error
 
 %token <int> NUMBER
 
-%token <string> CONSTANT STRING NAME NAME_W
+%token <string> CONSTANT STRING NAME
 
 %token
 
@@ -65,7 +65,7 @@ open Error
   (* These are the tokens that can begin a TS-expression, and
      thus might be involved in the decision about reducing an application: *)
 
-  QuestionMark LeftParen Kumax CONSTANT Lambda Sigma Pi Dollar NAME NAME_W
+  QuestionMark LeftParen Kumax CONSTANT Lambda Sigma Pi Dollar NAME
 
 %nonassoc
 
@@ -116,7 +116,7 @@ unmarked_judgment:
 	{ J_Singleton(x,t) }
 
     | LeftBracket t= expr Type RightBracket
-	{ unmark (if !ts_mode then istype t else istype_embedded_witnesses t) }
+	{ unmark (if !ts_mode then istype t else witnessed_istype t) }
 
     | LeftBracket a= expr Colon t= expr RightBracket
 	{ unmark (hastype a t) }
@@ -139,7 +139,7 @@ unmarked_judgment:
 	  unmark (pi1_implication (v,a) b) }
 
     | v= marked_identifier Type
-	{ let (pos,v) = v in make_F_Sigma texp (v,(if !ts_mode then istype_v else istype_embedded_witnesses_v) pos v) }
+	{ let (pos,v) = v in make_F_Sigma texp (v,(if !ts_mode then istype_v else witnessed_istype_v) pos v) }
 
     | v= marked_identifier ColonColon t= expr
 	{ let (pos,v) = v in make_F_Sigma oexp (v,hastype (id_to_expr pos v) t) }
@@ -357,7 +357,7 @@ unmarked_ts_judgment:
     | Type
 	{ let pos = Position($startpos, $endpos) in
 	  let v = id "T" in
-	  make_F_Sigma texp (v,(if !ts_mode then istype_v else istype_embedded_witnesses_v) pos v) }
+	  make_F_Sigma texp (v,(if !ts_mode then istype_v else witnessed_istype_v) pos v) }
 
     | Colon t= ts_expr
 	{ let v = id "o" in
@@ -371,7 +371,7 @@ unmarked_ts_judgment:
         { let v = id "t" in
           let pos = get_pos a in
           let a = with_pos pos (J_Singleton(a,texp)) in
-          let b = if !ts_mode then istype_v pos v else istype_embedded_witnesses_v pos v in
+          let b = if !ts_mode then istype_v pos v else witnessed_istype_v pos v in
           make_F_Sigma a (v,b)
         }
 
@@ -400,16 +400,9 @@ unmarked_ts_judgment:
 		     if c <> [] then $syntaxerror;
 		     fun v u -> with_pos_of v (make_F_Pi uexp (unmark v, u))
 		 | IST ->
-		     fun v u -> apply_binder pos c v texp u (if !ts_mode then istype_v else istype_embedded_witnesses_v)
+		     fun v u -> apply_binder pos c v texp u (if !ts_mode then istype_v else witnessed_istype_v)
 		 | HAST t ->
-		     fun v u -> apply_binder pos c v oexp u (hastype_v t)
-		 | W_HAST(o,t) ->
-		     fun v u -> 
-		       let o' = id_to_expr (get_pos o) (unmark o) in
-		       let u = apply_binder pos c v wexp u (witnessed_hastype_v t o') in
-		       let w = bind_pi (pos,unmark o,oexp) u in
-		       printf " binder result = %a\n%!" _t (empty_environment,w);
-		       w
+		     fun v u -> apply_binder pos c v oexp u (if !ts_mode then hastype_v t else witnessed_hastype_v t)
 		 | W_TEQ(t1,t2) ->
 		     fun v u -> apply_binder pos c v wexp u (witnessed_type_equality_v t1 t2)
 		 | W_OEQ(o1,o2,t) ->
@@ -422,13 +415,17 @@ unmarked_ts_judgment:
 ts_bracketed_judgment:
 
     | LeftBracket a= ts_expr Type RightBracket
-	{ unmark (if !ts_mode then istype a else istype_embedded_witnesses a) }
+	{ unmark (if !ts_mode then istype a else witnessed_istype a) }
 
     | LeftBracket a= ts_expr EqualEqual b= ts_expr RightBracket
 	{ unmark (type_equality a b) }
 
     | LeftBracket x= ts_expr Colon t= ts_expr RightBracket
-	{ unmark (hastype x t) }
+	{ 
+	  if !ts_mode
+	  then unmark (hastype x t) 
+	  else unmark (witnessed_hastype t x)
+	}
 
     | LeftBracket x= ts_expr EqualEqual y= ts_expr Colon t= ts_expr RightBracket
 	{ unmark (object_equality x y t) }
@@ -441,9 +438,6 @@ ts_bracketed_judgment:
 
     | LeftBracket a= ts_expr Tilde b= ts_expr Colon t= ts_expr RightBracket
 	{ unmark (object_uequality a b t) }
-
-    | LeftBracket p= ts_expr Colon x= ts_expr Colon t= ts_expr RightBracket
-	{ unmark (witnessed_hastype t x p) }
 
     | LeftBracket p= ts_expr Colon a= ts_expr EqualEqual b= ts_expr RightBracket
 	{ unmark (witnessed_type_equality a b p) }
@@ -458,8 +452,6 @@ binder_judgment:
     | Type { IST }
 
     | Colon t= ts_expr { HAST t }
-
-    | Colon o= marked_identifier Colon t= ts_expr { W_HAST(o,t) }
 
     | Colon x= ts_expr EqualEqual y= ts_expr { W_TEQ(x,y) }
 
@@ -484,7 +476,6 @@ empty_hole: QuestionMark { default_tactic }
 identifier:
 
     | NAME { id $1 }
-    | NAME_W { idw $1 }
 
 marked_name:
 
@@ -523,9 +514,7 @@ template_ts_expr:
 	{ 
 	  Position($startpos, $endpos),
 	  let v = match v with Some v -> unmark v | None -> id "_" in
-	  if !ts_mode
-	  then unmark (lambda1 v body)
-	  else unmark (lambda2 v (witness_id v) body)
+	  unmark (lambda1 v body)
 	}
 
 unmarked_ts_expr:
@@ -549,37 +538,28 @@ unmarked_ts_expr:
 
     | f= ts_expr o= ts_expr
 	%prec Reduce_application
-	{ let pos = Position($startpos, $endpos) in
-	  if !ts_mode
-	  then BASIC(O O_ev,  f ** o ** (pos, default_tactic) ** END) 
-	  else BASIC(O O_ev', f ** o ** (pos, default_tactic) ** (pos, default_tactic) ** END) 
-	}
+	{ let pos = Position($startpos, $endpos) in BASIC(O O_ev, f ** o ** (pos, default_tactic) ** (pos, default_tactic) ** END) }
 
     | LeftParen x= identifier Colon t= ts_expr RightParen ArrowFromBar o= ts_expr
     | Lambda x= identifier Colon t= ts_expr Comma o= ts_expr
 	%prec Reduce_binder
-	{ 
-	  if !ts_mode
-	  then make_O_lambda  t (x,o) 
-	  else make_O_lambda' t (x,o) 
-	}
+	{ make_O_lambda  t (x,o) }
 
     | Star o= ts_expr
-	{ let pos = Position($startpos, $endpos) in
-	  if !ts_mode then make_T_El o else make_T_El' o (pos, (cite_tactic "default" END)) }
+	{ make_T_El o }
 
     | Pi x= identifier Colon t1= ts_expr Comma t2= ts_expr
 	%prec Reduce_binder
 	{ make_T_Pi t1 (x,t2) }
 
     | LeftParen x= identifier Colon t= ts_expr RightParen Arrow u= ts_expr
-	{ if !ts_mode then make_T_Pi t (x,u) else make_T_Pi' t (lambda1 x (lambda1 (witness_id x) u)) }
+	{ make_T_Pi t (x,u) }
 
     | x= ts_expr Equal y= ts_expr
 	{ make_T_Id (with_pos_of x (cite_tactic "tn12" END)) x y }
 
     | t= ts_expr Arrow u= ts_expr
-	{ if !ts_mode then make_T_Pi t (id "_",u) else make_T_Pi' t (lambda1 (id "_") (lambda1 (idw "_") u)) }
+	{ make_T_Pi t (id "_",u) }
 
     | Sigma x= identifier Colon t1= ts_expr Comma t2= ts_expr
 	%prec Reduce_binder
