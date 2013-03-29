@@ -12,13 +12,6 @@ exception WitnessNotFound
 
 let abstract env x = nowhere 202 (TEMPLATE(first_var env, x))
 
-let open_context t1 (env,o,t2) =
-  let env = local_tts_declare_object env "x" t1 in
-  let e = var_to_expr_bare (Rel 1) ** var_to_expr_bare (Rel 0) ** END in
-  let o = Substitute.apply_args (rel_shift_expr 1 o) e in
-  let t2 = Substitute.apply_args (rel_shift_expr 1 t2) e in
-  (env,o,t2)
-
 let rec this_head_reduces env o =   (* returns (p,o'), where p : o == o' : _ *)
   (* raises Not_found if there is no head reduction *)
   try
@@ -62,8 +55,6 @@ and find_w_object_equality env o o' t =
 let witness (surr:surrounding) (env:environment) (pos:position) (t:judgment) (args:expr_list) : tactic_return =
   try
     match surr with
-    | (env,S_type_family_args(3,[o;t]), None, Some (_,J_Basic(J_witnessed_hastype,_))) :: _ ->
-	TacticSuccess (raise NotImplemented)
     | (env,S_type_family_args(4,[o';o;t]), None, Some (_,J_Basic(J_witnessed_object_equality,_))) :: _ ->
 	TacticSuccess (find_w_object_equality env o o' t)
     | (env,S_type_family_args(3,[t';t]), None, Some (pos,J_Basic(J_witnessed_type_equality,_))) :: _ ->

@@ -14,6 +14,11 @@ let isunused_variable_expression x =
 
 exception Args_match_failure
 
+let args0 s =
+  match s with
+  | END -> ()
+  | _ -> raise Args_match_failure
+
 let args1 s =
   match s with
   | ARG(x,END) -> x

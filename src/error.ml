@@ -10,7 +10,7 @@ let try_normalization = true
 
 let env_limit = Some 20
 
-let tactic_tracing = false
+let tactic_tracing = true
 
 let lesser_debug_mode = true
 

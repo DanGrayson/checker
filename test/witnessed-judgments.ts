@@ -12,21 +12,18 @@ Goal [ T -> @U Type ];;
 
 # Goal LF (B:texp) ⟶ witnessed_istype (@Pi B (_ ⟼ _ ⟼ @U));;
 
-Goal [ ? : f : T -> @U ];;
+Goal [ f : T -> @U ];;
 
-Goal [ ? : x : T ];;
+Goal [ x : T ];;
 
-Goal [ ? : @ev[f,x,T,.@U] : @U ];;
+Goal [ @ev[f,x,T,.@U] : @U ];;
 
-Goal [ ? : @ev[@λ[T,y.@ev[f,y,T,.@U]],x,T,.@U]: @U];;
+Goal [ @ev[@λ[T,y.@ev[f,y,T,.@U]],x,T,.@U] : @U];;
 
-Lemma a [ ? : @ev[@λ[T,y.@ev[f,y,T,.@U]],x,T,.@U]: @U];;
+Lemma a [ @ev[@λ[T,y.@ev[f,y,T,.@U]],x,T,.@U] : @U];;
 Check a;;
-Check a$;;
 
-Goal [ @El[@ev[f,x,T,.@U],@wev[f$,x$]] Type ];;
-
-Goal [ @El[@ev[f,x,T,.@U],?] Type ];;
+Goal [ @El[@ev[f,x,T,.@U]] Type ];;
 
 Goal [ *@ev[f,x,T,.@U] Type ];;		    # * is notation for El
 
