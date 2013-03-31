@@ -145,3 +145,10 @@ Gonthier mentioned:
 
 	 Mizar, for its natural language
 	 Matita, for its literate documentation of its kernel, modeled after coq's
+
+A language of patterns for subterm selection
+  	Georges Gonthier and Enrico Tassi
+	http://www.msr-inria.inria.fr/~gares/rew.pdf
+
+Isabelle - Isar
+	http://isabelle.in.tum.de/Isar/
