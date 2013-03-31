@@ -45,7 +45,7 @@ let default_tactic = cite_tactic "default" END
 
 let ( ** ) x s = ARG(x,s)		(* right associative *)
 
-let var_0 = var_to_expr_bare (Rel 0) ** END
+let var_0 = var_to_expr_nowhere (Rel 0) ** END
 
 let rec nth_arg n args =
   match n,args with
@@ -268,7 +268,8 @@ let uuu = nowhere 187 (BASIC(T T_U', END))
 
 let make_T_El x = make_T T_El (x ** END)
 let make_T_U x = make_T T_U ( x ** END)
-let make_T_Pi    t1 (x,t2) = make_T T_Pi    (t1 ** lambda1 x t2 ** END)
+let make_T_Pi      t1 (x,t2) = make_T T_Pi    (t1 ** lambda1 x t2 ** END)
+let make_T_Pi_flat t1    t2  = make_T T_Pi    (t1 ** t2 ** END)
 let make_T_Sigma t1 (x,t2) = make_T T_Sigma (t1 ** lambda1 x t2 ** END)
 let make_T_Pt = make_T T_Pt END
 let make_T_Coprod t t' = make_T T_Coprod (t ** t' ** END)

@@ -9,6 +9,7 @@ let rec map_expr_list f s = match s with
   | END -> s
 
 let rec rel_shift_expr limit shift e =
+  if shift = 0 then e else
   match unmark e with
   | BASIC(h,args) ->
       let args' = map_expr_list (rel_shift_expr limit shift) args in

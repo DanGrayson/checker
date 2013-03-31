@@ -34,10 +34,10 @@ let mismatch_term_t env pos x pos' x' t =
                     pos',      "to match\n\t" ^ expr_to_string env x';
                get_pos t,       "of type\n\t" ^ judgment_to_string env t]))
 
-let mismatch_term env pos x pos' x' =
+let mismatch_term env x x' =
   raise (TypeCheckingFailure (env, [], [
-                    pos , "expected term\n\t" ^ expr_to_string env x;
-                    pos',      "to match\n\t" ^ expr_to_string env x']))
+                    get_pos x , "expected term\n\t" ^ expr_to_string env x;
+                    get_pos x',      "to match\n\t" ^ expr_to_string env x']))
 
 let function_expected env f t =
   raise (TypeCheckingFailure (env, [], [

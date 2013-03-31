@@ -138,7 +138,7 @@ let rec head_reduction (env:environment) (x:expr) : expr =
   | BASIC(h,args) -> (
       match h with
       | TACTIC _ -> raise Internal	(* all tactics should have been handled during type checking *)
-      | (U _|O _|T _) -> raise Not_found (* we know the constants in our signature don't involve singleton types *)
+      | (U _|O _|T _|W _) -> raise Not_found (* we know the constants in our signature don't involve singleton types *)
       | head ->
 	  let t = 
 	    try
@@ -188,7 +188,7 @@ let compare_var_to_expr v e =
 let open_context t1 (env,o,t2) =
   let env = local_tts_declare_object env "x" t1 in
   let v = Rel 0 in
-  let e = var_to_expr_bare v ** END in
+  let e = var_to_expr_nowhere v ** END in
   let o = Substitute.apply_args (rel_shift_expr 1 o) e in
   let t2 = Substitute.apply_args (rel_shift_expr 1 t2) e in
   (env,o,t2)
@@ -225,13 +225,11 @@ let rec check_witnessed_istype env t =
 	  let t1,t2 = args2 args in
 	  check_witnessed_istype env t1;
 	  let env = local_tts_declare_object env "o" t1 in
-	  let o = var_to_expr_bare (Rel 0) in
-	  let t2 = Substitute.apply_args t2 (o ** END) in
+	  let o = var_to_expr_nowhere (Rel 0) in
+	  let t2 = apply_1 0 t2 o in
 	  check_witnessed_istype env t2
-      | T_U' -> ()
-      | T_El ->				(* rewrite *)
-	  let o = args1 args in
-	  check_witnessed_hastype env uuu o
+      | T_U' -> let _ = args0 args in ()
+      | T_El -> check_witnessed_hastype env uuu (args1 args)
       | _ -> err env (get_pos t) "invalid type, or not implemented yet.")
   | _ -> err env (get_pos t) ("invalid type, or not implemented yet: " ^ ts_expr_to_string env t)
 
@@ -246,14 +244,14 @@ and check_witnessed_hastype env t o =
   | BASIC(O O_ev, oargs) ->
       let f,o,t1,t2 = args4 oargs in
       check_witnessed_hastype env t1 o;
-      let u = nowhere 123 (BASIC(T T_Pi, t1 ** t2 ** END)) in
+      let u = nowhere 123 (make_T_Pi_flat t1 t2) in
       check_witnessed_hastype env u f;
       let t2' = Substitute.apply_args t2 (o ** END) in
       if not (term_equiv t2' t) then mismatch_term_tstype_tstype env o t t2'
   | BASIC(O O_lambda, oargs) ->
       let t1',o = unpack_lambda o in
       let t1,t2 = unpack_Pi t in
-      if not (term_equiv t1' t1) then mismatch_term env (get_pos t) t (get_pos t1) t1;
+      if not (term_equiv t1' t1) then mismatch_term env t t1;
       let env,o,t2 = open_context t1 (env,o,t2) in
       check_witnessed_hastype env t2 o
   | _ -> mismatch_term_tstype env o t
@@ -263,13 +261,7 @@ and check_witnessed_type_equality env t t' p =
   match unmark p with
   | BASIC(W wh, pargs) -> (
       match wh with
-      | W_weleq ->
-	  let peq = args1 pargs in
-	  let o = unpack_El t in
-	  let o' = unpack_El t' in
-	  check_witnessed_object_equality env uuu o o' peq;
-	  check_witnessed_hastype env uuu o;
-	  check_witnessed_hastype env uuu o'
+      | W_weleq -> check_witnessed_object_equality env uuu (unpack_El t) (unpack_El t') (args1 pargs)
       | W_wrefl | W_Wrefl | W_Wsymm | W_Wtrans | W_wsymm | W_wtrans | W_wconv
       | W_wconveq | W_wpi1 | W_wpi2 | W_wlam | W_wl1 | W_wl2 | W_wev
       | W_wevt1 | W_wevt2 | W_wevf | W_wevo | W_wbeta | W_weta | W_QED
@@ -286,18 +278,18 @@ and check_witnessed_object_equality env t o o' p =
 	  let _ = args0 pargs in
 	  let f,o1,t1',t2 = unpack_ev o in
 	  let t1,o2 = unpack_lambda f in
-	  if not (term_equiv t1 t1') then mismatch_term env (get_pos t1) t1 (get_pos t1') t1';
+	  if not (term_equiv t1 t1') then mismatch_term env t1 t1';
 	  check_witnessed_hastype env t1 o1;
 	  let env,o2',t2' = open_context t1 (env,o2,t2) in
 	  check_witnessed_hastype env t2' o2';
 	  let t2'' = apply_1 1 t2 o1 in
-	  if not (term_equiv t2'' t) then mismatch_term env (get_pos t2'') t2'' (get_pos t) t;
+	  if not (term_equiv t2'' t) then mismatch_term env t2'' t;
 	  let o2' = apply_1 1 o2 o1 in
-	  if not (term_equiv o2' o') then mismatch_term env (get_pos o2') o2' (get_pos o') o'
+	  if not (term_equiv o2' o') then mismatch_term env o2' o'
       | W_wrefl -> (
 	  check_witnessed_hastype env t o;
 	  check_witnessed_hastype env t o';
-	  if not (term_equiv o o') then mismatch_term env (get_pos o) o (get_pos o') o';
+	  if not (term_equiv o o') then mismatch_term env o o';
 	 )
       | _ -> raise FalseWitness)
   | _ -> raise FalseWitness
@@ -347,7 +339,7 @@ let rec term_equivalence (env:environment) (x:expr) (y:expr) (t:judgment) : unit
       term_equivalence env (pi2 x) (pi2 y) (subst_type (pi1 x) b)
   | J_Pi (v,a,b) ->
       let env = local_lf_bind env v a in
-      let v = var_to_expr_bare (Rel 0) in
+      let v = var_to_expr_nowhere (Rel 0) in
       let xres = apply_args (rel_shift_expr 1 x) (ARG(v,END)) in
       let yres = apply_args (rel_shift_expr 1 y) (ARG(v,END)) in
       term_equivalence env xres yres b
@@ -676,7 +668,7 @@ let rec term_normalization (env:environment) (x:expr) (t:judgment) : expr =
       let result =
 	match unmark x with
 	| TEMPLATE(_,body) -> body	(* this is just an optimization *)
-	| _ -> apply_args (rel_shift_expr 1 x) (ARG(var_to_expr_bare (Rel 0),END)) in
+	| _ -> apply_args (rel_shift_expr 1 x) (ARG(var_to_expr_nowhere (Rel 0),END)) in
       let body = term_normalization env result b in
       let r = pos, TEMPLATE(v,body) in
       if !debug_mode then printf "term_normalization(%d) r = %a\n%!" c _e (env,result);
@@ -691,9 +683,11 @@ let rec term_normalization (env:environment) (x:expr) (t:judgment) : expr =
       let y = term_normalization env y b in
       pos, PAIR(x,y)
   | J_Basic _ ->
-      let x = head_normalization env x in
-      let (x,t) = path_normalization env x in
-      x
+      let x = head_normalization env x in (
+      try
+	let (x,t) = path_normalization env x in x
+      with NonSynthesizing -> x		(* this might require more thought *)
+     )
   | J_Singleton(x',t) -> term_normalization env x t
 
 and path_normalization (env:environment) (x:expr) : expr * judgment =
@@ -726,9 +720,9 @@ and path_normalization (env:environment) (x:expr) : expr * judgment =
                   let (c,args) = repeat b (ARG(x,args_passed)) args in
                   (c, ARG(x,args)))
           | J_Singleton _ ->
-	      if !debug_mode then printf "\tbad type t = %a\n%!" _t (env,t);
+	      printf "\tbad type t = %a\n%!" _t (env,t);
 	      print_context (Some 5) stdout env;
-	      (trap(); raise Internal) (* x was head normalized, so any definition of head should have been unfolded *)
+	      raise Internal (* x was head normalized, so any definition of head should have been unfolded *)
           | J_Sigma(v,a,b) -> (
               match args with
               | END -> (t,END)

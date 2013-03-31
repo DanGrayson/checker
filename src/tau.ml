@@ -55,7 +55,7 @@ let rec tau (env:environment) e : expr =
               match args with
               | ARG(t,ARG(o,END)) ->
 		  let x = id "x" in
-		  let x' = id_to_expr_bare x in
+		  let x' = id_to_expr_nowhere x in
                   make_T_Pi t (x, tau (ts_bind env x t) (Substitute.apply_args o (ARG(x',END))))
               | _ -> raise Internal)
           | O_forall -> (

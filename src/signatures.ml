@@ -101,7 +101,7 @@ let whead_to_signature = function
   | W_wevo -> wexp @-> wexp @-> wexp @-> wexp
   | W_wbeta -> wexp
   | W_weta -> wexp @-> wexp
-  | W_QED -> wexp		(* not really true *)
+  | W_QED -> raise Error.NonSynthesizing
 
 (** Signatures for judgments *)
 

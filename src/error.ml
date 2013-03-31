@@ -10,7 +10,7 @@ let try_normalization = true
 
 let env_limit = Some 20
 
-let tactic_tracing = true
+let tactic_tracing = false
 
 let lesser_debug_mode = true
 
@@ -36,6 +36,7 @@ exception Eof
 exception FalseWitness
 exception GoBack of int
 exception GoBackTo of int
+exception NonSynthesizing
 
 let bump_error_count pos =
   incr error_count;
