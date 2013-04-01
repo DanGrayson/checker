@@ -282,7 +282,9 @@ unmarked_command:
 	  Toplevel.Theorem (pos, Some name, (pos,default_tactic), thm) }
 
     | Include filename= STRING EndOfProofStepMarker
-	{ Toplevel.Include filename }
+	{ 
+	  let pos = Position($startpos, $endpos) in
+	  Toplevel.Include (pos,filename) }
 
     | Clear EndOfProofStepMarker
 	{ Toplevel.Clear }

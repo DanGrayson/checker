@@ -53,7 +53,7 @@ ifeq "$(DEBUG)" "yes"
 CHECKER_OPTIONS += --debug
 endif
 
-CHECKER := $(CHECKER_ENV) time ./$(CHECKER_EXE) $(CHECKER_OPTIONS)
+CHECKER := $(CHECKER_ENV) time $(shell pwd)/$(CHECKER_EXE) $(CHECKER_OPTIONS)
 
 BFLAGS = -I src   -I src/tactics   -I +camlp5   -use-menhir   -menhir 'menhir --explain --error-recovery'
 

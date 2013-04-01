@@ -16,7 +16,7 @@ type command' =
   | Show of int option
   | Back of int
   | BackTo of int
-  | Include of string
+  | Include of position * string
   | Clear
   | SyntaxError
   | Mode of string

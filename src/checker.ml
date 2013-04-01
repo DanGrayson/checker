@@ -236,9 +236,12 @@ let rec process_command env lexbuf =
     | Toplevel.BackTo n ->
         if env.state <= n then env else raise (GoBackTo n)
     | Toplevel.CheckUniverses -> checkUniversesCommand env pos; env
-    | Toplevel.Include filename ->
+    | Toplevel.Include (pos,filename) ->
 	let save_interactive = !interactive in
-	let env = parse_file env filename in
+	let env = 
+	  try parse_file env filename 
+	  with Sys_error msg -> Errorcheck.err env pos msg
+	in
 	interactive := save_interactive;
 	env
     | Toplevel.Clear -> empty_environment
@@ -309,7 +312,9 @@ let toplevel() =
       (fun filename ->
 	try
 	  env := parse_file !env filename
-	with Failure "exiting" -> exit 1	(* after too many errors in a file, we don't parse the other files *)
+	with 
+	| Sys_error msg -> printf "%s\n%!" msg; exit 1
+	| Failure "exiting" -> exit 1	(* after too many errors in a file, we don't parse the other files *)
       )
       ("usage: " ^ (Filename.basename Sys.argv.(0)) ^ " [option|filename] ...");
   with FileFinished -> ());
