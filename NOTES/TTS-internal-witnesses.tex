@@ -376,7 +376,7 @@ $$\frac{\Gamma\vdash p : o \eqd o' \synth{\Eu}}{\Gamma\vdash \ha\weleq{p} : \ha\
 \begin{enumerate}
 
 \item 
-$$\frac{\Gamma, \var \ccolon{T}\vdash U\Type}{\Gamma\vdash \ha\prod{T,.U}\Type}$$
+$$\frac{\Gamma \vdash T \Type \spc \Gamma, \var \ccolon{T}\vdash U\Type}{\Gamma\vdash \ha\prod{T,.U}\Type}$$
 
 Here $.U$ is notation for abstraction: binding a variable to the scope of the expression $U$.
 
@@ -395,12 +395,12 @@ where any $\#0$ occuring in $e$ denotes the first variable in the resulting
 term.
 
 \item 
-$$\frac{\Gamma, \var \ccolon{T}\vdash o \ccheck{U}}{\Gamma\vdash \ha\lambda{.o} \ccheck{\ha\prod{T,.U}}}$$
+$$\frac{\Gamma \vdash T \Type \spc \Gamma, \var \ccolon{T}\vdash o \ccheck{U}}{\Gamma\vdash \ha\lambda{.o} \ccheck{\ha\prod{T,.U}}}$$
 
 Some space is saved by not annotating $\ha\lambda{.o}$ with $T$ and $.U$, due to bidirectionality.
 
 \item 
-$$\frac{\Gamma, \var \ccolon{T}\vdash p : o\eqd o' \ccheck{U}}{\Gamma\vdash \ha\wl{p} : \ha\lambda{.o}\eqd \ha\lambda{.o'} : \ha\prod{T,.U}}$$
+$$\frac{\Gamma \vdash T \Type \spc \Gamma, \var \ccolon{T}\vdash p : o\eqd o' \ccheck{U}}{\Gamma\vdash \ha\wl{p} : \ha\lambda{.o}\eqd \ha\lambda{.o'} : \ha\prod{T,.U}}$$
 
 \item 
 $$\frac{\Gamma\vdash f \ccolon{\ha\prod{T,.U}}\spc \Gamma\vdash t \ccheck{T}}{\Gamma\vdash \ha\ev{f,t} \synth{U[\ha\annot{t,T}]}}$$
@@ -431,15 +431,18 @@ the witnesses have been forgotten.
 
 \item 
 % beta
-$$\frac{ \Gamma\vdash t \ccheck{T}\spc \Gamma, \var \ccolon{T}\vdash u \ccheck{U}}{\Gamma\vdash \ha\wbeta{T,.U} : \ha\ev{\ha\lambda{.u},t} \eqd u[\ha\annot{t,T}] : U[\ha\annot{t,T}]}$$
+$$\frac{ \Gamma \vdash T \Type \spc \Gamma\vdash t \ccheck{T}\spc \Gamma, \var \ccolon{T}\vdash u \ccheck{U}}{\Gamma\vdash \ha\wbeta{T,.U} : \ha\ev{\ha\lambda{.u},t} \eqd u[\ha\annot{t,T}] : U[\ha\annot{t,T}]}$$
 
 Replacing $\ha\lambda{.u}$ by $\ha\annot{\ha\lambda{.u},\ha\prod{T,.U}}$ would
 be an alternative to putting $T$ and $.U$ in the witness.  Comparison of two
 terms of the same type by normalization need not involve computation of the
 types of partially applied results, so a version of this rule free of type
 annotations is needed.
-% eta
 
+It would be better if $\beta$-reduction were free-running, without the
+necessity of tracking the types $T$ and $U$.
+
+% eta
 \item 
 $$\frac{\Gamma\vdash f \ccheck{\ha\prod{T,.U}}}{\Gamma\vdash \ha\weta{} : f \eqd \ha\lambda{x.\ha\ev{f,x}} : \ha\prod{T,.U}}$$ 
 
