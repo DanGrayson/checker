@@ -14,16 +14,13 @@ module Identifier :
     end 
     =
   struct
-    type flavor = Object | Witness
-    type identifier = string * flavor
+    type identifier = string
     type t = identifier
     let compare : t -> t -> int = Pervasives.compare
-    let idtostring = function
-      | name, Object -> name
-      | name, Witness -> name ^ "$"
-    let id name = name, Object
-    let isid = function _,Object -> true | _,Witness -> false
-    let id_to_name = function name,_ -> name
+    let idtostring = function name -> name
+    let id name = name
+    let isid = function _ -> true
+    let id_to_name = function name -> name
   end
 
 include Identifier
