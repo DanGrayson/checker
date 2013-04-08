@@ -39,7 +39,10 @@ type tts_judgment =
   | TTS_istype
   | TTS_hastype of expr
   | TTS_type_equality of expr * expr
-  | TTS_object_equality of expr * expr * expr
+  | TTS_object_equality of expr * expr * expr                  (* (t, o, o') represents o = o' : t *)
+  | TTS_template of string * tts_judgment * tts_judgment       (* x : J |- J'; with relative index 0 used to refer to x within J' *)
+
+type tts_declaration = tts_judgment * expr option              (* a judgment with an optional definition (value) *)
 
 (** Functions *)
 

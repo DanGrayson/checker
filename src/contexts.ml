@@ -9,8 +9,8 @@ module MapIdentifier = Map.Make(Identifier)
 
 type environment = {
     state : int;
-    local_tts_context : (string * tts_judgment) list;
-    global_tts_context : tts_judgment MapString.t;
+    local_tts_context : (string * tts_declaration) list;
+    global_tts_context : tts_declaration MapString.t;
     local_lf_context : (identifier * judgment) list;
     global_lf_context : judgment MapIdentifier.t;
   }
@@ -48,53 +48,47 @@ let lf_fetch env = function
   | Var name -> global_lf_fetch env name
   | Rel i -> local_lf_fetch env i
 
-let local_tts_declare_type   env name   = { env with local_tts_context = (name,TTS_istype   ) :: env.local_tts_context }
+let local_tts_declare_type   env name   = { env with local_tts_context = (name,(TTS_istype, None)) :: env.local_tts_context }
 
-let local_tts_declare_object env name t = { env with local_tts_context = (name,TTS_hastype t) :: env.local_tts_context }
+let local_tts_declare_object env name t = { env with local_tts_context = (name,(TTS_hastype t, None)) :: env.local_tts_context }
 
 let global_tts_declare_type env pos name = 
   if MapString.mem name env.global_tts_context then raise (MarkedError (pos, "variable already defined: " ^ name));
-  { env with global_tts_context = MapString.add name TTS_istype env.global_tts_context }
+  { env with global_tts_context = MapString.add name (TTS_istype, None) env.global_tts_context }
 
 let global_tts_declare_object env pos name t = 
   if MapString.mem name env.global_tts_context then raise (MarkedError (pos, "variable already defined: " ^ name));
-  { env with global_tts_context = MapString.add name (TTS_hastype t) env.global_tts_context }
+  { env with global_tts_context = MapString.add name (TTS_hastype t, None) env.global_tts_context }
 
 let ts_bind env v t = 
   if isid v then local_tts_declare_object env (id_to_name v) t else raise Internal
 
 let local_tts_fetch env i =			(* (Rel i) *)
-  (* note: each TTS_hastype consumes two relative indices, whereas each TTS_istype consumes only one; that should change *)
-  let rec repeat shift i context =
-    match context with
-    | (_, TTS_istype) :: context -> if i = 0 then TTS_istype else repeat (shift+1) (i-1) context
-    | (_, TTS_hastype t) :: context -> if i = 0 || i = 1 then TTS_hastype (rel_shift_expr shift t) else repeat (shift+2) (i-2) context
-    | (_, TTS_type_equality(t,t')) :: _ -> raise NotImplemented
-    | (_, TTS_object_equality(t,o,o')) :: _ -> raise NotImplemented
-    | [] -> raise Not_found
-  in repeat 2 i env.local_tts_context
+  match List.nth env.local_tts_context i with
+  | (_, (TTS_istype, _)) -> TTS_istype
+  | (_, (TTS_hastype t, _)) -> TTS_hastype (rel_shift_expr (i+1) t)
+  | (_, (TTS_type_equality(t,t'),_)) -> raise NotImplemented
+  | (_, (TTS_object_equality(t,o,o'),_)) -> raise NotImplemented
+  | (_, (TTS_template _,_)) -> raise NotImplemented
 
-let global_tts_fetch env name = MapString.find name env.global_tts_context
+let global_tts_fetch env name = fst (MapString.find name env.global_tts_context)
 
 let global_tts_fetch_type env name =
-  match
-    global_tts_fetch env name
-  with
+  match global_tts_fetch env name with
   | TTS_hastype t -> t
   | TTS_istype 
   | TTS_type_equality _
   | TTS_object_equality _
+  | TTS_template _
     -> raise Not_found
 
 let is_tts_type_variable env name =
-  try
-    match
-      global_tts_fetch env name
-    with
-    | TTS_istype -> true
-    | TTS_hastype _
-    | TTS_type_equality _
-    | TTS_object_equality _ -> false
+  try match global_tts_fetch env name with
+  | TTS_istype -> true
+  | TTS_hastype _
+  | TTS_type_equality _
+  | TTS_object_equality _
+  | TTS_template _ -> false
   with
   | Not_found -> false
 
@@ -108,6 +102,7 @@ let tts_fetch_type env name =
   | TTS_istype
   | TTS_type_equality _
   | TTS_object_equality _
+  | TTS_template _
     -> raise Not_found
 
 let ts_fetch env v = 
@@ -116,6 +111,7 @@ let ts_fetch env v =
   | TTS_istype
   | TTS_type_equality _
   | TTS_object_equality _
+  | TTS_template _
     -> raise Internal
 
 let first_var env =

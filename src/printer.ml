@@ -566,10 +566,15 @@ let print_context n file env =
       (fun i (name,j) ->
         if i = n then raise Limit;
 	match j with
-	| TTS_istype -> fprintf file "   %s Type\n%!" name
-	| TTS_hastype t -> fprintf file "   %s : %a\n%!" name _e (env,t)
-	| TTS_type_equality(t,t') -> fprintf file "   %s : %a == %a\n%!" name _e (env,t) _e (env,t')
-	| TTS_object_equality(t,o,o') -> fprintf file "   %s : %a == %a : %a\n%!" name _e (env,o) _e (env,o') _e (env,t)
+	| TTS_istype, None -> fprintf file "   %s Type\n%!" name
+	| TTS_istype, Some t -> fprintf file "   %s := %a Type\n%!" name _e (env,t)
+	| TTS_hastype t, None -> fprintf file "   %s : %a\n%!" name _e (env,t)
+	| TTS_hastype t, Some o -> fprintf file "   %s := %a : %a\n%!" name _e (env,o) _e (env,t)
+	| TTS_type_equality(t,t'), None -> fprintf file "   %s : %a == %a\n%!" name _e (env,t) _e (env,t')
+	| TTS_type_equality(t,t'), Some p -> fprintf file "   %s := %a : %a == %a\n%!" name _e (env,p) _e (env,t) _e (env,t')
+	| TTS_object_equality(t,o,o'), None -> fprintf file "   %s : %a == %a : %a\n%!" name _e (env,o) _e (env,o') _e (env,t)
+	| TTS_object_equality(t,o,o'), Some p -> fprintf file "   %s := %a : %a == %a : %a\n%!" name _e (env,p) _e (env,o) _e (env,o') _e (env,t)
+	| TTS_template _, _ -> raise NotImplemented (* make a separate recursive routine for printing tts_judgments *)
       )
       lfc
   with Limit -> fprintf file "     ...\n");
