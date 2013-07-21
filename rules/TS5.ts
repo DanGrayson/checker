@@ -77,14 +77,17 @@ Lemma nat_equality_sanity { x : Nat ⊢ T Type }
 		:
 		T[@ev[S,n,Nat,.Nat]]
 	   ] :=
-   T.T'.o1.o1'.o2.o2'.n.n'.t.t'.(
+   T.T'...o2..n.n'.t..(
    ev_hastype[
       T[n], .T[@ev[S,n,Nat,.Nat]], @ev[o2,n,Nat,x.T[x] -> T[@ev[S,x,Nat,.Nat]]], t, SND,
       T'[n,n'],
       ..T'[@ev[S,n,Nat,.Nat],ev_hastype[Nat,.Nat,S,n,SND,?,?,?,?]],
       ev_hastype[
       	  Nat, x.T[x] -> T[@ev[S,x,Nat,.Nat]], o2, n, SND,
-	  ?, x.x'.∏_istype[T[x],.T[@ev[S,x,Nat,.Nat]],SND,T'[x,?],..T'[@ev[S,x,Nat,.Nat],ev_hastype[Nat,.Nat,S,x,SND,?,?,?,?]]], ?, ?],
+	  ?,
+	  x..∏_istype[T[x],.T[@ev[S,x,Nat,.Nat]],SND,T'[x,?],..T'[@ev[S,x,Nat,.Nat],ev_hastype[Nat,.Nat,S,x,SND,?,?,?,?]]],
+	  ?,
+	  ?],
       ?]);;
 
 Axiom nat_equality
