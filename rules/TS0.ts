@@ -55,6 +55,8 @@ Axiom 3.4.24 λ_equality { ⊢ T T' Type } { x : T ⊢ U U' Type, o o' : U[x] }
 
 Axiom 3.4.24.1 λ_equality1 { ⊢ T T' Type } { x : T ⊢ U Type, o : U[x] }
 
+		        [ T ≡ T' ] ⇒ 
+
      			[ λ t:T, o[t] ≡ λ t':T', o[t'] : ∏ t:T, U[t] ];;
 
 Axiom 3.4.24.2 λ_equality2 { ⊢ T Type } { x : T ⊢ U U' Type, o o' : U[x] }
