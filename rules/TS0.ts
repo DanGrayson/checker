@@ -87,7 +87,7 @@ Axiom 3.4.29 jj_hastype { ⊢ M1 M2 Ulevel } [ umax[M1,M2] ~ M2 Ulevel ]
 
 Axiom 3.4.30 El_j_reduction { ⊢ M1 M2 Ulevel, o : UU[M1] }
 
-  	[ umax[M1,M2] ~ M2 Ulevel ] ⇒ [ *@ev[jj[M1,M2],o,UU[M1],_.UU[M2]] ≡ *o ];;
+  	[ umax[M1,M2] ~ M2 Ulevel ] ⇒ [ *@ev[jj[M1,M2],o,UU[M1],.UU[M2]] ≡ *o ];;
 
 Axiom 3.4.31 forall_hastype { ⊢ M1 M2 Ulevel, o1 : UU[M1] } { x : *o1 ⊢ o2 : UU[M2] }
 

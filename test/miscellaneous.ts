@@ -63,11 +63,11 @@ Check TS jj[u1,u2];;
 Check TS @λ[T,x.x];;
 # Check TS @forall[u1,u2,x0,x.x0];;
 
-Check TS λ f:T⟶U, λ o:T, @ev[f,o,T,_.U];;
+Check TS λ f:T⟶U, λ o:T, @ev[f,o,T,.U];;
 # Check TS λ f:T⟶U, λ o:T, f o;;
 # Check TS λ k:U, λ g:T⟶*k, λ f:∏ t:T, *g t, λ o:T, f o;;
 # Check TS λ r:U, λ f:T⟶U, λ o:T, λ x : *r, f o;;
-Check TS λ f:X⟶T, λ y:X, @ev[f,y,X,_.T];;
+Check TS λ f:X⟶T, λ y:X, @ev[f,y,X,.T];;
 # Check TS λ f:X⟶T, λ y:X, f y;;
 
 Check TS U_istype;;

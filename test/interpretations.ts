@@ -4,15 +4,15 @@ Include "rules/TS2.ts";;
 
 # derive versions of some inference rules with simple types
 
-Definition pi1 { ⊢ T U Type } ⊢ @∏[T,_.U] Type ::=
+Definition pi1 { ⊢ T U Type } ⊢ @∏[T,.U] Type ::=
 
    T ⟼ U ⟼ (?, T' ⟼ U' ⟼ (∏_istype T (_ ⟼ U) SND T' (_ ⟼ _ ⟼ U')));;
 
-Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ @λ[T,o] : @∏[T,_.U] ::=
+Definition lambda1 { ⊢ T U Type } { t : T ⊢ o : U } ⊢ @λ[T,o] : @∏[T,.U] ::=
 
    T ⟼ U ⟼ o ⟼ ((@λ T o), T' ⟼ U' ⟼ (λ_hastype T (_ ⟼ U) o SND T' (_ ⟼ _ ⟼ U')));;
 
-Definition ev1 { ⊢ T U Type, f : @∏[T,_.U], o : T } ⊢ @ev[f,o,T,_.U] : U ::=
+Definition ev1 { ⊢ T U Type, f : @∏[T,.U], o : T } ⊢ @ev[f,o,T,.U] : U ::=
 
    T ⟼ U ⟼ f ⟼ o ⟼
    ((ev_hastype T (_ ⟼ U) f o FST), T' ⟼ U' ⟼ (ev_hastype T (_ ⟼ U) f o SND T' (_ ⟼ _ ⟼ U')));;
