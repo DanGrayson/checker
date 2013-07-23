@@ -87,7 +87,7 @@
 \newcommand{\PP}{{\bf Prop}}
 \newcommand{\cc}{{\bf c}}
 \newcommand{\rect}{{\bf rect}}
-\newcommand{\eqd}{\stackrel{d}{=}}
+\newcommand{\eqd}{\equiv}
 
 \newcommand{\cu}{{u}}
 \newcommand{\Eu}{{\cal U}}
@@ -133,7 +133,7 @@
 \newcommand{\wstrans}{{\sf wstrans}}
 \newcommand{\wctrans}{{\sf wctrans}}
 \newcommand{\var}{\char`_}
-\newcommand{\defn}{\vcentcolon=}
+\newcommand{\defn}{\vcentcolon\equiv}
 
 \begin{document}
 
@@ -160,7 +160,7 @@ HTS.
 We are aiming at a type system where every derivable extended sentence can be
 obtained by a unique inference rules such that one gets a bijection between
 inference trees and $\alpha$-equivalence classes of derivable extended
-sentences.
+sentences.  The extension is chosen here in a minimal way.
 
 \subsection{Rules}
 
@@ -193,6 +193,9 @@ with free variables introduced by $\Gamma'$ or by earlier entries in the list
 $\Gamma$, and where $X$, $x$, or $w$ is the (single) variable {\em introduced}
 by the item.  The operator $\defn$ is used to indicate that the variable is
 accompanied by a value, thereby providing a definition, rather than an axiom.
+The witnesses $w$ and $p$ are the additional data that makes these sentences
+{\em extended}, and need be recorded only if the derivation tree needs to
+recoverable from the derived sentence.
 
 If $\Gamma'$ is empty, we may simplify notation and write
 $$ X \Type $$
@@ -250,22 +253,22 @@ $$\frac{\Gamma,\Gamma'\vdash T \Type }{\Gamma,\{\Gamma' \vdash X \defn T \Type \
 
 This item introduces a variable $X$ representing a family of types parametrized by
 the variables of $\Gamma'$, with value is given by the expression $T$.  This is
-intended to be the standard way that type families, such as $\mathop{isProp}$,
+intended to be the standard way that type families, such as $\mathsf{isProp}$,
 are defined.
 
 \item
 $$\frac{\Gamma,\Gamma'\vdash T \Type}{\Gamma,\{\Gamma' \vdash x \ccolon{T} \} \vdash\Okay}$$
 
 This item introduces a variable $x$ of type $T$.  Both are parametrized by the
-variables of $\Gamma'$.  This would be the standard way to introduce a type $T$
-as an axiom.
+variables of $\Gamma'$.  This is intended to be the standard way to introduce a
+type $T$ as an axiom.
 
 \item
 $$\frac{\Gamma,\Gamma'\vdash o \synth T}{\Gamma,\{\Gamma' \vdash x \defn o \ccolon{T} \} \vdash\Okay}$$
 
-This item introduces a variable $x$ with value $o$ of type $T$. This would be
-the standard way to record the proof $o$ of a theorem $T$ parametrized by
-$\Gamma'$ under the name $x$.
+This item introduces a variable $x$ with value $o$ of type $T$. This is
+intended to be the standard way to record the proof $o$ of a theorem $T$
+parametrized by $\Gamma'$ under the name $x$.
 
 \item
 $$\frac{\Gamma,\Gamma'\vdash T \Type \spc \Gamma,\Gamma'\vdash T' \Type}{\Gamma,\{\Gamma' \vdash w : T \eqd T' \} \vdash\Okay}$$
@@ -313,6 +316,11 @@ this rule because $T'$ may not be validatable.  Similarly for objects.
 \item 
 $$\frac{\Gamma\vdash p:T_1\eqd T_2}{\Gamma\vdash \ha\Wsymm{p}:T_2\eqd T_1}$$
 
+We don't list the sentences $ \Gamma \vdash T_1 \Type $ and $ \Gamma \vdash T_2
+\Type $ as premisses, but for conversion to LF they would be needed, since each
+item would have to be introduced somehow.  This might make this approach more
+efficient than using LF.
+
 \item 
 $$\frac{\Gamma\vdash p:T_1\eqd T_2\spc\Gamma\vdash q:T_2\eqd T_3}{\Gamma\vdash \ha\Wtrans{p,q,T_2}: T_1\eqd T_3}$$
 
@@ -337,12 +345,14 @@ $$\frac{\Gamma\vdash p:o_1\eqd o_2 \ccheck{T}\spc\Gamma\vdash q:o_2\eqd o_3 \cch
 \item 
 $$\frac{\Gamma\vdash o \synth{T}\spc \Gamma\vdash q : T \eqd T'}{\Gamma\vdash \ha\conv{o,q} \ccheck{T'}}$$
 
-In the comparisons $T\sim T'$ and $o\sim o'$, the term $\ha\conv{o,T,q}$ is regarded as equivalent to $o$.
+In any comparisons $T\sim T'$ and $o\sim o'$, a term of the form
+$\ha\conv{o,q}$ is regarded as equivalent to $o$.
 
 \item 
 $$\frac{\Gamma\vdash o \ccheck{T}}{\Gamma\vdash \ha\annot{o,T} \synth{T}}$$
 
-In the comparisons $T\sim T'$ and $o\sim o'$, the term $\ha\annot{o,T}$ is regarded as equivalent to $o$.
+In any comparisons $T\sim T'$ and $o\sim o'$, a term of the form
+$\ha\annot{o,T}$ is regarded as equivalent to $o$.
 
 In the code, the term $\ha\annot{o,T}$ could be represented by a private data
 type, so that such terms can be created only by the kernel of the type checker,
@@ -354,11 +364,11 @@ and so no tactic could forge such a certificate.
 
 \begin{enumerate}
 
-\item for $x$ not in $v(\Gamma)$
+\item
 
 $$\frac{\Gamma\vdash\Okay}{\Gamma \vdash \Eu\Type}$$
 
-\item for $x$ not in $v(\Gamma)$
+\item
 
 $$\frac{\Gamma\vdash o \synth{\Eu}}{\Gamma \vdash \ha\El{o}\Type}$$
 
@@ -368,6 +378,9 @@ term $o$, hence the choice of direction in this rule.
 \item 
 
 $$\frac{\Gamma\vdash p : o \eqd o' \synth{\Eu}}{\Gamma\vdash \ha\weleq{p} : \ha\El{o} \eqd \ha\El{o'}}$$
+
+When universe levels are added, the universe level synthesized here will be the
+larger of those synthesized from $o$ and $o'$.
 
 \end{enumerate}
 
@@ -397,7 +410,7 @@ term.
 \item 
 $$\frac{\Gamma \vdash T \Type \spc \Gamma, \var \ccolon{T}\vdash o \ccheck{U}}{\Gamma\vdash \ha\lambda{.o} \ccheck{\ha\prod{T,.U}}}$$
 
-Some space is saved by not annotating $\ha\lambda{.o}$ with $T$ and $.U$, due to bidirectionality.
+Some space is saved by not annotating $\ha\lambda{.o}$ with $T$ and $.U$.
 
 \item 
 $$\frac{\Gamma \vdash T \Type \spc \Gamma, \var \ccolon{T}\vdash p : o\eqd o' \ccheck{U}}{\Gamma\vdash \ha\wl{p} : \ha\lambda{.o}\eqd \ha\lambda{.o'} : \ha\prod{T,.U}}$$
