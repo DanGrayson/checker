@@ -176,7 +176,8 @@ where $p$, $o$, $t$, $t'$, $T$, $T'$ are expressions with free variables {\em
   introduced} by $\Gamma$.  Here $\Gamma$ is a {\em context}, a list of items,
 each of which has one of the following forms:
 
-$$\{ \Gamma'\vdash X \Type \}$$
+$$\{ \Gamma'\vdash X \Type \}\footnote{Hmm, this one seems to have no semantic
+  meaning.  It would be a very large space of all spaces.}$$
 $$\{ \Gamma'\vdash X \defn T \Type \}$$
 
 $$\{ \Gamma'\vdash x \ccolon{T} \}$$
@@ -210,9 +211,10 @@ etc., in $\Gamma$.
 Inference rules given later determine which sentences are well-formed and
 derivable.
 
-Variables in the context are considered to be nameless and distinct.  To
-emphasize that, we may write the names of all the variables as underscores, as
-in $\var \ccolon{T_1},\dots,\var \ccolon{T_n}\vdash \Okay$.
+Variables in the context may have names that are uninteresting for us, since
+they don't have to be referred to again.  To indicate that, we will write the
+names of such variables as underscores, as in $\var \ccolon{T_1},\dots,\var
+\ccolon{T_n}\vdash \Okay$.
 
 In the inference rules below, we'll indicate directionality of type inference
 in our algorithms by writing 
@@ -246,7 +248,7 @@ $$\frac{}{\vdash\Okay}$$
 $$\frac{\Gamma,\Gamma'\vdash \Okay}{\Gamma,\{\Gamma' \vdash X \Type \} \vdash\Okay}$$
 
 This item introduces a variable $X$ representing a family of types parametrized by
-the variables of $\Gamma'$.  It is intended only for temporary use.
+the variables of $\Gamma'$.  (The semantic meaning is unclear.)
 
 \item
 $$\frac{\Gamma,\Gamma'\vdash T \Type }{\Gamma,\{\Gamma' \vdash X \defn T \Type \} \vdash\Okay}$$
