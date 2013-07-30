@@ -1,0 +1,6 @@
+%.cmo: %.ml; ocamlbuild $(BFLAGS) $*.cmo
+%.cmo: %.mll; ocamlbuild $(BFLAGS) $*.cmo
+%.cmo: %.mly; ocamlbuild $(BFLAGS) $*.cmo
+%.cmx: %.ml; ocamlbuild $(BFLAGS) $*.cmx
+%.cmx: %.mll; ocamlbuild $(BFLAGS) $*.cmx
+%.cmx: %.mly; ocamlbuild $(BFLAGS) $*.cmx

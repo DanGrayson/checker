@@ -1,0 +1,8 @@
+In this directory we start writing a derivation tree producer from scratch.
+
+The main differences from ../src are:
+
+  - start out with no parser: ocaml itself is the language for writing proofs
+  - the kernel contains a routine for each inference rule that accepts
+    validated premisses and produces a validated conclusion
+

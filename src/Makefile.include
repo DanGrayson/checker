@@ -66,14 +66,6 @@ BFLAGS = -I src   -I src/tactics   -I +camlp5   -use-menhir   -menhir 'menhir --
 
 BASENAMES = $(shell for i in $(patsubst %.mli, %, $(patsubst %.mly, %, $(patsubst %.mll, %, $(patsubst %.ml, %, $(MLSRCFILES))))) ; do echo $$i ; done | uniq)
 
-
-%.cmo: %.ml; ocamlbuild $(BFLAGS) $*.cmo
-%.cmo: %.mll; ocamlbuild $(BFLAGS) $*.cmo
-%.cmo: %.mly; ocamlbuild $(BFLAGS) $*.cmo
-%.cmx: %.ml; ocamlbuild $(BFLAGS) $*.cmx
-%.cmx: %.mll; ocamlbuild $(BFLAGS) $*.cmx
-%.cmx: %.mly; ocamlbuild $(BFLAGS) $*.cmx
-
 all: build
 build: notify src/$(CHECKER_EXE)
 notify:; @ echo "make: building $(CODE) code"

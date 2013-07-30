@@ -8,8 +8,11 @@ open Ocamlbuild_plugin;;
   "-use-menhir";
 *)
 
-(* @8 above refers to Warning 8: this pattern-matching is not exhaustive. *)
-let cflags = [ "-g"; "-annot"; "-w"; "@8" ]
+let cflags = [ "-g"; 
+	       "-annot"; 
+	       "-w"; 
+	       "@8"       (* @8 refers to Warning 8: this pattern-matching is not exhaustive. *)
+	     ]
 let lflags = [ "-g" ]
 
 let atomize args = List.map (fun arg -> A arg) args

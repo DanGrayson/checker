@@ -1,0 +1,14 @@
+MLSRC2FILES =					\
+	src2/error.ml				\
+	src2/checker2.ml
+TAGS2_FILES += $(MLSRC2FILES)
+CHECKER2_EXE = checker2.$(CODE)
+all: build2
+build2: notify src2/$(CHECKER2_EXE)
+CHECKER2 := $(CHECKER_ENV) time $(shell pwd)/$(CHECKER2_EXE) $(CHECKER_OPTIONS)
+run2: build2; $(CHECKER2)
+src2/checker2.native src2/checker2.byte: always; ocamlbuild $(BFLAGS) $@
+
+# Local Variables:
+# compile-command: "make -C .. run2 "
+# End:
