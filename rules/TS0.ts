@@ -77,7 +77,7 @@ Axiom 3.4.26 ev_eq { ⊢ T Type, o o' : T } { t : T ⊢ U U' Type } { ⊢ f f' :
 
 Axiom 3.4.27 beta_reduction { ⊢ T Type, o1 : T } { x : T ⊢ U Type, o2 : U[x] }
 
-      [ @ev[(λ t:T, o2[t]), o1, T, t.U[t]] ≡ o2[o1] : U[o1] ];;
+      [ @ev[(λ t:T, o2[t]), o1, T, U] ≡ o2[o1] : U[o1] ];;
 
 Axiom 3.4.28 eta_reduction { ⊢ T Type } { t : T ⊢ U Type } { ⊢ f : ∏ t:T, U[t] }
 
