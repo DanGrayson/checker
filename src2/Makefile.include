@@ -1,5 +1,8 @@
 MLSRC2FILES =					\
 	src2/error.ml				\
+	src2/variables.ml			\
+	src2/expressions.ml			\
+	src2/judgments.ml			\
 	src2/checker2.ml
 TAGS2_FILES += $(MLSRC2FILES)
 CHECKER2_EXE = checker2.$(CODE)
@@ -10,5 +13,5 @@ run2: build2; $(CHECKER2)
 src2/checker2.native src2/checker2.byte: always; ocamlbuild $(BFLAGS) $@
 
 # Local Variables:
-# compile-command: "make -C .. run2 "
+# compile-command: "make -C .. TAGS2 run2 "
 # End:

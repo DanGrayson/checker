@@ -1,4 +1,4 @@
 # -*- makefile-gmake -*-
 
-all :; $(MAKE) -C .. build2
+all :; $(MAKE) -C .. run2
 
