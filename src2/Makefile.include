@@ -4,7 +4,6 @@ MLSRC2FILES =					\
 	src2/expressions.ml			\
 	src2/judgments.ml			\
 	src2/checker2.ml
-TAGS2_FILES += $(MLSRC2FILES)
 CHECKER2_EXE = checker2.$(CODE)
 all: build2
 build2: notify src2/$(CHECKER2_EXE)

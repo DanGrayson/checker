@@ -29,8 +29,6 @@ MLSRCFILES =					\
 	src/checker.ml				\
 	$(TACTIC_FILES)
 
-TAGS_FILES += $(MLSRCFILES)
-
 CODE = byte
 # A convenient way to select native code on the command line is:
 #    make CODE=native
