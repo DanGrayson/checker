@@ -32,15 +32,30 @@ type judgment =
      *)
   | J_istype of expr option			           (* t represents |- t type *)
   | J_hastype of expr * expr option		           (* (t,o) represents |- o : t *)
-  | J_type_equality of expr * expr * expr option	   (* (t,t',p) represents |- p : t = t' *)
-  | J_object_equality of expr * expr * expr * expr option  (* (t, o, o',p) represents |- p : o = o' : t *)
+  | J_type_equality of expr * expr * expr option	   (* (t,t',p) represents |- p : t = t' 
+							      Here p is a witness that allows the derivation tree
+							      to be recovered.
+							    *)
+  | J_object_equality of expr * expr * expr * expr option  (* (t,o,o',p) represents |- p : o = o' : t 
+							      Here p is a witness that allows the derivation tree
+							      to be recovered.
+							    *)
   | J_Pi of judgment * judgment				   (* 
-							      (j,k) represents the judgment that j entails k 
-							      Here j should have the last expr missing, and
+							      (j,k) represents the judgment that j entails k.
+							      Here j would usually have the last expr missing, and
 							      the corresponding variable is bound in k.
+							      Use j=>k as an abbreviation.
 							    *)
 
-(** Functions *)
+type statement = judgment list (* 
+				  A list [h;i;j] represents the judgment j=>(i=>h). 
+				  In other words, it's a chain of implications, stored in reverse order,
+				  with the final conclusion at the top of the list.
+				  If we were using contexts, we would write j,i |- h instead; we
+				  refrain from separating the context from the final conclusion.
+				*)
+
+(** functions *)
 
 let var_to_expr v = BASIC(V v,END)
 
