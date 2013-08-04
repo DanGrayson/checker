@@ -2,12 +2,13 @@
 
 open Error
 open Expressions
+open Substitute
 open Relative
 
 type rule_name =
 
   R_Empty | R_Abstr | R_TypeVar | R_Parm | R_Equal | R_equal | R_Refl | R_Symm | R_Trans| R_refl | R_symm | R_trans |
-  R_Univ | R_El | R_Eleq | R_Pi | R_conv | R_lambda | R_Drop
+  R_Univ | R_El | R_Eleq | R_Pi | R_conv | R_lambda | R_Drop | R_ev
 
 module InferenceRules :
     sig
@@ -57,5 +58,9 @@ module InferenceRules :
         J(J_istype,[T_Pi @ t ** u **. END]) :: s
     | R_lambda, [J(J_hastype,[u;o]) :: J(J_hastype,[t]) :: s] -> 
         J(J_hastype,[T_Pi @ t ** u **. END; O_lambda @ o **. END]) :: s
+    | R_ev, [J(J_hastype,[t;x]) :: s; J(J_hastype,[BASIC(T_Pi,ARG(0,_t,ARG(1,u,END)));f]) :: _s]
+        when t == _t && s == _s ->
+	  let u' = subst_expr x u in
+	  J(J_hastype,[u';O_ev @ f ** x ** END]) :: s
     | _ -> raise InternalError
   end
