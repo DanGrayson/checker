@@ -8,7 +8,7 @@ open Relative
 type rule_name =
 
   R_Empty | R_Abstr | R_TypeVar | R_Parm | R_Equal | R_equal | R_Refl | R_Symm | R_Trans| R_refl | R_symm | R_trans |
-  R_Univ | R_El | R_Eleq | R_Pi | R_conv | R_lambda | R_Drop | R_ev
+  R_Univ | R_El | R_Eleq | R_Pi | R_conv | R_lambda | R_Drop | R_ev | R_beta
 
 module InferenceRules :
     sig
@@ -62,5 +62,11 @@ module InferenceRules :
         when t == _t && s == _s ->
 	  let u' = subst_expr x u in
 	  J(J_hastype,[u';O_ev @ f ** x ** END]) :: s
+    | R_beta, [J(J_hastype,[t;x]) :: s ; J(J_hastype,[u;o]) :: J(J_hastype,[_t]) :: _s]
+      when s == _s && t == _t ->
+	let u' = subst_expr x u in
+	let o' = subst_expr x o in
+	let f = O_lambda @ o **. END in
+	J(J_object_equality,[u'; O_ev @ f ** x ** END; o'; W_beta @ t ** u **. END]) :: s	
     | _ -> raise InternalError
   end
