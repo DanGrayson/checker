@@ -49,6 +49,14 @@ let rec subst_expr shift subs e =
       | _ -> 
 	  if args' == args then e else BASIC(h,args'))
 
+and subst_expr_list shift subs s =
+  match s with
+  | x :: t ->
+      let x' = subst_expr shift subs x in
+      let t' = subst_expr_list shift subs t in
+      if x == x' && t == t' then s else x' :: t'
+  | [] -> []
+
 and subst_jgmt shift subs j =
   match j with
   | J_Pi(a,b) ->
@@ -56,37 +64,9 @@ and subst_jgmt shift subs j =
       let shift = shift + 1 in
       let b' = subst_jgmt shift subs b in
       if a' == a && b' == b then j else J_Pi(a',b')
-  | J_istype(None) -> j
-  | J_istype(Some t) ->
-      let t' = subst_expr shift subs t in
-      if t == t' then j else J_istype(Some t')
-  | J_hastype(t,None) ->
-      let t' = subst_expr shift subs t in
-      if t == t' then j else J_hastype(t',None)
-  | J_hastype(t,Some o) ->
-      let t' = subst_expr shift subs t in
-      let o' = subst_expr shift subs o in
-      if t == t' && o == o' then j else J_hastype(t',Some o')
-  | J_type_equality(t,u,None) ->
-      let t' = subst_expr shift subs t in
-      let u' = subst_expr shift subs u in
-      if t == t' && u == u' then j else J_type_equality(t',u',None)
-  | J_type_equality(t,u,Some o) ->
-      let t' = subst_expr shift subs t in
-      let u' = subst_expr shift subs u in
-      let o' = subst_expr shift subs o in
-      if t == t' && u == u' && o == o' then j else J_type_equality(t',u',Some o')
-  | J_object_equality(t,n,o,None) ->
-      let t' = subst_expr shift subs t in
-      let n' = subst_expr shift subs n in
-      let o' = subst_expr shift subs o in
-      if t == t' && n == n' && o == o' then j else J_object_equality(t',n',o',None)
-  | J_object_equality(t,n,o,Some p) ->
-      let t' = subst_expr shift subs t in
-      let n' = subst_expr shift subs n in
-      let o' = subst_expr shift subs o in
-      let p' = subst_expr shift subs p in
-      if t == t' && n == n' && o == o' && p == p' then j else J_object_equality(t',n',o',Some p')
+  | J(h,s) ->
+      let s' = subst_expr_list shift subs s in
+      if s == s' then j else J(h,s')
 
 let subst_l subs e = if Array.length subs = 0 then e else subst_expr 0 subs e
 
