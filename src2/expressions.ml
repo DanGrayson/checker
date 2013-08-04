@@ -20,9 +20,9 @@ type expr_head =
   | O_empty | O_empty_r | O_c | O_ip_r | O_ip | O_paths | O_refl | O_J | O_rr0
   | O_rr1 | O_nat | O_nat_r | O_O | O_S
 
-  | W_Wrefl | W_Wsymm | W_Wtrans | W_wrefl | W_wsymm | W_wtrans | W_wconv
-  | W_wconveq | W_weleq | W_wpi1 | W_wpi2 | W_wlam | W_wl1 | W_wl2 | W_wev
-  | W_wevt1 | W_wevt2 | W_wevf | W_wevo | W_wbeta | W_weta
+  | W_Refl | W_Symm | W_Trans | W_refl | W_symm | W_trans | W_conv
+  | W_conveq | W_eleq | W_pi1 | W_pi2 | W_lam | W_l1 | W_l2 | W_ev
+  | W_evt1 | W_evt2 | W_evf | W_evo | W_beta | W_eta
 
 type expr =
   | BASIC of expr_head * expr_list

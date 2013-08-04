@@ -1,8 +1,7 @@
 MLSRC2FILES =					\
 	src2/error.ml				\
-	src2/variables.ml			\
 	src2/expressions.ml			\
-	src2/judgments.ml			\
+	src2/rules.ml				\
 	src2/checker2.ml
 CHECKER2_EXE = checker2.$(CODE)
 all: build2
