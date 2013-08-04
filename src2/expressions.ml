@@ -18,10 +18,10 @@ type expr_head =
   | O_u | O_j | O_ev | O_lambda | O_forall | O_pair | O_pr1
   | O_pr2 | O_total | O_pt | O_pt_r | O_tt | O_coprod | O_ii1 | O_ii2 | O_sum
   | O_empty | O_empty_r | O_c | O_ip_r | O_ip | O_paths | O_refl | O_J | O_rr0
-  | O_rr1 | O_nat | O_nat_r | O_O | O_S
+  | O_rr1 | O_nat | O_nat_r | O_O | O_S | O_conv
 
-  | W_Refl | W_Symm | W_Trans | W_refl | W_symm | W_trans | W_conv
-  | W_conveq | W_eleq | W_pi1 | W_pi2 | W_lam | W_l1 | W_l2 | W_ev
+  | W_Refl | W_Symm | W_Trans | W_refl | W_symm | W_trans
+  | W_conveq | W_Eleq | W_pi1 | W_pi2 | W_lam | W_l1 | W_l2 | W_ev
   | W_evt1 | W_evt2 | W_evf | W_evo | W_beta | W_eta
 
 type expr =
