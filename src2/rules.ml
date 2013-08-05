@@ -35,7 +35,7 @@ module InferenceRules :
       when s == _s && t == _t -> 
 	J(J_object_equality,[t;o;o']) :: s
     | R_Refl, [J(J_istype,[t]) :: s; J(J_istype,[t']) :: _s]
-      when s == _s && t = t' -> 
+      when s == _s && expr_equality t t' -> 
 	J(J_type_equality,[t;t';W_Refl @ END]) :: s
     | R_Symm, [J(J_type_equality,[t;t';p]) :: s] -> 
 	J(J_type_equality,[t';t;W_Symm @ p ** END]) :: s
@@ -43,7 +43,7 @@ module InferenceRules :
       when s == _s && t' == _t' -> 
 	J(J_type_equality,[t;t'';W_Trans @ p ** p' ** END]) :: s
     | R_refl, [J(J_hastype,[t;o]) :: s; J(J_hastype,[_t;o']) :: _s]
-      when s == _s && t == _t && o = o' -> 
+      when s == _s && t == _t && expr_equality o o' -> 
 	J(J_object_equality,[t;o;o';W_refl @ END]) :: s
     | R_symm, [J(J_object_equality,[t;o;o';p]) :: s] -> 
 	J(J_object_equality,[t;o;o';W_symm @ p ** END]) :: s

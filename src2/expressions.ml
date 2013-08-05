@@ -37,6 +37,16 @@ let ( **.. ) x s = ARG(2,x,s)
 let ( **... ) x s = ARG(3,x,s)
 let var_to_expr v = (Var v) @ END
 
+let rec expr_equality x y = 
+  match x,y with
+  | BASIC(O_conv,ARG(_,x',_)),_ -> expr_equality x' y
+  | _,BASIC(O_conv,ARG(_,y',_)) -> expr_equality x y'
+  | BASIC(h,a),BASIC(k,b) -> h = k && expr_list_equality (a,b)
+and expr_list_equality = function
+  | ARG(i,x,a'),ARG(j,y,b') -> i = j && expr_equality x y && expr_list_equality (a',b')
+  | END,END -> true
+  | _,_ -> false
+
 type jgmt_head = J_istype | J_hastype | J_type_equality | J_object_equality
 
 type judgment = 
