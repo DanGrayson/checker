@@ -50,17 +50,17 @@ and expr_list_equality = function
 type jgmt_head = J_istype | J_hastype | J_type_equality | J_object_equality
 
 type judgment = 
-  | J of jgmt_head * expr list
-	(* J(J_istype,[t]) represents |- t type
-	   J(J_hastype,[t;o]) represents |- o : t
-	   J(J_type_equality,[t;t';p]) represents |- p : t = t' 
+  | J_Basic of jgmt_head * expr list
+	(* J_Basic(J_istype,[t]) represents |- t type
+	   J_Basic(J_hastype,[t;o]) represents |- o : t
+	   J_Basic(J_type_equality,[t;t';p]) represents |- p : t = t' 
 	     Here p is a witness that allows the derivation tree
 	     to be recovered.
-	   J(J_object_equality,[t;o;o';p]) represents |- p : o = o' : t 
+	   J_Basic(J_object_equality,[t;o;o';p]) represents |- p : o = o' : t 
 	     Here p is a witness that allows the derivation tree
 	     to be recovered.
 	   If the last expr in the list is missing, then it represents a
-	     hypothesis, if present, a conclusion and definition. *)
+	     hypothesis, otherwise, it represents a conclusion and definition. *)
   | J_Pi of judgment * judgment	(* (j,k) represents the judgment that j entails k.
 				   Here j would usually have the last expr missing, and
 				   the corresponding variable is bound in k.

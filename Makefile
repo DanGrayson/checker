@@ -6,7 +6,7 @@ include src/Makefile.include
 include rules/Makefile.include
 include test/Makefile.include
 TAGS_FILES = scripts/ts.etags Makefile rules/Makefile.include test/Makefile.include src/Makefile.include
-TAGS: $(TAGS_FILES) 
+TAGS: $(TAGS_FILES) $(MLSRCFILES)
 	( scripts/etags.ocaml $(MLSRCFILES) \
 	  && \
 	  etags --language=none --regex=@scripts/ts.etags $(TAGS_FILES) -o - ) >$@
@@ -14,7 +14,7 @@ TAGS: $(TAGS_FILES)
 all: TAGS2
 include src2/Makefile.include
 TAGS2_FILES = Makefile src2/Makefile.include
-TAGS2: $(TAGS2_FILES)
+TAGS2: $(TAGS2_FILES) $(MLSRC2FILES)
 	( scripts/etags.ocaml $(MLSRC2FILES) \
 	  && \
 	  etags --language=none --regex=@scripts/ts.etags $(TAGS2_FILES) -o - ) >$@

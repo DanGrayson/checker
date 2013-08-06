@@ -1,4 +1,4 @@
 # -*- makefile-gmake -*-
 
-all :; $(MAKE) -C .. run2
+all :; $(MAKE) -C .. TAGS2 run2
 

@@ -64,9 +64,9 @@ and subst_jgmt shift subs j =
       let shift = shift + 1 in
       let b' = subst_jgmt shift subs b in
       if a' == a && b' == b then j else J_Pi(a',b')
-  | J(h,s) ->
+  | J_Basic(h,s) ->
       let s' = subst_expr_list shift subs s in
-      if s == s' then j else J(h,s')
+      if s == s' then j else J_Basic(h,s')
 
 let subst_l subs e = if Array.length subs = 0 then e else subst_expr 0 subs e
 

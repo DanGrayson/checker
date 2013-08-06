@@ -38,9 +38,9 @@ and rel_shift_jgmt shift limit j =
       let limit = limit + 1 in
       let b' = rel_shift_jgmt shift limit b in
       if a' == a && b' == b then j else J_Pi(a',b')
-  | J(h,s) ->
+  | J_Basic(h,s) ->
       let s' = rel_shift_expr_list shift limit s in
-      if s == s' then j else J(h,s')
+      if s == s' then j else J_Basic(h,s')
 
 let rel_shift_expr shift e = if shift = 0 then e else rel_shift_expr 0 shift e
 
