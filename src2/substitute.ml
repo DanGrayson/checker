@@ -68,7 +68,7 @@ and subst_jgmt shift subs j =
       let s' = subst_expr_list shift subs s in
       if s == s' then j else J_Basic(h,s')
 
-let subst_l subs e = if Array.length subs = 0 then e else subst_expr 0 subs e
+let subst_expr_l subs e = if Array.length subs = 0 then e else subst_expr 0 subs e
 
 let subst_jgmt_l subs t = if Array.length subs = 0 then t else subst_jgmt 0 subs t
 
