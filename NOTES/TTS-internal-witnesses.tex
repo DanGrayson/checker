@@ -108,8 +108,8 @@
 
 \newcommand{\ccolon}[1]{\vcentcolon#1}
 \newcommand{\ccheck}[1]{\vcentcolon#1}  %\Leftarrow
-\newcommand{\synth}[1]{\vcentcolon(\Rightarrow#1)} %\Rightarrow
-\renewcommand{\synth}[1]{\ccheck#1} %\Rightarrow
+\newcommand{\csynth}[1]{\vcentcolon\vcentcolon #1} %\Rightarrow
+% \renewcommand{\csynth}[1]{\ccheck#1} %\Rightarrow
 
 \newcommand{\Type}{\mathop{\text{ \sc type}}}
 \newcommand{\Okay}{\mathop{\text{ \sc okay}}}
@@ -122,6 +122,8 @@
 \newcommand{\Wsymm}{{\sf Wsymm}}
 \newcommand{\El}{{\sf El}}
 \newcommand{\annot}{{\sf annot}}
+\newcommand{\haa}[2]{\ha\annot{#1,#2}}
+% \renewcommand{\haa}[2]{#1}
 \newcommand{\conv}{{\sf conv}}
 \newcommand{\ev}{{\sf ev}}
 \newcommand{\wbeta}{{\sf wbeta}}
@@ -203,18 +205,26 @@ uninteresting for us, if they aren't referred to again.  To indicate that, we
 will write the names of such variables as underscores, as in $\var
 \ccolon{T_1},\dots,\var \ccolon{T_n}\Context$.
 
-%% In the inference rules below, we'll indicate directionality of type inference
-%% in our algorithms by writing
-%% $$\Gamma\vdash o \synth{T}$$ to indicate that the type $T$ is produced
-%% from the term $o$ and the rest of the information in the sentence by the
-%% algorithms, whereas in $$\Gamma\vdash o \ccheck{T}$$ the type $T$ is known and
-%% the task is to check that $o$ is of type $T$.  In the former case, one says
-%% that $o$ synthesizes its type, and in the latter case, that the type of $o$ is
-%% to be checked.  Such directional indications are used for ease of thinking
-%% about the correctness, description, and implementation of the algorithms.  The
-%% algorithms will necessarily be directional, in that some parts of them will be
-%% asked to check that an object has a given type, and other parts of which will
-%% be asked to manipulate objects whose type has already been determined.
+We introduce the judgment notation
+
+$$ \Gamma, x \defn t \csynth{T} \Context $$
+
+as something semantically the same as
+
+$$ \Gamma, x \defn t \ccolon{T} \Context $$
+
+In the inference rules below, we'll indicate directionality of type inference
+in our algorithms by writing
+$$\Gamma, x \defn t \csynth{T} \Context$$ to indicate that the type $T$ can
+be computed from the term $t$ and the rest of the information in $\Gamma$,
+whereas in $$\Gamma, x \defn t \ccheck{T} \Context$$ the type $T$ is known
+and the task is to check that $t$ is of type $T$.  In the former case, one says
+that $t$ synthesizes its type, and in the latter case, that the type of $t$ is
+to be checked.  Such directional indications are used for ease of thinking
+about the correctness, description, and implementation of the algorithms.  The
+algorithms will necessarily be directional, in that some parts of them will be
+asked to check that an object has a given type, and other parts of which will
+be asked to manipulate objects whose type has already been determined.
 
 Thanks to Dan Licata for suggestions and advice.
 
@@ -254,17 +264,11 @@ by the new variable $w$.
 
 \item
   \[\frac{
-  \Gamma, \var \defn t \synth{T} \Context
+  \Gamma, \var \defn t \csynth{T} \Context
   \spc
-  \Gamma, \var \defn t' \synth{T'} \Context
-  \spc
-  T = T'
+  \Gamma, \var \defn t' \csynth{T} \Context
   } {
   \Gamma, w : t \eqd t' \ccolon{T} \Context}\]
-
-This item introduces a hypothesis asserting equality of $t$ and $t'$ witnessed
-by the new variable $w$.  (The relation $T = T'$ indicates equality up to
-renaming of local variables and expansion of definitions.)
 
 \item 
 \[\frac{\Gamma, \var \defn T \Type \Context \spc \Gamma, \var \defn T'\Type \Context
@@ -284,56 +288,49 @@ $$\frac{\Gamma,\var\defn p:T_1\eqd T_2 \Context }{\Gamma, \var\defn \ha\Wsymm{p}
   \frac{
     \Gamma, \var \defn p:T_1\eqd T_2 \Context
     \spc
-    \Gamma, \var \defn q:T'_2\eqd T_3 \Context
-    \spc
-    T_2=T_2'}
+    \Gamma, \var \defn q:T_2\eqd T_3 \Context
+  }
   {\Gamma, \var \defn \ha\Wtrans{p,q,T_2}: T_1\eqd T_3 \Context}
 \]
 
 \item 
 \[\frac{
-  \Gamma, \var \defn o \synth{T} \Context
+  \Gamma, \var \defn o \ccheck{T} \Context
   \spc
-  \Gamma, \var \defn o' \synth{T'} \Context
-  \spc
-  T = T'
+  \Gamma, \var \defn o' \ccheck{T} \Context
   \spc
   o \sim o'
   } {
-  \Gamma, \var \defn  \ha\wrefl{}:o\eqd o' \synth{T} \Context
+  \Gamma, \var \defn  \ha\wrefl{}:o\eqd o' \ccolon{T} \Context
   } 
 \]
 
 \item 
-\[\frac{\Gamma, \var \defn p:o_1\eqd o_2 \synth{T} \Context}{\Gamma, \var \defn \ha\wsymm{p}:o_2\eqd o_1 \synth{T} \Context}\]
+\[\frac
+    {\Gamma, \var \defn p:o_1\eqd o_2 \ccolon{T} \Context}
+    {\Gamma, \var \defn \ha\wsymm{p}:o_2\eqd o_1 \ccolon{T} \Context}\]
 
 \item 
-\[\frac{\Gamma \var\defn p:o_1\eqd o_2 \synth{T} \Context 
+\[\frac{\Gamma \var\defn p:o_1\eqd o_2 \ccolon{T} \Context 
   \spc
-  \Gamma, \var\defn q:o'_2\eqd o_3 \synth{T} \Context
-  \spc
-  o_2 = o'_2
+  \Gamma, \var\defn q:o_2\eqd o_3 \ccolon{T} \Context
   } {
-  \Gamma, \var \defn \ha\wtrans{p,q,o_2}:o_1\eqd o_3 \synth{T} \Context}
+  \Gamma, \var \defn \ha\wtrans{p,q,o_2}:o_1\eqd o_3 \ccolon{T} \Context}
 \]
 
 \item 
 \[\frac
-    { \Gamma, \var \defn o \synth{T} \Context \spc \Gamma, \var \defn q : T' \eqd T'' \Context \spc T = T' }
-    { \Gamma, \var \defn \ha\conv{o,q} \ccheck{T''} \Context}\]
+    { \Gamma, \var \defn o \csynth{T} \Context \spc \Gamma, \var \defn p : T \eqd T' \Context }
+    { \Gamma, \var \defn \ha\conv{o,p} \ccheck{T'} \Context}\]
 
 In any comparisons $T\sim T'$ and $o\sim o'$, a term of the form
-$\ha\conv{o,q}$ is regarded as equivalent to $o$.
+$\ha\conv{o,p}$ is regarded as equivalent to $o$.
 
-%% \item 
-%% \[\frac{\Gamma\vdash o \ccheck{T}}{\Gamma\vdash \ha\annot{o,T} \synth{T}}\]
+\item 
+\[\frac{\Gamma, \var\defn o \ccheck{T} \Context}{\Gamma, \var\defn \haa o T \csynth{T}\Context}\]
 
-%% In any comparisons $T\sim T'$ and $o\sim o'$, a term of the form
-%% $\ha\annot{o,T}$ is regarded as equivalent to $o$.
-
-%% In the code, the term $\ha\annot{o,T}$ could be represented by a private data
-%% type, so that such terms can be created only by the kernel of the type checker,
-%% and so no tactic could forge such a certificate.
+In any comparisons $T\sim T'$ and $o\sim o'$, a term of the form
+$\haa o T$ is regarded as equivalent to $o$.
 
 \end{enumerate}
 
@@ -347,14 +344,14 @@ $\ha\conv{o,q}$ is regarded as equivalent to $o$.
 
 \item
 
-\[\frac{\Gamma, \var \defn o \synth{\Eu} \Context}{\Gamma, \var \defn \ha\El{o}\Type \Context }\]
+\[\frac{\Gamma, \var \defn o \csynth{\Eu} \Context}{\Gamma, \var \defn \ha\El{o}\Type \Context }\]
 
 %% Later on, there will a universe level, and it will be computable from the
 %% term $o$, hence the choice of direction in this rule.
 
 \item 
 
-\[\frac{\Gamma, \var \defn p : o \eqd o' \synth{\Eu} \Context}
+\[\frac{\Gamma, \var \defn p : o \eqd o' \ccheck{\Eu} \Context}
        {\Gamma, \var \defn \ha\weleq{p} : \ha\El{o} \eqd \ha\El{o'} \Context}\]
 
 When universe levels are added, the universe level synthesized here will be the
@@ -367,64 +364,80 @@ larger of those synthesized from $o$ and $o'$.
 \begin{enumerate}
 
 \item 
-\[\frac{\Gamma \vdash T \Type \spc \Gamma, \var \ccolon{T}\vdash U\Type}{\Gamma\vdash \ha\prod{T,.U}\Type}\]
+\[\frac{ \Gamma, \var \ccolon{T}, \var \defn U\Type \Context }{\Gamma, \var \defn \ha\prod{T,.U}\Type}\]
 
 Here $.U$ is notation for abstraction: binding a variable to the scope of the expression $U$.
 
 \item 
 \[ \frac{ 
-  \Gamma, \var \ccolon{T'} \vdash U'  \Type      \spc 
-  \Gamma     \vdash p:T \eqd T'    \spc
-  \Gamma,  \var \ccolon{T}  \vdash q:U \eqd p^*U'
+  \Gamma, \var \ccolon{T'}, \var \defn U'  \Type \Context \spc 
+  \Gamma, \var \defn p:T \eqd T' \Context \spc
+  \Gamma,  \var \ccolon{T}, \var \defn q:U \eqd U'' \spc
+  p^*U' = U'' 
   } {
-  \Gamma     \vdash \ha\wpi{p,q}:\ha\prod{T,.U}\eqd \ha\prod{T',.U'}
+  \Gamma, \var \defn \ha\wpi{p,.q}:\ha\prod{T,.U}\eqd \ha\prod{T',.U''} \Context
 }\]
 
-Here ${p}^*U'$ is notation for $U'[\ha\annot{\ha\conv{\#0,p},T'}/\#0]$, where
+Here ${p}^*U'$ is notation for $U'[\haa {\ha\conv{\#0,p}} {T'} /\#0]$, where
 $U'[e/\#0]$ is notation for replacing the first variable in $U'$ by $e$, and
 where any $\#0$ occuring in $e$ denotes the first variable in the resulting
 term.
 
-\item 
-\[\frac{\Gamma \vdash T \Type \spc \Gamma, \var \ccolon{T}\vdash o \ccheck{U}}{\Gamma\vdash \ha\lambda{.o} \ccheck{\ha\prod{T,.U}}}\]
-
-Some space is saved by not annotating $\ha\lambda{.o}$ with $T$ and $.U$.
+The relation $T = T'$ indicates equality up to renaming of local variables and
+expansion of definitions.
 
 \item 
-\[\frac{\Gamma \vdash T \Type \spc \Gamma, \var \ccolon{T}\vdash p : o\eqd o' \ccheck{U}}{\Gamma\vdash \ha\wl{p} : \ha\lambda{.o}\eqd \ha\lambda{.o'} : \ha\prod{T,.U}}\]
+\[\frac{
+  \Gamma, \var \ccolon{T}, \var\defn o \ccheck{U} \Context
+}{\Gamma, \var\defn \ha\lambda{.o} \ccheck{\ha\prod{T,.U}} \Context}
+\]
+
+Some space is saved by not annotating $\ha\lambda{.o}$ internally with $T$ and
+$.U$; an external annotation of the form $\haa {\ha\lambda{.o}} {\ha\prod{T,.U}} $ may be used instead.
 
 \item 
-\[\frac{\Gamma\vdash f \ccolon{\ha\prod{T,.U}}\spc \Gamma\vdash t \ccheck{T}}{\Gamma\vdash \ha\ev{f,t} \synth{U[\ha\annot{t,T}]}}\]
+\[\frac{
+  \Gamma, \var \ccolon{T}, \var\defn p : o\eqd o' \ccheck{U} \Context
+}{
+  \Gamma, \var\defn \ha\wl{.p} : \ha\lambda{.o}\eqd \ha\lambda{.o'} : \ha\prod{T,.U} \Context
+}\]
+
+\item 
+\[\frac{
+  \Gamma, \var\defn f \csynth{\ha\prod{T,.U}} \Context
+  \spc 
+  \Gamma, \var\defn t \ccheck{T}\Context
+}{
+  \Gamma, \var\defn \ha\ev{f,t} \csynth{U[\haa t T]} \Context
+}\]
 
 Here $U[o]$ is notation for replacing the first variable of $U$ by $o$, with
 the second variable of $U$ becoming the first, and so on.  
 
-The annotation is present to ensure that the sentence $\Gamma \vdash
-U[\ha\annot{t,T}] \Type$ is checkable.
+%% The annotation is present to ensure that the sentence $\Gamma \vdash
+%% U[\haa t T] \Type$ is checkable.
 
-Some space is saved by not annotating $\ha\ev{f,o}$ with $T$ and $.U$, due to
-bidirectionality.  The same applies to such expressions as $x.y.z.f\, x\, y\,
-z$, where $f$ synthesizes its type.
+Some space is saved by not annotating $\ha\ev{f,o}$ with $T$ and $.U$.
 
 \item 
 \[\frac{
-   \Gamma\vdash p : f \eqd f' \synth{\ha\prod{T,.U}}\spc 
-   \Gamma\vdash q : t \eqd t' \ccheck{T}
+   \Gamma\vdash p : f \eqd f' \ccolon{\ha\prod{T,.U}}\spc 
+   \Gamma\vdash q : t \eqd t' \ccolon{T}
    }{
-   \Gamma\vdash \ha\weveq{p,q} : \ha\ev{f,t} \eqd \ha\ev{f',t'} \synth{U[\ha\annot{t,T}]}
+   \Gamma\vdash \ha\weveq{p,q,T,.U} : \ha\ev{f,t} \eqd \ha\ev{f',t'} \ccolon{U[\haa t T]}
   }\]
 
 For simplicity, assume that $f'$ is $f$, and observe that $\Gamma \vdash
-\ha\ev{f',t'} \synth{U[\ha\annot{t,T}]}$ may not be valid, even though $\Gamma
-\vdash \ha\ev{f',t'} \synth{U[\ha\annot{t',T}]}$ is.  Nevertheless, $\Gamma \vdash
-\ha\ev{f',t'} : U[\ha\annot{t,T}]$ is valid in the underlying type theory where
+\ha\ev{f',t'} \csynth{U[\haa t T]}$ may not be valid, even though $\Gamma
+\vdash \ha\ev{f',t'} \csynth{U[\haa {t'}{T}]}$ is.  Nevertheless, $\Gamma \vdash
+\ha\ev{f',t'} : U[\haa{t}{T}]$ is valid in the underlying type theory where
 the witnesses have been forgotten.
 
 \item 
 % beta
-\[\frac{ \Gamma \vdash T \Type \spc \Gamma\vdash t \ccheck{T}\spc \Gamma, \var \ccolon{T}\vdash u \ccheck{U}}{\Gamma\vdash \ha\wbeta{T,.U} : \ha\ev{\ha\lambda{.u},t} \eqd u[\ha\annot{t,T}] : U[\ha\annot{t,T}]}\]
+\[\frac{ \Gamma \vdash T \Type \spc \Gamma\vdash t \ccheck{T}\spc \Gamma, \var \ccolon{T}\vdash u \ccheck{U}}{\Gamma\vdash \ha\wbeta{T,.U} : \ha\ev{\ha\lambda{.u},t} \eqd u[\haa{t}{T}] : U[\haa{t}{T}]}\]
 
-Replacing $\ha\lambda{.u}$ by $\ha\annot{\ha\lambda{.u},\ha\prod{T,.U}}$ would
+Replacing $\ha\lambda{.u}$ by $\haa{\ha\lambda{.u}}{\ha\prod{T,.U}}$ would
 be an alternative to putting $T$ and $.U$ in the witness.  Comparison of two
 terms of the same type by normalization need not involve computation of the
 types of partially applied results, so a version of this rule free of type
