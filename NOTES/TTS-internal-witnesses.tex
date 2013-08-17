@@ -82,7 +82,6 @@
 \hspace{2mm}}{\vskip
 3mm}
 
-%% \newcommand{\ev}{{\bf ev}}
 \newcommand{\TT}{{\bf Type0}}
 \newcommand{\PP}{{\bf Prop}}
 \newcommand{\cc}{{\bf c}}
@@ -372,10 +371,9 @@ Here $.U$ is notation for abstraction: binding a variable to the scope of the ex
 \[ \frac{ 
   \Gamma, \var \ccolon{T'}, \var \defn U'  \Type \Context \spc 
   \Gamma, \var \defn p:T \eqd T' \Context \spc
-  \Gamma,  \var \ccolon{T}, \var \defn q:U \eqd U'' \spc
-  p^*U' = U'' 
+  \Gamma,  \var \ccolon{T}, \var \defn q:U \eqd p^*U' \spc
   } {
-  \Gamma, \var \defn \ha\wpi{p,.q}:\ha\prod{T,.U}\eqd \ha\prod{T',.U''} \Context
+  \Gamma, \var \defn \ha\wpi{p,.q}:\ha\prod{T,.U}\eqd \ha\prod{T',.U'} \Context
 }\]
 
 Here ${p}^*U'$ is notation for $U'[\haa {\ha\conv{\#0,p}} {T'} /\#0]$, where
@@ -383,8 +381,8 @@ $U'[e/\#0]$ is notation for replacing the first variable in $U'$ by $e$, and
 where any $\#0$ occuring in $e$ denotes the first variable in the resulting
 term.
 
-The relation $T = T'$ indicates equality up to renaming of local variables and
-expansion of definitions.
+The relation $U = U'$ between type expressions indicates equality up to
+renaming of local variables and expansion of definitions.
 
 \item 
 \[\frac{
@@ -404,38 +402,48 @@ $.U$; an external annotation of the form $\haa {\ha\lambda{.o}} {\ha\prod{T,.U}}
 
 \item 
 \[\frac{
-  \Gamma, \var\defn f \csynth{\ha\prod{T,.U}} \Context
+  \Gamma, \var\defn f \ccheck{\ha\prod{T,.U}} \Context
   \spc 
   \Gamma, \var\defn t \ccheck{T}\Context
+  \spc
+  U' = U[\haa t T]
 }{
-  \Gamma, \var\defn \ha\ev{f,t} \csynth{U[\haa t T]} \Context
+  \Gamma, \var\defn \ha \ev{f,t,T,.U} \csynth{U'} \Context
 }\]
 
 Here $U[o]$ is notation for replacing the first variable of $U$ by $o$, with
 the second variable of $U$ becoming the first, and so on.  
 
-%% The annotation is present to ensure that the sentence $\Gamma \vdash
-%% U[\haa t T] \Type$ is checkable.
-
-Some space is saved by not annotating $\ha\ev{f,o}$ with $T$ and $.U$.
+The annotation is present to ensure that the sentence $$\Gamma, \var \defn
+U[\haa t T] \Type \Context$$ is checkable.
 
 \item 
 \[\frac{
-   \Gamma\vdash p : f \eqd f' \ccolon{\ha\prod{T,.U}}\spc 
-   \Gamma\vdash q : t \eqd t' \ccolon{T}
+   \Gamma, \var\defn p : f \eqd f' \ccolon{\ha\prod{T,.U}} \Context
+   \spc 
+   \Gamma, \var\defn q : t \eqd t' \ccolon{T} \Context
    }{
-   \Gamma\vdash \ha\weveq{p,q,T,.U} : \ha\ev{f,t} \eqd \ha\ev{f',t'} \ccolon{U[\haa t T]}
+   \Gamma, \var\defn \ha\weveq{p,q} : \ha\ev{f,t,T,.U} \eqd \ha\ev{f',t',T,.U}
+   \ccolon{U[\haa t T]} \Context
   }\]
 
-For simplicity, assume that $f'$ is $f$, and observe that $\Gamma \vdash
-\ha\ev{f',t'} \csynth{U[\haa t T]}$ may not be valid, even though $\Gamma
-\vdash \ha\ev{f',t'} \csynth{U[\haa {t'}{T}]}$ is.  Nevertheless, $\Gamma \vdash
-\ha\ev{f',t'} : U[\haa{t}{T}]$ is valid in the underlying type theory where
-the witnesses have been forgotten.
+For simplicity, assume that $f'$ is $f$, and observe that $\Gamma, \var\defn
+\ha\ev{f',t',T,.U} \csynth{U[\haa t T]} \Context$ may not be valid, even though
+$\Gamma,\var\defn \ha\ev{f',t',T,.U} \csynth{U[\haa {t'}{T}]} \Context$ is.  This
+might be a problem, even though $\Gamma, \var\defn \ha\ev{f',t',T,.U} :
+U[\haa{t}{T}] \Context$ is valid in the underlying type theory where the
+witnesses have been forgotten.
 
 \item 
 % beta
-\[\frac{ \Gamma \vdash T \Type \spc \Gamma\vdash t \ccheck{T}\spc \Gamma, \var \ccolon{T}\vdash u \ccheck{U}}{\Gamma\vdash \ha\wbeta{T,.U} : \ha\ev{\ha\lambda{.u},t} \eqd u[\haa{t}{T}] : U[\haa{t}{T}]}\]
+\[\frac{
+  \Gamma, \var\defn t \ccheck{T} \Context
+  \spc
+  \Gamma, \var \ccolon{T}, \var\defn u \ccheck{U} \Context
+  }{
+  \Gamma,\var\defn \ha\wbeta{} : \ha\ev{\ha\lambda{.u},t,T,.U} \eqd
+  u[\haa{t}{T}] : U[\haa{t}{T}] \Context
+}\]
 
 Replacing $\ha\lambda{.u}$ by $\haa{\ha\lambda{.u}}{\ha\prod{T,.U}}$ would
 be an alternative to putting $T$ and $.U$ in the witness.  Comparison of two
@@ -449,8 +457,8 @@ necessity of tracking the types $T$ and $U$.
 % eta
 \item 
 \[
-  \frac{\Gamma\vdash f \ccheck{\ha\prod{T,.U}}}
-       {\Gamma\vdash \ha\weta{} : f \eqd \ha\lambda{x.\ha\ev{f,x}} : \ha\prod{T,.U}}
+  \frac{\Gamma, \var\defn f \ccheck{\ha\prod{T,.U}}\Context}
+       {\Gamma, \var\defn \ha\weta{} : f \eqd \ha\lambda{t.\ha\ev{f,t,T,.U}} : \ha\prod{T,.U}\Context}
 \]
 
 \end{enumerate}
