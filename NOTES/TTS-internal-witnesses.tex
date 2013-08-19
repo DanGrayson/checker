@@ -105,11 +105,12 @@
 \newcommand{\spc}{{\,\,\,\,\,\,\,}}
 \renewcommand{\AA}{{\cal A}}
 
-\newcommand{\ccolon}[1]{\vcentcolon#1}
-\newcommand{\ccheck}[1]{\vcentcolon#1}  %\Leftarrow
-\newcommand{\csynth}[1]{\vcentcolon\vcentcolon #1} %\Rightarrow
-% \renewcommand{\csynth}[1]{\ccheck#1} %\Rightarrow
+\newcommand{\ccolon}{\vcentcolon}
+\newcommand{\ccheck}{\vcentcolon}            % was \Leftarrow
+\newcommand{\csynth}{\vcentcolon\vcentcolon} % was \Rightarrow
+\renewcommand{\csynth}{\ccheck}              % was \Rightarrow
 
+\newcommand{\Univ}{\mathop{\text{ \sc univ}}}
 \newcommand{\Type}{\mathop{\text{ \sc type}}}
 \newcommand{\Okay}{\mathop{\text{ \sc okay}}}
 \newcommand{\Context}{\vdash\Okay}
@@ -122,8 +123,9 @@
 \newcommand{\El}{{\sf El}}
 \newcommand{\annot}{{\sf annot}}
 \newcommand{\haa}[2]{\ha\annot{#1,#2}}
-% \renewcommand{\haa}[2]{#1}
+\renewcommand{\haa}[2]{#1}
 \newcommand{\conv}{{\sf conv}}
+\newcommand{\wconv}{{\sf wconv}}
 \newcommand{\ev}{{\sf ev}}
 \newcommand{\wbeta}{{\sf wbeta}}
 \newcommand{\weleq}{{\sf weleq}}
@@ -165,28 +167,30 @@ sentences.  The extension is chosen here in a minimal way.
 
 \subsection{Rules}
 
-A {\em judgment} $J$ has one of the following forms:
+A {\em supertype} $J$ has one of the following forms:
 
+$$ u \Univ $$
+$$ u \defn n \Univ $$
 $$ X \Type $$
 $$ X \defn T \Type $$
-$$ x \ccolon{T} $$
-$$ x \defn t \ccolon{T} $$
+$$ x \ccolon T $$
+$$ x \defn t \ccolon T $$
 $$ w : T \eqd T' $$
 $$ w \defn p : T \eqd T' $$
-$$ w : t \eqd t' \ccolon{T} $$
-$$ w \defn p : t \eqd t' \ccolon{T} $$
+$$ w : t \eqd t' \ccolon T \eqd T' $$
+$$ w \defn p : t \eqd t' \ccolon T \eqd T' $$
 $$ J \Rightarrow J' $$
 
-where $X$, $x$, or $w$ is the (single) variable {\em introduced} by the
-judgment, where $p$, $t$, $t'$, $T$, $T'$ are expressions, possibly with free
-variables, that define values for the variables (as indicated by the operator
-$\defn$), and where $J$ and $J'$ are judgments.  The variable introduced by $J$
-is regarded as bound in $J'$, and the variable introduced by $J'$ is, in turn,
-introduced by $ J \Rightarrow J' $ for possible later use.
+where $U$, $X$, $x$, or $w$ is the (single) variable {\em introduced} by the
+supertype, where $n$, $p$, $t$, $t'$, $T$, $T'$ are expressions, possibly with
+free variables, that define values for the variables (as indicated by the
+operator $\defn$), and where $J$ and $J'$ are supertypes.  The variable
+introduced by $J$ is regarded as bound in $J'$, and the variable introduced by
+$J'$ is co-opted to serve as the variable introduced by $ J \Rightarrow J' $.
 
-A {\em context} or {\em sentence} $\Gamma$ is a list of judgments, each of
+A {\em context} or {\em sentence} $\Gamma$ is a list of supertypes, each of
 which has all of its free variables bound by variables introduced earlier in
-the list.  Alternatively, we may say the variable introduced by a judgment in
+the list.  Alternatively, we may say the variable introduced by a supertype in
 the list is bound in the remainder of the list.
 
 The witnesses $w$ and $p$ are the additional data that makes these sentences
@@ -199,33 +203,51 @@ derivable.
 The notation $$\Gamma \Context$$ will be used to indicate that $\Gamma$ is
 well-formed.
 
-Variables introduced by judgments in the context may have names that are
+Variables introduced by supertypes in the context may have names that are
 uninteresting for us, if they aren't referred to again.  To indicate that, we
 will write the names of such variables as underscores, as in $\var
-\ccolon{T_1},\dots,\var \ccolon{T_n}\Context$.
+\ccolon T_1,\dots,\var \ccolon T_n\Context$.
 
-We introduce the judgment notation
+%% We introduce the supertype notation
 
-$$ \Gamma, x \defn t \csynth{T} \Context $$
+%% $$ \Gamma, x \defn t \csynth{T} \Context $$
 
-as something semantically the same as
+%% as something semantically the same as
 
-$$ \Gamma, x \defn t \ccolon{T} \Context $$
+%% $$ \Gamma, x \defn t \ccolon T \Context $$
 
-In the inference rules below, we'll indicate directionality of type inference
-in our algorithms by writing
-$$\Gamma, x \defn t \csynth{T} \Context$$ to indicate that the type $T$ can
-be computed from the term $t$ and the rest of the information in $\Gamma$,
-whereas in $$\Gamma, x \defn t \ccheck{T} \Context$$ the type $T$ is known
-and the task is to check that $t$ is of type $T$.  In the former case, one says
-that $t$ synthesizes its type, and in the latter case, that the type of $t$ is
-to be checked.  Such directional indications are used for ease of thinking
-about the correctness, description, and implementation of the algorithms.  The
-algorithms will necessarily be directional, in that some parts of them will be
-asked to check that an object has a given type, and other parts of which will
-be asked to manipulate objects whose type has already been determined.
+%% In the inference rules below, we'll indicate directionality of type inference
+%% in our algorithms by writing
+%% $$\Gamma, x \defn t \csynth{T} \Context$$ to indicate that the type $T$ can
+%% be computed from the term $t$ and the rest of the information in $\Gamma$,
+%% whereas in $$\Gamma, x \defn t \ccheck{T} \Context$$ the type $T$ is known
+%% and the task is to check that $t$ is of type $T$.  In the former case, one says
+%% that $t$ synthesizes its type, and in the latter case, that the type of $t$ is
+%% to be checked.  Such directional indications are used for ease of thinking
+%% about the correctness, description, and implementation of the algorithms.  The
+%% algorithms will necessarily be directional, in that some parts of them will be
+%% asked to check that an object has a given type, and other parts of which will
+%% be asked to manipulate objects whose type has already been determined.
 
-Thanks to Dan Licata for suggestions and advice.
+We intend the inference rules to satisfy some meta-theorems.  For example, if 
+$$ \Gamma, \var \defn t \ccolon T \Context $$
+is derivable, then
+$$ \Gamma, \var \defn T \Type \Context $$
+should be derivable, too.  If
+$$ \Gamma, \var \defn p \ccolon T \eqd T' \Context $$
+is derivable, then
+$$ \Gamma, \var \defn T \Type \Context $$
+and
+$$ \Gamma, \var \defn T' \Type \Context $$
+should be derivable, too.  Finally, if 
+$$ \Gamma, \var \defn p : t \eqd t' \ccolon T \eqd T' \Context $$
+is derivable, then
+$$ \Gamma, \var \defn t \ccolon T \Context $$
+and
+$$ \Gamma, \var \defn t' \ccolon T' \Context $$
+should be derivable, too.
+
+Thanks to Dan Licata and Peter Lumsdaine for suggestions and advice.
 
 \paragraph{Inference rules} 
 
@@ -240,15 +262,14 @@ $$\frac{\Gamma,J,J'\Context}{\Gamma,J \Rightarrow J' \Context}$$
 \item
 $$\frac{\Gamma\Context}{\Gamma, X \Type \Context}$$
 
-This item introduces a variable $X$ representing a family of types parametrized
-by the variables of $\Gamma$.  (The semantic meaning is unclear.)
+This item introduces a variable $X$ representing a type.
 
 \item
-$$\frac{\Gamma, X \defn T \Type \Context}{\Gamma, x \ccolon{T} \Context}$$
+$$\frac{\Gamma, X \defn T \Type \Context}{\Gamma, x \ccolon T \Context}$$
 
-This item introduces a variable $x$ of type $T$.  Both are parametrized by the
-variables of $\Gamma$.  This is intended to be the standard way to introduce a
-proposition $T$ as a hypothesis.
+This item introduces a variable $x$ of type $T$.  This is intended to be the
+standard way to introduce a proposition $T$ as a hypothesis.  (The hypotheses
+active in a context $\Gamma$ are the variables with no defined value.)
 
 \item
 $$\frac{
@@ -260,14 +281,13 @@ $$\frac{
 This item introduces a hypothesis asserting equality of $T$ and $T'$ witnessed
 by the new variable $w$.
 
-
 \item
   \[\frac{
-  \Gamma, \var \defn t \csynth{T} \Context
+  \Gamma, \var \defn t \ccolon T \Context
   \spc
-  \Gamma, \var \defn t' \csynth{T} \Context
+  \Gamma, \var \defn t' \ccolon T' \Context
   } {
-  \Gamma, w : t \eqd t' \ccolon{T} \Context}\]
+  \Gamma, w : t \eqd t' \ccolon T \eqd T' \Context}\]
 
 \item 
 \[\frac{\Gamma, \var \defn T \Type \Context \spc \Gamma, \var \defn T'\Type \Context
@@ -277,7 +297,7 @@ by the new variable $w$.
 \]
 
 Here $T\sim T'$ denotes a comparison operation on terms, which treats certain
-conversion and annotation operations specially, as mentioned below.
+operations specially, as mentioned below.
 
 \item 
 $$\frac{\Gamma,\var\defn p:T_1\eqd T_2 \Context }{\Gamma, \var\defn \ha\Wsymm{p}:T_2\eqd T_1 \Context}$$
@@ -300,61 +320,70 @@ $$\frac{\Gamma,\var\defn p:T_1\eqd T_2 \Context }{\Gamma, \var\defn \ha\Wsymm{p}
   \spc
   o \sim o'
   } {
-  \Gamma, \var \defn  \ha\wrefl{}:o\eqd o' \ccolon{T} \Context
+  \Gamma, \var \defn  \ha\wrefl{}: o \eqd o' \ccolon T \eqd T \Context
   } 
 \]
 
 \item 
 \[\frac
-    {\Gamma, \var \defn p:o_1\eqd o_2 \ccolon{T} \Context}
-    {\Gamma, \var \defn \ha\wsymm{p}:o_2\eqd o_1 \ccolon{T} \Context}\]
+    {\Gamma, \var \defn p:o_1\eqd o_2 \ccolon T_1 \eqd T_2 \Context}
+    {\Gamma, \var \defn \ha\wsymm{p}:o_2\eqd o_1 \ccolon T_2 \eqd T_1 \Context}\]
 
 \item 
-\[\frac{\Gamma \var\defn p:o_1\eqd o_2 \ccolon{T} \Context 
+\[\frac{\Gamma \var\defn p:o_1\eqd o_2 \ccolon T_1 \eqd T_2 \Context 
   \spc
-  \Gamma, \var\defn q:o_2\eqd o_3 \ccolon{T} \Context
+  \Gamma, \var\defn q:o_2\eqd o_3 \ccolon T_2 \eqd T_3 \Context
   } {
-  \Gamma, \var \defn \ha\wtrans{p,q,o_2}:o_1\eqd o_3 \ccolon{T} \Context}
+  \Gamma, \var \defn \ha\wtrans{p,o_2,T_2,q}:o_1\eqd o_3 \ccolon T_1 \eqd T_3 \Context}
 \]
 
 \item 
 \[\frac
-    { \Gamma, \var \defn o \csynth{T} \Context \spc \Gamma, \var \defn p : T \eqd T' \Context }
-    { \Gamma, \var \defn \ha\conv{o,p} \ccheck{T'} \Context}\]
+    { \Gamma, \var \defn o \ccolon T \Context \spc \Gamma, \var \defn p : T \eqd T' \Context }
+    { \Gamma, \var \defn \ha\conv{o,T,p} \ccolon T' \Context}\]
 
-In any comparisons $T\sim T'$ and $o\sim o'$, a term of the form
-$\ha\conv{o,p}$ is regarded as equivalent to $o$.
+and
 
-\item 
-\[\frac{\Gamma, \var\defn o \ccheck{T} \Context}{\Gamma, \var\defn \haa o T \csynth{T}\Context}\]
+\[\frac
+    { \Gamma, \var \defn o \ccolon T \Context \spc \Gamma, \var \defn p : T \eqd T' \Context }
+    { \Gamma, \var \defn \ha\wconv{} \ccolon o \eqd \ha\conv{o,T,p} \ccolon T \eqd T' \Context}\]
 
-In any comparisons $T\sim T'$ and $o\sim o'$, a term of the form
-$\haa o T$ is regarded as equivalent to $o$.
+%%% probably obsolete:
+%% In any comparisons $T\sim T'$ and $o\sim o'$, a term of the form
+%% $\ha\conv{o,T'',p}$ is regarded as equivalent to $o$.
+
+%% \item 
+%% \[\frac{\Gamma, \var\defn o \ccheck{T} \Context}{\Gamma, \var\defn \haa o T \csynth{T}\Context}\]
+
+%% In any comparisons $T\sim T'$ and $o\sim o'$, a term of the form
+%% $\haa o T$ is regarded as equivalent to $o$.
 
 \end{enumerate}
 
-\paragraph{Universe}
+\paragraph{Universes}
 
 \begin{enumerate}
 
 \item
 
-\[\frac{\Gamma\Context}{\Gamma, \var \defn \Eu \Type \Context }\]
+\[\frac{\Gamma, \var \defn n \Univ \Context }{\Gamma, \var \defn \Eu_n \Type \Context }\]
 
 \item
 
-\[\frac{\Gamma, \var \defn o \csynth{\Eu} \Context}{\Gamma, \var \defn \ha\El{o}\Type \Context }\]
-
-%% Later on, there will a universe level, and it will be computable from the
-%% term $o$, hence the choice of direction in this rule.
+\[\frac{
+  \Gamma, \var \defn n \Univ \Context 
+  \spc
+  \Gamma, \var \defn o \csynth{\Eu_n} \Context}{
+  \Gamma, \var \defn \ha\El{n,o}\Type \Context }\]
 
 \item 
 
-\[\frac{\Gamma, \var \defn p : o \eqd o' \ccheck{\Eu} \Context}
-       {\Gamma, \var \defn \ha\weleq{p} : \ha\El{o} \eqd \ha\El{o'} \Context}\]
-
-When universe levels are added, the universe level synthesized here will be the
-larger of those synthesized from $o$ and $o'$.
+\[\frac{
+  \Gamma, \var \defn n \Univ \Context
+  \spc
+  \Gamma, \var \defn p : o \eqd o' \ccheck{\Eu_n} \Context
+}
+       {\Gamma, \var \defn \ha\weleq{n,p} : \ha\El{n,o} \eqd \ha\El{n,o'} \Context}\]
 
 \end{enumerate}
 
@@ -363,42 +392,50 @@ larger of those synthesized from $o$ and $o'$.
 \begin{enumerate}
 
 \item 
-\[\frac{ \Gamma, \var \ccolon{T}, \var \defn U\Type \Context }{\Gamma, \var \defn \ha\prod{T,.U}\Type}\]
+\[\frac{ \Gamma, \var \ccolon T, \var \defn U\Type \Context }{\Gamma, \var \defn \ha\prod{T,.U}\Type\Context}\]
 
-Here $.U$ is notation for abstraction: binding a variable to the scope of the expression $U$.
+Here $.U$ is notation for abstraction: binding an anonymous variable to the
+expression $U$; we will also use the notation $x.U$ when binding a named
+variable $x$, as in the following version of the same rule.
+
+\[\frac{ \Gamma, x \ccolon T, \var \defn U\Type \Context }{\Gamma, \var \defn
+  \ha\prod{T,x.U}\Type \Context}\]
 
 \item 
 \[ \frac{ 
-  \Gamma, \var \ccolon{T'}, \var \defn U'  \Type \Context \spc 
+  \Gamma, x' \ccolon T', \var \defn U'  \Type \Context \spc 
   \Gamma, \var \defn p:T \eqd T' \Context \spc
-  \Gamma,  \var \ccolon{T}, \var \defn q:U \eqd p^*U' \spc
+  \Gamma,  x \ccolon T, \var \defn q:U \eqd p^*U' \spc
   } {
-  \Gamma, \var \defn \ha\wpi{p,.q}:\ha\prod{T,.U}\eqd \ha\prod{T',.U'} \Context
+  \Gamma, \var \defn \ha\wpi{p,x.q}:\ha\prod{T,x.U}\eqd \ha\prod{T',x'.U'} \Context
 }\]
 
-Here ${p}^*U'$ is notation for $U'[\haa {\ha\conv{\#0,p}} {T'} /\#0]$, where
-$U'[e/\#0]$ is notation for replacing the first variable in $U'$ by $e$, and
-where any $\#0$ occuring in $e$ denotes the first variable in the resulting
-term.
+Here ${p}^*U'$ is notation for $U'[\haa {\ha\conv{x,T,p}} {T'}/x]$, where
+$U'[e/x]$ is notation for replacing the variable $x$ in $U'$ by the expression
+$e$.
 
-The relation $U = U'$ between type expressions indicates equality up to
-renaming of local variables and expansion of definitions.
+In the presence of $$\Gamma, \var \defn p:T \eqd T' \Context $$ it should be a
+meta-theorem that $$\Gamma, x' \ccolon T', \var \defn U' \Type \Context$$ is
+derivable if and only if $$\Gamma, x \ccolon T, \var \defn p^* U' \Type
+\Context$$ is derivable.
 
 \item 
 \[\frac{
-  \Gamma, \var \ccolon{T}, \var\defn o \ccheck{U} \Context
+  \Gamma, \var \ccolon T, \var\defn o \ccheck{U} \Context
 }{\Gamma, \var\defn \ha\lambda{.o} \ccheck{\ha\prod{T,.U}} \Context}
 \]
 
-Some space is saved by not annotating $\ha\lambda{.o}$ internally with $T$ and
-$.U$; an external annotation of the form $\haa {\ha\lambda{.o}} {\ha\prod{T,.U}} $ may be used instead.
+%% Some space is saved by not annotating $\ha\lambda{.o}$ internally with $T$ and
+%% $.U$; an external annotation of the form $\haa {\ha\lambda{.o}} {\ha\prod{T,.U}} $ may be used instead.
 
 \item 
 \[\frac{
-  \Gamma, \var \ccolon{T}, \var\defn p : o\eqd o' \ccheck{U} \Context
+  \Gamma, \var \ccolon T, \var\defn p : o\eqd o' \ccheck{U} \Context
 }{
   \Gamma, \var\defn \ha\wl{.p} : \ha\lambda{.o}\eqd \ha\lambda{.o'} : \ha\prod{T,.U} \Context
 }\]
+
+FIX THIS.
 
 \item 
 \[\frac{
@@ -414,45 +451,81 @@ $.U$; an external annotation of the form $\haa {\ha\lambda{.o}} {\ha\prod{T,.U}}
 Here $U[o]$ is notation for replacing the first variable of $U$ by $o$, with
 the second variable of $U$ becoming the first, and so on.  
 
-The annotation is present to ensure that the sentence $$\Gamma, \var \defn
-U[\haa t T] \Type \Context$$ is checkable.
+The relation $U' = U[\haa t T]$ between type expressions indicates equality up to
+renaming of local variables and expansion of definitions.
+
+%% The annotation is present to ensure that the sentence $$\Gamma, \var \defn
+%% U[\haa t T] \Type \Context$$ is checkable.
+
+Question: what makes the sentence $$\Gamma, \var \defn U[\haa t T] \Type
+\Context$$ checkable?
 
 \item 
 \[\frac{
    \Gamma, \var\defn p : f \eqd f' \ccolon{\ha\prod{T,.U}} \Context
    \spc 
-   \Gamma, \var\defn q : t \eqd t' \ccolon{T} \Context
+   \Gamma, \var\defn q : t \eqd t' \ccolon T \Context
    }{
    \Gamma, \var\defn \ha\weveq{p,q} : \ha\ev{f,t,T,.U} \eqd \ha\ev{f',t',T,.U}
-   \ccolon{U[\haa t T]} \Context
+   \ccolon U[\haa t T] \eqd U[\haa {t'} T] \Context
   }\]
 
-For simplicity, assume that $f'$ is $f$, and observe that $\Gamma, \var\defn
-\ha\ev{f',t',T,.U} \csynth{U[\haa t T]} \Context$ may not be valid, even though
-$\Gamma,\var\defn \ha\ev{f',t',T,.U} \csynth{U[\haa {t'}{T}]} \Context$ is.  This
-might be a problem, even though $\Gamma, \var\defn \ha\ev{f',t',T,.U} :
-U[\haa{t}{T}] \Context$ is valid in the underlying type theory where the
-witnesses have been forgotten.
+FIX THIS.
+
+Question: what term $q'$ will make the following sentence derivable?
+$$ \Gamma, \var \defn q' : U[\haa t T] \eqd U[\haa {t'} T] \Type \Context $$
+How does the rule above relate to $q'$?
+
+\item 
+\[\frac{
+  \Gamma, \var\defn f \ccheck{\ha\prod{T,.U}} \Context
+  \spc
+  \Gamma, \var\defn p \ccolon t \eqd t' \ccolon T \eqd T'
+}{
+  \Gamma, \var\defn ... : \ha\ev{f,t,T,.U} \eqd \ha\ev{f,t',T',.U} \ccolon U[\haa t T] \eqd U[\haa {t'} T] \Context
+}\]
+
+\dots incomplete \dots
+
+Question: what makes $$\Gamma, \var\defn ... : \ha\ev{f,\ha\conv{t,T,p},T',.U}
+\ccolon U[\haa t T] \Context$$ checkable?
+
+\item 
+\[\frac{
+  \Gamma, \var\defn f \ccheck{\ha\prod{T,.U}} \Context
+  \spc 
+  \Gamma, \var\defn t \ccheck{T}\Context
+  \spc
+  \Gamma, \var\defn T, \var\defn q \ccolon U \eqd U'
+}{
+  \Gamma, \var\defn ... : \ha\ev{f,t,T,.U} \eqd \ha\ev{f,t,T,.U'}
+   \ccolon U[\haa t T] \Context
+}\]
+
+\dots incomplete \dots
+
+Question: what makes $$ \Gamma, \var\defn ... : \ha\ev{f,t,T,.U'}
+\ccolon U[\haa t T] \Context $$ checkable?
 
 \item 
 % beta
 \[\frac{
   \Gamma, \var\defn t \ccheck{T} \Context
   \spc
-  \Gamma, \var \ccolon{T}, \var\defn u \ccheck{U} \Context
+  \Gamma, \var \ccolon T, \var\defn u \ccheck{U} \Context
   }{
   \Gamma,\var\defn \ha\wbeta{} : \ha\ev{\ha\lambda{.u},t,T,.U} \eqd
   u[\haa{t}{T}] : U[\haa{t}{T}] \Context
 }\]
 
-Replacing $\ha\lambda{.u}$ by $\haa{\ha\lambda{.u}}{\ha\prod{T,.U}}$ would
-be an alternative to putting $T$ and $.U$ in the witness.  Comparison of two
-terms of the same type by normalization need not involve computation of the
-types of partially applied results, so a version of this rule free of type
-annotations is needed.
+%% Replacing $\ha\lambda{.u}$ by $\haa{\ha\lambda{.u}}{\ha\prod{T,.U}}$ would
+%% be an alternative to putting $T$ and $.U$ in the witness.  Comparison of two
+%% terms of the same type by normalization need not involve computation of the
+%% types of partially applied results, so a version of this rule free of type
+%% annotations is needed.
 
-It would be better if $\beta$-reduction were free-running, without the
-necessity of tracking the types $T$ and $U$.
+(It would be better if $\beta$-reduction were free-running, without the
+necessity of tracking the types $T$ and $U$.)
 
 % eta
 \item 
