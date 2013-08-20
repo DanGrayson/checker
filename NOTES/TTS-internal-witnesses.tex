@@ -186,7 +186,7 @@ the supertype, where $n$, $p$, $t$, $t'$, $T$, $T'$ are expressions, possibly
 with free variables, that define values for the variables (as indicated by the
 operator $\defn$), and where $J$ and $J'$ are supertypes.  The variable
 introduced by $J$ is regarded as bound in $J'$.  The variable introduced by
-$J'$ is unused $ v : J \Rightarrow J' $; we write $ J \Rightarrow J' $ to
+$J'$ is unused in $ v : J \Rightarrow J' $; we write $ J \Rightarrow J' $ to
 indicate re-using it to serve as $v$.
 
 A {\em context} or {\em sentence} $\Gamma$ is a list of supertypes, each of
@@ -294,7 +294,7 @@ This inference rule introduces a type variable $X$.
 \item
 $$\frac{\Gamma \vdash T \Type}{\Gamma, x \ccolon T \Context}$$
 
-This inference rule introduces a variable $x$ of type $T$.  This is intended to be the
+This inference rule introduces a variable $x$ of type $T$.  This is the
 standard way to introduce a proposition $T$ as a hypothesis.  (The hypotheses
 active in a context $\Gamma$ are the variables with no defined value.)
 
