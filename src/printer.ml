@@ -524,8 +524,12 @@ let print_signature env file =
            ) judgment_heads;
   fprintf file "  Object constants:\n";
   List.iter (fun h ->
-    fprintf file "     %a : %a\n" _h h  _t (env,head_to_type env (Error.no_pos 23) h)
-           ) expr_heads;
+    fprintf file "     %a : " _h h;
+    if h <> W W_QED then
+      fprintf file "%a\n" _t (env,head_to_type env (Error.no_pos 23) h)
+    else
+      fprintf file "*\n"      
+            ) expr_heads;
   flush file
 
 (** Print the context. *)
