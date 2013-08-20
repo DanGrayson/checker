@@ -130,7 +130,7 @@
 \newcommand{\wbeta}{{\sf wbeta}}
 \newcommand{\weleq}{{\sf weleq}}
 \newcommand{\weveq}{{\sf wev}}
-\newcommand{\wlameq}{{\sf wlambda}}
+\newcommand{\wlambda}{{\sf wlambda}}
 \newcommand{\wpieq}{{\sf wpi}}
 \newcommand{\wrefl}{{\sf wrefl}}
 \newcommand{\wsymm}{{\sf wsymm}}
@@ -223,6 +223,11 @@ $$ \Gamma \vdash T \Type $$
 $$ \Gamma \vdash t \ccolon T $$
 $$ \Gamma \vdash p : T \eqd T' $$
 $$ \Gamma \vdash p : t \eqd t' \ccolon T \eqd T' $$
+
+Moreover, when $T$ is $T'$, we may abbreviate
+$$ \Gamma \vdash p : t \eqd t' \ccolon T \eqd T' $$
+to
+$$ \Gamma \vdash p : t \eqd t' \ccolon T $$
 
 Variables introduced by supertypes in the context may have names that are
 uninteresting for us, if they aren't referred to again.  To indicate that, we
@@ -463,7 +468,7 @@ as a premise to the rule above.
   \Gamma \vdash p:T \eqd T'  \spc
   \Gamma,  x \ccolon T \vdash q:o \eqd p^* o' \ccolon U \eqd p^*U'
   } {
-  \Gamma \vdash \ha\wlameq{.q} : \ha\lambda{.o}\eqd \ha\lambda{.o'} : \ha\prod{T,.U} \eqd \ha\prod{T',.U'}
+  \Gamma \vdash \ha\wlambda{p,.q} : \ha\lambda{.o}\eqd \ha\lambda{.o'} : \ha\prod{T,.U} \eqd \ha\prod{T',.U'}
 }\]
 
 \item 
@@ -472,7 +477,7 @@ as a premise to the rule above.
   \spc 
   \Gamma \vdash t \ccheck{T}
 }{
-  \Gamma \vdash \ha \ev{f,t,T,.U} \csynth U[\haa t T] 
+  \Gamma \vdash \ha \ev{f,t,{\ha\prod{T,.U}}} \csynth U[\haa t T] 
 }\]
 
 Here $U[o]$ is notation for replacing the first variable of $U$ by $o$, with
@@ -490,17 +495,17 @@ checkable, in the context above?
    \spc 
    \Gamma \vdash q : t \eqd t' \ccolon T \eqd T'
    }{
-   \Gamma \vdash \ha\weveq{p,q} : \ha\ev{f,t,T,.U} \eqd \ha\ev{f',t',T',.U'} \ccolon U[\haa t T] \eqd U'[\haa {t'} {T'}]
+   \Gamma \vdash \ha\weveq{p,q} : \ha\ev{f,t,{\ha\prod{T,.U}}} \eqd \ha\ev{f',t',{\ha\prod{T',.U'}}} \ccolon U[\haa t T] \eqd U'[\haa {t'} {T'}]
   }\]
 
 \item 
 % beta
 \[\frac{
-  \Gamma \vdash t \ccheck{T} 
+  \Gamma \vdash \ha\lambda{.u} \ccheck {\ha\prod{T,.U}}
   \spc
-  \Gamma, \var \ccolon T \vdash u \ccheck{U} 
+  \Gamma \vdash t \ccheck{T} 
   }{
-  \Gamma \vdash \ha\wbeta{} : \ha\ev{\ha\lambda{.u},t,T,.U} \eqd u[\haa{t}{T}] : U[\haa{t}{T}] \eqd U[\haa{t}{T}]
+  \Gamma \vdash \ha\wbeta{} : \ha\ev{\ha\lambda{.u},t,{\ha\prod{T,.U}}} \eqd u[\haa{t}{T}] : U[\haa{t}{T}]
 }\]
 
 %% Replacing $\ha\lambda{.u}$ by $\haa{\ha\lambda{.u}}{\ha\prod{T,.U}}$ would
@@ -516,7 +521,7 @@ necessity of tracking the types $T$ and $U$.)
 \item 
 \[
   \frac{\Gamma \vdash f \ccheck{\ha\prod{T,.U}}}
-       {\Gamma \vdash \ha\weta{} : f \eqd \ha\lambda{t.\ha\ev{f,t,T,.U}} : \ha\prod{T,.U} \eqd \ha\prod{T,.U}
+       {\Gamma \vdash \ha\weta{} : f \eqd \ha\lambda{t.\ha\ev{f,t,{\ha\prod{T,.U}}}} : \ha\prod{T,.U}
        }
 \]
 
