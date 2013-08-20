@@ -202,6 +202,9 @@ Inference rules given later determine which sentences are well-formed and
 derivable.  The notation $$\Gamma \Context$$ will be used to indicate that
 $\Gamma$ is well-formed.
 
+Equality between expressions occurring twice in the conclusion of an inference
+rule will be up to renaming of local variables and expansion of definitions.
+
 The last variable introduced by a context is unused, so if it has a defined
 value, we may abbreviate the corresponding sentence moving the last entry to
 the right of the turnstile, without its variable.  In other words, we may
@@ -248,21 +251,21 @@ will write the names of such variables as underscores, as in $\var
 %% be asked to manipulate objects whose type has already been determined.
 
 We intend the inference rules to satisfy some meta-theorems.  For example, if 
-$$ \Gamma, \var \defn t \ccolon T \Context $$
+$$ \Gamma \vdash t \ccolon T  $$
 is derivable, then
-$$ \Gamma, \var \defn T \Type \Context $$
+$$ \Gamma \vdash T \Type  $$
 should be derivable, too.  If
-$$ \Gamma, \var \defn p \ccolon T \eqd T' \Context $$
+$$ \Gamma \vdash p \ccolon T \eqd T'  $$
 is derivable, then
-$$ \Gamma, \var \defn T \Type \Context $$
+$$ \Gamma \vdash T \Type  $$
 and
-$$ \Gamma, \var \defn T' \Type \Context $$
+$$ \Gamma \vdash T' \Type  $$
 should be derivable, too.  Finally, if 
-$$ \Gamma, \var \defn p : t \eqd t' \ccolon T \eqd T' \Context $$
+$$ \Gamma \vdash p : t \eqd t' \ccolon T \eqd T'  $$
 is derivable, then
-$$ \Gamma, \var \defn t \ccolon T \Context $$
+$$ \Gamma \vdash t \ccolon T  $$
 and
-$$ \Gamma, \var \defn t' \ccolon T' \Context $$
+$$ \Gamma \vdash t' \ccolon T'  $$
 should be derivable, too.
 
 Thanks to Dan Licata and Peter Lumsdaine for suggestions and advice.
@@ -275,6 +278,12 @@ Thanks to Dan Licata and Peter Lumsdaine for suggestions and advice.
 $$\frac{}{\Context}$$
 
 \item
+$$\frac{\Gamma,J,J'\Context}{\Gamma,v : J \Rightarrow J' \Context}$$
+
+This inference rule introduces a variable $v$ that abstracts inferring $J'$ from the hypothesis $J$.
+As mentioned above, we may omit $v$ to indicate that the unused variable introduced by $J'$ is to be recycled, as 
+in the following equivalent version of the rule.
+
 $$\frac{\Gamma,J,J'\Context}{\Gamma,J \Rightarrow J' \Context}$$
 
 \item
@@ -447,7 +456,7 @@ meta-theorem that $$\Gamma, x' \ccolon T' \vdash U' \Type $$ is
 derivable if and only if $$\Gamma, x \ccolon T \vdash p^* U' \Type
 $$ is derivable.  If not, we should add
 $$  \Gamma, x' \ccolon T' \vdash U'  \Type  $$
-as a premise.
+as a premise to the rule above.
 
 \item 
 \[ \frac{ 
@@ -462,17 +471,12 @@ as a premise.
   \Gamma \vdash f \ccheck{\ha\prod{T,.U}}
   \spc 
   \Gamma \vdash t \ccheck{T}
-  \spc
-  U' = U[\haa t T]
 }{
-  \Gamma \vdash \ha \ev{f,t,T,.U} \csynth{U'} 
+  \Gamma \vdash \ha \ev{f,t,T,.U} \csynth U[\haa t T] 
 }\]
 
 Here $U[o]$ is notation for replacing the first variable of $U$ by $o$, with
 the second variable of $U$ becoming the first, and so on.  
-
-The relation $U' = U[\haa t T]$ between type expressions indicates equality up to
-renaming of local variables and expansion of definitions.
 
 %% The annotation is present to ensure that the sentence $$\Gamma, \var \defn
 %% U[\haa t T] \Type \Context$$ is checkable.
