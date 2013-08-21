@@ -102,7 +102,7 @@
 \newcommand{\brd}{\equiv}
 \newcommand{\ind}{Ind\,\,}
 \newcommand{\erd}[1]{\equiv_{{\AA},#1}}
-\newcommand\spc{{\,\,\,\,\,\,\,}}
+\newcommand\spc{{\hskip 26pt}}
 \renewcommand{\AA}{{\cal A}}
 
 \newcommand{\ccolon}{\vcentcolon}
@@ -111,7 +111,8 @@
 \renewcommand{\csynth}{\ccheck}              % was \Rightarrow
 
 \newcommand{\Univ}{\mathop{\text{ \sc univ}}}
-\newcommand{\Type}{\mathop{\text{ \sc type}}}
+\newcommand{\TYPE}{\mathop{\text{ \sc type}}}
+\newcommand{\Type}{\mathop{\text{Type}}}
 \newcommand{\Okay}{\mathop{\text{ \sc okay}}}
 \newcommand{\Context}{\vdash\Okay}
 \renewcommand{\Context}{\vdash}
@@ -171,8 +172,8 @@ A {\em supertype} $J$ has one of the following forms:
 
 $$ u \Univ $$
 $$ u \defn n \Univ $$
-$$ X \Type $$
-$$ X \defn T \Type $$
+$$ X \TYPE $$
+$$ X \defn T \TYPE $$
 $$ x \ccolon T $$
 $$ x \defn t \ccolon T $$
 $$ w : T \eqd T' $$
@@ -211,7 +212,7 @@ the right of the turnstile, without its variable.  In other words, we may
 abbreviate the five sentences
 
 $$ \Gamma, u \defn n \Univ \Context $$
-$$ \Gamma, X \defn T \Type \Context $$
+$$ \Gamma, X \defn T \TYPE \Context $$
 $$ \Gamma, x \defn t \ccolon T \Context $$
 $$ \Gamma, w \defn p : T \eqd T' \Context $$
 $$ \Gamma, w \defn p : t \eqd t' \ccolon T \eqd T' \Context $$
@@ -219,7 +220,7 @@ $$ \Gamma, w \defn p : t \eqd t' \ccolon T \eqd T' \Context $$
 by the following sentences:
 
 $$ \Gamma \vdash n \Univ $$
-$$ \Gamma \vdash T \Type $$
+$$ \Gamma \vdash T \TYPE $$
 $$ \Gamma \vdash t \ccolon T $$
 $$ \Gamma \vdash p : T \eqd T' $$
 $$ \Gamma \vdash p : t \eqd t' \ccolon T \eqd T' $$
@@ -258,13 +259,13 @@ will write the names of such variables as underscores, as in $\var
 We intend the inference rules to satisfy some meta-theorems.  For example, if 
 $$ \Gamma \vdash t \ccolon T  $$
 is derivable, then
-$$ \Gamma \vdash T \Type  $$
+$$ \Gamma \vdash T \TYPE  $$
 should be derivable, too.  If
 $$ \Gamma \vdash p \ccolon T \eqd T'  $$
 is derivable, then
-$$ \Gamma \vdash T \Type  $$
+$$ \Gamma \vdash T \TYPE  $$
 and
-$$ \Gamma \vdash T' \Type  $$
+$$ \Gamma \vdash T' \TYPE  $$
 should be derivable, too.  Finally, if 
 $$ \Gamma \vdash p : t \eqd t' \ccolon T \eqd T'  $$
 is derivable, then
@@ -292,12 +293,12 @@ in the following equivalent version of the rule.
 $$\frac{\Gamma,J,J'\Context}{\Gamma,J \Rightarrow J' \Context}$$
 
 \item
-$$\frac{\Gamma\Context}{\Gamma, X \Type \Context}$$
+$$\frac{\Gamma\Context}{\Gamma, X \TYPE \Context}$$
 
 This inference rule introduces a type variable $X$.
 
 \item
-$$\frac{\Gamma \vdash T \Type}{\Gamma, x \ccolon T \Context}$$
+$$\frac{\Gamma \vdash T \TYPE}{\Gamma, x \ccolon T \Context}$$
 
 This inference rule introduces a variable $x$ of type $T$.  This is the
 standard way to introduce a proposition $T$ as a hypothesis.  (The hypotheses
@@ -305,9 +306,9 @@ active in a context $\Gamma$ are the variables with no defined value.)
 
 \item
 $$\frac{
-  \Gamma \vdash T \Type  
+  \Gamma \vdash T \TYPE  
   \spc
-  \Gamma \vdash T' \Type }
+  \Gamma \vdash T' \TYPE }
 {\Gamma, w : T \eqd T' \Context}$$
 
 This inference rule introduces a hypothesis asserting equality of $T$ and $T'$ witnessed
@@ -325,7 +326,7 @@ This inference rule introduces a hypothesis asserting equality of $t$ and $t'$, 
 with their corresponding types, witnessed by the new variable $w$.
 
 \item 
-\[\frac{\Gamma \vdash T \Type \spc \Gamma \vdash T' \Type
+\[\frac{\Gamma \vdash T \TYPE \spc \Gamma \vdash T' \TYPE
   \spc T\sim T'}{
   \Gamma \vdash \ha\Wrefl{}: T\eqd T' 
 }
@@ -374,7 +375,7 @@ $$\frac{\Gamma \vdash p:T_1\eqd T_2 }{\Gamma \vdash \ha\Wsymm{p}:T_2\eqd T_1}$$
 
 \item 
 \[\frac
-    { \Gamma \vdash o \ccolon T \Context \spc \Gamma \vdash p : T \eqd T'}
+    { \Gamma \vdash o \ccolon T \spc \Gamma \vdash p : T \eqd T'}
     { \Gamma \vdash \ha\conv{o,T,p} \ccolon T' }\]
 
 and
@@ -394,49 +395,52 @@ and
 %% In any comparisons $T\sim T'$ and $o\sim o'$, a term of the form
 %% $\haa o T$ is regarded as equivalent to $o$.
 
-\end{enumerate}
-
-\paragraph{Universes}
-
-\begin{enumerate}
-
 \item
 
 \[\frac{\Gamma \vdash n \Univ  }
-       {\Gamma \vdash \Eu_n \Type  }\]
+       {\Gamma \vdash \Eu_n \TYPE  }\]
 
 \item
 
 \[\frac{
-  \Gamma \vdash n \Univ  
-  \spc
   \Gamma \vdash o \csynth{\Eu_n}}{
-  \Gamma \vdash \ha\El{n,o}\Type }\]
+  \Gamma \vdash \ha\El{n,o}\TYPE }\]
 
 \item 
 
-\[\frac{
-  \Gamma \vdash n \Univ 
-  \spc
-  \Gamma \vdash p : o \eqd o' \ccheck{\Eu_n}
-}
+\[\frac{\Gamma \vdash p : o \eqd o' \ccheck \Eu_n}
        {\Gamma \vdash \ha\weleq{p} : \ha\El{n,o} \eqd \ha\El{n,o'}}\]
 
-\end{enumerate}
+\item
+This item and the following three (concerning $\Type$, the type of all small
+types) are experimental.  A {\em small} type is one of the form $\ha\El{n,t}$,
+for some $n$ and some $t$.
 
-\paragraph{Dependent products}
+\[\frac{}
+       {\Gamma \vdash \Type \TYPE }\]
 
-\begin{enumerate}
+
+\item
+\[\frac{\Gamma \vdash T \ccolon \Type}
+       {\Gamma \vdash T \TYPE}\]
+
+\item
+\[\frac{\Gamma \vdash t \ccolon \Eu_n}
+       {\Gamma \vdash \ha\El{n,t} \ccheck \Type}\]
+
+\[\frac{\Gamma \vdash p : t \eqd t' \ccheck \Eu_n}
+       {\Gamma \vdash \ha\weleq{p} : \ha\El{n,t} \eqd \ha\El{n,t'} : \Type }\]
+
 
 \item 
-\[\frac{ \Gamma, \var \ccolon T \vdash U\Type  }{\Gamma \vdash \ha\prod{T,.U}\Type}\]
+\[\frac{ \Gamma, \var \ccolon T \vdash U\TYPE  }{\Gamma \vdash \ha\prod{T,.U}\TYPE}\]
 
 Here $.U$ is notation for abstraction: binding an anonymous variable to the
 expression $U$; we will also use the notation $x.U$ when binding a named
 variable $x$, as in the following equivalent version of the same rule.
 
-\[\frac{ \Gamma, x \ccolon T \vdash U\Type  }
-       {\Gamma \vdash \ha\prod{T,x.U}\Type}\]
+\[\frac{ \Gamma, x \ccolon T \vdash U\TYPE  }
+       {\Gamma \vdash \ha\prod{T,x.U}\TYPE}\]
 
 \item 
 \[\frac{
@@ -457,10 +461,10 @@ $U'[e/x']$ is notation for replacing the leading variable $x'$ in $U'$ by the
 expression $e$.
 
 In the presence of $$\Gamma \vdash p:T \eqd T'  $$ it should be a
-meta-theorem that $$\Gamma, x' \ccolon T' \vdash U' \Type $$ is
-derivable if and only if $$\Gamma, x \ccolon T \vdash p^* U' \Type
+meta-theorem that $$\Gamma, x' \ccolon T' \vdash U' \TYPE $$ is
+derivable if and only if $$\Gamma, x \ccolon T \vdash p^* U' \TYPE
 $$ is derivable.  If not, we should add
-$$  \Gamma, x' \ccolon T' \vdash U'  \Type  $$
+$$  \Gamma, x' \ccolon T' \vdash U'  \TYPE  $$
 as a premise to the rule above.
 
 \item 
@@ -484,9 +488,9 @@ Here $U[o]$ is notation for replacing the first variable of $U$ by $o$, with
 the second variable of $U$ becoming the first, and so on.  
 
 %% The annotation is present to ensure that the sentence $$\Gamma, \var \defn
-%% U[\haa t T] \Type \Context$$ is checkable.
+%% U[\haa t T] \TYPE \Context$$ is checkable.
 
-Question: what makes the sentence $$\Gamma \vdash U[\haa t T] \Type $$
+Question: what makes the sentence $$\Gamma \vdash U[\haa t T] \TYPE $$
 checkable, in the context above?
 
 \item 
