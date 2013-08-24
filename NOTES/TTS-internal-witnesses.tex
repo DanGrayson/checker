@@ -132,6 +132,8 @@
 \newcommand{\weleq}{{\sf weleq}}
 \newcommand{\weveq}{{\sf wev}}
 \newcommand{\wlambda}{{\sf wlambda}}
+\newcommand{\Wsubst}{{\sf Wsubst}}
+\newcommand{\wsubst}{{\sf wsubst}}
 \newcommand{\wpieq}{{\sf wpi}}
 \newcommand{\wrefl}{{\sf wrefl}}
 \newcommand{\wsymm}{{\sf wsymm}}
@@ -256,24 +258,6 @@ will write the names of such variables as underscores, as in $\var
 %% asked to check that an object has a given type, and other parts of which will
 %% be asked to manipulate objects whose type has already been determined.
 
-We intend the inference rules to satisfy some meta-theorems.  For example, if 
-$$ \Gamma \vdash t \ccolon T  $$
-is derivable, then
-$$ \Gamma \vdash T \TYPE  $$
-should be derivable, too.  If
-$$ \Gamma \vdash p \ccolon T \eqd T'  $$
-is derivable, then
-$$ \Gamma \vdash T \TYPE  $$
-and
-$$ \Gamma \vdash T' \TYPE  $$
-should be derivable, too.  Finally, if 
-$$ \Gamma \vdash p : t \eqd t' \ccolon T \eqd T'  $$
-is derivable, then
-$$ \Gamma \vdash t \ccolon T  $$
-and
-$$ \Gamma \vdash t' \ccolon T'  $$
-should be derivable, too.
-
 Thanks to Dan Licata and Peter Lumsdaine for suggestions and advice.
 
 \paragraph{Inference rules} 
@@ -316,24 +300,21 @@ by the new variable $w$.
 
 \item
   \[\frac{
+  \Gamma \vdash p : T \eqd T'
+  \spc
   \Gamma \vdash t \ccolon T
   \spc
   \Gamma \vdash t' \ccolon T'
   } {
   \Gamma, w : t \eqd t' \ccolon T \eqd T' \Context}\]
 
-This inference rule introduces a hypothesis asserting equality of $t$ and $t'$, along
-with their corresponding types, witnessed by the new variable $w$.
+This inference rule introduces a hypothesis asserting equality of $t$ and $t'$,
+witnessed by the new variable $w$.
 
 \item 
-\[\frac{\Gamma \vdash T \TYPE \spc \Gamma \vdash T' \TYPE
-  \spc T\sim T'}{
-  \Gamma \vdash \ha\Wrefl{}: T\eqd T' 
-}
+\[\frac{\Gamma \vdash T \TYPE \spc \Gamma \vdash T' \TYPE \spc T = T'}
+       {\Gamma \vdash \ha\Wrefl{}: T\eqd T'}
 \]
-
-Here $T\sim T'$ denotes a comparison operation on terms, which treats certain
-operations specially, as mentioned below.
 
 \item 
 $$\frac{\Gamma \vdash p:T_1\eqd T_2 }{\Gamma \vdash \ha\Wsymm{p}:T_2\eqd T_1}$$
@@ -352,11 +333,13 @@ $$\frac{\Gamma \vdash p:T_1\eqd T_2 }{\Gamma \vdash \ha\Wsymm{p}:T_2\eqd T_1}$$
 \[\frac{
   \Gamma \vdash o \ccheck{T}
   \spc
-  \Gamma \vdash o' \ccheck{T}
+  \Gamma \vdash o' \ccheck{T'}
   \spc
-  o \sim o'
+  T = T'
+  \spc
+  o = o'
   } {
-  \Gamma \vdash  \ha\wrefl{}: o \eqd o' \ccolon T \eqd T
+  \Gamma \vdash  \ha\wrefl{}: o \eqd o' \ccolon T \eqd T'
   } 
 \]
 
@@ -395,6 +378,31 @@ and
 %% In any comparisons $T\sim T'$ and $o\sim o'$, a term of the form
 %% $\haa o T$ is regarded as equivalent to $o$.
 
+\item 
+\[ \frac{ 
+  \Gamma \vdash p:T \eqd T'  
+  \spc
+  \Gamma \vdash r:t \eqd t' : T \eqd T'  
+  \spc
+  \Gamma,  x \ccolon T \vdash q: U \eqd p^*U'
+  } {
+  \Gamma \vdash \ha\Wsubst{p,r,.q} : U[t] \eqd U'[t']
+}\]
+
+Here $U[t]$ is notation for replacing the first variable of $U$ by $t$, with
+the second variable of $U$ becoming the first, and so on.  
+
+\item 
+\[ \frac{ 
+  \Gamma \vdash p:T \eqd T'  
+  \spc
+  \Gamma \vdash r:t \eqd t' : T \eqd T'  
+  \spc
+  \Gamma,  x \ccolon T \vdash q:u \eqd p^* u' \ccolon U \eqd p^*U'
+  } {
+  \Gamma \vdash \ha\wsubst{p,r,.q} : u[t] \eqd u'[t'] : U[t] \eqd U'[t']
+}\]
+
 \item
 
 \[\frac{\Gamma \vdash n \Univ  }
@@ -412,26 +420,21 @@ and
        {\Gamma \vdash \ha\weleq{p} : \ha\El{n,o} \eqd \ha\El{n,o'}}\]
 
 \item
-This item and the following three (concerning $\Type$, the type of all small
-types) are experimental.  A {\em small} type is one of the form $\ha\El{n,t}$,
-for some $n$ and some $t$.
+The following rules, concerning $\Type$, the type of all small types, are
+experimental.  A {\em small} type is one of the form $\ha\El{n,t}$, for some
+$n$ and some $t$.
 
 \[\frac{}
        {\Gamma \vdash \Type \TYPE }\]
 
-
-\item
 \[\frac{\Gamma \vdash T \ccolon \Type}
        {\Gamma \vdash T \TYPE}\]
 
-\item
 \[\frac{\Gamma \vdash t \ccolon \Eu_n}
        {\Gamma \vdash \ha\El{n,t} \ccheck \Type}\]
 
-\item
 \[\frac{\Gamma \vdash p : t \eqd t' \ccheck \Eu_n}
        {\Gamma \vdash \ha\weleq{p} : \ha\El{n,t} \eqd \ha\El{n,t'} : \Type }\]
-
 
 \item 
 \[\frac{ \Gamma, \var \ccolon T \vdash U\TYPE  }{\Gamma \vdash \ha\prod{T,.U}\TYPE}\]
@@ -445,8 +448,8 @@ variable $x$, as in the following equivalent version of the same rule.
 
 \item 
 \[\frac{
-  \Gamma, \var \ccolon T \vdash o \ccheck{U}
-}{\Gamma \vdash \ha\lambda{.o} \ccheck{\ha\prod{T,.U}}}
+  \Gamma, \var \ccolon T \vdash u \ccheck{U}
+}{\Gamma \vdash \ha\lambda{.u} \ccheck{\ha\prod{T,.U}}}
 \]
 
 \item 
@@ -470,10 +473,11 @@ as a premise to the rule above.
 
 \item 
 \[ \frac{ 
-  \Gamma \vdash p:T \eqd T'  \spc
-  \Gamma,  x \ccolon T \vdash q:o \eqd p^* o' \ccolon U \eqd p^*U'
+  \Gamma \vdash p:T \eqd T'  
+  \spc
+  \Gamma,  x \ccolon T \vdash q:u \eqd p^* u' \ccolon U \eqd p^*U'
   } {
-  \Gamma \vdash \ha\wlambda{p,.q} : \ha\lambda{.o}\eqd \ha\lambda{.o'} : \ha\prod{T,.U} \eqd \ha\prod{T',.U'}
+  \Gamma \vdash \ha\wlambda{p,.q} : \ha\lambda{.u}\eqd \ha\lambda{.u'} : \ha\prod{T,.U} \eqd \ha\prod{T',.U'}
 }\]
 
 \item 
@@ -481,12 +485,11 @@ as a premise to the rule above.
   \Gamma \vdash f \ccheck{\ha\prod{T,.U}}
   \spc 
   \Gamma \vdash t \ccheck{T}
+  \spc
+  U' = U[\haa t T] 
 }{
-  \Gamma \vdash \ha \ev{f,t,{\ha\prod{T,.U}}} \csynth U[\haa t T] 
+  \Gamma \vdash \ha \ev{f,t,{\ha\prod{T,.U}}} \csynth U'
 }\]
-
-Here $U[o]$ is notation for replacing the first variable of $U$ by $o$, with
-the second variable of $U$ becoming the first, and so on.  
 
 %% The annotation is present to ensure that the sentence $$\Gamma, \var \defn
 %% U[\haa t T] \TYPE \Context$$ is checkable.
@@ -529,6 +532,64 @@ necessity of tracking the types $T$ and $U$.)
        {\Gamma \vdash \ha\weta{} : f \eqd \ha\lambda{t.\ha\ev{f,t,{\ha\prod{T,.U}}}} : \ha\prod{T,.U}
        }
 \]
+
+\item
+The following rules are included, because they correspond to meta-theorems that
+we intend should hold; they are not expected to be useful in constructing
+proofs, and they shouldn't participate in derivations considered by the
+uniqueness statement of the introduction.
+
+\[
+  \frac{\Gamma \vdash t \ccolon T}
+       {\Gamma, \var \ccolon T \Context}
+\]
+\[
+  \frac{\Gamma, \var \ccolon T \Context}
+       {\Gamma \vdash T \TYPE}
+\]
+
+\[
+  \frac{\Gamma \vdash p \ccolon T \eqd T'}
+       {\Gamma, \var \ccolon T \eqd T' \Context}
+\]
+\[
+  \frac{\Gamma, \var \ccolon T \eqd T' \Context}
+       {\Gamma \vdash T \TYPE}
+\]
+
+\[
+  \frac{\Gamma \vdash p \ccolon T \eqd T'}
+       {\Gamma, \var \ccolon T \eqd T' \Context}
+\]
+\[
+  \frac{\Gamma, \var \ccolon T \eqd T' \Context}
+       {\Gamma \vdash T' \TYPE}
+\]
+
+\[
+  \frac{\Gamma \vdash p : t \eqd t' \ccolon T \eqd T'}
+       {\Gamma, \var : t \eqd t' \ccolon T \eqd T' \Context}
+\]
+\[
+  \frac{\Gamma, \var : t \eqd t' \ccolon T \eqd T' \Context}
+       {\Gamma \vdash t \ccolon T}
+\]
+
+\[
+  \frac{\Gamma \vdash p : t \eqd t' \ccolon T \eqd T'}
+       {\Gamma, \var : t \eqd t' \ccolon T \eqd T' \Context}
+\]
+\[
+  \frac{\Gamma, \var : t \eqd t' \ccolon T \eqd T' \Context}
+       {\Gamma \vdash t' \ccolon T'}
+\]
+
+\item
+It should be a meta-theorem that if
+\[{\Gamma \vdash p : t \eqd t' \ccolon T \eqd T'}\]
+is derivable, then, for some $p'$,
+\[{\Gamma \vdash p' : T \eqd T'}\]
+is derivable.
 
 \end{enumerate}
 
