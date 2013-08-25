@@ -265,35 +265,47 @@ Thanks to Dan Licata and Peter Lumsdaine for suggestions and advice.
 \begin{enumerate}
 
 \item
-$$\frac{}{\Context}$$
+\[\frac{}{\Context}\]
 
 \item
-$$\frac{\Gamma,J,J'\Context}{\Gamma,v : J \Rightarrow J' \Context}$$
 
-This inference rule introduces a variable $v$ that abstracts inferring $J'$ from the hypothesis $J$.
+\[\frac{\Gamma,x:Q,\Gamma'\Context}{\Gamma,x:Q,\Gamma',y\defn x : Q \Context}\]
+
+\[\frac{\Gamma,x \defn p :Q,\Gamma'\Context}{\Gamma,x \defn p :Q,\Gamma',y\defn x : Q \Context}\]
+
+In these two rules, $Q$ represents the tail end of a supertype, not including
+the variable or its defined value.  For example, a special case of this rule is the following one.
+
+\[\frac{\Gamma,x:T,\Gamma'\Context}{\Gamma,x:T,\Gamma' \vdash x : T}\]
+
+
+\item
+\[\frac{\Gamma,J,J'\Context}{\Gamma,v : J \Rightarrow J' \Context}\]
+
+This inference rule introduces a variable $v$ that abstracts the inference of $J'$ from the hypothesis $J$.
 As mentioned above, we may omit $v$ to indicate that the unused variable introduced by $J'$ is to be recycled, as 
 in the following equivalent version of the rule.
 
-$$\frac{\Gamma,J,J'\Context}{\Gamma,J \Rightarrow J' \Context}$$
+\[\frac{\Gamma,J,J'\Context}{\Gamma,J \Rightarrow J' \Context}\]
 
 \item
-$$\frac{\Gamma\Context}{\Gamma, X \TYPE \Context}$$
+\[\frac{\Gamma\Context}{\Gamma, X \TYPE \Context}\]
 
 This inference rule introduces a type variable $X$.
 
 \item
-$$\frac{\Gamma \vdash T \TYPE}{\Gamma, x \ccolon T \Context}$$
+\[\frac{\Gamma \vdash T \TYPE}{\Gamma, x \ccolon T \Context}\]
 
 This inference rule introduces a variable $x$ of type $T$.  This is the
 standard way to introduce a proposition $T$ as a hypothesis.  (The hypotheses
 active in a context $\Gamma$ are the variables with no defined value.)
 
 \item
-$$\frac{
+\[\frac{
   \Gamma \vdash T \TYPE  
   \spc
   \Gamma \vdash T' \TYPE }
-{\Gamma, w : T \eqd T' \Context}$$
+{\Gamma, w : T \eqd T' \Context}\]
 
 This inference rule introduces a hypothesis asserting equality of $T$ and $T'$ witnessed
 by the new variable $w$.
@@ -317,7 +329,7 @@ witnessed by the new variable $w$.
 \]
 
 \item 
-$$\frac{\Gamma \vdash p:T_1\eqd T_2 }{\Gamma \vdash \ha\Wsymm{p}:T_2\eqd T_1}$$
+\[\frac{\Gamma \vdash p:T_1\eqd T_2 }{\Gamma \vdash \ha\Wsymm{p}:T_2\eqd T_1}\]
 
 \item 
 \[
@@ -358,15 +370,18 @@ $$\frac{\Gamma \vdash p:T_1\eqd T_2 }{\Gamma \vdash \ha\Wsymm{p}:T_2\eqd T_1}$$
 
 \item 
 \[\frac
-    { \Gamma \vdash o \ccolon T \spc \Gamma \vdash p : T \eqd T'}
-    { \Gamma \vdash \ha\conv{o,T,p} \ccolon T' }\]
+    { \Gamma \vdash t \ccolon T \spc \Gamma \vdash p : T \eqd T'}
+    { \Gamma \vdash \ha\conv{t,T,p} \ccolon T' }\]
 
 and
 
 \[\frac
-    { \Gamma \vdash o \ccolon T \spc
+    { \Gamma \vdash t \ccolon T \spc
       \Gamma \vdash p : T \eqd T' }
-    { \Gamma \vdash \ha\wconv{} \ccolon o \eqd \ha\conv{o,T,p} \ccolon T \eqd T'}\]
+    { \Gamma \vdash \ha\wconv{} \ccolon t \eqd \ha\conv{t,T,p} \ccolon T \eqd T'}\]
+
+When $T'$ is $T$, it would be nice if $\ha\conv{t,T,\ha\Wrefl{}}$ were equal to
+$t$ in a strong sense.
 
 %%% probably obsolete:
 %% In any comparisons $T\sim T'$ and $o\sim o'$, a term of the form
@@ -464,11 +479,15 @@ Here ${p}^*U'$ is notation for $U'[\haa {\ha\conv{x,T,p}} {T'}/x']$, where
 $U'[e/x']$ is notation for replacing the leading variable $x'$ in $U'$ by the
 expression $e$.
 
-In the presence of $$\Gamma \vdash p:T \eqd T'  $$ it should be a
-meta-theorem that $$\Gamma, x' \ccolon T' \vdash U' \TYPE $$ is
-derivable if and only if $$\Gamma, x \ccolon T \vdash p^* U' \TYPE
-$$ is derivable.  If not, we should add
-$$  \Gamma, x' \ccolon T' \vdash U'  \TYPE  $$
+In the presence of 
+\[\Gamma \vdash p:T \eqd T'  \]
+it should be a
+meta-theorem that 
+\[\Gamma, x' \ccolon T' \vdash U' \TYPE \]
+is derivable if and only if 
+\[\Gamma, x \ccolon T \vdash p^* U' \TYPE \]
+is derivable.  If not, we should add
+\[  \Gamma, x' \ccolon T' \vdash U'  \TYPE  \]
 as a premise to the rule above.
 
 \item 
@@ -494,7 +513,8 @@ as a premise to the rule above.
 %% The annotation is present to ensure that the sentence $$\Gamma, \var \defn
 %% U[\haa t T] \TYPE \Context$$ is checkable.
 
-Question: what makes the sentence $$\Gamma \vdash U[\haa t T] \TYPE $$
+Question: what makes the sentence 
+\[ \Gamma \vdash U[\haa t T] \TYPE \]
 checkable, in the context above?
 
 \item 
