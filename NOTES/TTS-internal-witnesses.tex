@@ -142,12 +142,14 @@
 \newcommand{\windeq}{{\sf windeq}}
 \newcommand{\winds}{{\sf winds}}
 \newcommand{\wetaN}{{\sf wetaN}}
+\newcommand{\wetatN}{{\sf wetatN}}
 \newcommand{\succN}{{\sf succ}}
 \newcommand{\zeroN}{{\sf zero}}
 \newcommand{\var}{\char`_}
 \newcommand{\defn}{\vcentcolon\equiv}
 \newcommand{\NN}{\mathbb N}
 \newcommand{\indN}{{\sf ind}_\NN}
+\newcommand{\indtN}{{\sf indt}_\NN}
 
 \begin{document}
 
@@ -580,6 +582,61 @@ necessity of tracking the types $T$ and $U$.)
 \]
 
 \item
+
+This rule and the following three deal with defining a family of types by
+induction on $\NN$.  If we can treat types as objects of a type called $\Type$,
+they won't be necessary.
+
+\[
+\inferrule{
+  \Gamma \vdash B \TYPE
+  \\
+  \Gamma, n \ccheck \NN, C \TYPE \vdash D \TYPE
+  \\
+  \Gamma \vdash n \ccheck \NN
+}
+     {\Gamma \vdash \ha\indtN{B,..D,n} \TYPE }
+\]
+
+\item
+\[
+\inferrule{
+  \Gamma \vdash B \TYPE
+  \\
+  \Gamma, n \ccheck \NN, C \TYPE \vdash D \TYPE
+}
+     {\Gamma \vdash \ha\windo{} : \ha\indtN{B,..D,\zeroN} \eqd B }
+\]
+
+\item
+\[
+\inferrule{
+  \Gamma \vdash B \TYPE
+  \\
+  \Gamma, n \ccheck \NN, C \TYPE \vdash D \TYPE
+  \\
+  \Gamma \vdash n \ccheck \NN
+}
+     {\Gamma \vdash \ha\winds{} : \ha\indtN{B,..D,\succN[n]} \eqd D[n,\ha\indtN{B,..D,n}] }
+\]
+
+\item
+\[
+\inferrule{
+  \Gamma \vdash q : B \eqd B'
+  \\
+  \Gamma, n \ccheck \NN, C \TYPE \vdash D \TYPE
+  \\
+  \Gamma, n \ccheck \NN, C' \TYPE \vdash D' \TYPE
+  \\
+  \Gamma, n \ccheck \NN, C \eqd C' \vdash r : D[n,C] \eqd D'[n,C']
+  \\
+  \Gamma \vdash s : n \eqd n' \ccheck \NN
+}
+     {\Gamma \vdash \ha\windeq{q,..r,s} : \ha\indtN{B,..D,n} \eqd \ha\indtN{B',..D',n'} }
+\]
+
+\item
 \[
 \inferrule{
   \Gamma, n \ccheck \NN \vdash T \TYPE
@@ -591,20 +648,6 @@ necessity of tracking the types $T$ and $U$.)
   \Gamma \vdash n \ccheck \NN
 }
      {\Gamma \vdash \ha\indN{.T,b,..d,n} : T[n] }
-\]
-
-\item
-\[
-\inferrule{
-  \Gamma, n \ccheck \NN \vdash p : T \eqd T'
-  \\
-  \Gamma \vdash q : b \eqd b' \ccheck T[\zeroN] \eqd T'[\zeroN]
-  \\
-  \Gamma, n \ccheck \NN, c \ccheck T[n] \vdash r : d \eqd d' \ccheck T[\succN[n]] \eqd T'[\succN[n]]
-  \\
-  \Gamma \vdash s : n \eqd n' \ccheck \NN
-}
-     {\Gamma \vdash \ha\windeq{.p,q,..r,s} : \ha\indN{.T,b,..d,n} \eqd \ha\indN{.T',b',..d',n'} : T[n] \eqd T'[n'] }
 \]
 
 \item
@@ -635,6 +678,37 @@ necessity of tracking the types $T$ and $U$.)
 
 \item
 \[
+\inferrule{
+  \Gamma, n \ccheck \NN \vdash p : T \eqd T'
+  \\
+  \Gamma \vdash q : b \eqd b' \ccheck T[\zeroN] \eqd T'[\zeroN]
+  \\
+  \Gamma, n \ccheck \NN, c \ccheck T[n] \vdash r : d \eqd d' \ccheck T[\succN[n]] \eqd T'[\succN[n]]
+  \\
+  \Gamma \vdash s : n \eqd n' \ccheck \NN
+}
+     {\Gamma \vdash \ha\windeq{.p,q,..r,s} : \ha\indN{.T,b,..d,n} \eqd \ha\indN{.T',b',..d',n'} : T[n] \eqd T'[n'] }
+\]
+
+\item
+\[
+  \inferrule {
+    \Gamma, n \ccheck \NN \vdash T \TYPE
+    \\
+    \Gamma, n \ccheck \NN \vdash T' \TYPE
+    \\
+    \Gamma \vdash p : T[\zeroN] \eqd T'[\zeroN]
+    \\
+    \Gamma, n \ccheck \NN, \var : T[n] \eqd T'[n] \vdash q : T[\succN[n]] \eqd T'[\succN[n]]
+    \\
+    \Gamma \vdash n \ccheck \NN
+  } {
+    \Gamma \vdash \ha\wetatN{.T,.T',p,..q,n} : T[n] \eqd T'[n]
+  }
+\]
+
+\item
+\[
   \inferrule {
     \Gamma, n \ccheck \NN \vdash t : T
     \\
@@ -656,50 +730,38 @@ we intend should hold; they are not expected to be useful in constructing
 proofs, and they shouldn't participate in derivations considered by the
 uniqueness statement of the introduction.
 
-\[
+\begin{mathparpagebreakable}
   \inferrule{\Gamma \vdash t \ccolon T}
        {\Gamma, \var \ccolon T \Context}
-\]
-\[
+  \and
   \inferrule{\Gamma, \var \ccolon T \Context}
        {\Gamma \vdash T \TYPE}
-\]
-
-\[
+  \and
   \inferrule{\Gamma \vdash p \ccolon T \eqd T'}
        {\Gamma, \var \ccolon T \eqd T' \Context}
-\]
-\[
+  \and
   \inferrule{\Gamma, \var \ccolon T \eqd T' \Context}
        {\Gamma \vdash T \TYPE}
-\]
-
-\[
+  \and
   \inferrule{\Gamma \vdash p \ccolon T \eqd T'}
        {\Gamma, \var \ccolon T \eqd T' \Context}
-\]
-\[
+  \and
   \inferrule{\Gamma, \var \ccolon T \eqd T' \Context}
        {\Gamma \vdash T' \TYPE}
-\]
-
-\[
+  \and
   \inferrule{\Gamma \vdash p : t \eqd t' \ccolon T \eqd T'}
        {\Gamma, \var : t \eqd t' \ccolon T \eqd T' \Context}
-\]
-\[
+  \and
   \inferrule{\Gamma, \var : t \eqd t' \ccolon T \eqd T' \Context}
        {\Gamma \vdash t \ccolon T}
-\]
-
-\[
+  \and
   \inferrule{\Gamma \vdash p : t \eqd t' \ccolon T \eqd T'}
        {\Gamma, \var : t \eqd t' \ccolon T \eqd T' \Context}
-\]
-\[
+  \and
   \inferrule{\Gamma, \var : t \eqd t' \ccolon T \eqd T' \Context}
        {\Gamma \vdash t' \ccolon T'}
-\]
+
+\end{mathparpagebreakable}
 
 \item
 It should be a meta-theorem that if
