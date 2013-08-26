@@ -122,6 +122,7 @@
 \newcommand{\Wtrans}{{\sf Wtrans}}
 \newcommand{\Wsymm}{{\sf Wsymm}}
 \newcommand{\El}{{\sf El}}
+\newcommand{\tprod}{\Pi}
 \newcommand{\annot}{{\sf annot}}
 \newcommand{\haa}[2]{\ha\annot{#1,#2}}
 \renewcommand{\haa}[2]{#1}
@@ -275,7 +276,7 @@ Thanks to Dan Licata and Peter Lumsdaine for suggestions and advice.
 \begin{enumerate}
 
 \item
-\[\inferrule{}{\Context}\]
+\[\inferrule{\ }{\Context}\]
 
 \item
 
@@ -403,30 +404,38 @@ $t$ in a strong sense.
 %% In any comparisons $T\sim T'$ and $o\sim o'$, a term of the form
 %% $\haa o T$ is regarded as equivalent to $o$.
 
-\item 
-\[ \inferrule{ 
-  \Gamma \vdash p:T \eqd T'  
-  \\
-  \Gamma \vdash r:t \eqd t' : T \eqd T'  
-  \\
-  \Gamma,  x \ccolon T \vdash q: U \eqd p^*U'
-  } {
-  \Gamma \vdash \ha\Wsubst{p,r,.q} : U[t] \eqd U'[t']
-}\]
+%% \item 
+%% \[ \inferrule{ 
+%%   \Gamma \vdash p:T \eqd T'  
+%%   \\
+%%   \Gamma \vdash r:t \eqd t' : T \eqd T'  
+%%   \\
+%%   \Gamma, x : T \vdash U \TYPE
+%%   \\
+%%   \Gamma, x' : T' \vdash U' \TYPE
+%%   \\
+%%   \Gamma, x \ccolon T \vdash q: U[x] \eqd U'[\haa {\ha\conv{x,T,p}} {T'}]
+%%   } {
+%%   \Gamma \vdash \ha\Wsubst{T,T',t,t',.U,.U',p,r,.q} : U[t] \eqd U'[t']
+%% }\]
 
-Here $U[t]$ is notation for replacing the first variable of $U$ by $t$, with
-the second variable of $U$ becoming the first, and so on.  
+%% Here $U[t]$ is notation for replacing the first variable of $U$ by $t$, with
+%% the second variable of $U$ becoming the first, and so on.  
 
-\item 
-\[ \inferrule{ 
-  \Gamma \vdash p:T \eqd T'  
-  \\
-  \Gamma \vdash r:t \eqd t' : T \eqd T'  
-  \\
-  \Gamma,  x \ccolon T \vdash q:u \eqd p^* u' \ccolon U \eqd p^*U'
-  } {
-  \Gamma \vdash \ha\wsubst{p,r,.q} : u[t] \eqd u'[t'] : U[t] \eqd U'[t']
-}\]
+%% \item 
+%% \[ \inferrule{ 
+%%   \Gamma \vdash p:T \eqd T'  
+%%   \\
+%%   \Gamma \vdash r:t \eqd t' : T \eqd T'  
+%%   \\
+%%   \Gamma, x : T \vdash u : U
+%%   \\
+%%   \Gamma, x' : T' \vdash u' : U'
+%%   \\
+%%   \Gamma,  x \ccolon T \vdash q:u[x] \eqd u'[\haa {\ha\conv{x,T,p}} {T'}] \ccolon U[x] \eqd U'[\haa {\ha\conv{x,T,p}} {T'}]
+%%   } {
+%%   \Gamma \vdash \ha\wsubst{T,T',t,t',.U,.U',.u,.u',p,r,.q} : u[t] \eqd u'[t'] : U[t] \eqd U'[t']
+%% }\]
 
 \item
 
@@ -449,32 +458,34 @@ The following rules, concerning $\Type$, the type of all small types, are
 experimental.  A {\em small} type is one of the form $\ha\El{n,t}$, for some
 $n$ and some $t$.
 
-\[\inferrule{}
-       {\Gamma \vdash \Type \TYPE }\]
-
-\[\inferrule{\Gamma \vdash T \ccolon \Type}
-       {\Gamma \vdash T \TYPE}\]
-
-\[\inferrule{\Gamma \vdash t \ccolon \Eu_n}
-       {\Gamma \vdash \ha\El{n,t} \ccheck \Type}\]
-
-\[\inferrule{\Gamma \vdash p : t \eqd t' \ccheck \Eu_n}
-       {\Gamma \vdash \ha\weleq{p} : \ha\El{n,t} \eqd \ha\El{n,t'} : \Type }\]
+\begin{mathparpagebreakable}
+\inferrule{\ }
+       {\Gamma \vdash \Type \TYPE }
+\and
+\inferrule{\Gamma \vdash T \ccolon \Type}
+       {\Gamma \vdash T \TYPE}
+\and
+\inferrule{\Gamma \vdash t \ccolon \Eu_n}
+       {\Gamma \vdash \ha\El{n,t} \ccheck \Type}
+\and
+\inferrule{\Gamma \vdash p : t \eqd t' \ccheck \Eu_n}
+       {\Gamma \vdash \ha\weleq{p} : \ha\El{n,t} \eqd \ha\El{n,t'} : \Type }
+\end{mathparpagebreakable}
 
 \item 
-\[\inferrule{ \Gamma, \var \ccolon T \vdash U\TYPE  }{\Gamma \vdash \ha\prod{T,.U}\TYPE}\]
+\[\inferrule{ \Gamma, \var \ccolon T \vdash U\TYPE  }{\Gamma \vdash \ha\tprod{T,.U}\TYPE}\]
 
 Here $.U$ is notation for abstraction: binding an anonymous variable to the
 expression $U$; we will also use the notation $x.U$ when binding a named
 variable $x$, as in the following equivalent version of the same rule.
 
 \[\inferrule{ \Gamma, x \ccolon T \vdash U\TYPE  }
-       {\Gamma \vdash \ha\prod{T,x.U}\TYPE}\]
+       {\Gamma \vdash \ha\tprod{T,x.U}\TYPE}\]
 
 \item 
 \[\inferrule{
   \Gamma, \var \ccolon T \vdash u \ccheck{U}
-}{\Gamma \vdash \ha\lambda{.u} \ccheck{\ha\prod{T,.U}}}
+}{\Gamma \vdash \ha\lambda{.u} \ccheck{\ha\tprod{T,.U}}}
 \]
 
 \item 
@@ -482,12 +493,13 @@ variable $x$, as in the following equivalent version of the same rule.
   \Gamma \vdash p:T \eqd T'  \\
   \Gamma,  x \ccolon T \vdash q:U \eqd p^*U' 
   } {
-  \Gamma \vdash \ha\wpieq{p,x.q}:\ha\prod{T,x.U}\eqd \ha\prod{T',x'.U'}
+  \Gamma \vdash \ha\wpieq{p,x.q}:\ha\tprod{T,x.U}\eqd \ha\tprod{T',x'.U'}
 }\]
 
 Here ${p}^*U'$ is notation for $U'[\haa {\ha\conv{x,T,p}} {T'}/x']$, where
 $U'[e/x']$ is notation for replacing the leading variable $x'$ in $U'$ by the
 expression $e$.
+
 
 In the presence of 
 \[\Gamma \vdash p:T \eqd T'  \]
@@ -506,18 +518,18 @@ as a premise to the rule above.
   \\
   \Gamma,  x \ccolon T \vdash q:u \eqd p^* u' \ccolon U \eqd p^*U'
   } {
-  \Gamma \vdash \ha\wlambda{p,.q} : \ha\lambda{.u}\eqd \ha\lambda{.u'} : \ha\prod{T,.U} \eqd \ha\prod{T',.U'}
+  \Gamma \vdash \ha\wlambda{p,.q} : \ha\lambda{.u}\eqd \ha\lambda{.u'} : \ha\tprod{T,.U} \eqd \ha\tprod{T',.U'}
 }\]
 
 \item 
 \[\inferrule{
-  \Gamma \vdash f \ccheck{\ha\prod{T,.U}}
+  \Gamma \vdash f \ccheck{\ha\tprod{T,.U}}
   \\ 
   \Gamma \vdash t \ccheck{T}
   \\
   U' = U[\haa t T] 
 }{
-  \Gamma \vdash \ha \ev{f,t,{\ha\prod{T,.U}}} \csynth U'
+  \Gamma \vdash \ha \ev{f,t,{\ha\tprod{T,.U}}} \csynth U'
 }\]
 
 %% The annotation is present to ensure that the sentence $$\Gamma, \var \defn
@@ -529,24 +541,24 @@ checkable, in the context above?
 
 \item 
 \[\inferrule{
-   \Gamma \vdash p : f \eqd f' \ccolon {\ha\prod{T,.U}} \eqd {\ha\prod{T',.U'}} 
+   \Gamma \vdash p : f \eqd f' \ccolon {\ha\tprod{T,.U}} \eqd {\ha\tprod{T',.U'}} 
    \\ 
    \Gamma \vdash q : t \eqd t' \ccolon T \eqd T'
    }{
-   \Gamma \vdash \ha\weveq{p,q} : \ha\ev{f,t,{\ha\prod{T,.U}}} \eqd \ha\ev{f',t',{\ha\prod{T',.U'}}} \ccolon U[\haa t T] \eqd U'[\haa {t'} {T'}]
+   \Gamma \vdash \ha\weveq{p,q} : \ha\ev{f,t,{\ha\tprod{T,.U}}} \eqd \ha\ev{f',t',{\ha\tprod{T',.U'}}} \ccolon U[\haa t T] \eqd U'[\haa {t'} {T'}]
   }\]
 
 \item 
 % beta
 \[\inferrule{
-  \Gamma \vdash \ha\lambda{.u} \ccheck {\ha\prod{T,.U}}
+  \Gamma \vdash \ha\lambda{.u} \ccheck {\ha\tprod{T,.U}}
   \\
   \Gamma \vdash t \ccheck{T} 
   }{
-  \Gamma \vdash \ha\wbeta{} : \ha\ev{\ha\lambda{.u},t,{\ha\prod{T,.U}}} \eqd u[\haa{t}{T}] : U[\haa{t}{T}]
+  \Gamma \vdash \ha\wbeta{} : \ha\ev{\ha\lambda{.u},t,{\ha\tprod{T,.U}}} \eqd u[\haa{t}{T}] : U[\haa{t}{T}]
 }\]
 
-%% Replacing $\ha\lambda{.u}$ by $\haa{\ha\lambda{.u}}{\ha\prod{T,.U}}$ would
+%% Replacing $\ha\lambda{.u}$ by $\haa{\ha\lambda{.u}}{\ha\tprod{T,.U}}$ would
 %% be an alternative to putting $T$ and $.U$ in the witness.  Comparison of two
 %% terms of the same type by normalization need not involve computation of the
 %% types of partially applied results, so a version of this rule free of type
@@ -558,8 +570,8 @@ necessity of tracking the types $T$ and $U$.)
 % eta
 \item 
 \[
-  \inferrule{\Gamma \vdash f \ccheck{\ha\prod{T,.U}}}
-       {\Gamma \vdash \ha\weta{} : f \eqd \ha\lambda{t.\ha\ev{f,t,{\ha\prod{T,.U}}}} : \ha\prod{T,.U}
+  \inferrule{\Gamma \vdash f \ccheck{\ha\tprod{T,.U}}}
+       {\Gamma \vdash \ha\weta{} : f \eqd \ha\lambda{t.\ha\ev{f,t,{\ha\tprod{T,.U}}}} : \ha\tprod{T,.U}
        }
 \]
 
@@ -629,7 +641,7 @@ they won't be necessary.
   \\
   \Gamma, n \ccheck \NN, C' \TYPE \vdash D' \TYPE
   \\
-  \Gamma, n \ccheck \NN, C \eqd C' \vdash r : D[n,C] \eqd D'[n,C']
+  \Gamma, n \ccheck \NN, \var : C \eqd C' \vdash r : D[n,C] \eqd D'[n,C']
   \\
   \Gamma \vdash s : n \eqd n' \ccheck \NN
 }
@@ -639,11 +651,9 @@ they won't be necessary.
 \item
 \[
 \inferrule{
-  \Gamma, n \ccheck \NN \vdash T \TYPE
-  \\
   \Gamma \vdash b \ccheck T[\zeroN]
   \\
-  \Gamma, n \ccheck \NN, c \ccheck T[n] \vdash d \ccheck T[\succN[n]]
+  \Gamma, n \ccheck \NN, c \ccheck T \vdash d \ccheck T[\succN[n]]
   \\
   \Gamma \vdash n \ccheck \NN
 }
@@ -653,11 +663,9 @@ they won't be necessary.
 \item
 \[
 \inferrule{
-  \Gamma, n \ccheck \NN \vdash T \TYPE
-  \\
   \Gamma \vdash b \ccheck T[\zeroN]
   \\
-  \Gamma, n \ccheck \NN, c \ccheck T[n] \vdash d \ccheck T[\succN[n]]
+  \Gamma, n \ccheck \NN, c \ccheck T \vdash d \ccheck T[\succN[n]]
 }
      {\Gamma \vdash \ha\windo{} : \ha\indN{.T,b,..d,\zeroN} \eqd b : T[\zeroN] }
 \]
@@ -665,11 +673,9 @@ they won't be necessary.
 \item
 \[
 \inferrule{
-  \Gamma, n \ccheck \NN \vdash T \TYPE
-  \\
   \Gamma \vdash b \ccheck T[\zeroN]
   \\
-  \Gamma, n \ccheck \NN, c \ccheck T[n] \vdash d \ccheck T[\succN[n]]
+  \Gamma, n \ccheck \NN, c \ccheck T \vdash d \ccheck T[\succN[n]]
   \\
   \Gamma \vdash n \ccheck \NN
 }
@@ -683,7 +689,11 @@ they won't be necessary.
   \\
   \Gamma \vdash q : b \eqd b' \ccheck T[\zeroN] \eqd T'[\zeroN]
   \\
-  \Gamma, n \ccheck \NN, c \ccheck T[n] \vdash r : d \eqd d' \ccheck T[\succN[n]] \eqd T'[\succN[n]]
+  \Gamma, n \ccheck \NN, c \ccheck T[n] \vdash d \ccheck T[\succN[n]]
+  \\
+  \Gamma, n \ccheck \NN, c' \ccheck T'[n] \vdash d' \ccheck T'[\succN[n]]
+  \\
+  \Gamma, n \ccheck \NN, \var : c \eqd c' \ccheck T[n] \eqd T'[n] \vdash r : d[n,c] \eqd d'[n,c'] \ccheck T[\succN[n]] \eqd T'[\succN[n]]
   \\
   \Gamma \vdash s : n \eqd n' \ccheck \NN
 }
@@ -693,13 +703,9 @@ they won't be necessary.
 \item
 \[
   \inferrule {
-    \Gamma, n \ccheck \NN \vdash T \TYPE
-    \\
-    \Gamma, n \ccheck \NN \vdash T' \TYPE
-    \\
     \Gamma \vdash p : T[\zeroN] \eqd T'[\zeroN]
     \\
-    \Gamma, n \ccheck \NN, \var : T[n] \eqd T'[n] \vdash q : T[\succN[n]] \eqd T'[\succN[n]]
+    \Gamma, n \ccheck \NN, \var : T \eqd T' \vdash q : T[\succN[n]] \eqd T'[\succN[n]]
     \\
     \Gamma \vdash n \ccheck \NN
   } {
