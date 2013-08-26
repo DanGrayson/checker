@@ -43,9 +43,11 @@ Axiom 3.4.21 ∏_istype { ⊢ T Type } { t : T ⊢ U Type } ⊢ ∏ t:T, U[t] Ty
 
 Axiom 3.4.22 ∏_eq { ⊢ T T' Type } { t : T ⊢ U U' Type } [ T ≡ T' ]
 
-      ⇒ ( { ⊢ x : T } [ U[x] ≡ U'[x] ] ) ⇒ [ ∏ t:T, U[t] ≡ ∏ t:T', U'[t] ];;
+      ⇒ ( { ⊢ x : T } [ U[x] ≡ U'[x] ] ) ⇒ [ ∏ t:T, U[t] ≡ ∏ t:T', U'[t] ];; # oops, U'[t] is wrong
 
 Axiom 3.4.23 λ_hastype { ⊢ T Type } { x : T ⊢ U Type, o : U[x] } ⊢ λ t:T, o[t] : ∏ t:T, U[t];;
+
+Check LF λ_hastype;;
 
 Axiom 3.4.24 λ_equality { ⊢ T T' Type } { x : T ⊢ U U' Type, o o' : U[x] }
 

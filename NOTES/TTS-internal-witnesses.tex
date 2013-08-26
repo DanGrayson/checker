@@ -3,6 +3,7 @@
 \usepackage{amscd, amssymb}
 \usepackage{enumerate}
 \usepackage{mathtools}          %to get \vcentcolon
+\usepackage{mathpartir}
 
 \textwidth = 6.5 in
 \textheight = 9 in
@@ -102,7 +103,6 @@
 \newcommand{\brd}{\equiv}
 \newcommand{\ind}{Ind\,\,}
 \newcommand{\erd}[1]{\equiv_{{\AA},#1}}
-\newcommand\spc{{\hskip 26pt}}
 \renewcommand{\AA}{{\cal A}}
 
 \newcommand{\ccolon}{\vcentcolon}
@@ -138,8 +138,16 @@
 \newcommand{\wrefl}{{\sf wrefl}}
 \newcommand{\wsymm}{{\sf wsymm}}
 \newcommand{\wtrans}{{\sf wtrans}}
+\newcommand{\windo}{{\sf windo}}
+\newcommand{\windeq}{{\sf windeq}}
+\newcommand{\winds}{{\sf winds}}
+\newcommand{\wetaN}{{\sf wetaN}}
+\newcommand{\succN}{{\sf succ}}
+\newcommand{\zeroN}{{\sf zero}}
 \newcommand{\var}{\char`_}
 \newcommand{\defn}{\vcentcolon\equiv}
+\newcommand{\NN}{\mathbb N}
+\newcommand{\indN}{{\sf ind}_\NN}
 
 \begin{document}
 
@@ -265,45 +273,45 @@ Thanks to Dan Licata and Peter Lumsdaine for suggestions and advice.
 \begin{enumerate}
 
 \item
-\[\frac{}{\Context}\]
+\[\inferrule{}{\Context}\]
 
 \item
 
-\[\frac{\Gamma,x:Q,\Gamma'\Context}{\Gamma,x:Q,\Gamma',y\defn x : Q \Context}\]
+\[\inferrule{\Gamma,x:Q,\Gamma'\Context}{\Gamma,x:Q,\Gamma',y\defn x : Q \Context}\]
 
-\[\frac{\Gamma,x \defn p :Q,\Gamma'\Context}{\Gamma,x \defn p :Q,\Gamma',y\defn x : Q \Context}\]
+\[\inferrule{\Gamma,x \defn p :Q,\Gamma'\Context}{\Gamma,x \defn p :Q,\Gamma',y\defn x : Q \Context}\]
 
 In these two rules, $Q$ represents the tail end of a supertype, not including
 the variable or its defined value.  For example, a special case of this rule is the following one.
 
-\[\frac{\Gamma,x:T,\Gamma'\Context}{\Gamma,x:T,\Gamma' \vdash x : T}\]
+\[\inferrule{\Gamma,x:T,\Gamma'\Context}{\Gamma,x:T,\Gamma' \vdash x : T}\]
 
 
 \item
-\[\frac{\Gamma,J,J'\Context}{\Gamma,v : J \Rightarrow J' \Context}\]
+\[\inferrule{\Gamma,J,J'\Context}{\Gamma,v : J \Rightarrow J' \Context}\]
 
 This inference rule introduces a variable $v$ that abstracts the inference of $J'$ from the hypothesis $J$.
 As mentioned above, we may omit $v$ to indicate that the unused variable introduced by $J'$ is to be recycled, as 
 in the following equivalent version of the rule.
 
-\[\frac{\Gamma,J,J'\Context}{\Gamma,J \Rightarrow J' \Context}\]
+\[\inferrule{\Gamma,J,J'\Context}{\Gamma,J \Rightarrow J' \Context}\]
 
 \item
-\[\frac{\Gamma\Context}{\Gamma, X \TYPE \Context}\]
+\[\inferrule{\Gamma\Context}{\Gamma, X \TYPE \Context}\]
 
 This inference rule introduces a type variable $X$.
 
 \item
-\[\frac{\Gamma \vdash T \TYPE}{\Gamma, x \ccolon T \Context}\]
+\[\inferrule{\Gamma \vdash T \TYPE}{\Gamma, x \ccolon T \Context}\]
 
 This inference rule introduces a variable $x$ of type $T$.  This is the
 standard way to introduce a proposition $T$ as a hypothesis.  (The hypotheses
 active in a context $\Gamma$ are the variables with no defined value.)
 
 \item
-\[\frac{
+\[\inferrule{
   \Gamma \vdash T \TYPE  
-  \spc
+  \\
   \Gamma \vdash T' \TYPE }
 {\Gamma, w : T \eqd T' \Context}\]
 
@@ -311,11 +319,11 @@ This inference rule introduces a hypothesis asserting equality of $T$ and $T'$ w
 by the new variable $w$.
 
 \item
-  \[\frac{
+  \[\inferrule{
   \Gamma \vdash p : T \eqd T'
-  \spc
+  \\
   \Gamma \vdash t \ccolon T
-  \spc
+  \\
   \Gamma \vdash t' \ccolon T'
   } {
   \Gamma, w : t \eqd t' \ccolon T \eqd T' \Context}\]
@@ -324,31 +332,31 @@ This inference rule introduces a hypothesis asserting equality of $t$ and $t'$,
 witnessed by the new variable $w$.
 
 \item 
-\[\frac{\Gamma \vdash T \TYPE \spc \Gamma \vdash T' \TYPE \spc T = T'}
+\[\inferrule{\Gamma \vdash T \TYPE \\ \Gamma \vdash T' \TYPE \\ T = T'}
        {\Gamma \vdash \ha\Wrefl{}: T\eqd T'}
 \]
 
 \item 
-\[\frac{\Gamma \vdash p:T_1\eqd T_2 }{\Gamma \vdash \ha\Wsymm{p}:T_2\eqd T_1}\]
+\[\inferrule{\Gamma \vdash p:T_1\eqd T_2 }{\Gamma \vdash \ha\Wsymm{p}:T_2\eqd T_1}\]
 
 \item 
 \[
-  \frac{
+  \inferrule{
     \Gamma \vdash p:T_1\eqd T_2
-    \spc
+    \\
     \Gamma \vdash q:T_2\eqd T_3
   }
   {\Gamma \vdash \ha\Wtrans{p,q,T_2}: T_1\eqd T_3 }
 \]
 
 \item 
-\[\frac{
+\[\inferrule{
   \Gamma \vdash o \ccheck{T}
-  \spc
+  \\
   \Gamma \vdash o' \ccheck{T'}
-  \spc
+  \\
   T = T'
-  \spc
+  \\
   o = o'
   } {
   \Gamma \vdash  \ha\wrefl{}: o \eqd o' \ccolon T \eqd T'
@@ -356,27 +364,27 @@ witnessed by the new variable $w$.
 \]
 
 \item 
-\[\frac
+\[\inferrule
     {\Gamma \vdash p:o_1\eqd o_2 \ccolon T_1 \eqd T_2}
     {\Gamma \vdash \ha\wsymm{p}:o_2\eqd o_1 \ccolon T_2 \eqd T_1}\]
 
 \item 
-\[\frac{\Gamma \vdash p:o_1\eqd o_2 \ccolon T_1 \eqd T_2
-  \spc
+\[\inferrule{\Gamma \vdash p:o_1\eqd o_2 \ccolon T_1 \eqd T_2
+  \\
   \Gamma \vdash q:o_2\eqd o_3 \ccolon T_2 \eqd T_3
   } {
   \Gamma \vdash \ha\wtrans{p,o_2,T_2,q}:o_1\eqd o_3 \ccolon T_1 \eqd T_3}
 \]
 
 \item 
-\[\frac
-    { \Gamma \vdash t \ccolon T \spc \Gamma \vdash p : T \eqd T'}
+\[\inferrule
+    { \Gamma \vdash t \ccolon T \\ \Gamma \vdash p : T \eqd T'}
     { \Gamma \vdash \ha\conv{t,T,p} \ccolon T' }\]
 
 and
 
-\[\frac
-    { \Gamma \vdash t \ccolon T \spc
+\[\inferrule
+    { \Gamma \vdash t \ccolon T \\
       \Gamma \vdash p : T \eqd T' }
     { \Gamma \vdash \ha\wconv{} \ccolon t \eqd \ha\conv{t,T,p} \ccolon T \eqd T'}\]
 
@@ -388,17 +396,17 @@ $t$ in a strong sense.
 %% $\ha\conv{o,T'',p}$ is regarded as equivalent to $o$.
 
 %% \item 
-%% \[\frac{\Gamma \vdash o \ccheck{T}}{\Gamma \vdash \haa o T \csynth{T}}\]
+%% \[\inferrule{\Gamma \vdash o \ccheck{T}}{\Gamma \vdash \haa o T \csynth{T}}\]
 
 %% In any comparisons $T\sim T'$ and $o\sim o'$, a term of the form
 %% $\haa o T$ is regarded as equivalent to $o$.
 
 \item 
-\[ \frac{ 
+\[ \inferrule{ 
   \Gamma \vdash p:T \eqd T'  
-  \spc
+  \\
   \Gamma \vdash r:t \eqd t' : T \eqd T'  
-  \spc
+  \\
   \Gamma,  x \ccolon T \vdash q: U \eqd p^*U'
   } {
   \Gamma \vdash \ha\Wsubst{p,r,.q} : U[t] \eqd U'[t']
@@ -408,11 +416,11 @@ Here $U[t]$ is notation for replacing the first variable of $U$ by $t$, with
 the second variable of $U$ becoming the first, and so on.  
 
 \item 
-\[ \frac{ 
+\[ \inferrule{ 
   \Gamma \vdash p:T \eqd T'  
-  \spc
+  \\
   \Gamma \vdash r:t \eqd t' : T \eqd T'  
-  \spc
+  \\
   \Gamma,  x \ccolon T \vdash q:u \eqd p^* u' \ccolon U \eqd p^*U'
   } {
   \Gamma \vdash \ha\wsubst{p,r,.q} : u[t] \eqd u'[t'] : U[t] \eqd U'[t']
@@ -420,18 +428,18 @@ the second variable of $U$ becoming the first, and so on.
 
 \item
 
-\[\frac{\Gamma \vdash n \Univ  }
+\[\inferrule{\Gamma \vdash n \Univ  }
        {\Gamma \vdash \Eu_n \TYPE  }\]
 
 \item
 
-\[\frac{
+\[\inferrule{
   \Gamma \vdash o \csynth{\Eu_n}}{
   \Gamma \vdash \ha\El{n,o}\TYPE }\]
 
 \item 
 
-\[\frac{\Gamma \vdash p : o \eqd o' \ccheck \Eu_n}
+\[\inferrule{\Gamma \vdash p : o \eqd o' \ccheck \Eu_n}
        {\Gamma \vdash \ha\weleq{p} : \ha\El{n,o} \eqd \ha\El{n,o'}}\]
 
 \item
@@ -439,37 +447,37 @@ The following rules, concerning $\Type$, the type of all small types, are
 experimental.  A {\em small} type is one of the form $\ha\El{n,t}$, for some
 $n$ and some $t$.
 
-\[\frac{}
+\[\inferrule{}
        {\Gamma \vdash \Type \TYPE }\]
 
-\[\frac{\Gamma \vdash T \ccolon \Type}
+\[\inferrule{\Gamma \vdash T \ccolon \Type}
        {\Gamma \vdash T \TYPE}\]
 
-\[\frac{\Gamma \vdash t \ccolon \Eu_n}
+\[\inferrule{\Gamma \vdash t \ccolon \Eu_n}
        {\Gamma \vdash \ha\El{n,t} \ccheck \Type}\]
 
-\[\frac{\Gamma \vdash p : t \eqd t' \ccheck \Eu_n}
+\[\inferrule{\Gamma \vdash p : t \eqd t' \ccheck \Eu_n}
        {\Gamma \vdash \ha\weleq{p} : \ha\El{n,t} \eqd \ha\El{n,t'} : \Type }\]
 
 \item 
-\[\frac{ \Gamma, \var \ccolon T \vdash U\TYPE  }{\Gamma \vdash \ha\prod{T,.U}\TYPE}\]
+\[\inferrule{ \Gamma, \var \ccolon T \vdash U\TYPE  }{\Gamma \vdash \ha\prod{T,.U}\TYPE}\]
 
 Here $.U$ is notation for abstraction: binding an anonymous variable to the
 expression $U$; we will also use the notation $x.U$ when binding a named
 variable $x$, as in the following equivalent version of the same rule.
 
-\[\frac{ \Gamma, x \ccolon T \vdash U\TYPE  }
+\[\inferrule{ \Gamma, x \ccolon T \vdash U\TYPE  }
        {\Gamma \vdash \ha\prod{T,x.U}\TYPE}\]
 
 \item 
-\[\frac{
+\[\inferrule{
   \Gamma, \var \ccolon T \vdash u \ccheck{U}
 }{\Gamma \vdash \ha\lambda{.u} \ccheck{\ha\prod{T,.U}}}
 \]
 
 \item 
-\[ \frac{ 
-  \Gamma \vdash p:T \eqd T'  \spc
+\[ \inferrule{ 
+  \Gamma \vdash p:T \eqd T'  \\
   \Gamma,  x \ccolon T \vdash q:U \eqd p^*U' 
   } {
   \Gamma \vdash \ha\wpieq{p,x.q}:\ha\prod{T,x.U}\eqd \ha\prod{T',x'.U'}
@@ -491,20 +499,20 @@ is derivable.  If not, we should add
 as a premise to the rule above.
 
 \item 
-\[ \frac{ 
+\[ \inferrule{ 
   \Gamma \vdash p:T \eqd T'  
-  \spc
+  \\
   \Gamma,  x \ccolon T \vdash q:u \eqd p^* u' \ccolon U \eqd p^*U'
   } {
   \Gamma \vdash \ha\wlambda{p,.q} : \ha\lambda{.u}\eqd \ha\lambda{.u'} : \ha\prod{T,.U} \eqd \ha\prod{T',.U'}
 }\]
 
 \item 
-\[\frac{
+\[\inferrule{
   \Gamma \vdash f \ccheck{\ha\prod{T,.U}}
-  \spc 
+  \\ 
   \Gamma \vdash t \ccheck{T}
-  \spc
+  \\
   U' = U[\haa t T] 
 }{
   \Gamma \vdash \ha \ev{f,t,{\ha\prod{T,.U}}} \csynth U'
@@ -518,9 +526,9 @@ Question: what makes the sentence
 checkable, in the context above?
 
 \item 
-\[\frac{
+\[\inferrule{
    \Gamma \vdash p : f \eqd f' \ccolon {\ha\prod{T,.U}} \eqd {\ha\prod{T',.U'}} 
-   \spc 
+   \\ 
    \Gamma \vdash q : t \eqd t' \ccolon T \eqd T'
    }{
    \Gamma \vdash \ha\weveq{p,q} : \ha\ev{f,t,{\ha\prod{T,.U}}} \eqd \ha\ev{f',t',{\ha\prod{T',.U'}}} \ccolon U[\haa t T] \eqd U'[\haa {t'} {T'}]
@@ -528,9 +536,9 @@ checkable, in the context above?
 
 \item 
 % beta
-\[\frac{
+\[\inferrule{
   \Gamma \vdash \ha\lambda{.u} \ccheck {\ha\prod{T,.U}}
-  \spc
+  \\
   \Gamma \vdash t \ccheck{T} 
   }{
   \Gamma \vdash \ha\wbeta{} : \ha\ev{\ha\lambda{.u},t,{\ha\prod{T,.U}}} \eqd u[\haa{t}{T}] : U[\haa{t}{T}]
@@ -548,9 +556,98 @@ necessity of tracking the types $T$ and $U$.)
 % eta
 \item 
 \[
-  \frac{\Gamma \vdash f \ccheck{\ha\prod{T,.U}}}
+  \inferrule{\Gamma \vdash f \ccheck{\ha\prod{T,.U}}}
        {\Gamma \vdash \ha\weta{} : f \eqd \ha\lambda{t.\ha\ev{f,t,{\ha\prod{T,.U}}}} : \ha\prod{T,.U}
        }
+\]
+
+\item
+\[
+\inferrule{\Gamma \Context}
+     {\Gamma \vdash \NN \TYPE }
+\]
+
+\item
+\[
+\inferrule{\Gamma \Context}
+     {\Gamma \vdash \zeroN \ccheck \NN }
+\]
+
+\item
+\[
+\inferrule{ \Gamma \vdash n \ccheck \NN }
+     {\Gamma \vdash \ha \succN {n} \ccheck \NN }
+\]
+
+\item
+\[
+\inferrule{
+  \Gamma, n \ccheck \NN \vdash T \TYPE
+  \\
+  \Gamma \vdash b \ccheck T[\zeroN]
+  \\
+  \Gamma, n \ccheck \NN, c \ccheck T[n] \vdash d \ccheck T[\succN[n]]
+  \\
+  \Gamma \vdash n \ccheck \NN
+}
+     {\Gamma \vdash \ha\indN{.T,b,..d,n} : T[n] }
+\]
+
+\item
+\[
+\inferrule{
+  \Gamma, n \ccheck \NN \vdash p : T \eqd T'
+  \\
+  \Gamma \vdash q : b \eqd b' \ccheck T[\zeroN] \eqd T'[\zeroN]
+  \\
+  \Gamma, n \ccheck \NN, c \ccheck T[n] \vdash r : d \eqd d' \ccheck T[\succN[n]] \eqd T'[\succN[n]]
+  \\
+  \Gamma \vdash s : n \eqd n' \ccheck \NN
+}
+     {\Gamma \vdash \ha\windeq{.p,q,..r,s} : \ha\indN{.T,b,..d,n} \eqd \ha\indN{.T',b',..d',n'} : T[n] \eqd T'[n'] }
+\]
+
+\item
+\[
+\inferrule{
+  \Gamma, n \ccheck \NN \vdash T \TYPE
+  \\
+  \Gamma \vdash b \ccheck T[\zeroN]
+  \\
+  \Gamma, n \ccheck \NN, c \ccheck T[n] \vdash d \ccheck T[\succN[n]]
+}
+     {\Gamma \vdash \ha\windo{} : \ha\indN{.T,b,..d,\zeroN} \eqd b : T[\zeroN] }
+\]
+
+\item
+\[
+\inferrule{
+  \Gamma, n \ccheck \NN \vdash T \TYPE
+  \\
+  \Gamma \vdash b \ccheck T[\zeroN]
+  \\
+  \Gamma, n \ccheck \NN, c \ccheck T[n] \vdash d \ccheck T[\succN[n]]
+  \\
+  \Gamma \vdash n \ccheck \NN
+}
+     {\Gamma \vdash \ha\winds{} : \ha\indN{.T,b,..d,\succN[n]} \eqd d[n,\ha\indN{.T,b,..d,n}] : T[\succN[n]] }
+\]
+
+\item
+\[
+  \inferrule {
+    \Gamma, n \ccheck \NN \vdash t : T
+    \\
+    \Gamma, n \ccheck \NN \vdash t' : T'
+    \\
+    \Gamma \vdash p : t[\zeroN] \eqd t'[\zeroN] : T[\zeroN] \eqd T'[\zeroN]
+    \\
+    \Gamma, n \ccheck \NN, \var : t[n] \eqd t'[n] : T[n] \eqd T'[n] \vdash q : t[\succN[n]] \eqd t'[\succN[n]] : T[\succN[n]] \eqd T'[\succN[n]]
+    \\
+    \Gamma \vdash n \ccheck \NN
+  } {
+    \Gamma \vdash \ha\wetaN{.T,.T',.t,.t',p,..q,n} : t[n] \eqd t'[n] : T[n] \eqd T'[n]
+  }
 \]
 
 \item
@@ -560,47 +657,47 @@ proofs, and they shouldn't participate in derivations considered by the
 uniqueness statement of the introduction.
 
 \[
-  \frac{\Gamma \vdash t \ccolon T}
+  \inferrule{\Gamma \vdash t \ccolon T}
        {\Gamma, \var \ccolon T \Context}
 \]
 \[
-  \frac{\Gamma, \var \ccolon T \Context}
+  \inferrule{\Gamma, \var \ccolon T \Context}
        {\Gamma \vdash T \TYPE}
 \]
 
 \[
-  \frac{\Gamma \vdash p \ccolon T \eqd T'}
+  \inferrule{\Gamma \vdash p \ccolon T \eqd T'}
        {\Gamma, \var \ccolon T \eqd T' \Context}
 \]
 \[
-  \frac{\Gamma, \var \ccolon T \eqd T' \Context}
+  \inferrule{\Gamma, \var \ccolon T \eqd T' \Context}
        {\Gamma \vdash T \TYPE}
 \]
 
 \[
-  \frac{\Gamma \vdash p \ccolon T \eqd T'}
+  \inferrule{\Gamma \vdash p \ccolon T \eqd T'}
        {\Gamma, \var \ccolon T \eqd T' \Context}
 \]
 \[
-  \frac{\Gamma, \var \ccolon T \eqd T' \Context}
+  \inferrule{\Gamma, \var \ccolon T \eqd T' \Context}
        {\Gamma \vdash T' \TYPE}
 \]
 
 \[
-  \frac{\Gamma \vdash p : t \eqd t' \ccolon T \eqd T'}
+  \inferrule{\Gamma \vdash p : t \eqd t' \ccolon T \eqd T'}
        {\Gamma, \var : t \eqd t' \ccolon T \eqd T' \Context}
 \]
 \[
-  \frac{\Gamma, \var : t \eqd t' \ccolon T \eqd T' \Context}
+  \inferrule{\Gamma, \var : t \eqd t' \ccolon T \eqd T' \Context}
        {\Gamma \vdash t \ccolon T}
 \]
 
 \[
-  \frac{\Gamma \vdash p : t \eqd t' \ccolon T \eqd T'}
+  \inferrule{\Gamma \vdash p : t \eqd t' \ccolon T \eqd T'}
        {\Gamma, \var : t \eqd t' \ccolon T \eqd T' \Context}
 \]
 \[
-  \frac{\Gamma, \var : t \eqd t' \ccolon T \eqd T' \Context}
+  \inferrule{\Gamma, \var : t \eqd t' \ccolon T \eqd T' \Context}
        {\Gamma \vdash t' \ccolon T'}
 \]
 
