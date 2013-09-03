@@ -200,15 +200,16 @@ $$ w : T \eqd T' $$
 $$ w \defn p : T \eqd T' $$
 $$ w : t \eqd t' \ccolon T \eqd T' $$
 $$ w \defn p : t \eqd t' \ccolon T \eqd T' $$
-$$ v : J \Rightarrow J' $$
+%% $$ v : J \Rightarrow J' $$
 
 where $U$, $X$, $v$, $x$, or $w$ is the (single) variable {\em introduced} by
 the supertype, where $n$, $p$, $t$, $t'$, $T$, $T'$ are expressions, possibly
 with free variables, that define values for the variables (as indicated by the
-operator $\defn$), and where $J$ and $J'$ are supertypes.  The variable
-introduced by $J$ is regarded as bound in $J'$.  The variable introduced by
-$J'$ is unused in $ v : J \Rightarrow J' $; we write $ J \Rightarrow J' $ to
-indicate re-using it to serve as $v$.
+operator $\defn$).
+%% , and where $J$ and $J'$ are supertypes.  The variable
+%% introduced by $J$ is regarded as bound in $J'$. The variable introduced by
+%% $J'$ is unused in $ v : J \Rightarrow J' $; we write $ J \Rightarrow J' $ to
+%% indicate re-using it to serve as $v$.
 
 A {\em context} or {\em sentence} $\Gamma$ is a list of supertypes, each of
 which has all of its free variables bound by variables introduced earlier in
@@ -293,20 +294,41 @@ Thanks to Dan Licata and Peter Lumsdaine for suggestions and advice.
 
 \[\inferrule{\Gamma,x \defn p :Q,\Gamma'\Context}{\Gamma,x \defn p :Q,\Gamma',y\defn x : Q \Context}\]
 
-In these two rules, $Q$ represents the tail end of a supertype, not including
+Here (and below) $Q$ represents the tail end of a supertype, not including
 the variable or its defined value.  For example, a special case of this rule is the following one.
 
 \[\inferrule{\Gamma,x:T,\Gamma'\Context}{\Gamma,x:T,\Gamma' \vdash x : T}\]
 
+\item
+\[\inferrule{\Gamma, x:Q,\Gamma' \Context \\ \Gamma, x \defn t:Q \Context}{\Gamma, x \defn t:Q,\Gamma'\Context}\]
+
+For example, special cases of this rule are the following ones.
+
+\[\inferrule{\Gamma, X \TYPE,\Gamma' \Context \\ \Gamma \vdash T \Type}{\Gamma, X \defn T \TYPE, \Gamma'\Context}\]
+
+\[\inferrule{\Gamma, x:T,\Gamma' \Context \\ \Gamma \vdash t:T}{\Gamma, x \defn t:T,\Gamma'\Context}\]
 
 \item
-\[\inferrule{\Gamma,J,J'\Context}{\Gamma,v : J \Rightarrow J' \Context}\]
+If the variable $x$ does not appear in $\Gamma'$, then
 
-This inference rule introduces a variable $v$ that abstracts the inference of $J'$ from the hypothesis $J$.
-As mentioned above, we may omit $v$ to indicate that the unused variable introduced by $J'$ is to be recycled, as 
-in the following equivalent version of the rule.
+\[\inferrule{\Gamma,x:Q,\Gamma'\Context}{\Gamma,\Gamma' \Context }\]
 
-\[\inferrule{\Gamma,J,J'\Context}{\Gamma,J \Rightarrow J' \Context}\]
+and
+
+\[\inferrule{\Gamma, x\defn t:Q,\Gamma'\Context}{\Gamma,\Gamma' \Context }\]
+
+In the latter rule, observe that since we are working modulo unfolding of
+definitions, $\Gamma'$ can always be replaced by something that doesn't involve
+$x$; that amounts to substituting $t$ for $x$ in $\Gamma'$.
+
+%% \item
+%% \[\inferrule{\Gamma,J,J'\Context}{\Gamma,v : J \Rightarrow J' \Context}\]
+
+%% This inference rule introduces a variable $v$ that abstracts the inference of $J'$ from the hypothesis $J$.
+%% As mentioned above, we may omit $v$ to indicate that the unused variable introduced by $J'$ is to be recycled, as 
+%% in the following equivalent version of the rule.
+
+%% \[\inferrule{\Gamma,J,J'\Context}{\Gamma,J \Rightarrow J' \Context}\]
 
 \item
 \[\inferrule{\Gamma\Context}{\Gamma, X \TYPE \Context}\]
@@ -326,9 +348,15 @@ Every fibrant type is a type.
 \item
 \[\inferrule{\Gamma \vdash T \TYPE}{\Gamma, x \ccolon T \Context}\]
 
-This inference rule introduces a variable $x$ of type $T$.  This is the
+This inference rule introduces a new variable $x$ of type $T$.  This is the
 standard way to introduce a proposition $T$ as a hypothesis.  (The hypotheses
 active in a context $\Gamma$ are the variables with no defined value.)
+
+The following rule is slightly more powerful; perhaps it is not needed.
+
+\[\inferrule{\Gamma \vdash T \TYPE \\ \Gamma,\Gamma' \Context}{\Gamma, x:T,\Gamma'\Context}\]
+
+Here also, $x$ is new.
 
 \item
 \[\inferrule{
@@ -534,6 +562,17 @@ variable $x$, as in the following equivalent version of the same rule.
 Question: what makes the sentence 
 \[ \Gamma \vdash U[\haa t T] \TYPE \]
 checkable, in the context above?
+
+The rule above can be expressed without using substitution, as follows.
+\[\inferrule{
+  \Gamma \vdash f \ccheck{\ha\tprod{T,x.U}}
+  \\ 
+  \Gamma \vdash t \ccheck{T}
+}{
+  \Gamma, x \defn t : T \vdash \ha \ev{f,t,{\ha\tprod{T,x.U}}} \csynth U
+}\]
+The disadvantages are that the conclusion has something other than $\Gamma$ to the
+left of the turnstile, and the name of the variable becomes important.
 
 \item 
 \[\inferrule{
