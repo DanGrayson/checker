@@ -90,7 +90,8 @@
 \newcommand{\eqd}{\equiv}
 
 \newcommand{\cu}{{u}}
-\newcommand{\Eu}{{\cal U}}
+\newcommand{\Univ}{{\cal U}}
+\newcommand{\FUniv}{{\cal U}^F}
 \newcommand{\JJ}[2]{{J(#1,#2)\,}}
 \newcommand{\J}[1]{{J(#1)\,}}
 \newcommand{\jj}[3]{{j(#1,#2,#3)\,}}
@@ -110,8 +111,9 @@
 \newcommand{\csynth}{\vcentcolon\vcentcolon} % was \Rightarrow
 \renewcommand{\csynth}{\ccheck}              % was \Rightarrow
 
-\newcommand{\Univ}{\mathop{\text{ \sc univ}}}
+\newcommand{\UNIV}{\mathop{\text{ \sc univ}}}
 \newcommand{\TYPE}{\mathop{\text{ \sc type}}}
+\newcommand{\FTYPE}{\mathop{\text{ \sc ftype}}}
 \newcommand{\Type}{\mathop{\text{Type}}}
 \newcommand{\Okay}{\mathop{\text{ \sc okay}}}
 \newcommand{\Context}{\vdash\Okay}
@@ -122,15 +124,18 @@
 \newcommand{\Wtrans}{{\sf Wtrans}}
 \newcommand{\Wsymm}{{\sf Wsymm}}
 \newcommand{\El}{{\sf El}}
+\newcommand{\ElF}{{\sf El}^F}
 \newcommand{\tprod}{\Pi}
 \newcommand{\annot}{{\sf annot}}
 \newcommand{\haa}[2]{\ha\annot{#1,#2}}
 \renewcommand{\haa}[2]{#1}
 \newcommand{\conv}{{\sf conv}}
+\newcommand{\univinc}{{\sf j}}
 \newcommand{\wconv}{{\sf wconv}}
 \newcommand{\ev}{{\sf ev}}
 \newcommand{\wbeta}{{\sf wbeta}}
 \newcommand{\weleq}{{\sf weleq}}
+\newcommand{\welfeq}{{\sf welfeq}}
 \newcommand{\weveq}{{\sf wev}}
 \newcommand{\wlambda}{{\sf wlambda}}
 \newcommand{\Wsubst}{{\sf Wsubst}}
@@ -183,10 +188,12 @@ sentences.  The extension is chosen here in a minimal way.
 
 A {\em supertype} $J$ has one of the following forms:
 
-$$ u \Univ $$
-$$ u \defn n \Univ $$
+$$ u \UNIV $$
+$$ u \defn n \UNIV $$
 $$ X \TYPE $$
 $$ X \defn T \TYPE $$
+$$ X \FTYPE $$
+$$ X \defn T \FTYPE $$
 $$ x \ccolon T $$
 $$ x \defn t \ccolon T $$
 $$ w : T \eqd T' $$
@@ -222,18 +229,20 @@ rule will be up to renaming of local variables and expansion of definitions.
 The last variable introduced by a context is unused, so if it has a defined
 value, we may abbreviate the corresponding sentence moving the last entry to
 the right of the turnstile, without its variable.  In other words, we may
-abbreviate the five sentences
+abbreviate the six sentences
 
-$$ \Gamma, u \defn n \Univ \Context $$
+$$ \Gamma, u \defn n \UNIV \Context $$
 $$ \Gamma, X \defn T \TYPE \Context $$
+$$ \Gamma, X \defn T \FTYPE \Context $$
 $$ \Gamma, x \defn t \ccolon T \Context $$
 $$ \Gamma, w \defn p : T \eqd T' \Context $$
 $$ \Gamma, w \defn p : t \eqd t' \ccolon T \eqd T' \Context $$
 
 by the following sentences:
 
-$$ \Gamma \vdash n \Univ $$
+$$ \Gamma \vdash n \UNIV $$
 $$ \Gamma \vdash T \TYPE $$
+$$ \Gamma \vdash T \FTYPE $$
 $$ \Gamma \vdash t \ccolon T $$
 $$ \Gamma \vdash p : T \eqd T' $$
 $$ \Gamma \vdash p : t \eqd t' \ccolon T \eqd T' $$
@@ -303,6 +312,16 @@ in the following equivalent version of the rule.
 \[\inferrule{\Gamma\Context}{\Gamma, X \TYPE \Context}\]
 
 This inference rule introduces a type variable $X$.
+
+\item
+\[\inferrule{\Gamma\Context}{\Gamma, X \FTYPE \Context}\]
+
+This inference rule introduces a fibrant type variable $X$.
+
+\item
+\[\inferrule{\Gamma \vdash T \FTYPE}{\Gamma \vdash T \TYPE}\]
+
+Every fibrant type is a type.
 
 \item
 \[\inferrule{\Gamma \vdash T \TYPE}{\Gamma, x \ccolon T \Context}\]
@@ -394,83 +413,65 @@ and
 When $T'$ is $T$, it would be nice if $\ha\conv{t,T,\ha\Wrefl{}}$ were equal to
 $t$ in a strong sense.
 
-%%% probably obsolete:
-%% In any comparisons $T\sim T'$ and $o\sim o'$, a term of the form
-%% $\ha\conv{o,T'',p}$ is regarded as equivalent to $o$.
-
-%% \item 
-%% \[\inferrule{\Gamma \vdash o \ccheck{T}}{\Gamma \vdash \haa o T \csynth{T}}\]
-
-%% In any comparisons $T\sim T'$ and $o\sim o'$, a term of the form
-%% $\haa o T$ is regarded as equivalent to $o$.
-
-%% \item 
-%% \[ \inferrule{ 
-%%   \Gamma \vdash p:T \eqd T'  
-%%   \\
-%%   \Gamma \vdash r:t \eqd t' : T \eqd T'  
-%%   \\
-%%   \Gamma, x : T \vdash U \TYPE
-%%   \\
-%%   \Gamma, x' : T' \vdash U' \TYPE
-%%   \\
-%%   \Gamma, x \ccolon T \vdash q: U[x] \eqd U'[\haa {\ha\conv{x,T,p}} {T'}]
-%%   } {
-%%   \Gamma \vdash \ha\Wsubst{T,T',t,t',.U,.U',p,r,.q} : U[t] \eqd U'[t']
-%% }\]
-
-%% Here $U[t]$ is notation for replacing the first variable of $U$ by $t$, with
-%% the second variable of $U$ becoming the first, and so on.  
-
-%% \item 
-%% \[ \inferrule{ 
-%%   \Gamma \vdash p:T \eqd T'  
-%%   \\
-%%   \Gamma \vdash r:t \eqd t' : T \eqd T'  
-%%   \\
-%%   \Gamma, x : T \vdash u : U
-%%   \\
-%%   \Gamma, x' : T' \vdash u' : U'
-%%   \\
-%%   \Gamma,  x \ccolon T \vdash q:u[x] \eqd u'[\haa {\ha\conv{x,T,p}} {T'}] \ccolon U[x] \eqd U'[\haa {\ha\conv{x,T,p}} {T'}]
-%%   } {
-%%   \Gamma \vdash \ha\wsubst{T,T',t,t',.U,.U',.u,.u',p,r,.q} : u[t] \eqd u'[t'] : U[t] \eqd U'[t']
-%% }\]
-
 \item
 
-\[\inferrule{\Gamma \vdash n \Univ  }
-       {\Gamma \vdash \Eu_n \TYPE  }\]
+\[\inferrule{\Gamma \vdash n \UNIV  }
+       {\Gamma \vdash \Univ_n \FTYPE  }\]
+
+\[\inferrule{\Gamma \vdash n \UNIV  }
+       {\Gamma \vdash \FUniv_n \FTYPE  }\]
 
 \item
 
 \[\inferrule{
-  \Gamma \vdash o \csynth{\Eu_n}}{
+  \Gamma \vdash o \csynth{\Univ_n}}{
   \Gamma \vdash \ha\El{n,o}\TYPE }\]
+
+\[\inferrule{
+  \Gamma \vdash o \csynth{\FUniv_n}}{
+  \Gamma \vdash \ha\ElF{n,o}\FTYPE }\]
 
 \item 
 
-\[\inferrule{\Gamma \vdash p : o \eqd o' \ccheck \Eu_n}
+\[\inferrule{\Gamma \vdash p : o \eqd o' \ccheck \Univ_n}
        {\Gamma \vdash \ha\weleq{p} : \ha\El{n,o} \eqd \ha\El{n,o'}}\]
 
-\item
-The following rules, concerning $\Type$, the type of all small types, are
-experimental.  A {\em small} type is one of the form $\ha\El{n,t}$, for some
-$n$ and some $t$.
+\[\inferrule{\Gamma \vdash p : o \eqd o' \ccheck \FUniv_n}
+       {\Gamma \vdash \ha\weleq{p} : \ha\ElF{n,o} \eqd \ha\ElF{n,o'}}\]
 
-\begin{mathparpagebreakable}
-\inferrule{\ }
-       {\Gamma \vdash \Type \TYPE }
-\and
-\inferrule{\Gamma \vdash T \ccolon \Type}
-       {\Gamma \vdash T \TYPE}
-\and
-\inferrule{\Gamma \vdash t \ccolon \Eu_n}
-       {\Gamma \vdash \ha\El{n,t} \ccheck \Type}
-\and
-\inferrule{\Gamma \vdash p : t \eqd t' \ccheck \Eu_n}
-       {\Gamma \vdash \ha\weleq{p} : \ha\El{n,t} \eqd \ha\El{n,t'} : \Type }
-\end{mathparpagebreakable}
+\item
+\[\inferrule{
+  \Gamma \vdash o \csynth{\FUniv_n}
+}{
+  \Gamma \vdash \ha\univinc{o} \csynth{\Univ_n}
+}\]
+
+\item
+\[\inferrule{
+  \Gamma \vdash o \csynth{\FUniv_n}
+}{
+  \Gamma \vdash \ha\welfeq{} : \ha\ElF{n,o} \eqd \ha\El{n,\ha\univinc{o}}
+}\]
+
+
+%% \item
+%% The following rules, concerning $\Type$, the type of all small types, are
+%% experimental.  A {\em small} type is one of the form $\ha\El{n,t}$, for some
+%% $n$ and some $t$.
+
+%% \begin{mathparpagebreakable}
+%% \inferrule{\ }
+%%        {\Gamma \vdash \Type \TYPE }
+%% \and
+%% \inferrule{\Gamma \vdash T \ccolon \Type}
+%%        {\Gamma \vdash T \TYPE}
+%% \and
+%% \inferrule{\Gamma \vdash t \ccolon \Univ_n}
+%%        {\Gamma \vdash \ha\El{n,t} \ccheck \Type}
+%% \and
+%% \inferrule{\Gamma \vdash p : t \eqd t' \ccheck \Univ_n}
+%%        {\Gamma \vdash \ha\weleq{p} : \ha\El{n,t} \eqd \ha\El{n,t'} : \Type }
+%% \end{mathparpagebreakable}
 
 \item 
 \[\inferrule{ \Gamma, \var \ccolon T \vdash U\TYPE  }{\Gamma \vdash \ha\tprod{T,.U}\TYPE}\]
@@ -484,6 +485,14 @@ variable $x$, as in the following equivalent version of the same rule.
 
 \item 
 \[\inferrule{
+  \Gamma \vdash T \FTYPE \\
+  \Gamma, \var \ccolon T \vdash U \FTYPE  
+}{
+  \Gamma \vdash \ha\tprod{T,.U} \FTYPE
+}\]
+
+\item 
+\[\inferrule{
   \Gamma, \var \ccolon T \vdash u \ccheck{U}
 }{\Gamma \vdash \ha\lambda{.u} \ccheck{\ha\tprod{T,.U}}}
 \]
@@ -491,34 +500,21 @@ variable $x$, as in the following equivalent version of the same rule.
 \item 
 \[ \inferrule{ 
   \Gamma \vdash p:T \eqd T'  \\
-  \Gamma,  x \ccolon T \vdash q:U \eqd p^*U' 
+  \Gamma, x \ccolon T \vdash U \TYPE \\
+  \Gamma, x' \ccolon T' \vdash U' \TYPE \\
+  \Gamma, x \ccolon T, x' \ccolon T', w : x \eqd x' \ccolon T \eqd T' \vdash q : U[x] \eqd U'[x'] 
   } {
-  \Gamma \vdash \ha\wpieq{p,x.q}:\ha\tprod{T,x.U}\eqd \ha\tprod{T',x'.U'}
+  \Gamma \vdash \ha\wpieq{p,...q}:\ha\tprod{T,x.U}\eqd \ha\tprod{T',x'.U'}
 }\]
-
-Here ${p}^*U'$ is notation for $U'[\haa {\ha\conv{x,T,p}} {T'}/x']$, where
-$U'[e/x']$ is notation for replacing the leading variable $x'$ in $U'$ by the
-expression $e$.
-
-
-In the presence of 
-\[\Gamma \vdash p:T \eqd T'  \]
-it should be a
-meta-theorem that 
-\[\Gamma, x' \ccolon T' \vdash U' \TYPE \]
-is derivable if and only if 
-\[\Gamma, x \ccolon T \vdash p^* U' \TYPE \]
-is derivable.  If not, we should add
-\[  \Gamma, x' \ccolon T' \vdash U'  \TYPE  \]
-as a premise to the rule above.
 
 \item 
 \[ \inferrule{ 
-  \Gamma \vdash p:T \eqd T'  
-  \\
-  \Gamma,  x \ccolon T \vdash q:u \eqd p^* u' \ccolon U \eqd p^*U'
+  \Gamma \vdash p:T \eqd T' \\
+  \Gamma, x \ccolon T \vdash u : U \\
+  \Gamma, x' \ccolon T' \vdash u' : U' \\
+  \Gamma, x \ccolon T, x' \ccolon T', w : x \eqd x' \ccolon T \eqd T' \vdash q : u[x] \eqd u'[x'] : U[x] \eqd U'[x'] 
   } {
-  \Gamma \vdash \ha\wlambda{p,.q} : \ha\lambda{.u}\eqd \ha\lambda{.u'} : \ha\tprod{T,.U} \eqd \ha\tprod{T',.U'}
+  \Gamma \vdash \ha\wlambda{p,...q} : \ha\lambda{.u}\eqd \ha\lambda{.u'} : \ha\tprod{T,.U} \eqd \ha\tprod{T',.U'}
 }\]
 
 \item 
@@ -564,8 +560,8 @@ checkable, in the context above?
 %% types of partially applied results, so a version of this rule free of type
 %% annotations is needed.
 
-(It would be better if $\beta$-reduction were free-running, without the
-necessity of tracking the types $T$ and $U$.)
+%% (It would be better if $\beta$-reduction were free-running, without the
+%% necessity of tracking the types $T$ and $U$.)
 
 % eta
 \item 
@@ -596,8 +592,9 @@ necessity of tracking the types $T$ and $U$.)
 \item
 
 This rule and the following three deal with defining a family of types by
-induction on $\NN$.  If we can treat types as objects of a type called $\Type$,
-they won't be necessary.
+induction on $\NN$.  
+%% If we treat types as objects of a type called $\Type$,
+%% they won't be necessary.
 
 \[
 \inferrule{
@@ -749,9 +746,6 @@ uniqueness statement of the introduction.
   \inferrule{\Gamma, \var \ccolon T \eqd T' \Context}
        {\Gamma \vdash T \TYPE}
   \and
-  \inferrule{\Gamma \vdash p \ccolon T \eqd T'}
-       {\Gamma, \var \ccolon T \eqd T' \Context}
-  \and
   \inferrule{\Gamma, \var \ccolon T \eqd T' \Context}
        {\Gamma \vdash T' \TYPE}
   \and
@@ -760,9 +754,6 @@ uniqueness statement of the introduction.
   \and
   \inferrule{\Gamma, \var : t \eqd t' \ccolon T \eqd T' \Context}
        {\Gamma \vdash t \ccolon T}
-  \and
-  \inferrule{\Gamma \vdash p : t \eqd t' \ccolon T \eqd T'}
-       {\Gamma, \var : t \eqd t' \ccolon T \eqd T' \Context}
   \and
   \inferrule{\Gamma, \var : t \eqd t' \ccolon T \eqd T' \Context}
        {\Gamma \vdash t' \ccolon T'}
@@ -774,7 +765,11 @@ It should be a meta-theorem that if
 \[{\Gamma \vdash p : t \eqd t' \ccolon T \eqd T'}\]
 is derivable, then, for some $p'$,
 \[{\Gamma \vdash p' : T \eqd T'}\]
-is derivable.
+is derivable.  Alternatively, it might be a good idea to keep track of the
+witness $p'$ by writing something like
+\[{\Gamma, \var \defn p : t \eqd t' \ccolon p' : T \eqd T' \Context}\]
+or
+\[{\Gamma, \var : t \eqd t' \ccolon p' : T \eqd T' \Context}\]
 
 \end{enumerate}
 
