@@ -113,7 +113,7 @@
 
 \newcommand{\UNIV}{\mathop{\text{ \sc univ}}}
 \newcommand{\TYPE}{\mathop{\text{ \sc type}}}
-\newcommand{\FTYPE}{\mathop{\text{ \sc ftype}}}
+\newcommand{\FTYPE}{\mathop{\text{ \sc fib}}}
 \newcommand{\Type}{\mathop{\text{Type}}}
 \newcommand{\Okay}{\mathop{\text{ \sc okay}}}
 \newcommand{\Context}{\vdash\Okay}
@@ -610,23 +610,17 @@ left of the turnstile, and the name of the variable becomes important.
        }
 \]
 
-\item
-\[
-\inferrule{\Gamma \Context}
-     {\Gamma \vdash \NN \TYPE }
-\]
-
-\item
-\[
-\inferrule{\Gamma \Context}
-     {\Gamma \vdash \zeroN \ccheck \NN }
-\]
-
-\item
-\[
-\inferrule{ \Gamma \vdash n \ccheck \NN }
-     {\Gamma \vdash \ha \succN {n} \ccheck \NN }
-\]
+\item\ 
+\begin{mathparpagebreakable}
+  \inferrule{\Gamma \Context}
+       {\Gamma \vdash \NN \TYPE }
+  \and
+  \inferrule{\Gamma \Context}
+       {\Gamma \vdash \zeroN \ccheck \NN }
+  \and
+  \inferrule{ \Gamma \vdash n \ccheck \NN }
+       {\Gamma \vdash \ha \succN {n} \ccheck \NN }
+\end{mathparpagebreakable}
 
 \item
 
