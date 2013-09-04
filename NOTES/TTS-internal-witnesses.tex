@@ -4,6 +4,7 @@
 \usepackage{enumerate}
 \usepackage{mathtools}          %to get \vcentcolon
 \usepackage{mathpartir}
+\input xy \xyoption{all} \CompileMatrices
 
 \textwidth = 6.5 in
 \textheight = 9 in
@@ -279,6 +280,22 @@ will write the names of such variables as underscores, as in $\var
 %% asked to check that an object has a given type, and other parts of which will
 %% be asked to manipulate objects whose type has already been determined.
 
+Putting defined values explicitly into the context allows us to identify a map
+$$ [ x_1 : T_1 , \dots , x_m : T_m ] \xrightarrow u [ y_1 : U_1 , \dots , y_n : U_n ] $$
+in the contextual category with its graph 
+$$ [ x_1 : T_1 , \dots , x_m : T_m, y_1 \defn u_1 : U_1 , \dots , y_n \defn u_n
+  : U_n ],$$ which is convenient, because of its compact form, without multiple
+explicit substitutions.  Moreover, a canonical pullback square has the form
+\[\xymatrix{
+[ x_1 : T_1 , \dots , x_m : T_m, y_1 \defn u_1 : U_1 , \dots , y_n \defn u_n : U_n, z : V ] \ar[r] \ar[d] &
+[ y_1 : U_1 , \dots , y_n : U_n, z:V ] \ar[d] \\
+[ x_1 : T_1 , \dots , x_m : T_m ] \ar[r]^u &
+[ y_1 : U_1 , \dots , y_n : U_n ]
+},\]
+provided we regard variables with defined values as mere annotations, rather than as coordinates
+with specified values.  Putting definitional equalities into the context, as we do, allows us
+to produce arbitrary pullbacks in the contextual category.
+
 Thanks to Dan Licata and Peter Lumsdaine for suggestions and advice.
 
 \paragraph{Inference rules} 
@@ -352,11 +369,11 @@ This inference rule introduces a new variable $x$ of type $T$.  This is the
 standard way to introduce a proposition $T$ as a hypothesis.  (The hypotheses
 active in a context $\Gamma$ are the variables with no defined value.)
 
-The following rule is slightly more powerful; perhaps it is not needed.
+%% The following rule is slightly more powerful; perhaps it is not needed.
 
-\[\inferrule{\Gamma \vdash T \TYPE \\ \Gamma,\Gamma' \Context}{\Gamma, x:T,\Gamma'\Context}\]
+%% \[\inferrule{\Gamma \vdash T \TYPE \\ \Gamma,\Gamma' \Context}{\Gamma, x:T,\Gamma'\Context}\]
 
-Here also, $x$ is new.
+%% Here also, $x$ is new.
 
 \item
 \[\inferrule{
@@ -438,8 +455,8 @@ and
       \Gamma \vdash p : T \eqd T' }
     { \Gamma \vdash \ha\wconv{} \ccolon t \eqd \ha\conv{t,T,p} \ccolon T \eqd T'}\]
 
-When $T'$ is $T$, it would be nice if $\ha\conv{t,T,\ha\Wrefl{}}$ were equal to
-$t$ in a strong sense.
+%% When $T'$ is $T$, it would be nice if $\ha\conv{t,T,\ha\Wrefl{}}$ were equal to
+%% $t$ in a strong sense.
 
 \item
 
