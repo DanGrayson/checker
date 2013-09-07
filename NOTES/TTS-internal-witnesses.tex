@@ -113,7 +113,7 @@
 \newcommand{\hastype}{\vcentcolon}
 
 \newcommand{\TYPE}{\mathop{\text{ \sc type}}}
-\newcommand{\FTYPE}{\mathop{\text{ \sc type}_F}}
+\newcommand{\FTYPE}{\mathop{\text{ \sc type}^F}}
 \newcommand{\Type}{\mathop{\text{Type}}}
 \newcommand{\Okay}{\mathop{\text{ \sc okay}}}
 \newcommand{\Context}{\vdash\Okay}
@@ -134,6 +134,8 @@
 \newcommand{\wbeta}{{\sf wbeta}}
 \newcommand{\weleq}{{\sf weleq}}
 \newcommand{\welfeq}{{\sf welfeq}}
+\newcommand{\welequ}{{\sf welequ}}
+\newcommand{\welfequ}{{\sf welfequ}}
 \newcommand{\weveq}{{\sf wev}}
 \newcommand{\wlambda}{{\sf wlambda}}
 \newcommand{\Wsubst}{{\sf Wsubst}}
@@ -239,10 +241,16 @@ will write the names of such variables as underscores, as in $\var
 
 Putting defined values explicitly into the context allows us to identify a map
 $$ [ x_1 : T_1 , \dots , x_m : T_m ] \xrightarrow u [ y_1 : U_1 , \dots , y_n : U_n ] $$
-in the contextual category with its graph 
+in the contextual category with the projection map
 $$ [ x_1 : T_1 , \dots , x_m : T_m, y_1 \defn u_1 : U_1 , \dots , y_n \defn u_n
-  : U_n ],$$ provided we regard variables with defined values as mere annotations, rather than as coordinates
-with specified values.  That is convenient, because of its compact form, without multiple
+  : U_n ] \xrightarrow u [ y_1 : U_1 , \dots , y_n : U_n ]$$  from the graph of
+$u$, provided we
+regard variables with defined values as mere annotations, rather than as
+coordinates
+with specified values, thereby rendering the other projection map 
+$$\xymatrix{[ x_1 : T_1 , \dots , x_m : T_m, y_1 \defn u_1 : U_1 , \dots , y_n \defn u_n
+  : U_n ] \ar[d]^1 \\ [ x_1 : T_1 , \dots , x_m : T_m]} $$ an identity map.
+That is convenient, because of its compact form, without multiple
 explicit substitutions.  Moreover, a canonical pullback square has the form
 \[\xymatrix{
 [ x_1 : T_1 , \dots , x_m : T_m, y_1 \defn u_1 : U_1 , \dots , y_n \defn u_n : U_n, z : V ] \ar[r] \ar[d] &
@@ -264,15 +272,14 @@ Thanks to Dan Licata and Peter Lumsdaine for suggestions and advice.
 
 \item
 The effect of defined values:
-\[\inferrule{\Gamma,x \defn t \hastype T,\Gamma'\Context}{x \syndef t}\]
-
-\item
-\[\inferrule{\Gamma,x:Q,\Gamma'\Context}{\Gamma,x:Q,\Gamma',y\defn x : Q \Context}\]
-
-\[\inferrule{\Gamma,x \defn p :Q,\Gamma'\Context}{\Gamma,x \defn p :Q,\Gamma',y\defn x : Q \Context}\]
+\begin{mathparpagebreakable}
+\inferrule{\Gamma,x \defn t \hastype Q,\Gamma'\Context}{\Gamma,x \defn t \hastype Q,\Gamma' \vdash x \syndef t}\and
+\inferrule{\Gamma,x:Q,\Gamma'\Context}{\Gamma,x:Q,\Gamma',y\defn x : Q \Context}\and
+\inferrule{\Gamma,x \defn p :Q,\Gamma'\Context}{\Gamma,x \defn p :Q,\Gamma',y\defn x : Q \Context}\and
+\end{mathparpagebreakable}
 
 Here (and below) $Q$ represents the tail end of a context entry, not including
-the variable or its defined value.  For example, a special case of this rule is the following one.
+the variable or its defined value.  For example, a special case of one of these rules is the following one.
 
 \[\inferrule{\Gamma,x:T,\Gamma'\Context}{\Gamma,x:T,\Gamma' \vdash x : T}\]
 
@@ -345,7 +352,7 @@ Maybe it is better to implement this at a lower level, by implementing $t \equiv
 $ p \equiv p' $ is always true.
 
 \item 
-\[\inferrule{\Gamma \vdash T \TYPE \\ \Gamma \vdash T' \TYPE \\ T \syndef T'}
+\[\inferrule{\Gamma \vdash T \TYPE \\ \Gamma \vdash T' \TYPE \\ \Gamma \vdash T \syndef T'}
        {\Gamma \vdash \ha\Wrefl{}\hastype  T\eqdef T'}
 \]
 
@@ -368,9 +375,9 @@ $ p \equiv p' $ is always true.
   \\
   \Gamma \vdash o' \hastype{T'}
   \\
-  T \syndef T'
+  \Gamma \vdash T \syndef T'
   \\
-  o \syndef o'
+  \Gamma \vdash o \syndef o'
   } {
   \Gamma \vdash  \ha\wrefl{}\hastype  o \eqdef o' \hastype T \eqdef T'
   } 
@@ -398,39 +405,48 @@ Equal objects have equal elements:
 \and
 \inferrule
     { \Gamma \vdash t \hastype T \\ \Gamma \vdash p \hastype  T \eqdef T' }
-    { \Gamma \vdash \ha\wconv{} \hastype t \eqdef \ha\conv{t,T,p} \hastype T \eqdef T'}
+    { \Gamma \vdash \ha\wconv{} \hastype t \eqdef \ha\conv{t,T,p} \hastype T
+      \eqdef T'}\and
+\inferrule
+    { \Gamma \vdash T_1 \syndef T_2 \and \Gamma \vdash t_1 \syndef t_2}
+    { \Gamma \vdash \ha\conv{t_1,T_1,p_1} \syndef \ha\conv{t_2,T_2,p_2} }
 \end{mathparpagebreakable}
 
 \item
-Irrelevance of universe level:
-\[\inferrule{ t \syndef t' }{ \ha\El{n,t} \syndef \ha\El{n',t'} }\]
-
-\item
-For each $n \hastype  \NN$ we introduce expressions $\univ_n$ and $\funiv_n$.  We introduce $\Univ_n$ as an
-abbreviation for $\ha\El{\ha\succN n, \univ_n}$ and $\FUniv_n$ as an
-abbreviation for $\ha\El{\ha\succN n, \funiv_n}$.
+Universes.
 
 \begin{mathparpagebreakable}
-\inferrule{\Gamma \vdash n \UNIV  } {\Gamma \vdash \univ_n \hastype  \FUniv_{\ha\succN n}  }
-\and
-\inferrule{\Gamma \vdash n \UNIV  } {\Gamma \vdash \funiv_n \hastype  \FUniv_{\ha\succN n} }
+\inferrule{\Gamma\vdash n \UNIV}{ \Gamma \vdash \Univ_n \FTYPE} \and
+\inferrule{\Gamma\vdash n \UNIV}{ \Gamma \vdash \FUniv_n \FTYPE} \and
+\inferrule{ \Gamma \vdash o \hastype{\Univ_n}} { \Gamma \vdash \ha\El{n,o}\TYPE } \and
+\inferrule{ \Gamma \vdash o \hastype{\FUniv_n}} { \Gamma \vdash \ha\El{n,o}\FTYPE } \and
+\inferrule{ \Gamma \vdash t \syndef t' }{ \Gamma \vdash \ha\El{n,t} \syndef \ha\El{n',t'} } \and
+\inferrule{\Gamma \vdash n \UNIV  } {\Gamma \vdash \univ_n \hastype  \FUniv_{\ha\succN n}  } \and
+\inferrule{\Gamma \vdash n \UNIV  } {\Gamma \vdash \funiv_n \hastype  \FUniv_{\ha\succN n} } \and
+\inferrule{\Gamma \vdash n \UNIV  } {\Gamma \vdash \ha\welequ{} \hastype \Univ_n \eqdef \ha\El{\ha\succN n, \univ_n} } \and
+\inferrule{\Gamma \vdash n \UNIV  } {\Gamma \vdash \ha\welfequ{} \hastype \FUniv_n \eqdef \ha\El{\ha\succN n, \funiv_n} } \and
+
 \end{mathparpagebreakable}
 
 \item
-\ 
+General and fibrant types.
 \begin{mathparpagebreakable}
-\inferrule{ \Gamma \vdash o \hastype{\Univ_n}}
-          { \Gamma \vdash \ha\El{n,o}\TYPE } \and
-\inferrule{ \Gamma \vdash o \hastype{\FUniv_n}}
-          { \Gamma \vdash \ha\El{n,o}\FTYPE } \and
 \inferrule{ \Gamma \vdash T \FTYPE }
           { \Gamma \vdash T \TYPE } \and
 \inferrule{ \Gamma \vdash o \hastype{\FUniv_n} }
           { \Gamma \vdash o \hastype{\Univ_n} } \and
+\inferrule{ \Gamma \vdash o \hastype{\Univ_n}}
+          { \Gamma \vdash o \hastype{\Univ_{\ha\succN n}}} \and
+\inferrule{ \Gamma \vdash o \hastype{\FUniv_n}}
+          { \Gamma \vdash o \hastype{\FUniv_{\ha\succN n}}} \and
 \inferrule{\Gamma \vdash p \hastype  o \eqdef o' \hastype \Univ_n \eqdef \Univ_{n'}} 
           {\Gamma \vdash \ha\weleq{p} \hastype  \ha\El{n,o} \eqdef \ha\El{n',o'}}
 \end{mathparpagebreakable}
 
+\item
+Equality and $\El$.
+\[\inferrule{\Gamma \vdash p \hastype  o \eqdef o' \hastype \Univ_n \eqdef \Univ_{n'}} 
+            {\Gamma \vdash \ha\weleq{p} \hastype  \ha\El{n,o} \eqdef \ha\El{n',o'}}\]
 
 \item 
 \[\inferrule{ \Gamma, \var \hastype T \vdash U\TYPE  }{\Gamma \vdash \ha\tprod{T,.U}\TYPE}\]
@@ -459,9 +475,7 @@ variable $x$, as in the following equivalent version of the same rule.
 \item 
 \[ \inferrule{ 
   \Gamma \vdash p\hastype T \eqdef T'  \\
-  \Gamma, x \hastype T \vdash U \TYPE \\
-  \Gamma, x' \hastype T' \vdash U' \TYPE \\
-  \Gamma, x \hastype T, x' \hastype T', w \hastype  x \eqdef x' \hastype T \eqdef T' \vdash q \hastype  U[x] \eqdef U'[x'] 
+  \Gamma, x \hastype T, x' \hastype T', w \hastype  x \eqdef x' \hastype T \eqdef T' \vdash q \hastype  U \eqdef U' 
   } {
   \Gamma \vdash \ha\wpieq{p,...q}\hastype \ha\tprod{T,x.U}\eqdef \ha\tprod{T',x'.U'}
 }\]
@@ -469,9 +483,7 @@ variable $x$, as in the following equivalent version of the same rule.
 \item 
 \[ \inferrule{ 
   \Gamma \vdash p\hastype T \eqdef T' \\
-  \Gamma, x \hastype T \vdash u \hastype  U \\
-  \Gamma, x' \hastype T' \vdash u' \hastype  U' \\
-  \Gamma, x \hastype T, x' \hastype T', w \hastype  x \eqdef x' \hastype T \eqdef T' \vdash q \hastype  u[x] \eqdef u'[x'] \hastype  U[x] \eqdef U'[x'] 
+  \Gamma, x \hastype T, x' \hastype T', w \hastype  x \eqdef x' \hastype T \eqdef T' \vdash q \hastype  u \eqdef u' \hastype  U \eqdef U'
   } {
   \Gamma \vdash \ha\wlambda{p,...q} \hastype  \ha\lambda{.u}\eqdef \ha\lambda{.u'} \hastype  \ha\tprod{T,.U} \eqdef \ha\tprod{T',.U'}
 }\]
@@ -482,28 +494,10 @@ variable $x$, as in the following equivalent version of the same rule.
   \\ 
   \Gamma \vdash t \hastype{T}
   \\
-  U' \syndef U[\haa t T] 
+  \Gamma \vdash U' \syndef U[\haa t T] 
 }{
   \Gamma \vdash \ha \ev{f,t,{\ha\tprod{T,.U}}} \hastype U'
 }\]
-
-%% The annotation is present to ensure that the sentence $$\Gamma, \var \defn
-%% U[\haa t T] \TYPE \Context$$ is checkable.
-
-Question: what makes the sentence 
-\[ \Gamma \vdash U[\haa t T] \TYPE \]
-checkable, in the context above?
-
-The rule above can be expressed without using substitution, as follows.
-\[\inferrule{
-  \Gamma \vdash f \hastype{\ha\tprod{T,x.U}}
-  \\ 
-  \Gamma \vdash t \hastype{T}
-}{
-  \Gamma, x \defn t \hastype  T \vdash \ha \ev{f,t,{\ha\tprod{T,x.U}}} \hastype U
-}\]
-The disadvantages are that the conclusion has something other than $\Gamma$ to the
-left of the turnstile, and the name of the variable becomes important.
 
 \item 
 \[\inferrule{
@@ -544,7 +538,7 @@ left of the turnstile, and the name of the variable becomes important.
 \item\ 
 \begin{mathparpagebreakable}
   \inferrule{\Gamma \Context}
-       {\Gamma \vdash \NN \TYPE }
+       {\Gamma \vdash \NN \FTYPE }
   \and
   \inferrule{\Gamma \Context}
        {\Gamma \vdash \zeroN \hastype \NN }
