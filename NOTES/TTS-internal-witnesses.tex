@@ -318,29 +318,56 @@ T'$.  It will serve as the mathematical notion of exact equality between
 objects of equal types.  In the case where $T$ and $T'$ are the same, we will
 abbreviate it to $t \equality t' \hastype T$.
 
-\item
-\[\inferrule
-{\Gamma \vdash p \hastype T \equality T' \\ \Gamma \vdash p' \hastype T \equality T'}
-{\Gamma \vdash \ha\uep{} \hastype p \equality p' \hastype T \equality T'}
-\]
-Proofs of equality between types are equal.
+\item 
+Equal types have equal elements:
+\begin{mathparpagebreakable}
+\inferrule
+    { \Gamma \vdash t \hastype T \\ \Gamma \vdash p \hastype  T \equality T'}
+    { \Gamma \vdash \ha\conv{t,T,p} \hastype T' }
+\and
+\inferrule
+    { \Gamma \vdash t \hastype T \\ \Gamma \vdash p \hastype  T \equality T' }
+    { \Gamma \vdash \ha\wconv{p} \hastype t \equality \ha\conv{t,T,p} \hastype T
+      \equality T'}\and
+\end{mathparpagebreakable}
 
+
+\item
+Conversion is ignored when checking syntactic equality.
+
+\begin{mathparpagebreakable}
+\inferrule
+    { \Gamma \vdash t_1 \syndef t_2}
+    { \Gamma \vdash \ha\conv{t_1,T_1,p_1} \syndef t_2 }\and
+\inferrule
+    { \Gamma \vdash t_1 \syndef t_2}
+    { \Gamma \vdash t_1 \syndef \ha\conv{t_2,T_2,p_2} }\and
+\end{mathparpagebreakable}
+
+We don't intend to imply that a subexpression can be replaced by anything
+syntactically equal to it, for then automatic typechecking of the resulting
+expression may fail.
+
+\item
+Proofs of equality between types are equal:
 \[\inferrule
-{\Gamma \vdash p \hastype t \equality t' \hastype T \equality T' \\ \Gamma \vdash p' \hastype t \equality t' \hastype T \equality T'}
-{\Gamma \vdash \ha\uep{} \hastype p \equality p' \hastype (t \equality t' \hastype T \equality T') \equality (t \equality t' \hastype T \equality T')}
+{\Gamma \vdash p \equality p' \hastype (T_1 \equality T'_1) \equality (T_2 \equality T'_2) \TYPE}
+{\Gamma \vdash \ha\uep{} \hastype p \equality p' \hastype (T_1 \equality T'_1) \equality (T_2 \equality T'_2)}
 \]
-Proofs of equality between objects are equal.  We regard the colon as a right
-associative operator, so the rule can be written in the following abbreviated form.
+
+Proofs of equality between objects are equal:
 \[\inferrule
-{\Gamma \vdash p \hastype t \equality t' \hastype T \equality T' \\ \Gamma \vdash p' \hastype t \equality t' \hastype T \equality T'}
-{\Gamma \vdash \ha\uep{} \hastype p \equality p' \hastype t \equality t' \hastype T \equality T'}
+{\Gamma \vdash p \equality p' \hastype (t_1 \equality t'_1 \hastype T_1 \equality T'_1) \equality (t_2 \equality t'_2 \hastype T_2 \equality T'_2) \TYPE}
+{\Gamma \vdash \ha\uep{} \hastype p \equality p' \hastype (t_1 \equality t'_1 \hastype T_1 \equality T'_1) \equality (t_2 \equality t'_2 \hastype T_2 \equality T'_2)}
 \]
 
 Maybe it is better to implement this at a lower level, by implementing $t \equiv t'$ so that
 $ p \equiv p' $ is always true.
 
+Or maybe, as Voevodsky indicates, these rules can be derived by induction and reflection.
+
 \item 
-\[\inferrule{\Gamma \vdash T \TYPE \\ \Gamma \vdash T' \TYPE \\ \Gamma \vdash T \syndef T'}
+\[\inferrule{\Gamma \vdash T \equality T' \TYPE \\ \Gamma \vdash T \syndef T'}
        {\Gamma \vdash \ha\Wrefl{}\hastype  T\equality T'}
 \]
 
@@ -359,9 +386,7 @@ $ p \equiv p' $ is always true.
 
 \item 
 \[\inferrule{
-  \Gamma \vdash o \hastype{T}
-  \\
-  \Gamma \vdash o' \hastype{T'}
+  \Gamma \vdash o \equality o' \hastype T \equality T' \TYPE
   \\
   \Gamma \vdash T \syndef T'
   \\
@@ -370,6 +395,8 @@ $ p \equiv p' $ is always true.
   \Gamma \vdash  \ha\wrefl{}\hastype  o \equality o' \hastype T \equality T'
   } 
 \]
+
+Or maybe we can just {\em define} $\ha\wrefl{}$ to be $\ha\wconv{\ha\Wrefl{}}$.
 
 \item 
 \[\inferrule
@@ -383,22 +410,6 @@ $ p \equiv p' $ is always true.
   } {
   \Gamma \vdash \ha\wtrans{p,o_2,T_2,q}\hastype o_1\equality o_3 \hastype T_1 \equality T_3}
 \]
-
-\item 
-Equal objects have equal elements:
-\begin{mathparpagebreakable}
-\inferrule
-    { \Gamma \vdash t \hastype T \\ \Gamma \vdash p \hastype  T \equality T'}
-    { \Gamma \vdash \ha\conv{t,T,p} \hastype T' }
-\and
-\inferrule
-    { \Gamma \vdash t \hastype T \\ \Gamma \vdash p \hastype  T \equality T' }
-    { \Gamma \vdash \ha\wconv{} \hastype t \equality \ha\conv{t,T,p} \hastype T
-      \equality T'}\and
-\inferrule
-    { \Gamma \vdash T_1 \syndef T_2 \and \Gamma \vdash t_1 \syndef t_2}
-    { \Gamma \vdash \ha\conv{t_1,T_1,p_1} \syndef \ha\conv{t_2,T_2,p_2} }
-\end{mathparpagebreakable}
 
 \item
 Universes.
@@ -752,15 +763,12 @@ checks.
 \end{mathparpagebreakable}
 
 \item
-It should be a meta-theorem that if
+It should be a meta-theorem (or sanity check) that if
 \[{\Gamma \vdash p : t \equality t' \hastype T \equality T'}\]
-is derivable, then, for some $p'$,
+is derivable, then, for some $p'$
 \[{\Gamma \vdash p' : T \equality T'}\]
-is derivable.  Alternatively, it might be a good idea to keep track of the
-witness $p'$ by writing something like
-\[{\Gamma, \var \defn p : t \equality t' \hastype p' : T \equality T' \Context}\]
-or
-\[{\Gamma, \var : t \equality t' \hastype p' : T \equality T' \Context}\]
+is derivable.  If we need $p'$ to be easily computable from $p$, we can
+arrange to store it inside $p$.
 
 \end{enumerate}
 
