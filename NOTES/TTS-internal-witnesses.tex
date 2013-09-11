@@ -637,6 +637,8 @@ variable $x$, as in the following equivalent version of the same rule.
      {\Gamma \vdash \ha\windeq{.p,q,..r,s} \hastype  \ha\indN{.T,b,..d,n} \equality \ha\indN{.T',b',..d',n'} \hastype {\rm ????} : T[n] \equality T'[n'] }
 \]
 
+One way to fill in the question marks would be to replace the premise $$\Gamma, n \hastype \NN \vdash p \hastype  T \equality T'$$ by the premise $$\Gamma, n \hastype \NN, n' \hastype \NN, z \hastype n \equality n' \hastype \NN \vdash p \hastype  T \equality T',$$ for then we could fill in the question marks with $p[n,n',s]$.  We would also replace instances of $p[m]$ with $p[m,m,\ha\wrefl{}]$.
+
 \item
 Identity type.
 \begin{mathparpagebreakable}
