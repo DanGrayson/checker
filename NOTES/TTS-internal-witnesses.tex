@@ -311,12 +311,13 @@ the mathematical notion of exact equality between types.
   \\
   \Gamma \vdash t' \hastype T'
   } {
-  \Gamma \vdash t \equality t' \hastype T \equality T' \TYPE}\]
+  \Gamma \vdash t \equality t' \hastype p : T \equality T' \TYPE}\]
 
-This inference rule introduces a type called $t \equality t' \hastype T \equality
+This inference rule introduces a type called $t \equality t' \hastype p : T \equality
 T'$.  It will serve as the mathematical notion of exact equality between
-objects of equal types.  In the case where $T$ and $T'$ are the same, we will
-abbreviate it to $t \equality t' \hastype T$.
+objects of equal types.  In the case where $T$ and $T'$ are the same and $p$ is $\ha\Wrefl{}$, we will
+abbreviate it to $t \equality t' \hastype T$.  Syntactic comparison of
+expressions representing two such types will ignore the expressions $p$.
 
 \item 
 Equal types have equal elements:
@@ -327,8 +328,7 @@ Equal types have equal elements:
 \and
 \inferrule
     { \Gamma \vdash t \hastype T \\ \Gamma \vdash p \hastype  T \equality T' }
-    { \Gamma \vdash \ha\wconv{p} \hastype t \equality \ha\conv{t,T,p} \hastype T
-      \equality T'}\and
+    { \Gamma \vdash \ha\wconv{} \hastype t \equality \ha\conv{t,T,p} \hastype p : T \equality T'}\and
 \end{mathparpagebreakable}
 
 
@@ -351,14 +351,14 @@ expression may fail.
 \item
 Proofs of equality between types are equal:
 \[\inferrule
-{\Gamma \vdash p \equality p' \hastype (T_1 \equality T'_1) \equality (T_2 \equality T'_2) \TYPE}
-{\Gamma \vdash \ha\uep{} \hastype p \equality p' \hastype (T_1 \equality T'_1) \equality (T_2 \equality T'_2)}
+{\Gamma \vdash p \equality p' \hastype q : (T_1 \equality T'_1) \equality (T_2 \equality T'_2) \TYPE}
+{\Gamma \vdash \ha\uep{} \hastype p \equality p' \hastype q : (T_1 \equality T'_1) \equality (T_2 \equality T'_2)}
 \]
 
 Proofs of equality between objects are equal:
 \[\inferrule
-{\Gamma \vdash p \equality p' \hastype (t_1 \equality t'_1 \hastype T_1 \equality T'_1) \equality (t_2 \equality t'_2 \hastype T_2 \equality T'_2) \TYPE}
-{\Gamma \vdash \ha\uep{} \hastype p \equality p' \hastype (t_1 \equality t'_1 \hastype T_1 \equality T'_1) \equality (t_2 \equality t'_2 \hastype T_2 \equality T'_2)}
+{\Gamma \vdash p \equality p' \hastype (t_1 \equality t'_1 \hastype q_1 : T_1 \equality T'_1) \equality (t_2 \equality t'_2 \hastype q_2 : T_2 \equality T'_2) \TYPE}
+{\Gamma \vdash \ha\uep{} \hastype p \equality p' \hastype (t_1 \equality t'_1 \hastype q_1 : T_1 \equality T'_1) \equality (t_2 \equality t'_2 \hastype q_2 : T_2 \equality T'_2)}
 \]
 
 Maybe it is better to implement this at a lower level, by implementing $t \equiv t'$ so that
@@ -386,29 +386,29 @@ Or maybe, as Voevodsky indicates, these rules can be derived by induction and re
 
 \item 
 \[\inferrule{
-  \Gamma \vdash o \equality o' \hastype T \equality T' \TYPE
+  \Gamma \vdash o \equality o' \hastype p : T \equality T' \TYPE
   \\
   \Gamma \vdash T \syndef T'
   \\
   \Gamma \vdash o \syndef o'
   } {
-  \Gamma \vdash  \ha\wrefl{}\hastype  o \equality o' \hastype T \equality T'
+  \Gamma \vdash  \ha\wrefl{}\hastype  o \equality o' \hastype \ha\Wrefl{} : T \equality T'
   } 
 \]
 
-Or maybe we can just {\em define} $\ha\wrefl{}$ to be $\ha\wconv{\ha\Wrefl{}}$.
+Or maybe we can just {\em define} $\ha\wrefl{}$ to be $\ha\wconv{}$.
 
 \item 
 \[\inferrule
-    {\Gamma \vdash p\hastype o_1\equality o_2 \hastype T_1 \equality T_2}
-    {\Gamma \vdash \ha\wsymm{p}\hastype o_2\equality o_1 \hastype T_2 \equality T_1}\]
+    {\Gamma \vdash p\hastype o_1\equality o_2 \hastype q : T_1 \equality T_2}
+    {\Gamma \vdash \ha\wsymm{p}\hastype o_2\equality o_1 \hastype \ha\Wsymm{q} : T_2 \equality T_1}\]
 
 \item 
 \[\inferrule{\Gamma \vdash p\hastype o_1\equality o_2 \hastype T_1 \equality T_2
   \\
   \Gamma \vdash q\hastype o_2\equality o_3 \hastype T_2 \equality T_3
   } {
-  \Gamma \vdash \ha\wtrans{p,o_2,T_2,q}\hastype o_1\equality o_3 \hastype T_1 \equality T_3}
+  \Gamma \vdash \ha\wtrans{p,T_2,o_2,q}\hastype o_1\equality o_3 \hastype \ha\Wtrans{p,T_2,q} : T_1 \equality T_3}
 \]
 
 \item
@@ -438,14 +438,13 @@ General and fibrant types.
           { \Gamma \vdash o \hastype{\Univ_{\ha\succN n}}} \and
 \inferrule{ \Gamma \vdash o \hastype{\FUniv_n}}
           { \Gamma \vdash o \hastype{\FUniv_{\ha\succN n}}} \and
-\inferrule{\Gamma \vdash p \hastype  o \equality o' \hastype \Univ_n \equality \Univ_{n'}} 
-          {\Gamma \vdash \ha\weleq{p} \hastype  \ha\El{n,o} \equality \ha\El{n',o'}}
 \end{mathparpagebreakable}
 
 \item
 Equality and $\El$.
-\[\inferrule{\Gamma \vdash p \hastype  o \equality o' \hastype \Univ_n \equality \Univ_{n'}} 
-            {\Gamma \vdash \ha\weleq{p} \hastype  \ha\El{n,o} \equality \ha\El{n',o'}}\]
+\[\inferrule{\Gamma \vdash p \hastype  o \equality o' \hastype q : \Univ_n \equality \Univ_{n'}} 
+          {\Gamma \vdash \ha\weleq{p,q} \hastype  \ha\El{n,o} \equality \ha\El{n',o'}}
+\]
 
 \item 
 \[\inferrule{ \Gamma, \var \hastype T \vdash U\TYPE  }{\Gamma \vdash \ha\tprod{T,.U}\TYPE}\]
@@ -474,7 +473,7 @@ variable $x$, as in the following equivalent version of the same rule.
 \item 
 \[ \inferrule{ 
   \Gamma \vdash p\hastype T \equality T'  \\
-  \Gamma, x \hastype T, x' \hastype T', w \hastype  x \equality x' \hastype T \equality T' \vdash q \hastype  U \equality U' 
+  \Gamma, x \hastype T, x' \hastype T', w \hastype  x \equality x' \hastype p' : T \equality T' \vdash q \hastype  U \equality U' 
   } {
   \Gamma \vdash \ha\wpieq{p,...q}\hastype \ha\tprod{T,x.U}\equality \ha\tprod{T',x'.U'}
 }\]
@@ -482,9 +481,9 @@ variable $x$, as in the following equivalent version of the same rule.
 \item 
 \[ \inferrule{ 
   \Gamma \vdash p\hastype T \equality T' \\
-  \Gamma, x \hastype T, x' \hastype T', w \hastype  x \equality x' \hastype T \equality T' \vdash q \hastype  u \equality u' \hastype  U \equality U'
+  \Gamma, x \hastype T, x' \hastype T', w \hastype  x \equality x' \hastype p' : T \equality T' \vdash q \hastype  u \equality u' \hastype  U \equality U'
   } {
-  \Gamma \vdash \ha\wlambda{p,...q} \hastype  \ha\lambda{.u}\equality \ha\lambda{.u'} \hastype  \ha\tprod{T,.U} \equality \ha\tprod{T',.U'}
+  \Gamma \vdash \ha\wlambda{p,...q} \hastype  \ha\lambda{.u}\equality \ha\lambda{.u'} \hastype \ha\wpieq{p,...q} :  \ha\tprod{T,.U} \equality \ha\tprod{T',.U'}
 }\]
 
 \item 
@@ -504,7 +503,7 @@ variable $x$, as in the following equivalent version of the same rule.
    \\ 
    \Gamma \vdash q \hastype  t \equality t' \hastype T \equality T'
    }{
-   \Gamma \vdash \ha\weveq{p,q} \hastype  \ha\ev{f,t,{\ha\tprod{T,.U}}} \equality \ha\ev{f',t',{\ha\tprod{T',.U'}}} \hastype U[\haa t T] \equality U'[\haa {t'} {T'}]
+   \Gamma \vdash \ha\weveq{p,q} \hastype  \ha\ev{f,t,{\ha\tprod{T,.U}}} \equality \ha\ev{f',t',{\ha\tprod{T',.U'}}} \hastype {\rm ????} : U[\haa t T] \equality U'[\haa {t'} {T'}]
   }\]
 
 \item 
@@ -641,17 +640,17 @@ induction on $\NN$.
 \inferrule{
   \Gamma, n \hastype \NN \vdash p \hastype  T \equality T'
   \\
-  \Gamma \vdash q \hastype  b \equality b' \hastype T[\zeroN] \equality T'[\zeroN]
+  \Gamma \vdash q \hastype  b \equality b' \hastype p[\zeroN] : T[\zeroN] \equality T'[\zeroN]
   \\
   \Gamma, n \hastype \NN, c \hastype T[n] \vdash d \hastype T[\succN[n]]
   \\
   \Gamma, n \hastype \NN, c' \hastype T'[n] \vdash d' \hastype T'[\succN[n]]
   \\
-  \Gamma, n \hastype \NN, \var \hastype  c \equality c' \hastype T[n] \equality T'[n] \vdash r \hastype  d[n,c] \equality d'[n,c'] \hastype T[\succN[n]] \equality T'[\succN[n]]
+  \Gamma, n \hastype \NN, \var \hastype  c \equality c' \hastype p[n] : T[n] \equality T'[n] \vdash r \hastype  d[n,c] \equality d'[n,c'] \hastype p[\succN[n]] : T[\succN[n]] \equality T'[\succN[n]]
   \\
   \Gamma \vdash s \hastype  n \equality n' \hastype \NN
 }
-     {\Gamma \vdash \ha\windeq{.p,q,..r,s} \hastype  \ha\indN{.T,b,..d,n} \equality \ha\indN{.T',b',..d',n'} \hastype  T[n] \equality T'[n'] }
+     {\Gamma \vdash \ha\windeq{.p,q,..r,s} \hastype  \ha\indN{.T,b,..d,n} \equality \ha\indN{.T',b',..d',n'} \hastype {\rm ????} : T[n] \equality T'[n'] }
 \]
 
 \item
@@ -670,17 +669,13 @@ induction on $\NN$.
 \item
 \[
   \inferrule {
-    \Gamma, n \hastype \NN \vdash t : T
+    \Gamma, n \hastype \NN, \var : t \equality t' \hastype r : T \equality T' \vdash q : t[\succN[n]] \equality t'[\succN[n]] \hastype r[\succN[n]] : T[\succN[n]] \equality T'[\succN[n]]
     \\
-    \Gamma, n \hastype \NN \vdash t' : T'
-    \\
-    \Gamma \vdash p : t[\zeroN] \equality t'[\zeroN] : T[\zeroN] \equality T'[\zeroN]
-    \\
-    \Gamma, n \hastype \NN, \var : t[n] \equality t'[n] : T[n] \equality T'[n] \vdash q : t[\succN[n]] \equality t'[\succN[n]] : T[\succN[n]] \equality T'[\succN[n]]
+    \Gamma \vdash p : t[\zeroN] \equality t'[\zeroN] : r[\zeroN] : T[\zeroN] \equality T'[\zeroN]
     \\
     \Gamma \vdash n \hastype \NN
   } {
-    \Gamma \vdash \ha\wetaN{.T,.T',.t,.t',p,..q,n} : t[n] \equality t'[n] : T[n] \equality T'[n]
+    \Gamma \vdash \ha\wetaN{.T,.T',.t,.t',p,..q,.r,n} : t[n] \equality t'[n] \hastype r[n] : T[n] \equality T'[n]
   }
 \]
 
@@ -723,7 +718,7 @@ Identity type.
     \Gamma \vdash T \FTYPE \\
     \Gamma \vdash T' \FTYPE \\
     \Gamma \vdash p \hastype t \equality t' \hastype T \equality T'}
-            {\Gamma \vdash \ha\wrefl{p} \hastype \ha\refl{} \equality \ha\refl{} \hastype (t \identity t \hastype T) \equality (t' \identity t' \hastype T')} \and
+            {\Gamma \vdash \ha\wrefl{} \hastype \ha\refl{} \equality \ha\refl{} \hastype \ha\Wid{p,p} : (t \identity t \hastype T) \equality (t' \identity t' \hastype T')} \and
 
 \end{mathparpagebreakable}
 
@@ -761,14 +756,6 @@ checks.
        {\Gamma \vdash t' \hastype T'}
 
 \end{mathparpagebreakable}
-
-\item
-It should be a meta-theorem (or sanity check) that if
-\[{\Gamma \vdash p : t \equality t' \hastype T \equality T'}\]
-is derivable, then, for some $p'$
-\[{\Gamma \vdash p' : T \equality T'}\]
-is derivable.  If we need $p'$ to be easily computable from $p$, we can
-arrange to store it inside $p$.
 
 \end{enumerate}
 
