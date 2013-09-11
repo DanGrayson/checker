@@ -400,15 +400,15 @@ Or maybe we can just {\em define} $\ha\wrefl{}$ to be $\ha\wconv{}$.
 
 \item 
 \[\inferrule
-    {\Gamma \vdash p\hastype o_1\equality o_2 \hastype q : T_1 \equality T_2}
-    {\Gamma \vdash \ha\wsymm{p}\hastype o_2\equality o_1 \hastype \ha\Wsymm{q} : T_2 \equality T_1}\]
+    {\Gamma \vdash p\hastype o_1\equality o_2 \hastype \tilde p : T_1 \equality T_2}
+    {\Gamma \vdash \ha\wsymm{p}\hastype o_2\equality o_1 \hastype \ha\Wsymm{\tilde p} : T_2 \equality T_1}\]
 
 \item 
-\[\inferrule{\Gamma \vdash p\hastype o_1\equality o_2 \hastype T_1 \equality T_2
+\[\inferrule{\Gamma \vdash p\hastype o_1\equality o_2 \hastype \tilde p : T_1 \equality T_2
   \\
-  \Gamma \vdash q\hastype o_2\equality o_3 \hastype T_2 \equality T_3
+  \Gamma \vdash q\hastype o_2\equality o_3 \hastype \tilde q : T_2 \equality T_3
   } {
-  \Gamma \vdash \ha\wtrans{p,T_2,o_2,q}\hastype o_1\equality o_3 \hastype \ha\Wtrans{p,T_2,q} : T_1 \equality T_3}
+  \Gamma \vdash \ha\wtrans{p,o_2,q}\hastype o_1\equality o_3 \hastype \ha\Wtrans{\tilde p,T_2,\tilde q} : T_1 \equality T_3}
 \]
 
 \item
@@ -473,7 +473,7 @@ variable $x$, as in the following equivalent version of the same rule.
 \item 
 \[ \inferrule{ 
   \Gamma \vdash p\hastype T \equality T'  \\
-  \Gamma, x \hastype T, x' \hastype T', w \hastype  x \equality x' \hastype p' : T \equality T' \vdash q \hastype  U \equality U' 
+  \Gamma, x \hastype T, x' \hastype T', \var \hastype  x \equality x' \hastype p : T \equality T' \vdash q \hastype  U \equality U' 
   } {
   \Gamma \vdash \ha\wpieq{p,...q}\hastype \ha\tprod{T,x.U}\equality \ha\tprod{T',x'.U'}
 }\]
@@ -481,9 +481,9 @@ variable $x$, as in the following equivalent version of the same rule.
 \item 
 \[ \inferrule{ 
   \Gamma \vdash p\hastype T \equality T' \\
-  \Gamma, x \hastype T, x' \hastype T', w \hastype  x \equality x' \hastype p' : T \equality T' \vdash q \hastype  u \equality u' \hastype  U \equality U'
+  \Gamma, x \hastype T, x' \hastype T', \var \hastype  x \equality x' \hastype p : T \equality T' \vdash q \hastype  u \equality u' \hastype \tilde q : U \equality U'
   } {
-  \Gamma \vdash \ha\wlambda{p,...q} \hastype  \ha\lambda{.u}\equality \ha\lambda{.u'} \hastype \ha\wpieq{p,...q} :  \ha\tprod{T,.U} \equality \ha\tprod{T',.U'}
+  \Gamma \vdash \ha\wlambda{...q} \hastype  \ha\lambda{.u}\equality \ha\lambda{.u'} \hastype \ha\wpieq{p,...\tilde q} :  \ha\tprod{T,.U} \equality \ha\tprod{T',.U'}
 }\]
 
 \item 
@@ -544,62 +544,6 @@ variable $x$, as in the following equivalent version of the same rule.
   \inferrule{ \Gamma \vdash n \hastype \NN }
        {\Gamma \vdash \ha \succN {n} \hastype \NN }
 \end{mathparpagebreakable}
-
-\item
-
-This rule and the following three deal with defining a family of types by
-induction on $\NN$.  
-%% If we treat types as objects of a type called $\Type$,
-%% they won't be necessary.
-
-\[
-\inferrule{
-  \Gamma \vdash B \TYPE
-  \\
-  \Gamma, n \hastype \NN, C \TYPE \vdash D \TYPE
-  \\
-  \Gamma \vdash n \hastype \NN
-}
-     {\Gamma \vdash \ha\indtN{B,..D,n} \TYPE }
-\]
-
-\item
-\[
-\inferrule{
-  \Gamma \vdash B \TYPE
-  \\
-  \Gamma, n \hastype \NN, C \TYPE \vdash D \TYPE
-}
-     {\Gamma \vdash \ha\windo{} \hastype  \ha\indtN{B,..D,\zeroN} \equality B }
-\]
-
-\item
-\[
-\inferrule{
-  \Gamma \vdash B \TYPE
-  \\
-  \Gamma, n \hastype \NN, C \TYPE \vdash D \TYPE
-  \\
-  \Gamma \vdash n \hastype \NN
-}
-     {\Gamma \vdash \ha\winds{} \hastype  \ha\indtN{B,..D,\succN[n]} \equality D[n,\ha\indtN{B,..D,n}] }
-\]
-
-\item
-\[
-\inferrule{
-  \Gamma \vdash q \hastype  B \equality B'
-  \\
-  \Gamma, n \hastype \NN, C \TYPE \vdash D \TYPE
-  \\
-  \Gamma, n \hastype \NN, C' \TYPE \vdash D' \TYPE
-  \\
-  \Gamma, n \hastype \NN, \var \hastype  C \equality C' \vdash r \hastype  D[n,C] \equality D'[n,C']
-  \\
-  \Gamma \vdash s \hastype  n \equality n' \hastype \NN
-}
-     {\Gamma \vdash \ha\windeq{q,..r,s} \hastype  \ha\indtN{B,..D,n} \equality \ha\indtN{B',..D',n'} }
-\]
 
 \item
 \[
