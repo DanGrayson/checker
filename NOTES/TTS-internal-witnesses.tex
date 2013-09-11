@@ -667,19 +667,6 @@ induction on $\NN$.
 \]
 
 \item
-\[
-  \inferrule {
-    \Gamma, n \hastype \NN, \var : t \equality t' \hastype r : T \equality T' \vdash q : t[\succN[n]] \equality t'[\succN[n]] \hastype r[\succN[n]] : T[\succN[n]] \equality T'[\succN[n]]
-    \\
-    \Gamma \vdash p : t[\zeroN] \equality t'[\zeroN] : r[\zeroN] : T[\zeroN] \equality T'[\zeroN]
-    \\
-    \Gamma \vdash n \hastype \NN
-  } {
-    \Gamma \vdash \ha\wetaN{.T,.T',.t,.t',p,..q,.r,n} : t[n] \equality t'[n] \hastype r[n] : T[n] \equality T'[n]
-  }
-\]
-
-\item
 Identity type.
 \begin{mathparpagebreakable}
   \inferrule{\Gamma \vdash T \FTYPE \\ \Gamma \vdash t_1 \hastype T \\ \Gamma \vdash t_2 \hastype T}
