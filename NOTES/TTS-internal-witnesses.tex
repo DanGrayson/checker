@@ -598,19 +598,6 @@ variable $x$, as in the following equivalent version of the same rule.
 \]
 
 \item
-\[
-  \inferrule {
-    \Gamma \vdash p \hastype  T[\zeroN] \equality T'[\zeroN]
-    \\
-    \Gamma, n \hastype \NN, \var \hastype  T \equality T' \vdash q \hastype  T[\succN[n]] \equality T'[\succN[n]]
-    \\
-    \Gamma \vdash n \hastype \NN
-  } {
-    \Gamma \vdash \ha\wetatN{.T,.T',p,..q,n} : T[n] \equality T'[n]
-  }
-\]
-
-\item
 Identity type.
 \begin{mathparpagebreakable}
   \inferrule{\Gamma \vdash T \FTYPE \\ \Gamma \vdash t_1 \hastype T \\ \Gamma \vdash t_2 \hastype T}
