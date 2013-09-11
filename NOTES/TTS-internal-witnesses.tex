@@ -319,6 +319,43 @@ objects of equal types.  In the case where $T$ and $T'$ are the same and $p$ is 
 abbreviate it to $t \equality t' \hastype T$.  Syntactic comparison of
 expressions representing two such types will ignore the expressions $p$.
 
+\item
+The following rules are included, because they correspond to meta-theorems that
+we intend should hold; they are not expected to be useful in constructing
+proofs, and they shouldn't participate in derivations considered by the
+uniqueness statement of the introduction.  They should be thought of as sanity
+checks.
+
+\begin{mathparpagebreakable}
+  \inferrule{\Gamma \vdash t \hastype T}
+       {\Gamma, \var \hastype T \Context}
+  \and
+  \inferrule{\Gamma, \var \hastype T \Context}
+       {\Gamma \vdash T \TYPE}
+  \and
+  \inferrule{\Gamma \vdash p \hastype T \equality T'}
+       {\Gamma, \var \hastype T \equality T' \Context}
+  \and
+  \inferrule{\Gamma, \var \hastype T \equality T' \Context}
+       {\Gamma \vdash T \TYPE}
+  \and
+  \inferrule{\Gamma, \var \hastype T \equality T' \Context}
+       {\Gamma \vdash T' \TYPE}
+  \and
+  \inferrule{\Gamma \vdash p : t \equality t' \hastype q : T \equality T'}
+       {\Gamma, \var : t \equality t' \hastype q : T \equality T' \Context}
+  \and
+  \inferrule{\Gamma, \var : t \equality t' \hastype q : T \equality T' \Context}
+       {\Gamma \vdash t \hastype T}
+  \and
+  \inferrule{\Gamma, \var : t \equality t' \hastype q : T \equality T' \Context}
+       {\Gamma \vdash t' \hastype T'}
+  \and
+  \inferrule{\Gamma, \var : t \equality t' \hastype q : T \equality T' \Context}
+       {\Gamma \vdash q : T \equality T'}
+
+\end{mathparpagebreakable}
+
 \item 
 Equal types have equal elements:
 \begin{mathparpagebreakable}
@@ -499,11 +536,14 @@ variable $x$, as in the following equivalent version of the same rule.
 
 \item 
 \[\inferrule{
-   \Gamma \vdash p \hastype  f \equality f' \hastype {\ha\tprod{T,.U}} \equality {\ha\tprod{T',.U'}} 
+   \Gamma \vdash p\hastype T \equality T'  \\
+   \Gamma, x \hastype T, x' \hastype T', \var \hastype  x \equality x' \hastype p : T \equality T' \vdash q \hastype  U \equality U' 
+   \\
+   \Gamma \vdash r \hastype  f \equality f' \hastype \ha\wpieq{p,...q} : {\ha\tprod{T,.U}} \equality {\ha\tprod{T',.U'}} 
    \\ 
-   \Gamma \vdash q \hastype  t \equality t' \hastype T \equality T'
+   \Gamma \vdash s \hastype  t \equality t' \hastype p : T \equality T'
    }{
-   \Gamma \vdash \ha\weveq{p,q} \hastype  \ha\ev{f,t,{\ha\tprod{T,.U}}} \equality \ha\ev{f',t',{\ha\tprod{T',.U'}}} \hastype {\rm ????} : U[\haa t T] \equality U'[\haa {t'} {T'}]
+   \Gamma \vdash \ha\weveq{p,...q,r,s} \hastype  \ha\ev{f,t,{\ha\tprod{T,.U}}} \equality \ha\ev{f',t',{\ha\tprod{T',.U'}}} \hastype q[t,t',s] : U[\haa t T] \equality U'[\haa {t'} {T'}]
   }\]
 
 \item 
@@ -640,40 +680,6 @@ Identity type.
 
 \end{mathparpagebreakable}
 
-
-\item
-The following rules are included, because they correspond to meta-theorems that
-we intend should hold; they are not expected to be useful in constructing
-proofs, and they shouldn't participate in derivations considered by the
-uniqueness statement of the introduction.  They should me thought of as sanity
-checks.
-
-\begin{mathparpagebreakable}
-  \inferrule{\Gamma \vdash t \hastype T}
-       {\Gamma, \var \hastype T \Context}
-  \and
-  \inferrule{\Gamma, \var \hastype T \Context}
-       {\Gamma \vdash T \TYPE}
-  \and
-  \inferrule{\Gamma \vdash p \hastype T \equality T'}
-       {\Gamma, \var \hastype T \equality T' \Context}
-  \and
-  \inferrule{\Gamma, \var \hastype T \equality T' \Context}
-       {\Gamma \vdash T \TYPE}
-  \and
-  \inferrule{\Gamma, \var \hastype T \equality T' \Context}
-       {\Gamma \vdash T' \TYPE}
-  \and
-  \inferrule{\Gamma \vdash p : t \equality t' \hastype T \equality T'}
-       {\Gamma, \var : t \equality t' \hastype T \equality T' \Context}
-  \and
-  \inferrule{\Gamma, \var : t \equality t' \hastype T \equality T' \Context}
-       {\Gamma \vdash t \hastype T}
-  \and
-  \inferrule{\Gamma, \var : t \equality t' \hastype T \equality T' \Context}
-       {\Gamma \vdash t' \hastype T'}
-
-\end{mathparpagebreakable}
 
 \end{enumerate}
 
