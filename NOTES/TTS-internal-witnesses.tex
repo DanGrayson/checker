@@ -203,11 +203,11 @@ Inference rules given later determine which sentences are well-formed and
 derivable.  The notation $$\Gamma \Context$$ will be used to indicate that
 $\Gamma$ is well-formed.
 
-Syntactic equality between expressions occurring twice in the conclusion of an
-inference rule will be up to renaming of local variables, expansion of
+Definitional equality between expressions occurring twice in the conclusion of
+an inference rule will be up to renaming of local variables, expansion of
 definitions, and a few other rules, to be presented later, that amount to
 ignoring certain subexpressions during equality checking.  We use the notation
-$ t \equiv t' $ for syntactic equality.
+$ t \syndef t' $ for definitional equality.
 
 The last variable introduced by a context is always unused, so we may 
 abbreviate the sentence
@@ -370,21 +370,21 @@ Equal types have equal elements:
 \end{mathparpagebreakable}
 
 
-\item
-Conversion is ignored when checking syntactic equality.
+%% \item
+%% Conversion is ignored when checking definitional equality.
 
-\begin{mathparpagebreakable}
-\inferrule
-    { \Gamma \vdash t_1 \syndef t_2}
-    { \Gamma \vdash \ha\conv{t_1,T_1,p_1} \syndef t_2 }\and
-\inferrule
-    { \Gamma \vdash t_1 \syndef t_2}
-    { \Gamma \vdash t_1 \syndef \ha\conv{t_2,T_2,p_2} }\and
-\end{mathparpagebreakable}
+%% \begin{mathparpagebreakable}
+%% \inferrule
+%%     { \Gamma \vdash t_1 \syndef t_2}
+%%     { \Gamma \vdash \ha\conv{t_1,T_1,p_1} \syndef t_2 }\and
+%% \inferrule
+%%     { \Gamma \vdash t_1 \syndef t_2}
+%%     { \Gamma \vdash t_1 \syndef \ha\conv{t_2,T_2,p_2} }\and
+%% \end{mathparpagebreakable}
 
-We don't intend to imply that a subexpression can be replaced by anything
-syntactically equal to it, for then automatic typechecking of the resulting
-expression may fail.
+%% We don't intend to imply that a subexpression can be replaced by anything
+%% definitionally equal to it, for then automatic typechecking of the resulting
+%% expression may fail.
 
 \item
 Proofs of equality between types are equal:
@@ -399,8 +399,8 @@ Proofs of equality between objects are equal:
 {\Gamma \vdash \ha\uep{} \hastype p \equality p' \hastype (t_1 \equality t'_1 \hastype q_1 : T_1 \equality T'_1) \equality (t_2 \equality t'_2 \hastype q_2 : T_2 \equality T'_2)}
 \]
 
-Maybe it is better to implement this at a lower level, by implementing $t \equiv t'$ so that
-$ p \equiv p' $ is always true.
+Maybe it is better to implement this at a lower level, by implementing $t \syndef t'$ so that
+$ p \syndef p' $ is always true.
 
 Or maybe, as Voevodsky indicates, these rules can be derived by induction and reflection.
 
