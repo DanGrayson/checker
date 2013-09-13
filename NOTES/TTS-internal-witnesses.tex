@@ -125,6 +125,7 @@
 \newcommand{\welequ}{{\sf welequ}}
 \newcommand{\welfequ}{{\sf welfequ}}
 \newcommand{\weveq}{{\sf wev}}
+\newcommand{\wsubeq}{{\sf wsubeq}}
 \newcommand{\wlambda}{{\sf wlambda}}
 \newcommand{\Wsubst}{{\sf Wsubst}}
 \newcommand{\wsubst}{{\sf wsubst}}
@@ -423,9 +424,7 @@ Or maybe, as Voevodsky indicates, these rules can be derived by induction and re
 
 \item 
 \[\inferrule{
-  \Gamma \vdash o \equality o' \hastype p : T \equality T' \TYPE
-  \\
-  \Gamma \vdash T \syndef T'
+  \Gamma \vdash o \equality o' \hastype \ha\Wrefl{} : T \equality T' \TYPE
   \\
   \Gamma \vdash o \syndef o'
   } {
@@ -447,6 +446,15 @@ Or maybe we can just {\em define} $\ha\wrefl{}$ to be $\ha\wconv{}$.
   } {
   \Gamma \vdash \ha\wtrans{p,o_2,q}\hastype o_1\equality o_3 \hastype \ha\Wtrans{\tilde p,T_2,\tilde q} : T_1 \equality T_3}
 \]
+
+\item
+  Propagation of equality through substitution.
+\[\inferrule{ 
+  \Gamma, \var \hastype T \vdash U \TYPE \\
+  \Gamma \vdash p \hastype t \equality t' \hastype \Wrefl[] : T \equality T
+}{
+  \Gamma \vdash \wsubeq[T,.U,t,t',p] \hastype U[t] \equality U[t']
+}\]
 
 \item
 Universes.
@@ -536,6 +544,8 @@ variable $x$, as in the following equivalent version of the same rule.
 
 \item 
 \[\inferrule{
+   \Gamma, x \hastype T \vdash U \TYPE \\
+   \Gamma, x' \hastype T' \vdash U' \TYPE \\
    \Gamma \vdash p\hastype T \equality T'  \\
    \Gamma, x \hastype T, x' \hastype T', \var \hastype  x \equality x' \hastype p : T \equality T' \vdash q \hastype  U \equality U' 
    \\
