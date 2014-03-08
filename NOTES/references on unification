@@ -19,3 +19,10 @@ from Yves Bertot:
 
      This paper is by the Matita group.
 
+from Matthie Sozeau:
+
+    You can have a look at Claudio Sacerdoti Coen’s thesis, chapter 10, which
+    is the best reference I know on unification for CIC and Abel and Pientka’s
+    paper on dynamic pattern unification for some of the tricks used in Coq
+    (although their system is slightly different). Ziliani’s ICFP paper with
+    Gonthier also includes some detailed explanations about unification in Coq.
