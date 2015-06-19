@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- mode: ts; coding: utf-8 -*-
 
 Include "rules/TS4.ts";;
 
