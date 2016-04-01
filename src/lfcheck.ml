@@ -534,7 +534,7 @@ and type_synthesis (surr:surrounding) (env:environment) (m:expr) : expr * judgme
       let head_type =
 	try
 	  head_to_type env pos head 
-	with Failure "nth" ->
+	with Failure _ ->
 	  printf "%a: head = %a, args = %a\n%!" _pos pos _h head _s args;
 	  print_context None stdout env;
 	  raise Internal

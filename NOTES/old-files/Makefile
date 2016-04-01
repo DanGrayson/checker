@@ -1,5 +1,5 @@
 FILES = interp.ml schemeGrammar.mly schemeLex.mll main.ml
-FLAGS = -menhir 'menhir --explain --error-recovery' -use-menhir -cflags -annot
+FLAGS = -menhir 'menhir --explain' -use-menhir -cflags -annot
 main.native: $(FILES); ocamlbuild $(FLAGS) $@
 clean:
 	rm -f interptmp.ml interptmp2.ml

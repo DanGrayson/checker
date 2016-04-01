@@ -4,7 +4,7 @@ open Ocamlbuild_plugin;;
 
 (*
   I don't know how to give these options to ocamlbuild here:
-  "-menhir"; "menhir --explain --error-recovery";
+  "-menhir"; "menhir --explain";
   "-use-menhir";
 *)
 

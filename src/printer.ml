@@ -110,7 +110,7 @@ let rec occurs_in_kind w = function
 
  *)
 
-let rel_to_string subs i = try idtostring (List.nth subs i) with Failure "nth" -> vartostring (Rel i)
+let rel_to_string subs i = try idtostring (List.nth subs i) with Failure _ -> vartostring (Rel i)
 
 let var_tester w subs occurs_in e = not ( List.exists (fun x -> id_to_name x == w ) subs ) && not ( occurs_in w e )
 

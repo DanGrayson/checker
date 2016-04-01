@@ -36,7 +36,7 @@ let local_lf_bind env v t = { env with local_lf_context = (v,t) :: env.local_lf_
 
 let local_lf_fetch env i = 			(* (Rel i) *)
   try rel_shift_type (i+1) (snd (List.nth env.local_lf_context i))
-  with Failure "nth" -> raise Not_found
+  with Failure _ -> raise Not_found
 
 let global_lf_bind env pos name t = 
   if MapIdentifier.mem name env.global_lf_context then raise (MarkedError (pos, "identifier already defined: " ^ idtostring name));

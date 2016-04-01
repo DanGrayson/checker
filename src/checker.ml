@@ -314,7 +314,7 @@ let toplevel() =
 	  env := parse_file !env filename
 	with 
 	| Sys_error msg -> printf "%s\n%!" msg; exit 1
-	| Failure "exiting" -> exit 1	(* after too many errors in a file, we don't parse the other files *)
+	| Failure _ -> exit 1	(* after too many errors in a file, we don't parse the other files *)
       )
       ("usage: " ^ (Filename.basename Sys.argv.(0)) ^ " [option|filename] ...");
   with FileFinished -> ());
@@ -323,7 +323,7 @@ let toplevel() =
     interactive := true;
     try
       env := parse_file !env "-"
-    with Failure "exiting" -> exit 1	(* after too many errors in a file, we don't parse the other files *)
+    with Failure _ -> exit 1	(* after too many errors in a file, we don't parse the other files *)
    )
 
 let unused env =
